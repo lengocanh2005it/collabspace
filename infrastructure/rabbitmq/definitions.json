@@ -1,0 +1,52 @@
+{
+  "users": [
+    {
+      "name": "guest",
+      "password": "guest",
+      "tags": "administrator"
+    }
+  ],
+  "vhosts": [
+    {
+      "name": "collabspace"
+    }
+  ],
+  "permissions": [
+    {
+      "user": "guest",
+      "vhost": "collabspace",
+      "configure": ".*",
+      "write": ".*",
+      "read": ".*"
+    }
+  ],
+  "queues": [
+    {
+      "name": "task_assigned",
+      "vhost": "collabspace",
+      "durable": true
+    },
+    {
+      "name": "workspace_invited",
+      "vhost": "collabspace",
+      "durable": true
+    }
+  ],
+  "exchanges": [
+    {
+      "name": "collabspace_exchange",
+      "vhost": "collabspace",
+      "type": "direct",
+      "durable": true
+    }
+  ],
+  "bindings": [
+    {
+      "source": "collabspace_exchange",
+      "destination": "task_assigned",
+      "destination_type": "queue",
+      "routing_key": "task_assigned",
+      "vhost": "collabspace"
+    }
+  ]
+}

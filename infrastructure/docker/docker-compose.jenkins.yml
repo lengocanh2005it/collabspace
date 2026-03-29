@@ -1,0 +1,20 @@
+services:
+  jenkins:
+    image: jenkins/jenkins:lts
+    container_name: jenkins
+    ports:
+      - "8081:8080"
+      - "50000:50000"
+    volumes:
+      - ../jenkins/jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ../jenkins/scripts:/usr/local/bin/scripts   # scripts dùng trong pipeline
+    networks:
+      - collabspace-network
+
+volumes:
+  jenkins_home:
+
+networks:
+  collabspace-network:
+    external: true

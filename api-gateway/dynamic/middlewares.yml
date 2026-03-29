@@ -1,0 +1,6 @@
+http:
+  middlewares:
+    auth-header:
+      headers:
+        customRequestHeaders:
+          X-Custom-Auth: "true"

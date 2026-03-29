@@ -1,0 +1,45 @@
+pipeline {
+    agent any
+
+    environment {
+        IMAGE_NAME = "myorg/auth-service"
+        DOCKER_REGISTRY = "docker.io"
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                git branch: 'main', url: 'https://github.com/myorg/auth-service.git'
+            }
+        }
+
+        stage('Build & Test') {
+            steps {
+                sh 'npm install'
+                sh 'npm test'
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                sh "docker build -t $DOCKER_REGISTRY/$IMAGE_NAME:latest ."
+            }
+        }
+
+        stage('Push Docker Image') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'docker-hub', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
+                    sh "echo $PASS | docker login -u $USER --password-stdin $DOCKER_REGISTRY"
+                    sh "docker push $DOCKER_REGISTRY/$IMAGE_NAME:latest"
+                }
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                // ví dụ deploy với docker-compose
+                sh "docker-compose -f docker-compose.yml -f docker-compose.override.yml up -d auth-service"
+            }
+        }
+    }
+}

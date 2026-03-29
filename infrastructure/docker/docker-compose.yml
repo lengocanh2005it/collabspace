@@ -1,0 +1,57 @@
+services:
+  rabbitmq:
+    build: ../rabbitmq
+    container_name: rabbitmq
+    env_file:
+      - ../rabbitmq/.env
+    ports:
+      - "5672:5672"  
+      - "15672:15672"  # Management UI
+    volumes:
+      - ../rabbitmq/data:/var/lib/rabbitmq   # persistent data
+    networks:
+      - collabspace-network
+
+  auth-service:
+    build: ./services/auth-service
+    container_name: auth-service
+    env_file:
+      - ./services/auth-service/.env
+    networks:
+      - collabspace-network
+
+  user-service:
+    build: ./services/user-service
+    container_name: user-service
+    env_file:
+      - ./services/user-service/.env
+    networks:
+      - collabspace-network
+
+  workspace-service:
+    build: ./services/workspace-service
+    container_name: workspace-service
+    env_file:
+      - ./services/workspace-service/.env
+    networks:
+      - collabspace-network
+
+  task-service:
+    build: ./services/task-service
+    container_name: task-service
+    env_file:
+      - ./services/task-service/.env
+    networks:
+      - collabspace-network
+
+  notification-service:
+    build: ./services/notification-service
+    container_name: notification-service
+    env_file:
+      - ./services/notification-service/.env
+    networks:
+      - collabspace-network
+
+networks:
+  collabspace-network:
+    driver: bridge

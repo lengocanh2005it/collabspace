@@ -1,0 +1,30 @@
+services:
+  auth-service:
+    volumes:
+      - ../../services/auth-service:/app
+    ports:
+      - "3000:3000"
+
+  user-service:
+    volumes:
+      - ../../services/user-service:/app
+    ports:
+      - "3001:3000"
+
+  workspace-service:
+    volumes:
+      - ../../services/workspace-service:/app
+    ports:
+      - "3002:8080"
+
+  task-service:
+    volumes:
+      - ../../services/task-service:/app
+    ports:
+      - "3003:3000"
+
+  notification-service:
+    volumes:
+      - ../../services/notification-service:/app
+    ports:
+      - "3004:3000"

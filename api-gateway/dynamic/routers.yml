@@ -1,0 +1,25 @@
+http:
+  routers:
+    auth-router:
+      rule: "PathPrefix(`/auth`)"
+      service: auth-service
+      entryPoints:
+        - web
+      middlewares:
+        - auth-header
+
+    workspace-router:
+      rule: "PathPrefix(`/workspaces`)"
+      service: workspace-service
+      entryPoints:
+        - web
+
+  services:
+    auth-service:
+      loadBalancer:
+        servers:
+          - url: "http://auth-service:3000"
+    workspace-service:
+      loadBalancer:
+        servers:
+          - url: "http://workspace-service:8080"
