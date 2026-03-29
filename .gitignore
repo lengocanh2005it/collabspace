@@ -49,3 +49,6 @@ logs/
 
 # ELK Data
 /infrastructure/logging/esdata
+
+# Redis Data
+/infrastructure/redis/data
