@@ -1,0 +1,219 @@
+# Jaeger Kubernetes Deployment
+# Agent BRAVO - Infrastructure Engineer: Phan Phu Tho
+# Last updated: 2026-04-03
+#
+# Jaeger All-in-One for distributed tracing
+# Ports: 16686 (UI), 6831/6832 (UDP agent), 14268 (HTTP collector)
+# Storage: In-memory (development) - configure Elasticsearch for production
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jaeger-config
+  namespace: collabspace
+  labels:
+    app: jaeger
+    app.kubernetes.io/name: jaeger
+    app.kubernetes.io/component: tracing
+    app.kubernetes.io/part-of: collabspace
+data:
+  # Sampling strategies configuration
+  sampling-strategies.json: |
+    {
+      "default_strategy": {
+        "type": "probabilistic",
+        "param": 1.0
+      },
+      "per_service_strategies": [
+        {
+          "service": "auth-service",
+          "type": "probabilistic",
+          "param": 1.0
+        },
+        {
+          "service": "user-service",
+          "type": "probabilistic",
+          "param": 1.0
+        },
+        {
+          "service": "workspace-service",
+          "type": "probabilistic",
+          "param": 1.0
+        },
+        {
+          "service": "task-service",
+          "type": "probabilistic",
+          "param": 1.0
+        },
+        {
+          "service": "notification-service",
+          "type": "probabilistic",
+          "param": 1.0
+        }
+      ]
+    }
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jaeger
+  namespace: collabspace
+  labels:
+    app: jaeger
+    app.kubernetes.io/name: jaeger
+    app.kubernetes.io/component: tracing
+    app.kubernetes.io/part-of: collabspace
+    app.kubernetes.io/version: "1.41"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jaeger
+  strategy:
+    type: Recreate  # All-in-one should be single instance
+  template:
+    metadata:
+      labels:
+        app: jaeger
+        app.kubernetes.io/name: jaeger
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "14269"
+        prometheus.io/path: "/metrics"
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+      containers:
+        - name: jaeger
+          image: jaegertracing/all-in-one:1.41
+          imagePullPolicy: IfNotPresent
+          args:
+            - "--memory.max-traces=100000"
+            - "--query.base-path=/jaeger"
+            - "--sampling.strategies-file=/etc/jaeger/sampling-strategies.json"
+          ports:
+            # Agent ports
+            - name: agent-compact
+              containerPort: 6831
+              protocol: UDP
+            - name: agent-binary
+              containerPort: 6832
+              protocol: UDP
+            - name: agent-config
+              containerPort: 5778
+              protocol: TCP
+            # Collector ports
+            - name: collector-http
+              containerPort: 14268
+              protocol: TCP
+            - name: collector-grpc
+              containerPort: 14250
+              protocol: TCP
+            # Query/UI port
+            - name: query
+              containerPort: 16686
+              protocol: TCP
+            # Admin/metrics port
+            - name: admin
+              containerPort: 14269
+              protocol: TCP
+            # Zipkin compatibility
+            - name: zipkin
+              containerPort: 9411
+              protocol: TCP
+          env:
+            - name: COLLECTOR_ZIPKIN_HOST_PORT
+              value: ":9411"
+            - name: SPAN_STORAGE_TYPE
+              value: "memory"
+            - name: MEMORY_MAX_TRACES
+              value: "100000"
+            # For production, use Elasticsearch:
+            # - name: SPAN_STORAGE_TYPE
+            #   value: "elasticsearch"
+            # - name: ES_SERVER_URLS
+            #   value: "http://elasticsearch:9200"
+          volumeMounts:
+            - name: jaeger-config
+              mountPath: /etc/jaeger
+              readOnly: true
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "250m"
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 14269
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 2
+            successThreshold: 1
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 14269
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 2
+            successThreshold: 1
+            failureThreshold: 3
+      volumes:
+        - name: jaeger-config
+          configMap:
+            name: jaeger-config
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jaeger
+  namespace: collabspace
+  labels:
+    app: jaeger
+spec:
+  type: ClusterIP
+  selector:
+    app: jaeger
+  ports:
+    # Agent ports (UDP)
+    - name: agent-compact
+      port: 6831
+      targetPort: 6831
+      protocol: UDP
+    - name: agent-binary
+      port: 6832
+      targetPort: 6832
+      protocol: UDP
+    # Agent config (TCP)
+    - name: agent-config
+      port: 5778
+      targetPort: 5778
+      protocol: TCP
+    # Collector ports
+    - name: collector-http
+      port: 14268
+      targetPort: 14268
+      protocol: TCP
+    - name: collector-grpc
+      port: 14250
+      targetPort: 14250
+      protocol: TCP
+    # Query/UI port
+    - name: query
+      port: 16686
+      targetPort: 16686
+      protocol: TCP
+    # Zipkin compatibility
+    - name: zipkin
+      port: 9411
+      targetPort: 9411
+      protocol: TCP

@@ -30,6 +30,11 @@
       "name": "workspace_invited",
       "vhost": "collabspace",
       "durable": true
+    },
+    {
+      "name": "comment_created",
+      "vhost": "collabspace",
+      "durable": true
     }
   ],
   "exchanges": [
@@ -46,6 +51,20 @@
       "destination": "task_assigned",
       "destination_type": "queue",
       "routing_key": "task_assigned",
+      "vhost": "collabspace"
+    },
+    {
+      "source": "collabspace_exchange",
+      "destination": "workspace_invited",
+      "destination_type": "queue",
+      "routing_key": "workspace_invited",
+      "vhost": "collabspace"
+    },
+    {
+      "source": "collabspace_exchange",
+      "destination": "comment_created",
+      "destination_type": "queue",
+      "routing_key": "comment_created",
       "vhost": "collabspace"
     }
   ]

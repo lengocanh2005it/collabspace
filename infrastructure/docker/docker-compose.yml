@@ -13,42 +13,65 @@ services:
       - collabspace-network
 
   auth-service:
-    build: ./services/auth-service
+    build: ../../services/auth-service
     container_name: auth-service
     env_file:
-      - ./services/auth-service/.env
+      - ../../services/auth-service/.env
+    depends_on:
+      rabbitmq:
+        condition: service_started
+      postgres:
+        condition: service_healthy
     networks:
       - collabspace-network
 
   user-service:
-    build: ./services/user-service
+    build: ../../services/user-service
     container_name: user-service
     env_file:
-      - ./services/user-service/.env
+      - ../../services/user-service/.env
+    depends_on:
+      postgres:
+        condition: service_healthy
     networks:
       - collabspace-network
 
   workspace-service:
-    build: ./services/workspace-service
+    build: ../../services/workspace-service
     container_name: workspace-service
     env_file:
-      - ./services/workspace-service/.env
+      - ../../services/workspace-service/.env
+    depends_on:
+      rabbitmq:
+        condition: service_started
+      postgres:
+        condition: service_healthy
     networks:
       - collabspace-network
 
   task-service:
-    build: ./services/task-service
+    build: ../../services/task-service
     container_name: task-service
     env_file:
-      - ./services/task-service/.env
+      - ../../services/task-service/.env
+    depends_on:
+      rabbitmq:
+        condition: service_started
+      mongo:
+        condition: service_healthy
     networks:
       - collabspace-network
 
   notification-service:
-    build: ./services/notification-service
+    build: ../../services/notification-service
     container_name: notification-service
     env_file:
-      - ./services/notification-service/.env
+      - ../../services/notification-service/.env
+    depends_on:
+      rabbitmq:
+        condition: service_started
+      redis:
+        condition: service_healthy
     networks:
       - collabspace-network
 

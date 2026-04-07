@@ -2,10 +2,15 @@ services:
   prometheus:
     image: prom/prometheus:latest
     container_name: prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.retention.time=15d'
+      - '--storage.tsdb.retention.size=2GB'
     ports:
       - "9090:9090"
     volumes:
       - ../monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
     networks:
       - collabspace-network
 
@@ -16,5 +21,10 @@ services:
       - "3005:3000"
     volumes:
       - ../monitoring/grafana-dashboards:/var/lib/grafana/dashboards
+      - grafana_data:/var/lib/grafana
     networks:
       - collabspace-network
+
+volumes:
+  prometheus_data:
+  grafana_data:

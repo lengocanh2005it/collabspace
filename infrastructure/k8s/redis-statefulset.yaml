@@ -1,0 +1,114 @@
+# ================================================
+# Redis StatefulSet for CollabSpace
+# Infrastructure Engineer: Phan Phu Tho
+# ================================================
+# Used by notification-service for caching + pub/sub
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: redis-secrets
+  namespace: collabspace
+  labels:
+    app.kubernetes.io/name: redis
+    app.kubernetes.io/part-of: collabspace
+type: Opaque
+stringData:
+  REDIS_PASSWORD: collabspace123
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: redis-config
+  namespace: collabspace
+  labels:
+    app.kubernetes.io/name: redis
+data:
+  redis.conf: |
+    appendonly yes
+    maxmemory 512mb
+    maxmemory-policy allkeys-lru
+    requirepass collabspace123
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis
+  namespace: collabspace
+  labels:
+    app.kubernetes.io/name: redis
+    app.kubernetes.io/part-of: collabspace
+spec:
+  serviceName: redis
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+        app.kubernetes.io/name: redis
+    spec:
+      containers:
+        - name: redis
+          image: redis:7
+          command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+          ports:
+            - containerPort: 6379
+              name: redis
+          volumeMounts:
+            - name: redis-data
+              mountPath: /data
+            - name: redis-conf
+              mountPath: /usr/local/etc/redis
+          resources:
+            requests:
+              memory: 128Mi
+              cpu: 100m
+            limits:
+              memory: 512Mi
+              cpu: 250m
+          readinessProbe:
+            exec:
+              command: ["redis-cli", "-a", "collabspace123", "ping"]
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+          livenessProbe:
+            exec:
+              command: ["redis-cli", "-a", "collabspace123", "ping"]
+            initialDelaySeconds: 15
+            periodSeconds: 30
+            timeoutSeconds: 3
+      volumes:
+        - name: redis-conf
+          configMap:
+            name: redis-config
+  volumeClaimTemplates:
+    - metadata:
+        name: redis-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 2Gi
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: collabspace
+  labels:
+    app.kubernetes.io/name: redis
+spec:
+  type: ClusterIP
+  ports:
+    - port: 6379
+      targetPort: 6379
+      name: redis
+  selector:
+    app: redis
