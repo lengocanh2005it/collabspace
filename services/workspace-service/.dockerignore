@@ -1,0 +1,17 @@
+build
+.gradle
+gradle
+gradlew
+gradlew.bat
+.env
+.env.*
+!.env.example
+.git
+.gitignore
+Dockerfile
+Jenkinsfile
+*.md
+.vscode
+.idea
+bin
+out
