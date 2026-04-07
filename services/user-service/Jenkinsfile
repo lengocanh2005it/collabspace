@@ -2,14 +2,14 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = "myorg/auth-service"
+        IMAGE_NAME = "myorg/user-service"
         DOCKER_REGISTRY = "docker.io"
     }
 
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/myorg/auth-service.git'
+                git branch: 'main', url: 'https://github.com/myorg/user-service.git'
             }
         }
 
@@ -39,7 +39,7 @@ pipeline {
             steps {
                 sh """
                     cd \${WORKSPACE}/infrastructure/docker
-                    docker-compose -f docker-compose.yml -f docker-compose.override.yml up -d auth-service
+                    docker-compose -f docker-compose.yml -f docker-compose.override.yml up -d user-service
                 """
             }
         }
