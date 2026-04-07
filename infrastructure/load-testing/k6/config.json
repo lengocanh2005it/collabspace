@@ -6,9 +6,21 @@
       "url": "http://auth-service:3000",
       "healthEndpoint": "/auth/health"
     },
+    "user-service": {
+      "url": "http://user-service:3000",
+      "healthEndpoint": "/users/health"
+    },
+    "workspace-service": {
+      "url": "http://workspace-service:8080",
+      "healthEndpoint": "/workspaces/health"
+    },
     "task-service": {
       "url": "http://task-service:3000",
       "healthEndpoint": "/tasks/health"
+    },
+    "notification-service": {
+      "url": "http://notification-service:3000",
+      "healthEndpoint": "/notifications/health"
     }
   }
 }

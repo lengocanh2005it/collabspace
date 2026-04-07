@@ -9,13 +9,13 @@ export let options = {
 const BASE_URL = __ENV.BASE_URL || "http://localhost";
 
 export default function () {
-  group("Workspace Service Health", function () {
-    let res = http.get(`${BASE_URL}/workspaces/health`);
+  group("Task Service Health", function () {
+    let res = http.get(`${BASE_URL}/tasks/health`);
     check(res, { "health status 200": (r) => r.status === 200 });
   });
 
-  group("List Workspaces", function () {
-    let res = http.get(`${BASE_URL}/workspaces`, {
+  group("List Tasks", function () {
+    let res = http.get(`${BASE_URL}/tasks`, {
       headers: { Authorization: `Bearer ${__ENV.TEST_TOKEN || ''}` },
     });
     check(res, {
