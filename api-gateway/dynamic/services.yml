@@ -1,0 +1,16 @@
+# ================================
+# Traefik Dynamic Services Configuration
+# ================================
+# Service definitions are managed inline within routers.yml
+# to keep routing and service config co-located.
+#
+# Service → URL mapping:
+#   auth-service         → http://auth-service:3000
+#   user-service         → http://user-service:3000
+#   workspace-service    → http://workspace-service:8080
+#   task-service         → http://task-service:3000
+#   notification-service → http://notification-service:3000
+#
+# To split services into this file, move the `services:` block
+# from routers.yml here. Traefik merges all files in the
+# dynamic config directory automatically.

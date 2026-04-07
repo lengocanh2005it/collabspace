@@ -7,19 +7,63 @@ http:
         - web
       middlewares:
         - auth-header
+        - rate-limit
+        - cors-headers
+
+    user-router:
+      rule: "PathPrefix(`/users`)"
+      service: user-service
+      entryPoints:
+        - web
+      middlewares:
+        - rate-limit
+        - cors-headers
 
     workspace-router:
       rule: "PathPrefix(`/workspaces`)"
       service: workspace-service
       entryPoints:
         - web
+      middlewares:
+        - rate-limit
+        - cors-headers
+
+    task-router:
+      rule: "PathPrefix(`/tasks`)"
+      service: task-service
+      entryPoints:
+        - web
+      middlewares:
+        - rate-limit
+        - cors-headers
+
+    notification-router:
+      rule: "PathPrefix(`/notifications`)"
+      service: notification-service
+      entryPoints:
+        - web
+      middlewares:
+        - rate-limit
+        - cors-headers
 
   services:
     auth-service:
       loadBalancer:
         servers:
           - url: "http://auth-service:3000"
+    user-service:
+      loadBalancer:
+        servers:
+          - url: "http://user-service:3000"
     workspace-service:
       loadBalancer:
         servers:
           - url: "http://workspace-service:8080"
+    task-service:
+      loadBalancer:
+        servers:
+          - url: "http://task-service:3000"
+    notification-service:
+      loadBalancer:
+        servers:
+          - url: "http://notification-service:3000"
