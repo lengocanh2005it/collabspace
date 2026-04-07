@@ -1,0 +1,187 @@
+# Jaeger Configuration for CollabSpace
+# Agent BRAVO - Infrastructure Engineer: Phan Phu Tho
+# Last updated: 2026-04-03
+#
+# This configuration is for the Jaeger all-in-one image used in development.
+# For production, consider deploying Jaeger components separately with
+# persistent storage (Elasticsearch/Cassandra backend).
+
+# Sampling Strategies Configuration
+# This file configures how Jaeger samples traces from services.
+# 
+# Sampling types:
+# - const: Sample all (param=1) or none (param=0)
+# - probabilistic: Sample a percentage (param=0.1 = 10%)
+# - ratelimiting: Sample up to N traces per second
+# - remote: Fetch sampling config from Jaeger backend
+
+# Default strategy for all services (development: sample everything)
+strategies:
+  # Default sampling strategy applied to all services not explicitly listed
+  default_strategy:
+    type: probabilistic
+    param: 1.0  # 100% sampling in development
+
+  # Per-service sampling strategies
+  # In production, reduce sampling rates for high-traffic services
+  per_service_strategies:
+    # Auth service - high importance, sample all
+    - service: auth-service
+      type: probabilistic
+      param: 1.0
+
+    # User service - medium traffic
+    - service: user-service
+      type: probabilistic
+      param: 1.0
+
+    # Workspace service (Java/Kotlin - port 8080)
+    - service: workspace-service
+      type: probabilistic
+      param: 1.0
+
+    # Task service - potentially high traffic
+    - service: task-service
+      type: probabilistic
+      param: 1.0
+
+    # Notification service - event-driven
+    - service: notification-service
+      type: probabilistic
+      param: 1.0
+
+    # Traefik gateway - very high traffic, sample less in production
+    - service: traefik
+      type: probabilistic
+      param: 1.0
+
+# Operation-specific strategies (fine-grained control)
+# Useful for reducing noise from health checks
+per_operation_strategies:
+  - service: auth-service
+    operation_strategies:
+      # Sample health checks less frequently
+      - operation: "GET /auth/health"
+        type: probabilistic
+        param: 0.01  # 1% of health checks
+      # Always sample auth operations
+      - operation: "POST /auth/login"
+        type: const
+        param: 1
+      - operation: "POST /auth/register"
+        type: const
+        param: 1
+
+  - service: user-service
+    operation_strategies:
+      - operation: "GET /users/health"
+        type: probabilistic
+        param: 0.01
+
+  - service: workspace-service
+    operation_strategies:
+      - operation: "GET /workspaces/health"
+        type: probabilistic
+        param: 0.01
+
+  - service: task-service
+    operation_strategies:
+      - operation: "GET /tasks/health"
+        type: probabilistic
+        param: 0.01
+
+  - service: notification-service
+    operation_strategies:
+      - operation: "GET /notifications/health"
+        type: probabilistic
+        param: 0.01
+
+---
+# Jaeger Agent Configuration (sidecar mode)
+# When running Jaeger agent as a sidecar, use these settings
+agent:
+  # Reporter configuration
+  reporter:
+    # gRPC reporter to collector
+    grpc:
+      host-port: "jaeger-collector:14250"
+      tls:
+        enabled: false
+    
+  # Processor configuration  
+  processor:
+    jaeger-compact:
+      server-host-port: ":6831"
+      server-max-packet-size: 65000
+    jaeger-binary:
+      server-host-port: ":6832"
+      server-max-packet-size: 65000
+
+---
+# Jaeger Collector Configuration
+collector:
+  # HTTP server for spans
+  http:
+    host-port: ":14268"
+  
+  # gRPC server for spans
+  grpc:
+    host-port: ":14250"
+  
+  # Zipkin compatibility endpoint
+  zipkin:
+    host-port: ":9411"
+
+  # Queue size for processing spans
+  queue-size: 2000
+  num-workers: 50
+
+---
+# Jaeger Query Configuration
+query:
+  # UI and API port
+  host-port: ":16686"
+  
+  # Static files path
+  static-files: "/go/bin/jaeger-ui-build/build/"
+  
+  # Base path for UI (useful behind reverse proxy)
+  base-path: "/"
+
+---
+# Storage Configuration (for all-in-one, uses memory)
+# For production, configure Elasticsearch or Cassandra
+storage:
+  type: memory
+  
+  # Memory storage options (development only)
+  memory:
+    max-traces: 100000
+
+  # Elasticsearch configuration (uncomment for production)
+  # elasticsearch:
+  #   server-urls: http://elasticsearch:9200
+  #   index-prefix: jaeger
+  #   username: ""
+  #   password: ""
+  #   tls:
+  #     enabled: false
+  #   num-shards: 5
+  #   num-replicas: 1
+  #   bulk:
+  #     size: 5000000
+  #     workers: 1
+  #     flush-interval: 200ms
+  #   tags-as-fields:
+  #     all: true
+
+---
+# Metrics Configuration
+metrics:
+  # Prometheus metrics endpoint
+  backend: prometheus
+  http-route: /metrics
+
+---
+# Logging Configuration
+log-level: info
