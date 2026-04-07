@@ -1,0 +1,140 @@
+# Kubernetes Services for CollabSpace Application Services
+# Agent BRAVO - Infrastructure Engineer: Phan Phu Tho
+# Last updated: 2026-04-03
+#
+# ClusterIP services for internal service-to-service communication
+# CRITICAL PORT REMINDER:
+# - auth-service: 3000 (Node.js)
+# - user-service: 3000 (Node.js)
+# - workspace-service: 8080 (Java/Kotlin) <-- DIFFERENT!
+# - task-service: 3000 (Node.js)
+# - notification-service: 3000 (Node.js)
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-service
+  namespace: collabspace
+  labels:
+    app: auth-service
+    app.kubernetes.io/name: auth-service
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: collabspace
+spec:
+  type: ClusterIP
+  selector:
+    app: auth-service
+  ports:
+    - name: http
+      port: 3000
+      targetPort: 3000
+      protocol: TCP
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-service
+  namespace: collabspace
+  labels:
+    app: user-service
+    app.kubernetes.io/name: user-service
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: collabspace
+spec:
+  type: ClusterIP
+  selector:
+    app: user-service
+  ports:
+    - name: http
+      port: 3000
+      targetPort: 3000
+      protocol: TCP
+
+---
+# CRITICAL: workspace-service runs on port 8080 (Java/Kotlin)
+apiVersion: v1
+kind: Service
+metadata:
+  name: workspace-service
+  namespace: collabspace
+  labels:
+    app: workspace-service
+    app.kubernetes.io/name: workspace-service
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: collabspace
+  annotations:
+    # Note for other developers
+    description: "Java/Kotlin service - uses port 8080, NOT 3000"
+spec:
+  type: ClusterIP
+  selector:
+    app: workspace-service
+  ports:
+    - name: http
+      port: 8080  # CRITICAL: 8080 for Java service
+      targetPort: 8080
+      protocol: TCP
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: task-service
+  namespace: collabspace
+  labels:
+    app: task-service
+    app.kubernetes.io/name: task-service
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: collabspace
+spec:
+  type: ClusterIP
+  selector:
+    app: task-service
+  ports:
+    - name: http
+      port: 3000
+      targetPort: 3000
+      protocol: TCP
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification-service
+  namespace: collabspace
+  labels:
+    app: notification-service
+    app.kubernetes.io/name: notification-service
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: collabspace
+spec:
+  type: ClusterIP
+  selector:
+    app: notification-service
+  ports:
+    - name: http
+      port: 3000
+      targetPort: 3000
+      protocol: TCP
+
+---
+# Headless service for WebSocket connections (sticky sessions)
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification-service-ws
+  namespace: collabspace
+  labels:
+    app: notification-service
+    component: websocket
+spec:
+  type: ClusterIP
+  clusterIP: None  # Headless for direct pod access
+  selector:
+    app: notification-service
+  ports:
+    - name: ws
+      port: 3000
+      targetPort: 3000
+      protocol: TCP

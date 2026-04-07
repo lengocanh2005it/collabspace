@@ -1,0 +1,171 @@
+# ================================================
+# NetworkPolicies for CollabSpace
+# Infrastructure Engineer: Phan Phu Tho
+# ================================================
+# Principle: each service can only reach what it needs.
+# Traefik can reach all application services.
+# Services can reach their specific databases.
+# Event publishers can reach RabbitMQ.
+
+# Default deny all ingress in the namespace
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-ingress
+  namespace: collabspace
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+
+---
+# Traefik → all application services (ports 3000, 8080)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-traefik-to-services
+  namespace: collabspace
+spec:
+  podSelector:
+    matchExpressions:
+      - key: app
+        operator: In
+        values: [auth-service, user-service, workspace-service, task-service, notification-service]
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: traefik
+      ports:
+        - port: 3000
+          protocol: TCP
+        - port: 8080
+          protocol: TCP
+
+---
+# PostgreSQL ← auth, user, workspace services
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-postgres-clients
+  namespace: collabspace
+spec:
+  podSelector:
+    matchLabels:
+      app: postgres
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchExpressions:
+              - key: app
+                operator: In
+                values: [auth-service, user-service, workspace-service]
+      ports:
+        - port: 5432
+          protocol: TCP
+
+---
+# MongoDB ← task-service
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-mongo-clients
+  namespace: collabspace
+spec:
+  podSelector:
+    matchLabels:
+      app: mongo
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: task-service
+      ports:
+        - port: 27017
+          protocol: TCP
+
+---
+# Redis ← notification-service
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-redis-clients
+  namespace: collabspace
+spec:
+  podSelector:
+    matchLabels:
+      app: redis
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: notification-service
+      ports:
+        - port: 6379
+          protocol: TCP
+
+---
+# RabbitMQ ← auth, workspace, task, notification (event producers + consumers)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-rabbitmq-clients
+  namespace: collabspace
+spec:
+  podSelector:
+    matchLabels:
+      app: rabbitmq
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchExpressions:
+              - key: app
+                operator: In
+                values: [auth-service, workspace-service, task-service, notification-service]
+      ports:
+        - port: 5672
+          protocol: TCP
+    # Management UI — only from Traefik (optional dashboard access)
+    - from:
+        - podSelector:
+            matchLabels:
+              app: traefik
+      ports:
+        - port: 15672
+          protocol: TCP
+
+---
+# Prometheus → all pods for /metrics scraping
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-prometheus-scraping
+  namespace: collabspace
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: prometheus
+      ports:
+        - port: 3000
+          protocol: TCP
+        - port: 8080
+          protocol: TCP
+        - port: 9090
+          protocol: TCP
+        - port: 15692
+          protocol: TCP

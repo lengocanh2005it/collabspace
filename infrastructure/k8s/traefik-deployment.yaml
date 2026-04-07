@@ -1,0 +1,274 @@
+# Traefik Ingress Controller Kubernetes Deployment
+# Agent BRAVO - Infrastructure Engineer: Phan Phu Tho
+# Last updated: 2026-04-03
+#
+# Traefik v2.10 as API Gateway / Ingress Controller
+# Ports: 80 (HTTP), 443 (HTTPS), 8080 (Dashboard)
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: traefik-ingress-controller
+  namespace: collabspace
+  labels:
+    app: traefik
+    app.kubernetes.io/name: traefik
+    app.kubernetes.io/component: ingress-controller
+    app.kubernetes.io/part-of: collabspace
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: traefik-ingress-controller
+  labels:
+    app: traefik
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - services
+      - endpoints
+      - secrets
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - extensions
+      - networking.k8s.io
+    resources:
+      - ingresses
+      - ingressclasses
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - extensions
+      - networking.k8s.io
+    resources:
+      - ingresses/status
+    verbs:
+      - update
+  - apiGroups:
+      - traefik.containo.us
+      - traefik.io
+    resources:
+      - middlewares
+      - middlewaretcps
+      - ingressroutes
+      - traefikservices
+      - ingressroutetcps
+      - ingressrouteudps
+      - tlsoptions
+      - tlsstores
+      - serverstransports
+    verbs:
+      - get
+      - list
+      - watch
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: traefik-ingress-controller
+  labels:
+    app: traefik
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: traefik-ingress-controller
+subjects:
+  - kind: ServiceAccount
+    name: traefik-ingress-controller
+    namespace: collabspace
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: traefik-config
+  namespace: collabspace
+  labels:
+    app: traefik
+data:
+  traefik.yml: |
+    api:
+      dashboard: true
+      insecure: false  # Secure in production
+    
+    entryPoints:
+      web:
+        address: ":80"
+        http:
+          redirections:
+            entryPoint:
+              to: websecure
+              scheme: https
+              permanent: true
+      websecure:
+        address: ":443"
+      traefik:
+        address: ":8080"
+    
+    providers:
+      kubernetesCRD: {}
+      kubernetesIngress: {}
+    
+    log:
+      level: INFO
+      format: json
+    
+    accessLog:
+      format: json
+      fields:
+        headers:
+          names:
+            X-Request-ID: keep
+            X-Trace-ID: keep
+    
+    metrics:
+      prometheus:
+        entryPoint: traefik
+        addEntryPointsLabels: true
+        addServicesLabels: true
+    
+    tracing:
+      jaeger:
+        samplingServerURL: http://jaeger:5778/sampling
+        localAgentHostPort: jaeger:6831
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: traefik
+  namespace: collabspace
+  labels:
+    app: traefik
+    app.kubernetes.io/name: traefik
+    app.kubernetes.io/component: ingress-controller
+    app.kubernetes.io/part-of: collabspace
+    app.kubernetes.io/version: "2.10"
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: traefik
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: traefik
+        app.kubernetes.io/name: traefik
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: traefik-ingress-controller
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+      containers:
+        - name: traefik
+          image: traefik:v2.10
+          imagePullPolicy: Always
+          args:
+            - --configFile=/etc/traefik/traefik.yml
+          ports:
+            - name: web
+              containerPort: 80
+              protocol: TCP
+            - name: websecure
+              containerPort: 443
+              protocol: TCP
+            - name: dashboard
+              containerPort: 8080
+              protocol: TCP
+          volumeMounts:
+            - name: traefik-config
+              mountPath: /etc/traefik
+              readOnly: true
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "100m"
+            limits:
+              memory: "128Mi"
+              cpu: "200m"
+          readinessProbe:
+            httpGet:
+              path: /ping
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 2
+            successThreshold: 1
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /ping
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 2
+            successThreshold: 1
+            failureThreshold: 3
+          securityContext:
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+      volumes:
+        - name: traefik-config
+          configMap:
+            name: traefik-config
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - traefik
+                topologyKey: kubernetes.io/hostname
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: traefik
+  namespace: collabspace
+  labels:
+    app: traefik
+  annotations:
+    # For cloud load balancers
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+spec:
+  type: LoadBalancer
+  selector:
+    app: traefik
+  ports:
+    - name: web
+      port: 80
+      targetPort: 80
+      protocol: TCP
+    - name: websecure
+      port: 443
+      targetPort: 443
+      protocol: TCP
+    - name: dashboard
+      port: 8080
+      targetPort: 8080
+      protocol: TCP

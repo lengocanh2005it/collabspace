@@ -1,0 +1,135 @@
+# User Service Kubernetes Deployment
+# Agent BRAVO - Infrastructure Engineer: Phan Phu Tho
+# Last updated: 2026-04-03
+#
+# Port: 3000 (Node.js)
+# Health: /users/health
+# Database: PostgreSQL (collabspace_user)
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: user-service-config
+  namespace: collabspace
+  labels:
+    app: user-service
+    app.kubernetes.io/name: user-service
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: collabspace
+data:
+  NODE_ENV: "production"
+  PORT: "3000"
+  POSTGRES_HOST: "postgres"
+  POSTGRES_PORT: "5432"
+  POSTGRES_DB: "collabspace_user"
+  AUTH_SERVICE_URL: "http://auth-service:3000"
+  JAEGER_AGENT_HOST: "jaeger"
+  JAEGER_AGENT_PORT: "6831"
+  LOG_LEVEL: "info"
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: user-service-secrets
+  namespace: collabspace
+  labels:
+    app: user-service
+type: Opaque
+stringData:
+  POSTGRES_USER: "postgres"
+  POSTGRES_PASSWORD: "postgres"  # CHANGE IN PRODUCTION
+  JWT_SECRET: "change-me-in-production"  # CHANGE IN PRODUCTION
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service
+  namespace: collabspace
+  labels:
+    app: user-service
+    app.kubernetes.io/name: user-service
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: collabspace
+    app.kubernetes.io/version: "1.0.0"
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: user-service
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: user-service
+        app.kubernetes.io/name: user-service
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3000"
+        prometheus.io/path: "/users/metrics"
+    spec:
+      serviceAccountName: default
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+        - name: user-service
+          image: collabspace/user-service:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: user-service-config
+            - secretRef:
+                name: user-service-secrets
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "250m"
+          readinessProbe:
+            httpGet:
+              path: /users/health
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            successThreshold: 1
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /users/health
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 3
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh", "-c", "sleep 10"]
+      terminationGracePeriodSeconds: 30
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - user-service
+                topologyKey: kubernetes.io/hostname

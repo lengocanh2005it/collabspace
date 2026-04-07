@@ -1,0 +1,102 @@
+# ================================================
+# Traefik IngressRoute — External client routing
+# Infrastructure Engineer: Phan Phu Tho
+# ================================================
+# This uses Traefik CRD IngressRoute (kubernetesCRD provider).
+# Traefik deployment already enables kubernetesCRD + kubernetesIngress.
+
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: collabspace-routes
+  namespace: collabspace
+  labels:
+    app.kubernetes.io/part-of: collabspace
+spec:
+  entryPoints:
+    - web
+    - websecure
+  routes:
+    # Auth Service — /auth/*
+    - match: PathPrefix(`/auth`)
+      kind: Rule
+      services:
+        - name: auth-service
+          port: 3000
+      middlewares:
+        - name: rate-limit
+        - name: cors-headers
+
+    # User Service — /users/*
+    - match: PathPrefix(`/users`)
+      kind: Rule
+      services:
+        - name: user-service
+          port: 3000
+      middlewares:
+        - name: rate-limit
+        - name: cors-headers
+
+    # Workspace Service — /workspaces/* (Java, port 8080)
+    - match: PathPrefix(`/workspaces`)
+      kind: Rule
+      services:
+        - name: workspace-service
+          port: 8080
+      middlewares:
+        - name: rate-limit
+        - name: cors-headers
+
+    # Task Service — /tasks/*
+    - match: PathPrefix(`/tasks`)
+      kind: Rule
+      services:
+        - name: task-service
+          port: 3000
+      middlewares:
+        - name: rate-limit
+        - name: cors-headers
+
+    # Notification Service — /notifications/*
+    - match: PathPrefix(`/notifications`)
+      kind: Rule
+      services:
+        - name: notification-service
+          port: 3000
+      middlewares:
+        - name: rate-limit
+        - name: cors-headers
+
+---
+# Middlewares referenced by IngressRoute
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: rate-limit
+  namespace: collabspace
+spec:
+  rateLimit:
+    average: 100
+    burst: 200
+
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: cors-headers
+  namespace: collabspace
+spec:
+  headers:
+    accessControlAllowMethods:
+      - GET
+      - POST
+      - PUT
+      - PATCH
+      - DELETE
+      - OPTIONS
+    accessControlAllowOriginList:
+      - "*"
+    accessControlAllowHeaders:
+      - Content-Type
+      - Authorization
+    accessControlMaxAge: 86400
