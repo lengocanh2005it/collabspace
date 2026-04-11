@@ -131,7 +131,7 @@ docker-compose -f docker-compose.yml -f docker-compose.db.yml -f docker-compose.
 |--------|------|------|-----------------|
 | Member 1 | Phan Phu Tho | Infrastructure Engineer | Docker, K8s, CI/CD, Monitoring, Tracing, Logging, API Gateway |
 | Member 2 | Le Ngoc Anh | Auth & User Service | JWT auth, RBAC, Profile APIs |
-| Member 3 | Ngo Minh Tien | Workspace Service | Workspace CRUD, Member invitations |
+| Member 3 | Ngo Quang Tien | Workspace Service | Workspace CRUD, Member invitations |
 | Member 4 | Vo Trung Tin | Task & Notification Service | Task CRUD, Comments, Events |
 
 ## API Routes
