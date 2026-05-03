@@ -1,0 +1,29 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "ES2021",
+
+    "rootDir": "./src",                 
+    "outDir": "./dist",
+
+    "baseUrl": "./",
+    "ignoreDeprecations": "6.0",
+    "paths": {
+  "@libs/common": ["../../dist/libs/common"],
+  "@libs/common/*": ["../../dist/libs/common/*"]
+},
+
+    "strictPropertyInitialization": false,
+    "declaration": true,
+    "removeComments": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
+    "skipLibCheck": true
+  },
+  "include": [
+    "src/**/*",
+    "../../libs/common/src/**/*"        
+  ]
+}
