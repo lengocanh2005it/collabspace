@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "target": "ES2021",
+    "baseUrl": ".",
+    "paths": {
+      "@libs/common": ["libs/common/src"]
+    }
+  }
+}
