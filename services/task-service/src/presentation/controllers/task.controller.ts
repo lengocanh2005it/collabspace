@@ -11,7 +11,16 @@ import {
   Req,
   HttpCode,
   HttpStatus,
+  UseInterceptors,
+  UseGuards,
+  UploadedFile,
+  Headers,
+  ParseFilePipe,
+  MaxFileSizeValidator,
 } from '@nestjs/common';
+import { ApiConsumes, ApiBody } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import type { Express, Request } from 'express';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { CreateTaskRequest } from '../dtos/create-task.request';
 import { UpdateTaskDetailsRequest } from '../dtos/update-task-details.request';
@@ -25,28 +34,30 @@ import { UpdateTaskDetailsCommand } from '../../application/commands/update-task
 import { ChangeTaskStatusCommand } from '../../application/commands/change-task-status.command';
 import { AssignTaskCommand } from '../../application/commands/assign-task.command';
 import { DeleteTaskCommand } from '../../application/commands/delete-task.command';
+import { UploadAttachmentCommand } from '../../application/commands/upload-attachment.command';
+import { DeleteAttachmentCommand } from '../../application/commands/delete-attachment.command';
 import { GetTaskByIdQuery } from '../../application/queries/get-task-by-id.query';
 import { GetTasksQuery } from '../../application/queries/get-tasks.query';
 import { created, ok } from '../common/response/api-response.wrapper';
+import { WorkspaceValidationGuard } from '../guards/workspace-validation.guard';
 
 @Controller('v1/tasks')
+@UseGuards(WorkspaceValidationGuard)
 export class TaskController {
   constructor(
     private readonly commandBus: CommandBus,
     private readonly queryBus: QueryBus
   ) {}
 
-  /**
-   * POST /tasks - Tạo task mới
-   */
-  @Post()
-  @HttpCode(HttpStatus.CREATED)
-  async createTask(
-    @Body() request: CreateTaskRequest,
-    @Req() req: any
-  ): Promise<any> {
-    const currentUserId = 'user-123';
-    const currentUserName = 'Người Dùng Hệ Thống';
+
+@Post()
+@HttpCode(HttpStatus.CREATED)
+async createTask(
+  @Body() request: CreateTaskRequest,
+  @Req() req: any
+) {
+  const currentUserId = 'user-002';
+  const currentUserName = 'Người Dùng Hệ Thống';
 
     const command = new CreateTaskCommand(
       request.title,
@@ -183,6 +194,76 @@ export class TaskController {
 
     return ok(
       { message: 'Xóa công việc thành công' },
+      req?.headers['x-request-id']
+    );
+  }
+
+  /**
+   * POST /tasks/:id/attachments - Upload file attachment
+   * Accepts file via form-data with field name 'file'
+   * File will be uploaded to Azure Blob Storage and URL stored in database
+   */
+  @Post(':id/attachments')
+  @HttpCode(HttpStatus.CREATED)
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: { type: 'string', format: 'binary' },
+      },
+    },
+  })
+  async uploadAttachment(
+    @Param('id') taskId: string,
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({ maxSize: 5 * 1024 * 1024 }), // 5MB
+        ],
+        fileIsRequired: true,
+      })
+    )
+    file: Express.Multer.File,
+    @Req() req: any
+  ): Promise<any> {
+    if (!file) {
+      throw new Error('File is required');
+    }
+
+    const command = new UploadAttachmentCommand(taskId, file);
+    const result = await this.commandBus.execute(command);
+
+    return created(
+      {
+        message: 'File uploaded successfully',
+        data: result,
+      },
+      req?.headers['x-request-id']
+    );
+  }
+
+  /**
+   * DELETE /tasks/:id/attachments - Remove file attachment
+   * Query parameter: fileUrl - S3 URL of file to remove
+   */
+  @Delete(':id/attachments')
+  @HttpCode(HttpStatus.OK)
+  async deleteAttachment(
+    @Param('id') taskId: string,
+    @Query('fileUrl') fileUrl: string,
+    @Req() req: any
+  ): Promise<any> {
+    if (!fileUrl) {
+      throw new Error('fileUrl query parameter is required');
+    }
+
+    const command = new DeleteAttachmentCommand(taskId, fileUrl);
+    await this.commandBus.execute(command);
+
+    return ok(
+      { message: 'File deleted successfully' },
       req?.headers['x-request-id']
     );
   }
