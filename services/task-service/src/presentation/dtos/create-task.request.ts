@@ -10,6 +10,7 @@ export class CreateTaskRequest {
   @IsOptional()
   public readonly description?: string;
 
-  @IsMongoId({ message: 'Workspace ID không hợp lệ' })
+  @IsString()
+  @IsNotEmpty({ message: 'Workspace ID không được để trống' })
   public readonly workspaceId!: string;
 }
