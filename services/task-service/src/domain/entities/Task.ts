@@ -16,6 +16,7 @@ export class Task {
     private readonly createdBy: UserSnapshot,
     private readonly createdAt: Date,
     private updatedAt: Date,
+    private attachments: string[] = []
   ) {}
 
   public static create(
@@ -52,7 +53,8 @@ export class Task {
     assignedTo: UserSnapshot | null,
     createdBy: UserSnapshot,
     createdAt: Date,
-    updatedAt: Date
+    updatedAt: Date,
+    attachments: string[] = []
   ): Task {
     const status = new TaskStatus(statusRaw);
     return new Task(
@@ -65,7 +67,8 @@ export class Task {
       assignedTo,
       createdBy,
       createdAt,
-      updatedAt
+      updatedAt,
+      attachments
     );
   }
 
@@ -95,6 +98,22 @@ export class Task {
   public unassign(): void {
     this.assigneeId = null;
     this.assignedTo = null;
+    this.updatedAt = new Date();
+  }
+
+  public addAttachment(fileUrl: string): void {
+    if (!fileUrl) throw new BusinessRuleException('File URL cannot be empty');
+    if (this.attachments.includes(fileUrl)) {
+      throw new BusinessRuleException('This attachment already exists');
+    }
+    this.attachments.push(fileUrl);
+    this.updatedAt = new Date();
+  }
+
+  public removeAttachment(fileUrl: string): void {
+    const index = this.attachments.indexOf(fileUrl);
+    if (index === -1) throw new BusinessRuleException('Attachment not found');
+    this.attachments.splice(index, 1);
     this.updatedAt = new Date();
   }
 
@@ -139,5 +158,9 @@ export class Task {
 
   public getUpdatedAt(): Date {
     return this.updatedAt;
+  }
+
+  public getAttachments(): string[] {
+    return [...this.attachments]; // Return copy to prevent external modification
   }
 }
