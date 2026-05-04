@@ -38,6 +38,9 @@ export class TaskPersistence {
     avatarUrl?: string;
   } | null;
 
+  @Prop({ type: [String], default: [] })
+  attachments!: string[]; // Array of S3 file URLs
+
   @Prop({ type: Date, default: () => new Date() })
   createdAt!: Date;
 
