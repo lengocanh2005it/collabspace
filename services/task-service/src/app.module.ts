@@ -14,6 +14,15 @@ import { AssignTaskHandler } from './application/usecases/assign-task.handler';
 import { DeleteTaskHandler } from './application/usecases/delete-task.handler';
 import { GetTaskByIdHandler } from './application/usecases/get-task-by-id.handler';
 import { GetTasksHandler } from './application/usecases/get-tasks.handler';
+import { UploadAttachmentHandler } from './application/usecases/upload-attachment.handler';
+import { DeleteAttachmentHandler } from './application/usecases/delete-attachment.handler';
+
+// Services
+import { AzureBlobService } from './infrastructure/services/azure-blob.service';
+import { WorkspaceMockService } from './infrastructure/services/workspace.mock.service';
+
+// Guards
+import { WorkspaceValidationGuard } from './presentation/guards/workspace-validation.guard';
 
 // Repository & Schema
 import { ITaskRepository } from './application/ports/ITaskRepository';
@@ -28,6 +37,8 @@ const Handlers = [
   DeleteTaskHandler,
   GetTaskByIdHandler,
   GetTasksHandler,
+  UploadAttachmentHandler,
+  DeleteAttachmentHandler,
 ];
 
 @Module({
@@ -51,6 +62,9 @@ const Handlers = [
   controllers: [TaskController],
   providers: [
     ...Handlers,
+    AzureBlobService,
+    WorkspaceMockService,
+    WorkspaceValidationGuard,
     {
       provide: ITaskRepository,
       useClass: MongoTaskRepository,
