@@ -10,4 +10,6 @@ export interface ITaskRepository {
   findByWorkspaceIdAsync(workspaceId: string): Promise<Task[]>;
   updateAsync(task: Task): Promise<void>;
   deleteAsync(id: TaskId): Promise<void>;
+  addAttachmentAsync(taskId: TaskId, fileUrl: string): Promise<void>;
+  removeAttachmentAsync(taskId: TaskId, fileUrl: string): Promise<void>;
 }

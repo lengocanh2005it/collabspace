@@ -52,4 +52,32 @@ export class MongoTaskRepository implements ITaskRepository {
       throw new EntityNotFoundException('Task', id.getValue());
     }
   }
+
+  async addAttachmentAsync(taskId: TaskId, fileUrl: string): Promise<void> {
+    const result = await this.taskModel.updateOne(
+      { _id: taskId.getValue() },
+      { 
+        $addToSet: { attachments: fileUrl }, // Add unique element to array
+        $set: { updatedAt: new Date() }
+      }
+    ).exec();
+
+    if (result.matchedCount === 0) {
+      throw new EntityNotFoundException('Task', taskId.getValue());
+    }
+  }
+
+  async removeAttachmentAsync(taskId: TaskId, fileUrl: string): Promise<void> {
+    const result = await this.taskModel.updateOne(
+      { _id: taskId.getValue() },
+      { 
+        $pull: { attachments: fileUrl }, // Remove element from array
+        $set: { updatedAt: new Date() }
+      }
+    ).exec();
+
+    if (result.matchedCount === 0) {
+      throw new EntityNotFoundException('Task', taskId.getValue());
+    }
+  }
 }
