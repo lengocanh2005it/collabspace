@@ -27,6 +27,7 @@ export class TaskMapper {
             avatarUrl: domainTask.getAssignedTo()!.getAvatarUrl(),
           }
         : null,
+      attachments: domainTask.getAttachments(),
       createdAt: domainTask.getCreatedAt(),
       updatedAt: domainTask.getUpdatedAt(),
     };
@@ -58,7 +59,8 @@ export class TaskMapper {
       assignedTo,
       creator,
       new Date(rawDoc.createdAt),
-      new Date(rawDoc.updatedAt)
+      new Date(rawDoc.updatedAt),
+      rawDoc.attachments || []
     );
   }
 
@@ -83,6 +85,7 @@ export class TaskMapper {
             avatarUrl: domainTask.getAssignedTo()!.getAvatarUrl(),
           }
         : null,
+      attachments: domainTask.getAttachments(),
       createdAt: domainTask.getCreatedAt(),
       updatedAt: domainTask.getUpdatedAt(),
     };
