@@ -5,6 +5,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 
 import { TaskController } from './presentation/controllers/task.controller';
+import { TaskCommentController } from './presentation/controllers/task-comment.controller';
 
 // Command & Query Handlers
 import { CreateTaskHandler } from './application/usecases/create-task.handler';
@@ -16,6 +17,10 @@ import { GetTaskByIdHandler } from './application/usecases/get-task-by-id.handle
 import { GetTasksHandler } from './application/usecases/get-tasks.handler';
 import { UploadAttachmentHandler } from './application/usecases/upload-attachment.handler';
 import { DeleteAttachmentHandler } from './application/usecases/delete-attachment.handler';
+import { CreateCommentHandler } from './application/usecases/comments/create/create-comment.handler';
+import { GetTaskCommentsHandler } from './application/usecases/comments/get/get-task-comments.handler';
+import { EditCommentHandler } from './application/usecases/comments/edit/edit-comment.handler';
+import { DeleteCommentHandler } from './application/usecases/comments/delete/delete-comment.handler';
 
 // Services
 import { AzureBlobService } from './infrastructure/services/azure-blob.service';
@@ -28,6 +33,9 @@ import { WorkspaceValidationGuard } from './presentation/guards/workspace-valida
 import { ITaskRepository } from './application/ports/ITaskRepository';
 import { MongoTaskRepository } from './infrastructure/repositories/mongo-task.repository';
 import { TaskSchema, TaskPersistence } from './infrastructure/persistence/task.schema';
+import { ICommentRepository, COMMENT_REPOSITORY_TOKEN } from './domain/repositories/comment.repository.interface';
+import { CommentRepository } from './infrastructure/repositories/comment.repository';
+import { TaskComment, TaskCommentSchema } from './infrastructure/persistence/task-comment.schema';
 
 const Handlers = [
   CreateTaskHandler,
@@ -39,6 +47,10 @@ const Handlers = [
   GetTasksHandler,
   UploadAttachmentHandler,
   DeleteAttachmentHandler,
+  CreateCommentHandler,
+  GetTaskCommentsHandler,
+  EditCommentHandler,
+  DeleteCommentHandler,
 ];
 
 @Module({
@@ -57,9 +69,12 @@ const Handlers = [
       inject: [ConfigService],
     }),
 
-    MongooseModule.forFeature([{ name: TaskPersistence.name, schema: TaskSchema }]),
+    MongooseModule.forFeature([
+      { name: TaskPersistence.name, schema: TaskSchema },
+      { name: TaskComment.name, schema: TaskCommentSchema },
+    ]),
   ],
-  controllers: [TaskController],
+  controllers: [TaskController, TaskCommentController],
   providers: [
     ...Handlers,
     AzureBlobService,
@@ -68,6 +83,10 @@ const Handlers = [
     {
       provide: ITaskRepository,
       useClass: MongoTaskRepository,
+    },
+    {
+      provide: COMMENT_REPOSITORY_TOKEN,
+      useClass: CommentRepository,
     },
   ],
 })
