@@ -26,8 +26,9 @@ import { RabbitMqEventsService } from '@/modules/rabbitmq/rabbitmq-events.servic
 import { RedisService } from '@/modules/redis/redis.service';
 import { RefreshTokensService } from '@/modules/refresh-tokens/refresh-tokens.service';
 import {
+  HttpException,
+  HttpStatus,
   Injectable,
-  TooManyRequestsException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { createHash, createSecretKey, randomInt } from 'crypto';
@@ -416,10 +417,13 @@ export class AuthService {
 
     if (await this.redisService.exists(cooldownKey)) {
       const ttl = await this.redisService.ttl(cooldownKey);
-      throw new TooManyRequestsException({
-        code: 'EMAIL_VERIFICATION_RESEND_COOLDOWN',
-        message: `Please wait ${Math.max(ttl, 1)} seconds before resending OTP`,
-      });
+      throw new HttpException(
+        {
+          code: 'EMAIL_VERIFICATION_RESEND_COOLDOWN',
+          message: `Please wait ${Math.max(ttl, 1)} seconds before resending OTP`,
+        },
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
     }
 
     const attempts = await this.redisService.increment(attemptsKey);
@@ -433,10 +437,13 @@ export class AuthService {
 
     if (attempts > emailVerificationConfig.resendMaxAttempts) {
       const ttl = await this.redisService.ttl(attemptsKey);
-      throw new TooManyRequestsException({
-        code: 'EMAIL_VERIFICATION_RESEND_LIMIT_REACHED',
-        message: `OTP resend limit reached. Try again in ${Math.max(ttl, 1)} seconds`,
-      });
+      throw new HttpException(
+        {
+          code: 'EMAIL_VERIFICATION_RESEND_LIMIT_REACHED',
+          message: `OTP resend limit reached. Try again in ${Math.max(ttl, 1)} seconds`,
+        },
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
     }
 
     await this.redisService.set(

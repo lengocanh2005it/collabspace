@@ -5,7 +5,7 @@ import { UserProfilesClientService } from '@/modules/identity/user-profiles-clie
 import { RabbitMqEventsService } from '@/modules/rabbitmq/rabbitmq-events.service';
 import { RedisService } from '@/modules/redis/redis.service';
 import { RefreshTokensService } from '@/modules/refresh-tokens/refresh-tokens.service';
-import { TooManyRequestsException, UnauthorizedException } from '@nestjs/common';
+import { HttpException, UnauthorizedException } from '@nestjs/common';
 import { AuthService } from './app.service';
 
 describe('AuthService', () => {
@@ -288,7 +288,7 @@ describe('AuthService', () => {
       authService.resendEmailVerificationOtp({
         userId: 'user-6',
       }),
-    ).rejects.toThrow(TooManyRequestsException);
+    ).rejects.toThrow(HttpException);
   });
 
   it('rejects resend when hourly quota is exhausted', async () => {
@@ -309,7 +309,7 @@ describe('AuthService', () => {
       authService.resendEmailVerificationOtp({
         userId: 'user-7',
       }),
-    ).rejects.toThrow(TooManyRequestsException);
+    ).rejects.toThrow(HttpException);
   });
 
   it('verifies email otp and marks profile as verified', async () => {
