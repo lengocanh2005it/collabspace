@@ -32,6 +32,28 @@ export class RefreshTokensService {
     });
   }
 
+  async listSessionsByUserId(userId: string): Promise<RefreshTokenEntity[]> {
+    const tokens = await this.refreshTokenRepository.find({
+      order: {
+        createdAt: 'DESC',
+      },
+      where: {
+        userId,
+      },
+    });
+    const latestByFamily = new Map<string, RefreshTokenEntity>();
+
+    for (const token of tokens) {
+      if (!latestByFamily.has(token.familyId)) {
+        latestByFamily.set(token.familyId, token);
+      }
+    }
+
+    return [...latestByFamily.values()].sort(
+      (left, right) => right.createdAt.getTime() - left.createdAt.getTime(),
+    );
+  }
+
   async issue(input: IssueRefreshTokenInput): Promise<RefreshTokenPayload> {
     return this.dataSource.transaction(async (manager) => {
       const repository = manager.getRepository(RefreshTokenEntity);
@@ -76,6 +98,27 @@ export class RefreshTokensService {
     return result.affected ?? 0;
   }
 
+  async revokeFamilyForUser(
+    userId: string,
+    familyId: string,
+    reason = 'session_revoked',
+  ): Promise<number> {
+    const now = new Date();
+    const result = await this.refreshTokenRepository
+      .createQueryBuilder()
+      .update(RefreshTokenEntity)
+      .set({
+        revokeReason: reason,
+        revokedAt: now,
+      })
+      .where('family_id = :familyId', { familyId })
+      .andWhere('user_id = :userId', { userId })
+      .andWhere('revoked_at IS NULL')
+      .execute();
+
+    return result.affected ?? 0;
+  }
+
   async revokeToken(
     refreshToken: string,
     reason = 'manually_revoked',
@@ -90,6 +133,55 @@ export class RefreshTokensService {
     currentToken.revokeReason = reason;
     currentToken.lastUsedAt = new Date();
     await this.refreshTokenRepository.save(currentToken);
+  }
+
+  async revokeAllForUser(
+    userId: string,
+    reason = 'logout_all',
+  ): Promise<number> {
+    const now = new Date();
+    const result = await this.refreshTokenRepository
+      .createQueryBuilder()
+      .update(RefreshTokenEntity)
+      .set({
+        revokeReason: reason,
+        revokedAt: now,
+      })
+      .where('user_id = :userId', { userId })
+      .andWhere('revoked_at IS NULL')
+      .execute();
+
+    return result.affected ?? 0;
+  }
+
+  async revokeOtherFamiliesForUser(
+    userId: string,
+    refreshToken: string,
+    reason = 'logout_others',
+  ): Promise<number> {
+    const currentToken = await this.loadTokenByValue(refreshToken);
+
+    if (!currentToken || currentToken.userId !== userId) {
+      throw new UnauthorizedException({
+        code: 'REFRESH_TOKEN_INVALID',
+        message: 'Refresh token is invalid',
+      });
+    }
+
+    const now = new Date();
+    const result = await this.refreshTokenRepository
+      .createQueryBuilder()
+      .update(RefreshTokenEntity)
+      .set({
+        revokeReason: reason,
+        revokedAt: now,
+      })
+      .where('user_id = :userId', { userId })
+      .andWhere('family_id != :familyId', { familyId: currentToken.familyId })
+      .andWhere('revoked_at IS NULL')
+      .execute();
+
+    return result.affected ?? 0;
   }
 
   async rotate(refreshToken: string): Promise<RefreshTokenPayload> {

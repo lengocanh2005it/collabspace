@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   Param,
@@ -9,16 +10,20 @@ import {
   Res,
 } from '@nestjs/common';
 import type {
+  LogoutOtherSessionsInput,
   LogoutInput,
   RefreshSessionInput,
 } from '@/common/types/auth-session.type';
 import type {
   AssignRolePermissionInput,
   AssignUserRoleInput,
+  ChangePasswordInput,
   CreatePermissionInput,
   CreateRoleInput,
+  ForgotPasswordInput,
   LoginInput,
   RegisterInput,
+  ResetPasswordInput,
   ResendEmailVerificationOtpInput,
   VerifyEmailOtpInput,
 } from '@/common/types/identity.type';
@@ -48,10 +53,22 @@ export class AuthController {
     return this.authService.login(body);
   }
 
+  @Post('forgot-password')
+  @HttpCode(200)
+  async forgotPassword(@Body() body: ForgotPasswordInput) {
+    return this.authService.forgotPassword(body);
+  }
+
   @Get('me')
   @HttpCode(200)
   async me(@Req() request: Request) {
     return this.authService.getCurrentUser(request.header('authorization'));
+  }
+
+  @Get('sessions')
+  @HttpCode(200)
+  async sessions(@Req() request: Request) {
+    return this.authService.getSessions(request.header('authorization'));
   }
 
   @Post('permissions')
@@ -78,10 +95,28 @@ export class AuthController {
     return this.authService.resendEmailVerificationOtp(body);
   }
 
+  @Post('reset-password')
+  @HttpCode(200)
+  async resetPassword(@Body() body: ResetPasswordInput) {
+    return this.authService.resetPassword(body);
+  }
+
   @Post('verify-email')
   @HttpCode(200)
   async verifyEmail(@Body() body: VerifyEmailOtpInput) {
     return this.authService.verifyEmailOtp(body);
+  }
+
+  @Post('change-password')
+  @HttpCode(200)
+  async changePassword(
+    @Req() request: Request,
+    @Body() body: ChangePasswordInput,
+  ) {
+    return this.authService.changePassword(
+      request.header('authorization'),
+      body,
+    );
   }
 
   @Post('roles/:roleId/permissions')
@@ -97,6 +132,36 @@ export class AuthController {
   @HttpCode(200)
   async logout(@Body() body: LogoutInput) {
     return this.authService.logout(body);
+  }
+
+  @Post('logout-all')
+  @HttpCode(200)
+  async logoutAll(@Req() request: Request) {
+    return this.authService.logoutAll(request.header('authorization'));
+  }
+
+  @Post('logout-others')
+  @HttpCode(200)
+  async logoutOthers(
+    @Req() request: Request,
+    @Body() body: LogoutOtherSessionsInput,
+  ) {
+    return this.authService.logoutOthers(
+      request.header('authorization'),
+      body,
+    );
+  }
+
+  @Delete('sessions/:familyId')
+  @HttpCode(200)
+  async revokeSession(
+    @Req() request: Request,
+    @Param('familyId') familyId: string,
+  ) {
+    return this.authService.revokeSession(
+      request.header('authorization'),
+      familyId,
+    );
   }
 
   @Post('refresh')
@@ -140,6 +205,12 @@ export class AuthController {
       response.setHeader('X-Roles', identity.roles.join(','));
     }
 
+    if (identity.permissions.length > 0) {
+      response.setHeader('X-Permissions', identity.permissions.join(','));
+    }
+
+    response.setHeader('X-Email-Verified', String(identity.emailVerified));
+
     if (identity.workspaceId) {
       response.setHeader('X-Workspace-Id', identity.workspaceId);
     }
@@ -150,7 +221,10 @@ export class AuthController {
 
     return {
       authenticated: true,
+      emailVerified: identity.emailVerified,
+      permissions: identity.permissions,
       role: identity.role ?? null,
+      roles: identity.roles,
       workspaceId: identity.workspaceId ?? null,
       userId: identity.userId,
     };

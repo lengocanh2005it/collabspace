@@ -16,7 +16,10 @@ type VerifyAccessTokenRequest = {
 
 type VerifyAccessTokenResponse = {
   authenticated?: boolean;
+  emailVerified?: boolean;
+  permissions?: string[];
   role?: string;
+  roles?: string[];
   userId?: string;
   workspaceId?: string;
 };
@@ -28,7 +31,10 @@ type AuthGrpcClient = {
 };
 
 export type AuthIdentity = {
+  emailVerified?: boolean;
+  permissions?: string[];
   role?: string;
+  roles?: string[];
   userId: string;
   workspaceId?: string;
 };
@@ -76,7 +82,10 @@ export class AuthGrpcService implements OnModuleInit {
       }
 
       return {
+        emailVerified: response.emailVerified,
+        permissions: response.permissions ?? [],
         role: response.role,
+        roles: response.roles ?? [],
         userId: response.userId,
         workspaceId: response.workspaceId,
       };

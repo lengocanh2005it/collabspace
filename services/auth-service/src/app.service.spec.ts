@@ -24,12 +24,20 @@ describe('AuthService', () => {
       resendMaxAttempts: 5,
       resendWindowSeconds: 3600,
     })),
+    getPasswordResetConfig: jest.fn(() => ({
+      tokenByteLength: 32,
+      ttlSeconds: 1800,
+    })),
   } as unknown as ConfigurationService;
   const emailsServiceMock = {
     sendText: jest.fn(),
   } as unknown as EmailsService;
   const refreshTokensServiceMock = {
     issue: jest.fn(),
+    listSessionsByUserId: jest.fn(),
+    revokeAllForUser: jest.fn(),
+    revokeFamilyForUser: jest.fn(),
+    revokeOtherFamiliesForUser: jest.fn(),
     revokeToken: jest.fn(),
     rotate: jest.fn(),
   } as unknown as RefreshTokensService;
@@ -44,9 +52,12 @@ describe('AuthService', () => {
     ttl: jest.fn(),
   } as unknown as RedisService;
   const identityServiceMock = {
+    changePassword: jest.fn(),
+    findUserByEmailForPasswordReset: jest.fn(),
     getAuthUserById: jest.fn(),
     markEmailVerified: jest.fn(),
     register: jest.fn(),
+    resetPassword: jest.fn(),
     validateCredentials: jest.fn(),
   } as unknown as IdentityService;
   const rabbitMqEventsServiceMock = {
@@ -99,7 +110,9 @@ describe('AuthService', () => {
     await expect(
       authService.verifyAccessToken(`Bearer ${token}`),
     ).resolves.toEqual({
+      emailVerified: true,
       fullName: 'Admin User',
+      permissions: ['users.read'],
       role: 'admin',
       roles: ['admin'],
       workspaceId: 'workspace-1',
@@ -166,7 +179,9 @@ describe('AuthService', () => {
     await expect(
       authService.verifyAccessToken(`Bearer ${session.accessToken}`),
     ).resolves.toEqual({
+      emailVerified: true,
       fullName: 'Admin User',
+      permissions: ['users.read'],
       role: 'admin',
       roles: ['admin'],
       userId: 'user-1',
@@ -206,7 +221,9 @@ describe('AuthService', () => {
     await expect(
       authService.verifyAccessToken(`Bearer ${session.accessToken}`),
     ).resolves.toEqual({
+      emailVerified: true,
       fullName: 'Member User',
+      permissions: ['users.read'],
       role: 'member',
       roles: ['member'],
       userId: 'user-2',
@@ -246,6 +263,104 @@ describe('AuthService', () => {
     ).toHaveBeenCalledWith({
       fullName: 'New User',
       userId: 'user-3',
+    });
+  });
+
+  it('accepts forgot password requests and sends reset token email for known users', async () => {
+    jest
+      .spyOn(identityServiceMock, 'findUserByEmailForPasswordReset')
+      .mockResolvedValue({
+        email: 'member@collabspace.dev',
+        isActive: true,
+        userId: 'user-2',
+      });
+    jest.spyOn(redisServiceMock, 'setJson').mockResolvedValue('OK');
+    jest.spyOn(emailsServiceMock, 'sendText').mockResolvedValue({} as never);
+
+    await expect(
+      authService.forgotPassword({
+        email: 'member@collabspace.dev',
+      }),
+    ).resolves.toEqual({
+      accepted: true,
+    });
+
+    expect(redisServiceMock.setJson).toHaveBeenCalled();
+    expect(emailsServiceMock.sendText).toHaveBeenCalledWith(
+      expect.objectContaining({
+        subject: 'Reset your CollabSpace password',
+        to: 'member@collabspace.dev',
+      }),
+    );
+  });
+
+  it('accepts forgot password requests without revealing unknown emails', async () => {
+    jest
+      .spyOn(identityServiceMock, 'findUserByEmailForPasswordReset')
+      .mockResolvedValue(null);
+
+    await expect(
+      authService.forgotPassword({
+        email: 'missing@collabspace.dev',
+      }),
+    ).resolves.toEqual({
+      accepted: true,
+    });
+  });
+
+  it('resets password from a valid reset token and revokes sessions', async () => {
+    jest.spyOn(redisServiceMock, 'getJson').mockResolvedValue({
+      email: 'member@collabspace.dev',
+      userId: 'user-2',
+    });
+    jest.spyOn(identityServiceMock, 'resetPassword').mockResolvedValue(undefined);
+    jest.spyOn(redisServiceMock, 'delete').mockResolvedValue(1);
+    jest.spyOn(refreshTokensServiceMock, 'revokeAllForUser').mockResolvedValue(3);
+
+    await expect(
+      authService.resetPassword({
+        newPassword: 'new-password-123',
+        token: 'reset-token-1',
+      }),
+    ).resolves.toEqual({
+      reset: true,
+      revokedSessionCount: 3,
+      userId: 'user-2',
+    });
+  });
+
+  it('changes password for the authenticated user and revokes sessions', async () => {
+    jest.spyOn(identityServiceMock, 'getAuthUserById').mockResolvedValue({
+      email: 'member@collabspace.dev',
+      emailVerified: true,
+      isActive: true,
+      permissions: ['users.read'],
+      role: 'member',
+      roles: ['member'],
+      userId: 'user-2',
+    });
+    jest.spyOn(identityServiceMock, 'changePassword').mockResolvedValue(undefined);
+    jest.spyOn(refreshTokensServiceMock, 'revokeAllForUser').mockResolvedValue(2);
+    jest.spyOn(userProfilesGrpcServiceMock, 'getProfile').mockResolvedValue({
+      fullName: 'Member User',
+      userId: 'user-2',
+    });
+    const token = await authService.signAccessToken({
+      role: 'member',
+      roles: ['member'],
+      userId: 'user-2',
+      workspaceId: 'workspace-2',
+    });
+
+    await expect(
+      authService.changePassword(`Bearer ${token}`, {
+        currentPassword: 'password123',
+        newPassword: 'password456',
+      }),
+    ).resolves.toEqual({
+      changed: true,
+      revokedSessionCount: 2,
+      userId: 'user-2',
     });
   });
 
@@ -420,10 +535,138 @@ describe('AuthService', () => {
     await expect(
       authService.verifyAccessToken(`Bearer ${token}`),
     ).resolves.toEqual({
+      emailVerified: true,
+      permissions: ['users.read'],
       role: 'member',
       roles: ['member'],
       userId: 'user-8',
       workspaceId: 'workspace-8',
+    });
+  });
+
+  it('lists sessions for the authenticated user', async () => {
+    jest.spyOn(identityServiceMock, 'getAuthUserById').mockResolvedValue({
+      email: 'admin@collabspace.dev',
+      emailVerified: true,
+      isActive: true,
+      permissions: ['users.read'],
+      role: 'admin',
+      roles: ['admin'],
+      userId: 'user-4',
+    });
+    jest.spyOn(refreshTokensServiceMock, 'listSessionsByUserId').mockResolvedValue([
+      {
+        createdAt: new Date('2026-05-01T00:00:00.000Z'),
+        expiresAt: new Date('2026-05-30T00:00:00.000Z'),
+        familyId: 'family-1',
+        id: 'token-1',
+        lastUsedAt: new Date('2026-05-02T00:00:00.000Z'),
+        parentTokenId: null,
+        replacedByTokenId: null,
+        revokeReason: null,
+        revokedAt: null,
+        tokenHash: 'hash',
+        updatedAt: new Date('2026-05-02T00:00:00.000Z'),
+        userId: 'user-4',
+        workspaceId: 'workspace-4',
+      },
+    ]);
+    const token = await authService.signAccessToken({
+      role: 'admin',
+      roles: ['admin'],
+      userId: 'user-4',
+      workspaceId: 'workspace-4',
+    });
+
+    await expect(authService.getSessions(`Bearer ${token}`)).resolves.toEqual([
+      {
+        expiresAt: '2026-05-30T00:00:00.000Z',
+        familyId: 'family-1',
+        isActive: true,
+        lastUsedAt: '2026-05-02T00:00:00.000Z',
+        revokeReason: null,
+        revokedAt: null,
+        tokenId: 'token-1',
+        userId: 'user-4',
+        workspaceId: 'workspace-4',
+      },
+    ]);
+  });
+
+  it('revokes all sessions for the authenticated user', async () => {
+    jest.spyOn(identityServiceMock, 'getAuthUserById').mockResolvedValue({
+      email: 'admin@collabspace.dev',
+      emailVerified: true,
+      isActive: true,
+      permissions: ['users.read'],
+      role: 'admin',
+      roles: ['admin'],
+      userId: 'user-4',
+    });
+    jest.spyOn(refreshTokensServiceMock, 'revokeAllForUser').mockResolvedValue(3);
+    const token = await authService.signAccessToken({
+      role: 'admin',
+      roles: ['admin'],
+      userId: 'user-4',
+      workspaceId: 'workspace-4',
+    });
+
+    await expect(authService.logoutAll(`Bearer ${token}`)).resolves.toEqual({
+      revokedCount: 3,
+    });
+  });
+
+  it('revokes other sessions while keeping the current family', async () => {
+    jest.spyOn(identityServiceMock, 'getAuthUserById').mockResolvedValue({
+      email: 'admin@collabspace.dev',
+      emailVerified: true,
+      isActive: true,
+      permissions: ['users.read'],
+      role: 'admin',
+      roles: ['admin'],
+      userId: 'user-4',
+    });
+    jest
+      .spyOn(refreshTokensServiceMock, 'revokeOtherFamiliesForUser')
+      .mockResolvedValue(2);
+    const token = await authService.signAccessToken({
+      role: 'admin',
+      roles: ['admin'],
+      userId: 'user-4',
+      workspaceId: 'workspace-4',
+    });
+
+    await expect(
+      authService.logoutOthers(`Bearer ${token}`, {
+        refreshToken: 'refresh-token-keep-current',
+      }),
+    ).resolves.toEqual({
+      revokedCount: 2,
+    });
+  });
+
+  it('revokes a single session family for the authenticated user', async () => {
+    jest.spyOn(identityServiceMock, 'getAuthUserById').mockResolvedValue({
+      email: 'admin@collabspace.dev',
+      emailVerified: true,
+      isActive: true,
+      permissions: ['users.read'],
+      role: 'admin',
+      roles: ['admin'],
+      userId: 'user-4',
+    });
+    jest.spyOn(refreshTokensServiceMock, 'revokeFamilyForUser').mockResolvedValue(1);
+    const token = await authService.signAccessToken({
+      role: 'admin',
+      roles: ['admin'],
+      userId: 'user-4',
+      workspaceId: 'workspace-4',
+    });
+
+    await expect(
+      authService.revokeSession(`Bearer ${token}`, 'family-1'),
+    ).resolves.toEqual({
+      revokedCount: 1,
     });
   });
 

@@ -39,6 +39,13 @@ export default () => ({
         3600,
       ),
     },
+    passwordReset: {
+      tokenByteLength: toNumber(
+        process.env.PASSWORD_RESET_TOKEN_BYTE_LENGTH,
+        32,
+      ),
+      ttlSeconds: toNumber(process.env.PASSWORD_RESET_TTL_SECONDS, 1800),
+    },
     jwt: {
       audience: process.env.JWT_AUDIENCE,
       expiry: process.env.JWT_EXPIRY ?? '1h',

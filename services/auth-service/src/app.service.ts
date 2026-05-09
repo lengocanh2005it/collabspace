@@ -1,13 +1,22 @@
 import {
+  AuthSessionInfo,
   AuthSession,
   LogoutInput,
+  LogoutOtherSessionsInput,
+  RevokeSessionResult,
   RefreshSessionInput,
 } from '@/common/types/auth-session.type';
 import {
   AuthUser,
+  ChangePasswordInput,
+  ChangePasswordResult,
+  ForgotPasswordInput,
+  ForgotPasswordResult,
   LoginInput,
   RegisterInput,
   RegisterPendingResult,
+  ResetPasswordInput,
+  ResetPasswordResult,
   ResendEmailVerificationOtpInput,
   ResendEmailVerificationOtpResult,
   VerifyEmailOtpInput,
@@ -32,11 +41,16 @@ import {
   Logger,
   UnauthorizedException,
 } from '@nestjs/common';
-import { createHash, createSecretKey, randomInt } from 'crypto';
+import { createHash, createSecretKey, randomBytes, randomInt } from 'crypto';
 
 type EmailVerificationOtpPayload = {
   email: string;
   otpHash: string;
+};
+
+type PasswordResetTokenPayload = {
+  email: string;
+  userId: string;
 };
 
 type EmailVerificationOtpDispatchResult = {
@@ -92,6 +106,60 @@ export class AuthService {
     );
 
     return { revoked: true };
+  }
+
+  async getSessions(
+    authorizationHeader?: string,
+  ): Promise<AuthSessionInfo[]> {
+    const { userId } = await this.resolveVerifiedUserContext(authorizationHeader);
+    const sessions = await this.refreshTokensService.listSessionsByUserId(userId);
+
+    return sessions.map((session) => ({
+      expiresAt: session.expiresAt.toISOString(),
+      familyId: session.familyId,
+      isActive: !session.revokedAt && session.expiresAt.getTime() > Date.now(),
+      lastUsedAt: session.lastUsedAt?.toISOString() ?? null,
+      revokeReason: session.revokeReason,
+      revokedAt: session.revokedAt?.toISOString() ?? null,
+      tokenId: session.id,
+      userId: session.userId,
+      workspaceId: session.workspaceId ?? null,
+    }));
+  }
+
+  async logoutAll(authorizationHeader?: string): Promise<RevokeSessionResult> {
+    const { userId } = await this.resolveVerifiedUserContext(authorizationHeader);
+    const revokedCount = await this.refreshTokensService.revokeAllForUser(userId);
+
+    return { revokedCount };
+  }
+
+  async logoutOthers(
+    authorizationHeader: string | undefined,
+    input: LogoutOtherSessionsInput,
+  ): Promise<RevokeSessionResult> {
+    this.assertRefreshTokenInput(input);
+    const { userId } = await this.resolveVerifiedUserContext(authorizationHeader);
+    const revokedCount =
+      await this.refreshTokensService.revokeOtherFamiliesForUser(
+        userId,
+        input.refreshToken,
+      );
+
+    return { revokedCount };
+  }
+
+  async revokeSession(
+    authorizationHeader: string | undefined,
+    familyId: string,
+  ): Promise<RevokeSessionResult> {
+    const { userId } = await this.resolveVerifiedUserContext(authorizationHeader);
+    const revokedCount = await this.refreshTokensService.revokeFamilyForUser(
+      userId,
+      familyId,
+    );
+
+    return { revokedCount };
   }
 
   async refresh(input: RefreshSessionInput): Promise<AuthSession> {
@@ -214,6 +282,103 @@ export class AuthService {
     };
   }
 
+  async forgotPassword(
+    input: ForgotPasswordInput,
+  ): Promise<ForgotPasswordResult> {
+    const user = await this.identityService.findUserByEmailForPasswordReset(
+      input.email,
+    );
+
+    if (!user || !user.isActive) {
+      return { accepted: true };
+    }
+
+    const token = this.generatePasswordResetToken();
+    const tokenHash = this.hashPasswordResetToken(token);
+    const ttlSeconds = this.configurationService.getPasswordResetConfig().ttlSeconds;
+
+    await this.redisService.setJson(
+      this.buildPasswordResetTokenKey(tokenHash),
+      {
+        email: user.email,
+        userId: user.userId,
+      } satisfies PasswordResetTokenPayload,
+      ttlSeconds,
+    );
+
+    await this.emailsService.sendText({
+      subject: 'Reset your CollabSpace password',
+      text: [
+        `Use this password reset token: ${token}.`,
+        `It expires in ${ttlSeconds} seconds.`,
+      ].join(' '),
+      to: user.email,
+    });
+
+    return { accepted: true };
+  }
+
+  async resetPassword(
+    input: ResetPasswordInput,
+  ): Promise<ResetPasswordResult> {
+    const token = input.token?.trim();
+
+    if (!token) {
+      throw new UnauthorizedException({
+        code: 'PASSWORD_RESET_INVALID',
+        message: 'Password reset token is required',
+      });
+    }
+
+    const payload = await this.redisService.getJson<PasswordResetTokenPayload>(
+      this.buildPasswordResetTokenKey(this.hashPasswordResetToken(token)),
+    );
+
+    if (!payload) {
+      throw new UnauthorizedException({
+        code: 'PASSWORD_RESET_INVALID',
+        message: 'Password reset token is invalid or expired',
+      });
+    }
+
+    await this.identityService.resetPassword(payload.userId, input.newPassword);
+    await this.redisService.delete(
+      this.buildPasswordResetTokenKey(this.hashPasswordResetToken(token)),
+    );
+    const revokedSessionCount = await this.refreshTokensService.revokeAllForUser(
+      payload.userId,
+      'password_reset',
+    );
+
+    return {
+      reset: true,
+      revokedSessionCount,
+      userId: payload.userId,
+    };
+  }
+
+  async changePassword(
+    authorizationHeader: string | undefined,
+    input: ChangePasswordInput,
+  ): Promise<ChangePasswordResult> {
+    const { userId } = await this.resolveVerifiedUserContext(authorizationHeader);
+    await this.identityService.changePassword(
+      userId,
+      input.currentPassword,
+      input.newPassword,
+    );
+    const revokedSessionCount = await this.refreshTokensService.revokeAllForUser(
+      userId,
+      'password_changed',
+    );
+
+    return {
+      changed: true,
+      revokedSessionCount,
+      userId,
+    };
+  }
+
   async signAccessToken(input: SignAccessTokenInput): Promise<string> {
     const secret = this.getJwtSecret();
     const jwtConfig = this.configurationService.getAuthJwtConfig();
@@ -245,7 +410,9 @@ export class AuthService {
     const fullName = await this.resolveUserFullName(userId);
 
     return {
+      emailVerified: user.emailVerified,
       fullName,
+      permissions: user.permissions,
       roles: user.roles,
       userId,
       role: user.role,
@@ -354,6 +521,10 @@ export class AuthService {
     return `email-verification:otp:${userId}`;
   }
 
+  private buildPasswordResetTokenKey(tokenHash: string): string {
+    return `password-reset:token:${tokenHash}`;
+  }
+
   private buildEmailVerificationResendCooldownKey(userId: string): string {
     return `email-verification:resend:cooldown:${userId}`;
   }
@@ -422,8 +593,17 @@ export class AuthService {
     return otp.toString().padStart(otpLength, '0');
   }
 
+  private generatePasswordResetToken(): string {
+    const { tokenByteLength } = this.configurationService.getPasswordResetConfig();
+    return randomBytes(tokenByteLength).toString('hex');
+  }
+
   private hashOtp(otp: string): string {
     return createHash('sha256').update(otp).digest('hex');
+  }
+
+  private hashPasswordResetToken(token: string): string {
+    return createHash('sha256').update(token).digest('hex');
   }
 
   private async assertEmailVerificationResendAllowed(

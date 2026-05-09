@@ -17,7 +17,10 @@ export class AuthGrpcController implements auth.AuthService {
     return from(this.authService.verifyAccessToken(request.authorization)).pipe(
       map((identity) => ({
         authenticated: true,
+        emailVerified: identity.emailVerified,
+        permissions: identity.permissions,
         role: identity.role,
+        roles: identity.roles,
         userId: identity.userId,
         workspaceId: identity.workspaceId,
       })),

@@ -39,6 +39,36 @@ export type ResendEmailVerificationOtpInput = {
   userId: string;
 };
 
+export type ForgotPasswordInput = {
+  email: string;
+};
+
+export type ForgotPasswordResult = {
+  accepted: true;
+};
+
+export type ResetPasswordInput = {
+  newPassword: string;
+  token: string;
+};
+
+export type ResetPasswordResult = {
+  reset: true;
+  revokedSessionCount: number;
+  userId: string;
+};
+
+export type ChangePasswordInput = {
+  currentPassword: string;
+  newPassword: string;
+};
+
+export type ChangePasswordResult = {
+  changed: true;
+  revokedSessionCount: number;
+  userId: string;
+};
+
 export type VerifyEmailOtpResult = {
   email: string;
   emailVerified: true;

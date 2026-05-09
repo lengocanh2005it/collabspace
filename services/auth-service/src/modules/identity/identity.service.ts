@@ -194,6 +194,28 @@ export class IdentityService {
     return this.toAuthUser(await this.loadUserById(userId));
   }
 
+  async findUserByEmailForPasswordReset(
+    email: string,
+  ): Promise<{ email: string; isActive: boolean; userId: string } | null> {
+    const normalizedEmail = this.normalizeEmail(email);
+    const user = await this.userRepository.findOne({
+      where: {
+        email: normalizedEmail,
+      },
+      withDeleted: true,
+    });
+
+    if (!user || user.deletedAt) {
+      return null;
+    }
+
+    return {
+      email: user.email,
+      isActive: user.isActive,
+      userId: user.id,
+    };
+  }
+
   async markEmailVerified(userId: string): Promise<AuthUser> {
     const user = await this.loadUserById(userId);
 
@@ -283,6 +305,37 @@ export class IdentityService {
     }
 
     return this.toAuthUser(user);
+  }
+
+  async changePassword(
+    userId: string,
+    currentPassword: string,
+    newPassword: string,
+  ): Promise<void> {
+    const normalizedCurrentPassword = this.normalizePassword(currentPassword);
+    const normalizedNewPassword = this.normalizePassword(newPassword);
+    const user = await this.loadUserById(userId);
+    const isPasswordValid = await this.verifyPassword(
+      normalizedCurrentPassword,
+      user.passwordHash,
+    );
+
+    if (!isPasswordValid) {
+      throw new UnauthorizedException({
+        code: 'PASSWORD_INVALID',
+        message: 'Current password is invalid',
+      });
+    }
+
+    user.passwordHash = await this.hashPassword(normalizedNewPassword);
+    await this.userRepository.save(user);
+  }
+
+  async resetPassword(userId: string, newPassword: string): Promise<void> {
+    const normalizedPassword = this.normalizePassword(newPassword);
+    const user = await this.loadUserById(userId);
+    user.passwordHash = await this.hashPassword(normalizedPassword);
+    await this.userRepository.save(user);
   }
 
   private async ensureRole(roleName: string): Promise<RoleEntity> {

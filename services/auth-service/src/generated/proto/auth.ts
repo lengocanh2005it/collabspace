@@ -21,6 +21,8 @@ export namespace auth {
         userId?: string;
         role?: string;
         workspaceId?: string;
+        roles?: string[];
+        permissions?: string[];
+        emailVerified?: boolean;
     }
 }
-

@@ -29,6 +29,11 @@ export type EmailVerificationConfig = {
   resendWindowSeconds: number;
 };
 
+export type PasswordResetConfig = {
+  tokenByteLength: number;
+  ttlSeconds: number;
+};
+
 export type DatabaseConfig = {
   autoLoadEntities: boolean;
   logging: boolean;
@@ -134,6 +139,16 @@ export class ConfigurationService {
         this.configService.get<number>(
           'auth.emailVerification.resendWindowSeconds',
         ) ?? 3600,
+    };
+  }
+
+  getPasswordResetConfig(): PasswordResetConfig {
+    return {
+      tokenByteLength:
+        this.configService.get<number>('auth.passwordReset.tokenByteLength') ??
+        32,
+      ttlSeconds:
+        this.configService.get<number>('auth.passwordReset.ttlSeconds') ?? 1800,
     };
   }
 
