@@ -3,6 +3,7 @@ import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { RefreshTokensService } from '../src/modules/refresh-tokens/refresh-tokens.service';
 import { IdentityService } from '../src/modules/identity/identity.service';
+import { UserProfilesGrpcService } from '../src/modules/identity/user-profiles-grpc.service';
 import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
 import { AuthService } from '../src/app.service';
@@ -18,6 +19,9 @@ describe('AuthController (e2e)', () => {
   const identityServiceMock = {
     getAuthUserById: jest.fn(),
     validateCredentials: jest.fn(),
+  };
+  const userProfilesGrpcServiceMock = {
+    getProfile: jest.fn(),
   };
   const jwtSecret = 'test-secret';
 
@@ -43,6 +47,10 @@ describe('AuthController (e2e)', () => {
       roles: ['member'],
       userId: 'user-123',
     });
+    userProfilesGrpcServiceMock.getProfile.mockResolvedValue({
+      fullName: 'Member Example',
+      userId: 'user-123',
+    });
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
@@ -51,6 +59,8 @@ describe('AuthController (e2e)', () => {
       .useValue(refreshTokensServiceMock)
       .overrideProvider(IdentityService)
       .useValue(identityServiceMock)
+      .overrideProvider(UserProfilesGrpcService)
+      .useValue(userProfilesGrpcServiceMock)
       .compile();
 
     app = moduleFixture.createNestApplication();
@@ -83,6 +93,7 @@ describe('AuthController (e2e)', () => {
       .expect(200);
 
     expect(response.headers['x-user-id']).toBe('user-123');
+    expect(response.headers['x-user-name']).toBe('Member Example');
     expect(response.headers['x-role']).toBe('member');
     expect(response.headers['x-workspace-id']).toBe('workspace-456');
     expect(response.headers['x-request-id']).toBe('req-123');

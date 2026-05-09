@@ -12,6 +12,16 @@ export namespace user {
             metadata?: Metadata,
             ...rest: any[]
         ): Observable<CreatePendingProfileResponse>;
+        getProfile(
+            data: GetProfileRequest,
+            metadata?: Metadata,
+            ...rest: any[]
+        ): Observable<GetProfileResponse>;
+        getProfiles(
+            data: GetProfilesRequest,
+            metadata?: Metadata,
+            ...rest: any[]
+        ): Observable<GetProfilesResponse>;
     }
     export interface CreatePendingProfileRequest {
         userId?: string;
@@ -21,5 +31,22 @@ export namespace user {
         success?: boolean;
         userId?: string;
     }
+    export interface GetProfileRequest {
+        userId?: string;
+    }
+    export interface GetProfileResponse {
+        userId?: string;
+        fullName?: string;
+    }
+    export interface GetProfilesRequest {
+        userIds?: string[];
+    }
+    export interface GetProfilesResponse {
+        profiles?: UserProfileSummary[];
+    }
+    export interface UserProfileSummary {
+        userId?: string;
+        fullName?: string;
+        avatarUrl?: string;
+    }
 }
-

@@ -128,6 +128,10 @@ export class AuthController {
 
     response.setHeader('X-User-Id', identity.userId);
 
+    if (identity.fullName) {
+      response.setHeader('X-User-Name', identity.fullName);
+    }
+
     if (identity.role) {
       response.setHeader('X-Role', identity.role);
     }

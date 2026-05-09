@@ -1,10 +1,35 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Headers, Param, Patch, Post, Query } from '@nestjs/common';
 import { GetUserProfileUseCase } from '../../application/use-cases/get-user-profile.use-case';
+import { GetUserSummaryUseCase } from '../../application/use-cases/get-user-summary.use-case';
+import { ListUserSummariesUseCase } from '../../application/use-cases/list-user-summaries.use-case';
+import { BulkGetUserProfilesUseCase } from '../../application/use-cases/bulk-get-user-profiles.use-case';
+import { GetUserPreferencesUseCase } from '../../application/use-cases/get-user-preferences.use-case';
+import { UpdateUserPreferencesUseCase } from '../../application/use-cases/update-user-preferences.use-case';
+import { UpdateUserProfileUseCase } from '../../application/use-cases/update-user-profile.use-case';
+import { UpdateUserStatusUseCase } from '../../application/use-cases/update-user-status.use-case';
+import { GetUserStatusesUseCase } from '../../application/use-cases/get-user-statuses.use-case';
+import { AuthGrpcService } from '../../integrations/auth/auth-grpc.service';
+import { BulkUsersRequestDto } from './dto/bulk-users-request.dto';
+import { ListUsersQueryDto } from './dto/list-users-query.dto';
+import { PresenceQueryDto } from './dto/presence-query.dto';
+import { SearchUsersQueryDto } from './dto/search-users-query.dto';
+import { UpdateCurrentUserPreferencesDto } from './dto/update-current-user-preferences.dto';
+import { UpdateCurrentUserProfileDto } from './dto/update-current-user-profile.dto';
+import { UpdateCurrentUserStatusDto } from './dto/update-current-user-status.dto';
 
 @Controller('users')
 export class UsersController {
   constructor(
+    private readonly authGrpcService: AuthGrpcService,
     private readonly getUserProfileUseCase: GetUserProfileUseCase,
+    private readonly getUserSummaryUseCase: GetUserSummaryUseCase,
+    private readonly listUserSummariesUseCase: ListUserSummariesUseCase,
+    private readonly bulkGetUserProfilesUseCase: BulkGetUserProfilesUseCase,
+    private readonly getUserPreferencesUseCase: GetUserPreferencesUseCase,
+    private readonly updateUserPreferencesUseCase: UpdateUserPreferencesUseCase,
+    private readonly updateUserProfileUseCase: UpdateUserProfileUseCase,
+    private readonly updateUserStatusUseCase: UpdateUserStatusUseCase,
+    private readonly getUserStatusesUseCase: GetUserStatusesUseCase,
   ) {}
 
   @Get('health')
@@ -15,8 +40,144 @@ export class UsersController {
     };
   }
 
+  @Get('me')
+  async getMe(@Headers('authorization') authorizationHeader?: string) {
+    const identity = await this.requireIdentity(authorizationHeader);
+    return this.getUserProfileUseCase.execute(identity.userId);
+  }
+
+  @Patch('me')
+  async updateMe(
+    @Body() body: UpdateCurrentUserProfileDto,
+    @Headers('authorization') authorizationHeader?: string,
+  ) {
+    const identity = await this.requireIdentity(authorizationHeader);
+    return this.updateUserProfileUseCase.execute(
+      identity.userId,
+      body,
+    );
+  }
+
+  @Get('me/preferences')
+  async getMyPreferences(@Headers('authorization') authorizationHeader?: string) {
+    const identity = await this.requireIdentity(authorizationHeader);
+    return this.getUserPreferencesUseCase.execute(identity.userId);
+  }
+
+  @Patch('me/preferences')
+  async updateMyPreferences(
+    @Body() body: UpdateCurrentUserPreferencesDto,
+    @Headers('authorization') authorizationHeader?: string,
+  ) {
+    const identity = await this.requireIdentity(authorizationHeader);
+    return this.updateUserPreferencesUseCase.execute(
+      identity.userId,
+      body,
+    );
+  }
+
+  @Patch('me/status')
+  async updateMyStatus(
+    @Body() body: UpdateCurrentUserStatusDto,
+    @Headers('authorization') authorizationHeader?: string,
+  ) {
+    const identity = await this.requireIdentity(authorizationHeader);
+    return this.updateUserStatusUseCase.execute(
+      identity.userId,
+      {
+        clearAt: this.parseOptionalDate(body.clearAt),
+        emoji: body.emoji,
+        lastSeenAt: this.parseOptionalDate(body.lastSeenAt),
+        status: body.status,
+        statusText: body.statusText,
+      },
+    );
+  }
+
+  @Get('presence')
+  async getPresence(
+    @Query() query: PresenceQueryDto,
+    @Headers('authorization') authorizationHeader?: string,
+  ) {
+    await this.requireIdentity(authorizationHeader);
+    return this.getUserStatusesUseCase.execute(query.userIds);
+  }
+
+  @Post('bulk')
+  async bulkGetUsers(
+    @Body() body: BulkUsersRequestDto,
+    @Headers('authorization') authorizationHeader?: string,
+  ) {
+    await this.requireIdentity(authorizationHeader);
+    return this.bulkGetUserProfilesUseCase.execute(body.userIds);
+  }
+
+  @Get()
+  async listUsers(
+    @Query() query: ListUsersQueryDto,
+    @Headers('authorization') authorizationHeader?: string,
+  ) {
+    await this.requireIdentity(authorizationHeader);
+    return this.listUserSummariesUseCase.execute({
+      limit: query.limit ?? 20,
+      offset: query.offset ?? 0,
+      q: query.q,
+    });
+  }
+
+  @Get('search')
+  async searchUsers(
+    @Query() query: SearchUsersQueryDto,
+    @Headers('authorization') authorizationHeader?: string,
+  ) {
+    await this.requireIdentity(authorizationHeader);
+    return this.listUserSummariesUseCase.execute({
+      limit: query.limit ?? 20,
+      offset: query.offset ?? 0,
+      q: query.q,
+    });
+  }
+
+  @Get(':id/summary')
+  async getSummary(
+    @Param('id') id: string,
+    @Headers('authorization') authorizationHeader?: string,
+  ) {
+    await this.requireIdentity(authorizationHeader);
+    return this.getUserSummaryUseCase.execute(id.trim());
+  }
+
   @Get(':id')
-  async getById(@Param('id') id: string) {
-    return this.getUserProfileUseCase.execute(id);
+  async getById(
+    @Param('id') id: string,
+    @Headers('authorization') authorizationHeader?: string,
+  ) {
+    await this.requireIdentity(authorizationHeader);
+    return this.getUserProfileUseCase.execute(id.trim());
+  }
+
+  private parseOptionalDate(value?: string | null): Date | null | undefined {
+    if (value === undefined) {
+      return undefined;
+    }
+
+    if (value === null) {
+      return null;
+    }
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+      throw new BadRequestException({
+        code: 'DATE_INVALID',
+        message: 'Date value is invalid',
+      });
+    }
+
+    return date;
+  }
+
+  private async requireIdentity(authorizationHeader?: string) {
+    return this.authGrpcService.verifyAccessToken(authorizationHeader);
   }
 }

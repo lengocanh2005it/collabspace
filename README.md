@@ -180,12 +180,23 @@ Base prefix: `/api/v1`
 
 ### User Service (`/users`)
 Base prefix: `/api/v1`
+- `GET /api/v1/users/me` - Get current user profile
+- `PATCH /api/v1/users/me` - Update current user profile
+- `GET /api/v1/users/me/preferences` - Get current user preferences
+- `PATCH /api/v1/users/me/preferences` - Update current user preferences
+- `PATCH /api/v1/users/me/status` - Update current user status
+- `GET /api/v1/users` - List/search user directory (paginated)
+- `GET /api/v1/users/search?q=...` - Search user directory
+- `POST /api/v1/users/bulk` - Fetch multiple user profiles by ID
+- `GET /api/v1/users/presence?userIds=...` - Get presence for multiple users
 - `GET /api/v1/users/{id}` - Get user profile
+- `GET /api/v1/users/{id}/summary` - Get lightweight user summary
 - `GET /api/v1/users/health` - Health check
-- `PATCH /api/v1/users/{id}` - Update user profile
 
 Internal service contract:
 - `auth-service` bootstraps pending profiles in `user-service` via gRPC `UserProfilesService.CreatePendingProfile`
+- `user-service` verifies access tokens for protected endpoints via gRPC `AuthService.VerifyAccessToken`
+- `user-service` supports bulk profile hydration via gRPC `UserProfilesService.GetProfiles`
 
 ### Workspace Service (`/workspaces`)
 - `POST /workspaces` - Create workspace

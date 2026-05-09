@@ -54,6 +54,7 @@ describe('AuthService', () => {
   } as unknown as RabbitMqEventsService;
   const userProfilesGrpcServiceMock = {
     createPendingProfile: jest.fn(),
+    getProfile: jest.fn(),
   } as unknown as UserProfilesGrpcService;
   let authService: AuthService;
 
@@ -63,6 +64,10 @@ describe('AuthService', () => {
     jwtConfigValues.expiry = '10m';
     jwtConfigValues.audience = undefined;
     jwtConfigValues.issuer = undefined;
+    jest.spyOn(userProfilesGrpcServiceMock, 'getProfile').mockResolvedValue({
+      fullName: 'Admin User',
+      userId: 'user-1',
+    });
     authService = new AuthService(
       configurationServiceMock,
       emailsServiceMock,
@@ -94,6 +99,7 @@ describe('AuthService', () => {
     await expect(
       authService.verifyAccessToken(`Bearer ${token}`),
     ).resolves.toEqual({
+      fullName: 'Admin User',
       role: 'admin',
       roles: ['admin'],
       workspaceId: 'workspace-1',
@@ -160,6 +166,7 @@ describe('AuthService', () => {
     await expect(
       authService.verifyAccessToken(`Bearer ${session.accessToken}`),
     ).resolves.toEqual({
+      fullName: 'Admin User',
       role: 'admin',
       roles: ['admin'],
       userId: 'user-1',
@@ -175,6 +182,10 @@ describe('AuthService', () => {
       permissions: ['users.read'],
       role: 'member',
       roles: ['member'],
+      userId: 'user-2',
+    });
+    jest.spyOn(userProfilesGrpcServiceMock, 'getProfile').mockResolvedValue({
+      fullName: 'Member User',
       userId: 'user-2',
     });
     jest.spyOn(refreshTokensServiceMock, 'rotate').mockResolvedValue({
@@ -195,6 +206,7 @@ describe('AuthService', () => {
     await expect(
       authService.verifyAccessToken(`Bearer ${session.accessToken}`),
     ).resolves.toEqual({
+      fullName: 'Member User',
       role: 'member',
       roles: ['member'],
       userId: 'user-2',
@@ -382,6 +394,36 @@ describe('AuthService', () => {
       roles: ['admin'],
       userId: 'user-4',
       workspaceId: 'workspace-4',
+    });
+  });
+
+  it('keeps token verification working when profile lookup fails', async () => {
+    jest.spyOn(identityServiceMock, 'getAuthUserById').mockResolvedValue({
+      email: 'fallback@collabspace.dev',
+      emailVerified: true,
+      isActive: true,
+      permissions: ['users.read'],
+      role: 'member',
+      roles: ['member'],
+      userId: 'user-8',
+    });
+    jest
+      .spyOn(userProfilesGrpcServiceMock, 'getProfile')
+      .mockRejectedValue(new Error('profile service unavailable'));
+    const token = await authService.signAccessToken({
+      role: 'member',
+      roles: ['member'],
+      userId: 'user-8',
+      workspaceId: 'workspace-8',
+    });
+
+    await expect(
+      authService.verifyAccessToken(`Bearer ${token}`),
+    ).resolves.toEqual({
+      role: 'member',
+      roles: ['member'],
+      userId: 'user-8',
+      workspaceId: 'workspace-8',
     });
   });
 

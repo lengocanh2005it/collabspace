@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { UserProfileOrmEntity } from './entities/user-profile.orm-entity';
+import { UserPreferencesOrmEntity } from './entities/user-preferences.orm-entity';
+import { UserStatusOrmEntity } from './entities/user-status.orm-entity';
 
 const toBoolean = (value: string | undefined, fallback: boolean): boolean => {
   if (!value) {
@@ -28,7 +30,11 @@ const createDatabaseOptions = (): TypeOrmModuleOptions => ({
 @Module({
   imports: [
     TypeOrmModule.forRoot(createDatabaseOptions()),
-    TypeOrmModule.forFeature([UserProfileOrmEntity]),
+    TypeOrmModule.forFeature([
+      UserProfileOrmEntity,
+      UserPreferencesOrmEntity,
+      UserStatusOrmEntity,
+    ]),
   ],
   exports: [TypeOrmModule],
 })

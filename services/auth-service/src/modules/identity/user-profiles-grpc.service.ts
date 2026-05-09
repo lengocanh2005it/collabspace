@@ -25,10 +25,24 @@ type CreatePendingProfileResponse = {
   userId: string;
 };
 
+type GetProfileInput = {
+  userId: string;
+};
+
+type GetProfileRequest = {
+  userId: string;
+};
+
+type GetProfileResponse = {
+  fullName?: string;
+  userId: string;
+};
+
 type UserProfilesGrpcClient = {
   createPendingProfile(
     request: CreatePendingProfileRequest,
   ): Observable<CreatePendingProfileResponse>;
+  getProfile(request: GetProfileRequest): Observable<GetProfileResponse>;
 };
 
 @Injectable()
@@ -62,6 +76,27 @@ export class UserProfilesGrpcService implements OnModuleInit {
       await firstValueFrom(
         this.userProfilesService.createPendingProfile(input),
       );
+    } catch (error) {
+      throw new ServiceUnavailableException({
+        code: 'USER_SERVICE_GRPC_REQUEST_FAILED',
+        message:
+          error instanceof Error
+            ? error.message
+            : `User service gRPC request failed via ${this.configurationService.getUserServiceConfig().grpcUrl}`,
+      });
+    }
+  }
+
+  async getProfile(input: GetProfileInput): Promise<GetProfileResponse> {
+    if (!this.userProfilesService) {
+      throw new ServiceUnavailableException({
+        code: 'USER_SERVICE_GRPC_UNAVAILABLE',
+        message: 'User profiles gRPC client is not initialized',
+      });
+    }
+
+    try {
+      return await firstValueFrom(this.userProfilesService.getProfile(input));
     } catch (error) {
       throw new ServiceUnavailableException({
         code: 'USER_SERVICE_GRPC_REQUEST_FAILED',

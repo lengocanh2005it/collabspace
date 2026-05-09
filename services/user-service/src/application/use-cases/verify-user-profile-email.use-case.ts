@@ -1,7 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { USER_PROFILE_REPOSITORY } from '../../domain/repositories/user-profile.repository';
 import type { UserProfileRepository } from '../../domain/repositories/user-profile.repository';
-import { UserProfileResponseDto } from '../dto/user-profile-response.dto';
+import {
+  UserProfileResponseDto,
+  toUserProfileResponseDto,
+} from '../dto/user-profile-response.dto';
 
 @Injectable()
 export class VerifyUserProfileEmailUseCase {
@@ -12,16 +15,6 @@ export class VerifyUserProfileEmailUseCase {
 
   async execute(userId: string): Promise<UserProfileResponseDto> {
     const profile = await this.userProfileRepository.markEmailVerified(userId);
-
-    return {
-      avatarUrl: profile.avatarUrl,
-      bio: profile.bio,
-      createdAt: profile.createdAt.toISOString(),
-      emailVerified: profile.emailVerified,
-      fullName: profile.fullName,
-      id: profile.id,
-      updatedAt: profile.updatedAt.toISOString(),
-      userId: profile.userId,
-    };
+    return toUserProfileResponseDto(profile);
   }
 }

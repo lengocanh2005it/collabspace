@@ -29,6 +29,7 @@ import {
   HttpException,
   HttpStatus,
   Injectable,
+  Logger,
   UnauthorizedException,
 } from '@nestjs/common';
 import { createHash, createSecretKey, randomInt } from 'crypto';
@@ -46,6 +47,8 @@ type EmailVerificationOtpDispatchResult = {
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly configurationService: ConfigurationService,
     private readonly emailsService: EmailsService,
@@ -239,8 +242,10 @@ export class AuthService {
   async verifyAccessToken(authorizationHeader?: string): Promise<AuthIdentity> {
     const { payload, user, userId } =
       await this.resolveVerifiedUserContext(authorizationHeader);
+    const fullName = await this.resolveUserFullName(userId);
 
     return {
+      fullName,
       roles: user.roles,
       userId,
       role: user.role,
@@ -289,6 +294,19 @@ export class AuthService {
       user,
       userId,
     };
+  }
+
+  private async resolveUserFullName(userId: string): Promise<string | undefined> {
+    try {
+      const profile = await this.userProfilesGrpcService.getProfile({ userId });
+      return profile.fullName?.trim() || undefined;
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : String(error);
+      this.logger.warn(
+        `Unable to resolve full name for user ${userId}: ${reason}`,
+      );
+      return undefined;
+    }
   }
 
   private async verifyJwt(token: string): Promise<JwtPayload> {

@@ -3,6 +3,7 @@ import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { join } from 'node:path';
 import { DataSource } from 'typeorm';
 import { AppModule } from './app.module';
+import { configureHttpApp } from './app.setup';
 
 const toBoolean = (value: string | undefined, fallback: boolean): boolean => {
   if (!value) {
@@ -14,7 +15,7 @@ const toBoolean = (value: string | undefined, fallback: boolean): boolean => {
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  app.setGlobalPrefix('api/v1');
+  configureHttpApp(app);
   const dataSource = app.get(DataSource);
   let hasConnectedMicroservice = false;
   const protoDir = join(process.cwd(), 'proto');

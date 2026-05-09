@@ -12,6 +12,7 @@ export type JwtPayload = JWTPayload & {
 };
 
 export type AuthIdentity = {
+  fullName?: string;
   roles: string[];
   role?: string;
   workspaceId?: string;

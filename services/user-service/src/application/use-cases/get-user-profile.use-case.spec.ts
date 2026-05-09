@@ -5,7 +5,15 @@ import { GetUserProfileUseCase } from './get-user-profile.use-case';
 describe('GetUserProfileUseCase', () => {
   const userProfileRepositoryMock: UserProfileRepository = {
     findByUserId: jest.fn(),
+    findManyByUserIds: jest.fn(),
+    getPreferences: jest.fn(),
+    getStatus: jest.fn(),
+    getStatusesByUserIds: jest.fn(),
+    list: jest.fn(),
     markEmailVerified: jest.fn(),
+    updatePreferences: jest.fn(),
+    updateProfile: jest.fn(),
+    updateStatus: jest.fn(),
     upsertPending: jest.fn(),
   };
 
@@ -20,24 +28,40 @@ describe('GetUserProfileUseCase', () => {
     jest.spyOn(userProfileRepositoryMock, 'findByUserId').mockResolvedValue({
       avatarUrl: 'https://cdn.example.com/avatar-1.png',
       bio: 'Product designer',
+      coverUrl: null,
       createdAt: new Date('2026-01-01T00:00:00.000Z'),
+      department: 'Design',
       deletedAt: null,
+      displayName: 'Jane',
       emailVerified: true,
       fullName: 'Jane Doe',
       id: 'profile-1',
+      jobTitle: 'Design Lead',
+      locale: 'vi-VN',
+      location: 'Ho Chi Minh City',
+      timezone: 'Asia/Saigon',
       updatedAt: new Date('2026-01-02T00:00:00.000Z'),
       userId: 'user-1',
+      username: 'jane.doe',
     });
 
     await expect(getUserProfileUseCase.execute('user-1')).resolves.toEqual({
       avatarUrl: 'https://cdn.example.com/avatar-1.png',
       bio: 'Product designer',
+      coverUrl: null,
       createdAt: '2026-01-01T00:00:00.000Z',
+      department: 'Design',
+      displayName: 'Jane',
       emailVerified: true,
       fullName: 'Jane Doe',
       id: 'profile-1',
+      jobTitle: 'Design Lead',
+      locale: 'vi-VN',
+      location: 'Ho Chi Minh City',
+      timezone: 'Asia/Saigon',
       updatedAt: '2026-01-02T00:00:00.000Z',
       userId: 'user-1',
+      username: 'jane.doe',
     });
   });
 
