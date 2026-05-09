@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { RefreshTokensService } from '../src/modules/refresh-tokens/refresh-tokens.service';
+import { IdentityService } from '../src/modules/identity/identity.service';
 import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
 import { AuthService } from '../src/app.service';
@@ -14,21 +15,46 @@ describe('AuthController (e2e)', () => {
     revokeToken: jest.fn(),
     rotate: jest.fn(),
   };
+  const identityServiceMock = {
+    getAuthUserById: jest.fn(),
+    validateCredentials: jest.fn(),
+  };
   const jwtSecret = 'test-secret';
 
   beforeEach(async () => {
     jest.clearAllMocks();
     process.env.JWT_SECRET = jwtSecret;
     process.env.JWT_EXPIRY = '10m';
+    identityServiceMock.getAuthUserById.mockResolvedValue({
+      email: 'member@example.com',
+      emailVerified: true,
+      isActive: true,
+      permissions: [],
+      role: 'member',
+      roles: ['member'],
+      userId: 'user-123',
+    });
+    identityServiceMock.validateCredentials.mockResolvedValue({
+      email: 'member@example.com',
+      emailVerified: true,
+      isActive: true,
+      permissions: [],
+      role: 'member',
+      roles: ['member'],
+      userId: 'user-123',
+    });
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     })
       .overrideProvider(RefreshTokensService)
       .useValue(refreshTokensServiceMock)
+      .overrideProvider(IdentityService)
+      .useValue(identityServiceMock)
       .compile();
 
     app = moduleFixture.createNestApplication();
+    app.setGlobalPrefix('api/v1');
     authService = moduleFixture.get(AuthService);
     await app.init();
   });
@@ -88,8 +114,8 @@ describe('AuthController (e2e)', () => {
     const response = await request(app.getHttpServer())
       .post('/api/v1/auth/login')
       .send({
-        role: 'member',
-        userId: 'user-123',
+        email: 'member@example.com',
+        password: 'password123',
         workspaceId: 'workspace-456',
       })
       .expect(200);
@@ -101,6 +127,16 @@ describe('AuthController (e2e)', () => {
   });
 
   it('/api/v1/auth/refresh (POST) rotates refresh token', async () => {
+    identityServiceMock.getAuthUserById.mockResolvedValue({
+      email: 'member@example.com',
+      emailVerified: true,
+      isActive: true,
+      permissions: [],
+      role: 'member',
+      roles: ['member'],
+      userId: 'user-321',
+    });
+
     refreshTokensServiceMock.rotate.mockResolvedValue({
       expiresAt: new Date(Date.now() + 60_000),
       familyId: 'family-2',

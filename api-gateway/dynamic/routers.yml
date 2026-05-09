@@ -1,7 +1,7 @@
 http:
   routers:
     auth-me-router:
-      rule: "Path(`/auth/me`)"
+      rule: "Path(`/api/v1/auth/me`)"
       service: auth-service
       priority: 100
       entryPoints:
@@ -13,7 +13,7 @@ http:
         - cors-headers
 
     auth-router:
-      rule: "PathPrefix(`/auth`)"
+      rule: "PathPrefix(`/api/v1/auth`)"
       service: auth-service
       entryPoints:
         - web
@@ -23,7 +23,7 @@ http:
         - cors-headers
 
     user-router:
-      rule: "PathPrefix(`/users`)"
+      rule: "PathPrefix(`/api/v1/users`)"
       service: user-service
       entryPoints:
         - web
@@ -33,7 +33,7 @@ http:
         - cors-headers
 
     workspace-router:
-      rule: "PathPrefix(`/workspaces`)"
+      rule: "PathPrefix(`/api/v1/workspaces`)"
       service: workspace-service
       entryPoints:
         - web
@@ -43,7 +43,7 @@ http:
         - cors-headers
 
     task-router:
-      rule: "PathPrefix(`/tasks`)"
+      rule: "PathPrefix(`/api/v1/tasks`)"
       service: task-service
       entryPoints:
         - web
@@ -53,7 +53,7 @@ http:
         - cors-headers
 
     notification-router:
-      rule: "PathPrefix(`/notifications`)"
+      rule: "PathPrefix(`/api/v1/notifications`)"
       service: notification-service
       entryPoints:
         - web

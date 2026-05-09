@@ -7,10 +7,9 @@ type CreatePendingProfileBody = {
   userId: string;
 };
 
-@Controller()
+@Controller('users')
 export class UsersController {
   constructor(
-    private readonly createPendingUserProfileUseCase: CreatePendingUserProfileUseCase,
     private readonly getUserProfileUseCase: GetUserProfileUseCase,
   ) {}
 
@@ -22,12 +21,19 @@ export class UsersController {
     };
   }
 
-  @Get('users/:id')
+  @Get(':id')
   async getById(@Param('id') id: string) {
     return this.getUserProfileUseCase.execute(id);
   }
+}
 
-  @Post('internal/users/profiles')
+@Controller('internal/users')
+export class InternalUsersController {
+  constructor(
+    private readonly createPendingUserProfileUseCase: CreatePendingUserProfileUseCase,
+  ) {}
+
+  @Post('profiles')
   async createPendingProfile(@Body() body: CreatePendingProfileBody) {
     return this.createPendingUserProfileUseCase.execute(body);
   }

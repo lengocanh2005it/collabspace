@@ -33,7 +33,7 @@
 | Service | Tech Stack | Port | Database | Health Endpoint |
 |---------|-----------|------|----------|-----------------|
 | **auth-service** | Node.js + Prisma | 3000 | PostgreSQL (`collabspace_auth`) | `/api/v1/auth/health` |
-| **user-service** | Node.js + Prisma | 3000 | PostgreSQL (`collabspace_user`) | `/api/v1/health` |
+| **user-service** | Node.js + Prisma | 3000 | PostgreSQL (`collabspace_user`) | `/api/v1/users/health` |
 | **workspace-service** | Java/Kotlin + Flyway | **8080** | PostgreSQL (`collabspace_workspace`) | `/workspaces/health` |
 | **task-service** | Node.js + MongoDB | 3000 | MongoDB (`collabspace_task`) | `/tasks/health` |
 | **notification-service** | Node.js | 3000 | Redis / MongoDB | `/notifications/health` |
@@ -181,6 +181,7 @@ Base prefix: `/api/v1`
 ### User Service (`/users`)
 Base prefix: `/api/v1`
 - `GET /api/v1/users/{id}` - Get user profile
+- `GET /api/v1/users/health` - Health check
 - `POST /api/v1/internal/users/profiles` - Internal pending profile bootstrap
 - `PATCH /api/v1/users/{id}` - Update user profile
 
