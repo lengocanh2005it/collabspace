@@ -55,6 +55,14 @@ export default () => ({
     enabled: toBoolean(process.env.GRPC_ENABLED, false),
     url: process.env.GRPC_URL ?? '0.0.0.0:50051',
   },
+  rabbitmq: {
+    enabled: toBoolean(process.env.RABBITMQ_ENABLED, false),
+    noAck: toBoolean(process.env.RABBITMQ_NO_ACK, false),
+    prefetchCount: toNumber(process.env.RABBITMQ_PREFETCH_COUNT, 10),
+    queue: process.env.RABBITMQ_QUEUE ?? 'auth-service',
+    queueDurable: toBoolean(process.env.RABBITMQ_QUEUE_DURABLE, true),
+    url: process.env.RABBITMQ_URL,
+  },
   refreshToken: {
     byteLength: toNumber(process.env.REFRESH_TOKEN_BYTE_LENGTH, 48),
     ttlDays: toNumber(process.env.REFRESH_TOKEN_TTL_DAYS, 30),

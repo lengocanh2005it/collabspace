@@ -9,6 +9,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   await app.get(DatabaseService).initialize();
   const configurationService = app.get(ConfigurationService);
+  let hasConnectedMicroservice = false;
 
   const grpcConfig = configurationService.getGrpcConfig();
 
@@ -16,9 +17,25 @@ async function bootstrap() {
     app.connectMicroservice<MicroserviceOptions>(
       configurationService.getGrpcMicroserviceOptions(),
     );
+    hasConnectedMicroservice = true;
+    Logger.log(`gRPC server configured on ${grpcConfig.url}`, 'Bootstrap');
+  }
 
+  const rabbitMqConfig = configurationService.getRabbitMqConfig();
+
+  if (rabbitMqConfig.enabled && rabbitMqConfig.url) {
+    app.connectMicroservice<MicroserviceOptions>(
+      configurationService.getRabbitMqMicroserviceOptions(),
+    );
+    hasConnectedMicroservice = true;
+    Logger.log(
+      `RabbitMQ consumer configured for queue ${rabbitMqConfig.queue}`,
+      'Bootstrap',
+    );
+  }
+
+  if (hasConnectedMicroservice) {
     await app.startAllMicroservices();
-    Logger.log(`gRPC server listening on ${grpcConfig.url}`, 'Bootstrap');
   }
 
   await app.listen(configurationService.getAppConfig().port);

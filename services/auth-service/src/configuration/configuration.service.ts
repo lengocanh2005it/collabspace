@@ -1,6 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Transport, type GrpcOptions } from '@nestjs/microservices';
+import {
+  Transport,
+  type GrpcOptions,
+  type RmqOptions,
+} from '@nestjs/microservices';
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { RedisOptions } from 'ioredis';
 import { join } from 'node:path';
@@ -55,6 +59,15 @@ export type GrpcConfig = {
 export type RefreshTokenConfig = {
   byteLength: number;
   ttlDays: number;
+};
+
+export type RabbitMqConfig = {
+  enabled: boolean;
+  noAck: boolean;
+  prefetchCount: number;
+  queue: string;
+  queueDurable: boolean;
+  url?: string;
 };
 
 export type RedisConfig = {
@@ -187,6 +200,37 @@ export class ConfigurationService {
         url: grpcConfig.url,
       },
       transport: Transport.GRPC,
+    };
+  }
+
+  getRabbitMqConfig(): RabbitMqConfig {
+    return {
+      enabled: this.configService.get<boolean>('rabbitmq.enabled') ?? false,
+      noAck: this.configService.get<boolean>('rabbitmq.noAck') ?? false,
+      prefetchCount:
+        this.configService.get<number>('rabbitmq.prefetchCount') ?? 10,
+      queue:
+        this.configService.get<string>('rabbitmq.queue') ?? 'auth-service',
+      queueDurable:
+        this.configService.get<boolean>('rabbitmq.queueDurable') ?? true,
+      url: this.configService.get<string>('rabbitmq.url') || undefined,
+    };
+  }
+
+  getRabbitMqMicroserviceOptions(): RmqOptions {
+    const rabbitMqConfig = this.getRabbitMqConfig();
+
+    return {
+      options: {
+        noAck: rabbitMqConfig.noAck,
+        prefetchCount: rabbitMqConfig.prefetchCount,
+        queue: rabbitMqConfig.queue,
+        queueOptions: {
+          durable: rabbitMqConfig.queueDurable,
+        },
+        urls: rabbitMqConfig.url ? [rabbitMqConfig.url] : [],
+      },
+      transport: Transport.RMQ,
     };
   }
 
