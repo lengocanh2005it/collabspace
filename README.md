@@ -32,8 +32,8 @@
 
 | Service | Tech Stack | Port | Database | Health Endpoint |
 |---------|-----------|------|----------|-----------------|
-| **auth-service** | Node.js + Prisma | 3000 | PostgreSQL (`collabspace_auth`) | `/auth/health` |
-| **user-service** | Node.js + Prisma | 3000 | PostgreSQL (`collabspace_user`) | `/users/health` |
+| **auth-service** | Node.js + Prisma | 3000 | PostgreSQL (`collabspace_auth`) | `/api/v1/auth/health` |
+| **user-service** | Node.js + Prisma | 3000 | PostgreSQL (`collabspace_user`) | `/api/v1/health` |
 | **workspace-service** | Java/Kotlin + Flyway | **8080** | PostgreSQL (`collabspace_workspace`) | `/workspaces/health` |
 | **task-service** | Node.js + MongoDB | 3000 | MongoDB (`collabspace_task`) | `/tasks/health` |
 | **notification-service** | Node.js | 3000 | Redis / MongoDB | `/notifications/health` |
@@ -169,18 +169,20 @@ sh ./scripts/seed.sh
 ## API Routes
 
 ### Auth Service (`/auth`)
-- `POST /auth/register` - User registration, creates pending profile, sends OTP email
-- `POST /auth/login` - User login (returns JWT)
-- `POST /auth/resend-verification-otp` - Resend email verification OTP with Redis rate limiting
-- `POST /auth/verify-email` - Verify email OTP
-- `POST /auth/refresh` - Refresh JWT token
-- `GET /auth/me` - Get current user
-- `GET /auth/health` - Health check
+Base prefix: `/api/v1`
+- `POST /api/v1/auth/register` - User registration, creates pending profile, sends OTP email
+- `POST /api/v1/auth/login` - User login (returns JWT)
+- `POST /api/v1/auth/resend-verification-otp` - Resend email verification OTP with Redis rate limiting
+- `POST /api/v1/auth/verify-email` - Verify email OTP
+- `POST /api/v1/auth/refresh` - Refresh JWT token
+- `GET /api/v1/auth/me` - Get current user
+- `GET /api/v1/auth/health` - Health check
 
 ### User Service (`/users`)
-- `GET /users/{id}` - Get user profile
-- `POST /internal/users/profiles` - Internal pending profile bootstrap
-- `PATCH /users/{id}` - Update user profile
+Base prefix: `/api/v1`
+- `GET /api/v1/users/{id}` - Get user profile
+- `POST /api/v1/internal/users/profiles` - Internal pending profile bootstrap
+- `PATCH /api/v1/users/{id}` - Update user profile
 
 ### Workspace Service (`/workspaces`)
 - `POST /workspaces` - Create workspace

@@ -16,7 +16,7 @@ export class UserProfilesClientService {
   ) {}
 
   async createPendingProfile(input: CreatePendingProfileInput): Promise<void> {
-    await this.request('/internal/users/profiles', {
+    await this.request('/api/v1/internal/users/profiles', {
       body: JSON.stringify(input),
       headers: {
         'content-type': 'application/json',

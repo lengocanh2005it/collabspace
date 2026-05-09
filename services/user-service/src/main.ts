@@ -13,6 +13,7 @@ const toBoolean = (value: string | undefined, fallback: boolean): boolean => {
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  app.setGlobalPrefix('api/v1');
   const dataSource = app.get(DataSource);
 
   if (process.env.DATABASE_URL && !dataSource.isInitialized) {

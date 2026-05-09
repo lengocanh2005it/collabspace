@@ -33,14 +33,17 @@ describe('AuthController (e2e)', () => {
     await app.init();
   });
 
-  it('/auth/health (GET)', () => {
-    return request(app.getHttpServer()).get('/auth/health').expect(200).expect({
-      service: 'auth-service',
-      status: 'ok',
-    });
+  it('/api/v1/auth/health (GET)', () => {
+    return request(app.getHttpServer())
+      .get('/api/v1/auth/health')
+      .expect(200)
+      .expect({
+        service: 'auth-service',
+        status: 'ok',
+      });
   });
 
-  it('/auth/verify (GET) returns identity headers for valid JWT', async () => {
+  it('/api/v1/auth/verify (GET) returns identity headers for valid JWT', async () => {
     const token = await authService.signAccessToken({
       role: 'member',
       workspaceId: 'workspace-456',
@@ -48,7 +51,7 @@ describe('AuthController (e2e)', () => {
     });
 
     const response = await request(app.getHttpServer())
-      .get('/auth/verify')
+      .get('/api/v1/auth/verify')
       .set('Authorization', `Bearer ${token}`)
       .set('X-Request-Id', 'req-123')
       .expect(200);
@@ -65,14 +68,14 @@ describe('AuthController (e2e)', () => {
     });
   });
 
-  it('/auth/verify (GET) rejects invalid JWT', () => {
+  it('/api/v1/auth/verify (GET) rejects invalid JWT', () => {
     return request(app.getHttpServer())
-      .get('/auth/verify')
+      .get('/api/v1/auth/verify')
       .set('Authorization', 'Bearer invalid.token.value')
       .expect(401);
   });
 
-  it('/auth/login (POST) returns an access token and refresh token', async () => {
+  it('/api/v1/auth/login (POST) returns an access token and refresh token', async () => {
     refreshTokensServiceMock.issue.mockResolvedValue({
       expiresAt: new Date(Date.now() + 60_000),
       familyId: 'family-1',
@@ -83,7 +86,7 @@ describe('AuthController (e2e)', () => {
     });
 
     const response = await request(app.getHttpServer())
-      .post('/auth/login')
+      .post('/api/v1/auth/login')
       .send({
         role: 'member',
         userId: 'user-123',
@@ -97,7 +100,7 @@ describe('AuthController (e2e)', () => {
     expect(response.body.accessToken).toBeTruthy();
   });
 
-  it('/auth/refresh (POST) rotates refresh token', async () => {
+  it('/api/v1/auth/refresh (POST) rotates refresh token', async () => {
     refreshTokensServiceMock.rotate.mockResolvedValue({
       expiresAt: new Date(Date.now() + 60_000),
       familyId: 'family-2',
@@ -108,7 +111,7 @@ describe('AuthController (e2e)', () => {
     });
 
     const response = await request(app.getHttpServer())
-      .post('/auth/refresh')
+      .post('/api/v1/auth/refresh')
       .send({
         refreshToken: 'refresh-token-current',
       })
@@ -119,11 +122,11 @@ describe('AuthController (e2e)', () => {
     expect(response.body.accessToken).toBeTruthy();
   });
 
-  it('/auth/logout (POST) revokes the refresh token', async () => {
+  it('/api/v1/auth/logout (POST) revokes the refresh token', async () => {
     refreshTokensServiceMock.revokeToken.mockResolvedValue(undefined);
 
     await request(app.getHttpServer())
-      .post('/auth/logout')
+      .post('/api/v1/auth/logout')
       .send({
         refreshToken: 'refresh-token-current',
       })
