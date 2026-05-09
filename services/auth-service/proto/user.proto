@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package user;
+
+service UserProfilesService {
+  rpc CreatePendingProfile(CreatePendingProfileRequest) returns (CreatePendingProfileResponse);
+}
+
+message CreatePendingProfileRequest {
+  string user_id = 1;
+  string full_name = 2;
+}
+
+message CreatePendingProfileResponse {
+  bool success = 1;
+  string user_id = 2;
+}

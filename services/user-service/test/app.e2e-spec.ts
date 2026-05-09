@@ -43,21 +43,6 @@ describe('AppController (e2e)', () => {
       });
   });
 
-  it('/internal/users/profiles (POST)', () => {
-    return request(app.getHttpServer())
-      .post('/api/v1/internal/users/profiles')
-      .send({
-        fullName: 'Pending User',
-        userId: 'pending-user-1',
-      })
-      .expect(201)
-      .expect((response) => {
-        expect(response.body.userId).toBe('pending-user-1');
-        expect(response.body.fullName).toBe('Pending User');
-        expect(response.body.emailVerified).toBe(false);
-      });
-  });
-
   afterEach(async () => {
     await app.close();
   });

@@ -21,7 +21,7 @@ import {
 import { ConfigurationService } from '@/configuration/configuration.service';
 import { EmailsService } from '@/modules/emails/emails.service';
 import { IdentityService } from '@/modules/identity/identity.service';
-import { UserProfilesClientService } from '@/modules/identity/user-profiles-client.service';
+import { UserProfilesGrpcService } from '@/modules/identity/user-profiles-grpc.service';
 import { RabbitMqEventsService } from '@/modules/rabbitmq/rabbitmq-events.service';
 import { RedisService } from '@/modules/redis/redis.service';
 import { RefreshTokensService } from '@/modules/refresh-tokens/refresh-tokens.service';
@@ -53,7 +53,7 @@ export class AuthService {
     private readonly rabbitMqEventsService: RabbitMqEventsService,
     private readonly redisService: RedisService,
     private readonly refreshTokensService: RefreshTokensService,
-    private readonly userProfilesClientService: UserProfilesClientService,
+    private readonly userProfilesGrpcService: UserProfilesGrpcService,
   ) {}
 
   async getCurrentUser(authorizationHeader?: string): Promise<
@@ -61,9 +61,8 @@ export class AuthService {
       workspaceId?: string | null;
     }
   > {
-    const { payload, user } = await this.resolveVerifiedUserContext(
-      authorizationHeader,
-    );
+    const { payload, user } =
+      await this.resolveVerifiedUserContext(authorizationHeader);
 
     return {
       ...user,
@@ -121,7 +120,7 @@ export class AuthService {
 
   async register(input: RegisterInput): Promise<RegisterPendingResult> {
     const user = await this.identityService.register(input);
-    await this.userProfilesClientService.createPendingProfile({
+    await this.userProfilesGrpcService.createPendingProfile({
       fullName: input.fullName,
       userId: user.userId,
     });
@@ -176,9 +175,10 @@ export class AuthService {
       });
     }
 
-    const otpPayload = await this.redisService.getJson<EmailVerificationOtpPayload>(
-      this.buildEmailVerificationOtpKey(input.userId),
-    );
+    const otpPayload =
+      await this.redisService.getJson<EmailVerificationOtpPayload>(
+        this.buildEmailVerificationOtpKey(input.userId),
+      );
 
     if (!otpPayload) {
       throw new UnauthorizedException({
@@ -200,7 +200,9 @@ export class AuthService {
       userId: input.userId,
       verifiedAt: new Date().toISOString(),
     });
-    await this.redisService.delete(this.buildEmailVerificationOtpKey(input.userId));
+    await this.redisService.delete(
+      this.buildEmailVerificationOtpKey(input.userId),
+    );
 
     return {
       email: user.email,
@@ -235,9 +237,8 @@ export class AuthService {
   }
 
   async verifyAccessToken(authorizationHeader?: string): Promise<AuthIdentity> {
-    const { payload, user, userId } = await this.resolveVerifiedUserContext(
-      authorizationHeader,
-    );
+    const { payload, user, userId } =
+      await this.resolveVerifiedUserContext(authorizationHeader);
 
     return {
       roles: user.roles,

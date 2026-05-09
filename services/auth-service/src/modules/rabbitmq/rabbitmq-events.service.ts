@@ -22,9 +22,7 @@ type AuthEmailVerifiedEvent = {
 export class RabbitMqEventsService implements OnModuleDestroy {
   private client: ClientProxy | null = null;
 
-  constructor(
-    private readonly configurationService: ConfigurationService,
-  ) {}
+  constructor(private readonly configurationService: ConfigurationService) {}
 
   async publishAuthEmailVerified(
     payload: AuthEmailVerifiedEvent,

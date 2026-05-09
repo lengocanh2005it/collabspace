@@ -45,7 +45,10 @@ export class IdentityService {
     roleId: string,
     input: AssignRolePermissionInput,
   ): Promise<RoleEntity> {
-    const permissionName = this.normalizeName(input.permissionName, 'permission');
+    const permissionName = this.normalizeName(
+      input.permissionName,
+      'permission',
+    );
     const role = await this.roleRepository.findOne({
       where: {
         id: roleId,
@@ -130,9 +133,14 @@ export class IdentityService {
     return this.toAuthUser(await this.loadUserById(user.id));
   }
 
-  async createPermission(input: CreatePermissionInput): Promise<PermissionEntity> {
+  async createPermission(
+    input: CreatePermissionInput,
+  ): Promise<PermissionEntity> {
     const name = this.normalizeName(input.name, 'permission');
-    const description = this.normalizeDescription(input.description, 'permission');
+    const description = this.normalizeDescription(
+      input.description,
+      'permission',
+    );
 
     const existingPermission = await this.permissionRepository.findOne({
       where: {
@@ -226,7 +234,9 @@ export class IdentityService {
     );
 
     const roleNames =
-      input.roleNames && input.roleNames.length > 0 ? input.roleNames : ['user'];
+      input.roleNames && input.roleNames.length > 0
+        ? input.roleNames
+        : ['user'];
 
     for (const roleName of roleNames) {
       const role = await this.ensureRole(roleName);
@@ -448,8 +458,8 @@ export class IdentityService {
     const permissions = user.userRoles
       .flatMap((userRole) => userRole.role?.rolePermissions ?? [])
       .map((rolePermission) => rolePermission.permission?.name)
-      .filter(
-        (permissionName): permissionName is string => Boolean(permissionName),
+      .filter((permissionName): permissionName is string =>
+        Boolean(permissionName),
       );
 
     return {

@@ -14,7 +14,10 @@ export class RoleEntity {
   @Column({ type: 'varchar' })
   name!: string;
 
-  @OneToMany(() => RolePermissionEntity, (rolePermission) => rolePermission.role)
+  @OneToMany(
+    () => RolePermissionEntity,
+    (rolePermission) => rolePermission.role,
+  )
   rolePermissions!: RolePermissionEntity[];
 
   @OneToMany(() => UserRoleEntity, (userRole) => userRole.role)

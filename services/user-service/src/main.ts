@@ -1,5 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
+import { join } from 'node:path';
 import { DataSource } from 'typeorm';
 import { AppModule } from './app.module';
 
@@ -15,9 +16,34 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.setGlobalPrefix('api/v1');
   const dataSource = app.get(DataSource);
+  let hasConnectedMicroservice = false;
+  const protoDir = join(process.cwd(), 'proto');
 
   if (process.env.DATABASE_URL && !dataSource.isInitialized) {
     await dataSource.initialize();
+  }
+
+  const grpcEnabled = toBoolean(process.env.GRPC_ENABLED, true);
+
+  if (grpcEnabled) {
+    app.connectMicroservice<MicroserviceOptions>({
+      options: {
+        loader: {
+          arrays: true,
+          enums: String,
+          includeDirs: [protoDir],
+          keepCase: false,
+          objects: true,
+          oneofs: true,
+        },
+        package: 'user',
+        protoPath: [join(protoDir, 'user.proto')],
+        url: process.env.GRPC_URL ?? '0.0.0.0:50052',
+      },
+      transport: Transport.GRPC,
+    });
+
+    hasConnectedMicroservice = true;
   }
 
   const rabbitMqEnabled = toBoolean(process.env.RABBITMQ_ENABLED, false);
@@ -37,6 +63,10 @@ async function bootstrap() {
       transport: Transport.RMQ,
     });
 
+    hasConnectedMicroservice = true;
+  }
+
+  if (hasConnectedMicroservice) {
     await app.startAllMicroservices();
   }
 

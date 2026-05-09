@@ -204,7 +204,9 @@ function toBoolean(value: string | undefined, fallback: boolean): boolean {
   return ['1', 'true', 'yes', 'on'].includes(value.toLowerCase());
 }
 
-async function seedRoles(dataSource: DataSource): Promise<Map<string, RoleEntity>> {
+async function seedRoles(
+  dataSource: DataSource,
+): Promise<Map<string, RoleEntity>> {
   const roleRepository = dataSource.getRepository(RoleEntity);
   const rolesByName = new Map<string, RoleEntity>();
 
@@ -261,13 +263,16 @@ async function seedRolePermissions(
   rolesByName: Map<string, RoleEntity>,
   permissionsByName: Map<string, PermissionEntity>,
 ): Promise<void> {
-  const rolePermissionRepository = dataSource.getRepository(RolePermissionEntity);
+  const rolePermissionRepository =
+    dataSource.getRepository(RolePermissionEntity);
 
   for (const seedRole of SEED_ROLES) {
     const role = rolesByName.get(seedRole.name);
 
     if (!role) {
-      throw new Error(`Missing role ${seedRole.name} during role permission seed`);
+      throw new Error(
+        `Missing role ${seedRole.name} during role permission seed`,
+      );
     }
 
     for (const permissionName of seedRole.permissionNames) {

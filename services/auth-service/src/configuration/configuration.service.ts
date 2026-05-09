@@ -59,8 +59,9 @@ export type GraphileWorkerConfig = {
 
 export type GrpcConfig = {
   enabled: boolean;
-  packageName: string;
-  protoPath: string;
+  includeDirs: string[];
+  packageName: string | string[];
+  protoPath: string[];
   url: string;
 };
 
@@ -90,7 +91,7 @@ export type RedisConfig = {
 };
 
 export type UserServiceConfig = {
-  url: string;
+  grpcUrl: string;
 };
 
 @Injectable()
@@ -211,10 +212,13 @@ export class ConfigurationService {
   }
 
   getGrpcConfig(): GrpcConfig {
+    const protoDir = join(process.cwd(), 'proto');
+
     return {
       enabled: this.configService.get<boolean>('grpc.enabled') ?? false,
+      includeDirs: [protoDir],
       packageName: 'auth',
-      protoPath: join(process.cwd(), 'proto', 'auth.proto'),
+      protoPath: [join(protoDir, 'auth.proto')],
       url: this.configService.get<string>('grpc.url') ?? '0.0.0.0:50051',
     };
   }
@@ -227,6 +231,7 @@ export class ConfigurationService {
         loader: {
           arrays: true,
           enums: String,
+          includeDirs: grpcConfig.includeDirs,
           keepCase: false,
           objects: true,
           oneofs: true,
@@ -245,8 +250,7 @@ export class ConfigurationService {
       noAck: this.configService.get<boolean>('rabbitmq.noAck') ?? false,
       prefetchCount:
         this.configService.get<number>('rabbitmq.prefetchCount') ?? 10,
-      queue:
-        this.configService.get<string>('rabbitmq.queue') ?? 'auth-service',
+      queue: this.configService.get<string>('rabbitmq.queue') ?? 'auth-service',
       queueDurable:
         this.configService.get<boolean>('rabbitmq.queueDurable') ?? true,
       userServiceQueue:
@@ -309,9 +313,9 @@ export class ConfigurationService {
 
   getUserServiceConfig(): UserServiceConfig {
     return {
-      url:
-        this.configService.get<string>('userService.url') ??
-        'http://user-service:3000',
+      grpcUrl:
+        this.configService.get<string>('userService.grpcUrl') ??
+        'user-service:50052',
     };
   }
 }

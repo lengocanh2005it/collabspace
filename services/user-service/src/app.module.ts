@@ -6,19 +6,13 @@ import { USER_PROFILE_REPOSITORY } from './domain/repositories/user-profile.repo
 import { DatabaseModule } from './infrastructure/database/database.module';
 import { InMemoryUserProfileRepository } from './infrastructure/repositories/in-memory-user-profile.repository';
 import { TypeOrmUserProfileRepository } from './infrastructure/repositories/typeorm-user-profile.repository';
-import {
-  InternalUsersController,
-  UsersController,
-} from './presentation/http/users.controller';
+import { UsersController } from './presentation/http/users.controller';
+import { UserProfilesGrpcController } from './presentation/grpc/user-profiles.grpc.controller';
 import { AuthEventsController } from './presentation/rabbitmq/auth-events.controller';
 
 @Module({
   imports: [DatabaseModule],
-  controllers: [
-    UsersController,
-    InternalUsersController,
-    AuthEventsController,
-  ],
+  controllers: [UsersController, UserProfilesGrpcController, AuthEventsController],
   providers: [
     CreatePendingUserProfileUseCase,
     GetUserProfileUseCase,

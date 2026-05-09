@@ -1,7 +1,7 @@
 import { ConfigurationService } from '@/configuration/configuration.service';
 import { EmailsService } from '@/modules/emails/emails.service';
 import { IdentityService } from '@/modules/identity/identity.service';
-import { UserProfilesClientService } from '@/modules/identity/user-profiles-client.service';
+import { UserProfilesGrpcService } from '@/modules/identity/user-profiles-grpc.service';
 import { RabbitMqEventsService } from '@/modules/rabbitmq/rabbitmq-events.service';
 import { RedisService } from '@/modules/redis/redis.service';
 import { RefreshTokensService } from '@/modules/refresh-tokens/refresh-tokens.service';
@@ -52,9 +52,9 @@ describe('AuthService', () => {
   const rabbitMqEventsServiceMock = {
     publishAuthEmailVerified: jest.fn(),
   } as unknown as RabbitMqEventsService;
-  const userProfilesClientServiceMock = {
+  const userProfilesGrpcServiceMock = {
     createPendingProfile: jest.fn(),
-  } as unknown as UserProfilesClientService;
+  } as unknown as UserProfilesGrpcService;
   let authService: AuthService;
 
   beforeEach(() => {
@@ -70,7 +70,7 @@ describe('AuthService', () => {
       rabbitMqEventsServiceMock,
       redisServiceMock,
       refreshTokensServiceMock,
-      userProfilesClientServiceMock,
+      userProfilesGrpcServiceMock,
     );
   });
 
@@ -212,7 +212,9 @@ describe('AuthService', () => {
       roles: ['user'],
       userId: 'user-3',
     });
-    jest.spyOn(userProfilesClientServiceMock, 'createPendingProfile').mockResolvedValue(undefined);
+    jest
+      .spyOn(userProfilesGrpcServiceMock, 'createPendingProfile')
+      .mockResolvedValue(undefined);
     jest.spyOn(redisServiceMock, 'setJson').mockResolvedValue('OK');
     jest.spyOn(emailsServiceMock, 'sendText').mockResolvedValue({} as never);
 
@@ -227,12 +229,12 @@ describe('AuthService', () => {
     expect(result.emailVerified).toBe(false);
     expect(redisServiceMock.setJson).toHaveBeenCalled();
     expect(emailsServiceMock.sendText).toHaveBeenCalled();
-    expect(userProfilesClientServiceMock.createPendingProfile).toHaveBeenCalledWith(
-      {
-        fullName: 'New User',
-        userId: 'user-3',
-      },
-    );
+    expect(
+      userProfilesGrpcServiceMock.createPendingProfile,
+    ).toHaveBeenCalledWith({
+      fullName: 'New User',
+      userId: 'user-3',
+    });
   });
 
   it('resends verification otp for a pending user', async () => {
@@ -327,7 +329,9 @@ describe('AuthService', () => {
       roles: ['user'],
       userId: 'user-3',
     });
-    jest.spyOn(rabbitMqEventsServiceMock, 'publishAuthEmailVerified').mockResolvedValue(undefined);
+    jest
+      .spyOn(rabbitMqEventsServiceMock, 'publishAuthEmailVerified')
+      .mockResolvedValue(undefined);
     jest.spyOn(redisServiceMock, 'delete').mockResolvedValue(1);
 
     await expect(
@@ -340,7 +344,9 @@ describe('AuthService', () => {
       emailVerified: true,
       verified: true,
     });
-    expect(rabbitMqEventsServiceMock.publishAuthEmailVerified).toHaveBeenCalledWith(
+    expect(
+      rabbitMqEventsServiceMock.publishAuthEmailVerified,
+    ).toHaveBeenCalledWith(
       expect.objectContaining({
         email: 'new@collabspace.dev',
         userId: 'user-3',
@@ -365,18 +371,18 @@ describe('AuthService', () => {
       workspaceId: 'workspace-4',
     });
 
-    await expect(authService.getCurrentUser(`Bearer ${token}`)).resolves.toEqual(
-      {
-        email: 'admin@collabspace.dev',
-        emailVerified: true,
-        isActive: true,
-        permissions: ['users.read', 'users.write'],
-        role: 'admin',
-        roles: ['admin'],
-        userId: 'user-4',
-        workspaceId: 'workspace-4',
-      },
-    );
+    await expect(
+      authService.getCurrentUser(`Bearer ${token}`),
+    ).resolves.toEqual({
+      email: 'admin@collabspace.dev',
+      emailVerified: true,
+      isActive: true,
+      permissions: ['users.read', 'users.write'],
+      role: 'admin',
+      roles: ['admin'],
+      userId: 'user-4',
+      workspaceId: 'workspace-4',
+    });
   });
 
   it('revokes refresh token on logout', async () => {

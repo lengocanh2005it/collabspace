@@ -182,8 +182,10 @@ Base prefix: `/api/v1`
 Base prefix: `/api/v1`
 - `GET /api/v1/users/{id}` - Get user profile
 - `GET /api/v1/users/health` - Health check
-- `POST /api/v1/internal/users/profiles` - Internal pending profile bootstrap
 - `PATCH /api/v1/users/{id}` - Update user profile
+
+Internal service contract:
+- `auth-service` bootstraps pending profiles in `user-service` via gRPC `UserProfilesService.CreatePendingProfile`
 
 ### Workspace Service (`/workspaces`)
 - `POST /workspaces` - Create workspace

@@ -8,7 +8,7 @@
   "scripts": {
     "build": "nest build && tsc-alias -p tsconfig.build.json",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
-    "proto:gen": "tsproto --path ./proto --output ./src/generated/proto --target auth.proto",
+    "proto:gen": "node ./scripts/proto/generate.cjs",
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
