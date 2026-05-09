@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+package user;
+
+service UserProfilesService {
+  rpc CreatePendingProfile(CreatePendingProfileRequest) returns (CreatePendingProfileResponse);
+  rpc GetProfile(GetProfileRequest) returns (GetProfileResponse);
+  rpc GetProfiles(GetProfilesRequest) returns (GetProfilesResponse);
+}
+
+message CreatePendingProfileRequest {
+  string user_id = 1;
+  string full_name = 2;
+}
+
+message CreatePendingProfileResponse {
+  bool success = 1;
+  string user_id = 2;
+}
+
+message GetProfileRequest {
+  string user_id = 1;
+}
+
+message GetProfileResponse {
+  string user_id = 1;
+  string full_name = 2;
+}
+
+message GetProfilesRequest {
+  repeated string user_ids = 1;
+}
+
+message GetProfilesResponse {
+  repeated UserProfileSummary profiles = 1;
+}
+
+message UserProfileSummary {
+  string user_id = 1;
+  string full_name = 2;
+  string avatar_url = 3;
+}

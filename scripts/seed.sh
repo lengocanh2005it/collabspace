@@ -1,16 +1,12 @@
-#!/bin/bash
-# Seed sample data
+#!/bin/sh
+set -eu
 
-echo "Seeding auth-service..."
-cd ../services/auth-service && node prisma/seed.js
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname "$0")" && pwd)
+ROOT_DIR=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)
 
-echo "Seeding user-service..."
-cd ../services/user-service && node prisma/seed.js
+echo "Running seed scripts from $ROOT_DIR"
 
-echo "Seeding workspace-service..."
-cd ../services/workspace-service && ./gradlew runSeed
+sh "$ROOT_DIR/services/auth-service/scripts/seed.sh"
+sh "$ROOT_DIR/services/user-service/scripts/seed.sh"
 
-echo "Seeding task-service..."
-cd ../services/task-service && node seed.js
-
-echo "Seed data inserted successfully!"
+echo "Seed data inserted successfully for auth-service and user-service."

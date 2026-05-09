@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package auth;
+
+service AuthService {
+  rpc VerifyAccessToken(VerifyAccessTokenRequest) returns (VerifyAccessTokenResponse);
+}
+
+message VerifyAccessTokenRequest {
+  string authorization = 1;
+}
+
+message VerifyAccessTokenResponse {
+  bool authenticated = 1;
+  string user_id = 2;
+  string role = 3;
+  string workspace_id = 4;
+  repeated string roles = 5;
+  repeated string permissions = 6;
+  bool email_verified = 7;
+}
