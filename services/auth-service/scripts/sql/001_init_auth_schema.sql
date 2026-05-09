@@ -1,12 +1,16 @@
 CREATE TABLE IF NOT EXISTS users (
   id uuid PRIMARY KEY,
   email varchar NOT NULL UNIQUE,
+  email_verified_at timestamptz NULL,
   password_hash varchar NOT NULL,
   is_active boolean NOT NULL DEFAULT true,
   deleted_at timestamptz NULL,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
+
+ALTER TABLE users
+  ADD COLUMN IF NOT EXISTS email_verified_at timestamptz NULL;
 
 CREATE TABLE IF NOT EXISTS roles (
   id uuid PRIMARY KEY,

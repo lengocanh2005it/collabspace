@@ -5,6 +5,8 @@ import { GetUserProfileUseCase } from './get-user-profile.use-case';
 describe('GetUserProfileUseCase', () => {
   const userProfileRepositoryMock: UserProfileRepository = {
     findByUserId: jest.fn(),
+    markEmailVerified: jest.fn(),
+    upsertPending: jest.fn(),
   };
 
   let getUserProfileUseCase: GetUserProfileUseCase;
@@ -20,6 +22,7 @@ describe('GetUserProfileUseCase', () => {
       bio: 'Product designer',
       createdAt: new Date('2026-01-01T00:00:00.000Z'),
       deletedAt: null,
+      emailVerified: true,
       fullName: 'Jane Doe',
       id: 'profile-1',
       updatedAt: new Date('2026-01-02T00:00:00.000Z'),
@@ -30,6 +33,7 @@ describe('GetUserProfileUseCase', () => {
       avatarUrl: 'https://cdn.example.com/avatar-1.png',
       bio: 'Product designer',
       createdAt: '2026-01-01T00:00:00.000Z',
+      emailVerified: true,
       fullName: 'Jane Doe',
       id: 'profile-1',
       updatedAt: '2026-01-02T00:00:00.000Z',

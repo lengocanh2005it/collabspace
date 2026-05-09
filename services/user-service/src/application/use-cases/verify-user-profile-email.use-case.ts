@@ -1,24 +1,17 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { USER_PROFILE_REPOSITORY } from '../../domain/repositories/user-profile.repository';
 import type { UserProfileRepository } from '../../domain/repositories/user-profile.repository';
 import { UserProfileResponseDto } from '../dto/user-profile-response.dto';
 
 @Injectable()
-export class GetUserProfileUseCase {
+export class VerifyUserProfileEmailUseCase {
   constructor(
     @Inject(USER_PROFILE_REPOSITORY)
     private readonly userProfileRepository: UserProfileRepository,
   ) {}
 
   async execute(userId: string): Promise<UserProfileResponseDto> {
-    const profile = await this.userProfileRepository.findByUserId(userId);
-
-    if (!profile || profile.deletedAt) {
-      throw new NotFoundException({
-        code: 'USER_PROFILE_NOT_FOUND',
-        message: `Profile for user ${userId} was not found`,
-      });
-    }
+    const profile = await this.userProfileRepository.markEmailVerified(userId);
 
     return {
       avatarUrl: profile.avatarUrl,

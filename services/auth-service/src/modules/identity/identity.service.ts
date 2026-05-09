@@ -186,8 +186,20 @@ export class IdentityService {
     return this.toAuthUser(await this.loadUserById(userId));
   }
 
+  async markEmailVerified(userId: string): Promise<AuthUser> {
+    const user = await this.loadUserById(userId);
+
+    if (!user.emailVerifiedAt) {
+      user.emailVerifiedAt = new Date();
+      await this.userRepository.save(user);
+    }
+
+    return this.toAuthUser(user);
+  }
+
   async register(input: RegisterInput): Promise<AuthUser> {
     const email = this.normalizeEmail(input.email);
+    this.normalizeFullName(input.fullName);
     const password = this.normalizePassword(input.password);
     const existingUser = await this.userRepository.findOne({
       where: {
@@ -206,6 +218,7 @@ export class IdentityService {
     const user = await this.userRepository.save(
       this.userRepository.create({
         email,
+        emailVerifiedAt: null,
         id: randomUUID(),
         isActive: true,
         passwordHash: await this.hashPassword(password),
@@ -249,6 +262,13 @@ export class IdentityService {
       throw new UnauthorizedException({
         code: 'LOGIN_INVALID',
         message: 'Email or password is invalid',
+      });
+    }
+
+    if (!user.emailVerifiedAt) {
+      throw new UnauthorizedException({
+        code: 'EMAIL_NOT_VERIFIED',
+        message: 'Email address has not been verified',
       });
     }
 
@@ -395,6 +415,19 @@ export class IdentityService {
     return normalizedValue;
   }
 
+  private normalizeFullName(fullName: string): string {
+    const normalizedFullName = fullName?.trim();
+
+    if (!normalizedFullName) {
+      throw new BadRequestException({
+        code: 'FULL_NAME_REQUIRED',
+        message: 'Full name is required',
+      });
+    }
+
+    return normalizedFullName;
+  }
+
   private normalizePassword(password: string): string {
     const normalizedPassword = password?.trim();
 
@@ -421,6 +454,7 @@ export class IdentityService {
 
     return {
       email: user.email,
+      emailVerified: !!user.emailVerifiedAt,
       isActive: user.isActive,
       permissions: [...new Set(permissions)],
       role: roles[0],

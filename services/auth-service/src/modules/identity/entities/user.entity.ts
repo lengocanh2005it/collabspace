@@ -22,6 +22,9 @@ export class UserEntity {
   @Column({ type: 'varchar' })
   email!: string;
 
+  @Column({ name: 'email_verified_at', nullable: true, type: 'timestamptz' })
+  emailVerifiedAt!: Date | null;
+
   @PrimaryColumn({ type: 'uuid' })
   id!: string;
 

@@ -169,14 +169,17 @@ sh ./scripts/seed.sh
 ## API Routes
 
 ### Auth Service (`/auth`)
-- `POST /auth/register` - User registration
+- `POST /auth/register` - User registration, creates pending profile, sends OTP email
 - `POST /auth/login` - User login (returns JWT)
+- `POST /auth/resend-verification-otp` - Resend email verification OTP with Redis rate limiting
+- `POST /auth/verify-email` - Verify email OTP
 - `POST /auth/refresh` - Refresh JWT token
 - `GET /auth/me` - Get current user
 - `GET /auth/health` - Health check
 
 ### User Service (`/users`)
 - `GET /users/{id}` - Get user profile
+- `POST /internal/users/profiles` - Internal pending profile bootstrap
 - `PATCH /users/{id}` - Update user profile
 
 ### Workspace Service (`/workspaces`)

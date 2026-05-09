@@ -31,11 +31,27 @@ describe('AppController (e2e)', () => {
       avatarUrl: 'https://cdn.example.com/avatar-1.png',
       bio: 'Product designer',
       createdAt: '2026-01-01T00:00:00.000Z',
+      emailVerified: true,
       fullName: 'Jane Doe',
       id: 'profile-1',
       updatedAt: '2026-01-02T00:00:00.000Z',
       userId: 'user-1',
     });
+  });
+
+  it('/internal/users/profiles (POST)', () => {
+    return request(app.getHttpServer())
+      .post('/internal/users/profiles')
+      .send({
+        fullName: 'Pending User',
+        userId: 'pending-user-1',
+      })
+      .expect(201)
+      .expect((response) => {
+        expect(response.body.userId).toBe('pending-user-1');
+        expect(response.body.fullName).toBe('Pending User');
+        expect(response.body.emailVerified).toBe(false);
+      });
   });
 
   afterEach(async () => {

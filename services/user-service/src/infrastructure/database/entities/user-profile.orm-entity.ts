@@ -23,6 +23,9 @@ export class UserProfileOrmEntity {
   @DeleteDateColumn({ name: 'deleted_at', nullable: true, type: 'timestamptz' })
   deletedAt!: Date | null;
 
+  @Column({ default: false, name: 'email_verified', type: 'boolean' })
+  emailVerified!: boolean;
+
   @Column({ name: 'full_name', type: 'varchar' })
   fullName!: string;
 

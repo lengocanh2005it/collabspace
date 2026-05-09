@@ -7,6 +7,11 @@ import {
   AuthUser,
   LoginInput,
   RegisterInput,
+  RegisterPendingResult,
+  ResendEmailVerificationOtpInput,
+  ResendEmailVerificationOtpResult,
+  VerifyEmailOtpInput,
+  VerifyEmailOtpResult,
 } from '@/common/types/identity.type';
 import {
   AuthIdentity,
@@ -14,17 +19,40 @@ import {
   SignAccessTokenInput,
 } from '@/common/types/jwt.type';
 import { ConfigurationService } from '@/configuration/configuration.service';
+import { EmailsService } from '@/modules/emails/emails.service';
 import { IdentityService } from '@/modules/identity/identity.service';
+import { UserProfilesClientService } from '@/modules/identity/user-profiles-client.service';
+import { RabbitMqEventsService } from '@/modules/rabbitmq/rabbitmq-events.service';
+import { RedisService } from '@/modules/redis/redis.service';
 import { RefreshTokensService } from '@/modules/refresh-tokens/refresh-tokens.service';
-import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { createSecretKey } from 'crypto';
+import {
+  Injectable,
+  TooManyRequestsException,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { createHash, createSecretKey, randomInt } from 'crypto';
+
+type EmailVerificationOtpPayload = {
+  email: string;
+  otpHash: string;
+};
+
+type EmailVerificationOtpDispatchResult = {
+  email: string;
+  otpExpiresInSeconds: number;
+  userId: string;
+};
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly configurationService: ConfigurationService,
+    private readonly emailsService: EmailsService,
     private readonly identityService: IdentityService,
+    private readonly rabbitMqEventsService: RabbitMqEventsService,
+    private readonly redisService: RedisService,
     private readonly refreshTokensService: RefreshTokensService,
+    private readonly userProfilesClientService: UserProfilesClientService,
   ) {}
 
   async getCurrentUser(authorizationHeader?: string): Promise<
@@ -90,9 +118,94 @@ export class AuthService {
     };
   }
 
-  async register(input: RegisterInput): Promise<AuthSession> {
+  async register(input: RegisterInput): Promise<RegisterPendingResult> {
     const user = await this.identityService.register(input);
-    return this.issueSession(user, input.workspaceId);
+    await this.userProfilesClientService.createPendingProfile({
+      fullName: input.fullName,
+      userId: user.userId,
+    });
+
+    const result = await this.sendEmailVerificationOtp(user);
+
+    return {
+      ...result,
+      emailVerified: false,
+      verificationRequired: true,
+    };
+  }
+
+  async resendEmailVerificationOtp(
+    input: ResendEmailVerificationOtpInput,
+  ): Promise<ResendEmailVerificationOtpResult> {
+    if (!input.userId || input.userId.trim().length === 0) {
+      throw new UnauthorizedException({
+        code: 'EMAIL_VERIFICATION_INVALID',
+        message: 'User id is required',
+      });
+    }
+
+    const user = await this.identityService.getAuthUserById(input.userId);
+
+    if (user.emailVerified) {
+      throw new UnauthorizedException({
+        code: 'EMAIL_ALREADY_VERIFIED',
+        message: 'Email address has already been verified',
+      });
+    }
+
+    await this.assertEmailVerificationResendAllowed(user.userId);
+    const result = await this.sendEmailVerificationOtp(user);
+
+    return {
+      ...result,
+      emailVerified: false,
+      resent: true,
+    };
+  }
+
+  async verifyEmailOtp(
+    input: VerifyEmailOtpInput,
+  ): Promise<VerifyEmailOtpResult> {
+    const otp = input.otp?.trim();
+
+    if (!input.userId || input.userId.trim().length === 0 || !otp) {
+      throw new UnauthorizedException({
+        code: 'EMAIL_VERIFICATION_INVALID',
+        message: 'User id and OTP are required',
+      });
+    }
+
+    const otpPayload = await this.redisService.getJson<EmailVerificationOtpPayload>(
+      this.buildEmailVerificationOtpKey(input.userId),
+    );
+
+    if (!otpPayload) {
+      throw new UnauthorizedException({
+        code: 'EMAIL_VERIFICATION_OTP_EXPIRED',
+        message: 'Email verification code has expired',
+      });
+    }
+
+    if (otpPayload.otpHash !== this.hashOtp(otp)) {
+      throw new UnauthorizedException({
+        code: 'EMAIL_VERIFICATION_OTP_INVALID',
+        message: 'Email verification code is invalid',
+      });
+    }
+
+    const user = await this.identityService.markEmailVerified(input.userId);
+    await this.rabbitMqEventsService.publishAuthEmailVerified({
+      email: user.email,
+      userId: input.userId,
+      verifiedAt: new Date().toISOString(),
+    });
+    await this.redisService.delete(this.buildEmailVerificationOtpKey(input.userId));
+
+    return {
+      email: user.email,
+      emailVerified: true,
+      verified: true,
+    };
   }
 
   async signAccessToken(input: SignAccessTokenInput): Promise<string> {
@@ -217,6 +330,18 @@ export class AuthService {
     return this.configurationService.getAuthJwtConfig().expiry;
   }
 
+  private buildEmailVerificationOtpKey(userId: string): string {
+    return `email-verification:otp:${userId}`;
+  }
+
+  private buildEmailVerificationResendCooldownKey(userId: string): string {
+    return `email-verification:resend:cooldown:${userId}`;
+  }
+
+  private buildEmailVerificationResendAttemptsKey(userId: string): string {
+    return `email-verification:resend:attempts:${userId}`;
+  }
+
   private getJwtSecret() {
     const secret = this.configurationService.getAuthJwtConfig().secret;
 
@@ -266,6 +391,91 @@ export class AuthService {
     return values.find(
       (value) => typeof value === 'string' && value.length > 0,
     );
+  }
+
+  private generateEmailVerificationOtp(): string {
+    const { otpLength } =
+      this.configurationService.getEmailVerificationConfig();
+    const max = 10 ** otpLength;
+    const otp = randomInt(0, max);
+
+    return otp.toString().padStart(otpLength, '0');
+  }
+
+  private hashOtp(otp: string): string {
+    return createHash('sha256').update(otp).digest('hex');
+  }
+
+  private async assertEmailVerificationResendAllowed(
+    userId: string,
+  ): Promise<void> {
+    const emailVerificationConfig =
+      this.configurationService.getEmailVerificationConfig();
+    const cooldownKey = this.buildEmailVerificationResendCooldownKey(userId);
+    const attemptsKey = this.buildEmailVerificationResendAttemptsKey(userId);
+
+    if (await this.redisService.exists(cooldownKey)) {
+      const ttl = await this.redisService.ttl(cooldownKey);
+      throw new TooManyRequestsException({
+        code: 'EMAIL_VERIFICATION_RESEND_COOLDOWN',
+        message: `Please wait ${Math.max(ttl, 1)} seconds before resending OTP`,
+      });
+    }
+
+    const attempts = await this.redisService.increment(attemptsKey);
+
+    if (attempts === 1) {
+      await this.redisService.expire(
+        attemptsKey,
+        emailVerificationConfig.resendWindowSeconds,
+      );
+    }
+
+    if (attempts > emailVerificationConfig.resendMaxAttempts) {
+      const ttl = await this.redisService.ttl(attemptsKey);
+      throw new TooManyRequestsException({
+        code: 'EMAIL_VERIFICATION_RESEND_LIMIT_REACHED',
+        message: `OTP resend limit reached. Try again in ${Math.max(ttl, 1)} seconds`,
+      });
+    }
+
+    await this.redisService.set(
+      cooldownKey,
+      '1',
+      emailVerificationConfig.resendCooldownSeconds,
+    );
+  }
+
+  private async sendEmailVerificationOtp(
+    user: AuthUser,
+  ): Promise<EmailVerificationOtpDispatchResult> {
+    const otp = this.generateEmailVerificationOtp();
+    const otpTtlSeconds =
+      this.configurationService.getEmailVerificationConfig().otpTtlSeconds;
+
+    await this.redisService.setJson(
+      this.buildEmailVerificationOtpKey(user.userId),
+      {
+        email: user.email,
+        otpHash: this.hashOtp(otp),
+      } satisfies EmailVerificationOtpPayload,
+      otpTtlSeconds,
+    );
+
+    await this.emailsService.sendText({
+      subject: 'Verify your CollabSpace email',
+      text: [
+        `Your CollabSpace verification code is ${otp}.`,
+        `This code expires in ${otpTtlSeconds} seconds.`,
+      ].join(' '),
+      to: user.email,
+    });
+
+    return {
+      email: user.email,
+      otpExpiresInSeconds: otpTtlSeconds,
+      userId: user.userId,
+    };
   }
 
   private assertRefreshTokenInput(input: RefreshSessionInput): void {

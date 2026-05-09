@@ -20,6 +20,22 @@ export default () => ({
     port: toNumber(process.env.PORT, 3000),
   },
   auth: {
+    emailVerification: {
+      otpLength: toNumber(process.env.EMAIL_VERIFICATION_OTP_LENGTH, 6),
+      otpTtlSeconds: toNumber(process.env.EMAIL_VERIFICATION_OTP_TTL_SECONDS, 600),
+      resendCooldownSeconds: toNumber(
+        process.env.EMAIL_VERIFICATION_RESEND_COOLDOWN_SECONDS,
+        60,
+      ),
+      resendMaxAttempts: toNumber(
+        process.env.EMAIL_VERIFICATION_RESEND_MAX_ATTEMPTS,
+        5,
+      ),
+      resendWindowSeconds: toNumber(
+        process.env.EMAIL_VERIFICATION_RESEND_WINDOW_SECONDS,
+        3600,
+      ),
+    },
     jwt: {
       audience: process.env.JWT_AUDIENCE,
       expiry: process.env.JWT_EXPIRY ?? '1h',
@@ -61,6 +77,8 @@ export default () => ({
     prefetchCount: toNumber(process.env.RABBITMQ_PREFETCH_COUNT, 10),
     queue: process.env.RABBITMQ_QUEUE ?? 'auth-service',
     queueDurable: toBoolean(process.env.RABBITMQ_QUEUE_DURABLE, true),
+    userServiceQueue:
+      process.env.RABBITMQ_USER_SERVICE_QUEUE ?? 'user-service',
     url: process.env.RABBITMQ_URL,
   },
   refreshToken: {
@@ -75,5 +93,8 @@ export default () => ({
     port: toNumber(process.env.REDIS_PORT, 6379),
     url: process.env.REDIS_URL,
     username: process.env.REDIS_USERNAME,
+  },
+  userService: {
+    url: process.env.USER_SERVICE_URL ?? 'http://user-service:3000',
   },
 });

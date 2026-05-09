@@ -131,6 +131,7 @@ async function main(): Promise<void> {
           avatarUrl: seedProfile.avatarUrl,
           bio: seedProfile.bio,
           deletedAt: null,
+          emailVerified: true,
           fullName: seedProfile.fullName,
           id: existingProfile?.id ?? seedProfile.id,
           userId: seedProfile.userId,

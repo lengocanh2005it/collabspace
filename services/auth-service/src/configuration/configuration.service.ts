@@ -21,6 +21,14 @@ export type AuthJwtConfig = {
   secret?: string;
 };
 
+export type EmailVerificationConfig = {
+  otpLength: number;
+  otpTtlSeconds: number;
+  resendCooldownSeconds: number;
+  resendMaxAttempts: number;
+  resendWindowSeconds: number;
+};
+
 export type DatabaseConfig = {
   autoLoadEntities: boolean;
   logging: boolean;
@@ -67,6 +75,7 @@ export type RabbitMqConfig = {
   prefetchCount: number;
   queue: string;
   queueDurable: boolean;
+  userServiceQueue: string;
   url?: string;
 };
 
@@ -78,6 +87,10 @@ export type RedisConfig = {
   port: number;
   url?: string;
   username?: string;
+};
+
+export type UserServiceConfig = {
+  url: string;
 };
 
 @Injectable()
@@ -97,6 +110,29 @@ export class ConfigurationService {
       expiry: this.configService.get<string>('auth.jwt.expiry') ?? '1h',
       issuer: this.configService.get<string>('auth.jwt.issuer') || undefined,
       secret: this.configService.get<string>('auth.jwt.secret') || undefined,
+    };
+  }
+
+  getEmailVerificationConfig(): EmailVerificationConfig {
+    return {
+      otpLength:
+        this.configService.get<number>('auth.emailVerification.otpLength') ?? 6,
+      otpTtlSeconds:
+        this.configService.get<number>(
+          'auth.emailVerification.otpTtlSeconds',
+        ) ?? 600,
+      resendCooldownSeconds:
+        this.configService.get<number>(
+          'auth.emailVerification.resendCooldownSeconds',
+        ) ?? 60,
+      resendMaxAttempts:
+        this.configService.get<number>(
+          'auth.emailVerification.resendMaxAttempts',
+        ) ?? 5,
+      resendWindowSeconds:
+        this.configService.get<number>(
+          'auth.emailVerification.resendWindowSeconds',
+        ) ?? 3600,
     };
   }
 
@@ -213,6 +249,9 @@ export class ConfigurationService {
         this.configService.get<string>('rabbitmq.queue') ?? 'auth-service',
       queueDurable:
         this.configService.get<boolean>('rabbitmq.queueDurable') ?? true,
+      userServiceQueue:
+        this.configService.get<string>('rabbitmq.userServiceQueue') ??
+        'user-service',
       url: this.configService.get<string>('rabbitmq.url') || undefined,
     };
   }
@@ -265,6 +304,14 @@ export class ConfigurationService {
       password: redisConfig.password,
       port: redisConfig.port,
       username: redisConfig.username,
+    };
+  }
+
+  getUserServiceConfig(): UserServiceConfig {
+    return {
+      url:
+        this.configService.get<string>('userService.url') ??
+        'http://user-service:3000',
     };
   }
 }

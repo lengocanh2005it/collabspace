@@ -19,6 +19,8 @@ import type {
   CreateRoleInput,
   LoginInput,
   RegisterInput,
+  ResendEmailVerificationOtpInput,
+  VerifyEmailOtpInput,
 } from '@/common/types/identity.type';
 import type { Request, Response } from 'express';
 import { IdentityService } from '@/modules/identity/identity.service';
@@ -68,6 +70,18 @@ export class AuthController {
   @HttpCode(201)
   async createRole(@Body() body: CreateRoleInput) {
     return this.identityService.createRole(body);
+  }
+
+  @Post('resend-verification-otp')
+  @HttpCode(200)
+  async resendVerificationOtp(@Body() body: ResendEmailVerificationOtpInput) {
+    return this.authService.resendEmailVerificationOtp(body);
+  }
+
+  @Post('verify-email')
+  @HttpCode(200)
+  async verifyEmail(@Body() body: VerifyEmailOtpInput) {
+    return this.authService.verifyEmailOtp(body);
   }
 
   @Post('roles/:roleId/permissions')

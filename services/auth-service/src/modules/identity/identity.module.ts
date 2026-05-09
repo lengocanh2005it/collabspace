@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { IdentityService } from './identity.service';
+import { UserProfilesClientService } from './user-profiles-client.service';
 import { PermissionEntity } from './entities/permission.entity';
 import { RolePermissionEntity } from './entities/role-permission.entity';
 import { RoleEntity } from './entities/role.entity';
@@ -17,7 +18,7 @@ import { UserEntity } from './entities/user.entity';
       RolePermissionEntity,
     ]),
   ],
-  providers: [IdentityService],
-  exports: [IdentityService, TypeOrmModule],
+  providers: [IdentityService, UserProfilesClientService],
+  exports: [IdentityService, TypeOrmModule, UserProfilesClientService],
 })
 export class IdentityModule {}
