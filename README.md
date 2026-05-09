@@ -32,8 +32,8 @@
 
 | Service | Tech Stack | Port | Database | Health Endpoint |
 |---------|-----------|------|----------|-----------------|
-| **auth-service** | Node.js + Prisma | 3000 | PostgreSQL (`collabspace_auth`) | `/api/v1/auth/health` |
-| **user-service** | Node.js + Prisma | 3000 | PostgreSQL (`collabspace_user`) | `/api/v1/users/health` |
+| **auth-service** | NestJS + TypeORM | 3000 | PostgreSQL (`collabspace_auth`) | `/api/v1/auth/health` |
+| **user-service** | NestJS + TypeORM | 3000 | PostgreSQL (`collabspace_user`) | `/api/v1/users/health` |
 | **workspace-service** | Java/Kotlin + Flyway | **8080** | PostgreSQL (`collabspace_workspace`) | `/workspaces/health` |
 | **task-service** | Node.js + MongoDB | 3000 | MongoDB (`collabspace_task`) | `/tasks/health` |
 | **notification-service** | Node.js | 3000 | Redis / MongoDB | `/notifications/health` |
@@ -312,8 +312,8 @@ Jenkins is available at http://localhost:8081 when running docker-compose.jenkin
 ```
 collabspace/
 ├── services/
-│   ├── auth-service/        # Authentication (Node.js + Prisma)
-│   ├── user-service/        # User profiles (Node.js + Prisma)
+│   ├── auth-service/        # Authentication (NestJS + TypeORM)
+│   ├── user-service/        # User profiles (NestJS + TypeORM)
 │   ├── workspace-service/   # Workspaces (Java/Kotlin + Flyway)
 │   ├── task-service/        # Tasks (Node.js + MongoDB)
 │   └── notification-service/# Notifications (Node.js + Redis)
