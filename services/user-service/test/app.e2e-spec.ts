@@ -16,11 +16,26 @@ describe('AppController (e2e)', () => {
     await app.init();
   });
 
-  it('/ (GET)', () => {
+  it('/health (GET)', () => {
     return request(app.getHttpServer())
-      .get('/')
+      .get('/health')
       .expect(200)
-      .expect('Hello World!');
+      .expect({
+        service: 'user-service',
+        status: 'ok',
+      });
+  });
+
+  it('/users/:id (GET)', () => {
+    return request(app.getHttpServer()).get('/users/user-1').expect(200).expect({
+      avatarUrl: 'https://cdn.example.com/avatar-1.png',
+      bio: 'Product designer',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      fullName: 'Jane Doe',
+      id: 'profile-1',
+      updatedAt: '2026-01-02T00:00:00.000Z',
+      userId: 'user-1',
+    });
   });
 
   afterEach(async () => {
