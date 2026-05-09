@@ -3,21 +3,33 @@ import {
   Controller,
   Get,
   HttpCode,
+  Param,
   Post,
   Req,
   Res,
 } from '@nestjs/common';
 import type {
-  LoginInput,
   LogoutInput,
   RefreshSessionInput,
 } from '@/common/types/auth-session.type';
+import type {
+  AssignRolePermissionInput,
+  AssignUserRoleInput,
+  CreatePermissionInput,
+  CreateRoleInput,
+  LoginInput,
+  RegisterInput,
+} from '@/common/types/identity.type';
 import type { Request, Response } from 'express';
+import { IdentityService } from '@/modules/identity/identity.service';
 import { AuthService } from './app.service';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly identityService: IdentityService,
+  ) {}
 
   @Get('health')
   @HttpCode(200)
@@ -34,6 +46,39 @@ export class AuthController {
     return this.authService.login(body);
   }
 
+  @Get('me')
+  @HttpCode(200)
+  async me(@Req() request: Request) {
+    return this.authService.getCurrentUser(request.header('authorization'));
+  }
+
+  @Post('permissions')
+  @HttpCode(201)
+  async createPermission(@Body() body: CreatePermissionInput) {
+    return this.identityService.createPermission(body);
+  }
+
+  @Post('register')
+  @HttpCode(201)
+  async register(@Body() body: RegisterInput) {
+    return this.authService.register(body);
+  }
+
+  @Post('roles')
+  @HttpCode(201)
+  async createRole(@Body() body: CreateRoleInput) {
+    return this.identityService.createRole(body);
+  }
+
+  @Post('roles/:roleId/permissions')
+  @HttpCode(200)
+  async assignPermissionToRole(
+    @Param('roleId') roleId: string,
+    @Body() body: AssignRolePermissionInput,
+  ) {
+    return this.identityService.assignPermissionToRole(roleId, body);
+  }
+
   @Post('logout')
   @HttpCode(200)
   async logout(@Body() body: LogoutInput) {
@@ -44,6 +89,15 @@ export class AuthController {
   @HttpCode(200)
   async refresh(@Body() body: RefreshSessionInput) {
     return this.authService.refresh(body);
+  }
+
+  @Post('users/:userId/roles')
+  @HttpCode(200)
+  async assignRoleToUser(
+    @Param('userId') userId: string,
+    @Body() body: AssignUserRoleInput,
+  ) {
+    return this.identityService.assignRoleToUser(userId, body);
   }
 
   @Get('verify')
@@ -62,6 +116,10 @@ export class AuthController {
 
     if (identity.role) {
       response.setHeader('X-Role', identity.role);
+    }
+
+    if (identity.roles.length > 0) {
+      response.setHeader('X-Roles', identity.roles.join(','));
     }
 
     if (identity.workspaceId) {

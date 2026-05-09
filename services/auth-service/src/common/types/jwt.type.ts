@@ -12,12 +12,14 @@ export type JwtPayload = JWTPayload & {
 };
 
 export type AuthIdentity = {
+  roles: string[];
   role?: string;
   workspaceId?: string;
   userId: string;
 };
 
 export type SignAccessTokenInput = {
+  roles?: string[];
   role?: string;
   workspaceId?: string;
   userId: string;

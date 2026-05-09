@@ -125,6 +125,38 @@ docker-compose -f docker-compose.yml -f docker-compose.db.yml -f docker-compose.
    ./scripts/seed.sh
    ```
 
+### Seeded Development Accounts
+
+After seeding `auth-service` and `user-service`, these demo accounts are available:
+
+| Name | Email | Role | Password |
+|------|-------|------|----------|
+| Phan Phu Tho | `tho@collabspace.dev` | `admin` | `collabspace123` |
+| Le Ngoc Anh | `ngocanh@collabspace.dev` | `member` | `collabspace123` |
+| Ngo Quang Tien | `quangtien@collabspace.dev` | `member` | `collabspace123` |
+| Vo Trung Tin | `trungtin@collabspace.dev` | `member` | `collabspace123` |
+| Demo Reviewer | `reviewer@collabspace.dev` | `viewer` | `collabspace123` |
+
+Seed order for aligned demo data:
+
+```powershell
+cd services/auth-service
+npm run seed
+
+cd ../user-service
+npm run seed
+```
+
+Or run the shell wrappers that are easier to reuse in Docker images and CI jobs:
+
+```sh
+sh ./services/auth-service/scripts/seed.sh
+sh ./services/user-service/scripts/seed.sh
+
+# seed both in the correct order
+sh ./scripts/seed.sh
+```
+
 ## Team
 
 | Member | Name | Role | Responsibilities |

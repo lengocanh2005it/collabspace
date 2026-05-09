@@ -1,15 +1,20 @@
 import {
   AuthSession,
-  LoginInput,
   LogoutInput,
   RefreshSessionInput,
 } from '@/common/types/auth-session.type';
+import {
+  AuthUser,
+  LoginInput,
+  RegisterInput,
+} from '@/common/types/identity.type';
 import {
   AuthIdentity,
   JwtPayload,
   SignAccessTokenInput,
 } from '@/common/types/jwt.type';
 import { ConfigurationService } from '@/configuration/configuration.service';
+import { IdentityService } from '@/modules/identity/identity.service';
 import { RefreshTokensService } from '@/modules/refresh-tokens/refresh-tokens.service';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { createSecretKey } from 'crypto';
@@ -18,26 +23,34 @@ import { createSecretKey } from 'crypto';
 export class AuthService {
   constructor(
     private readonly configurationService: ConfigurationService,
+    private readonly identityService: IdentityService,
     private readonly refreshTokensService: RefreshTokensService,
   ) {}
 
-  async login(input: LoginInput): Promise<AuthSession> {
-    const identity = this.normalizeIdentity(input);
-    const accessToken = await this.signAccessToken(identity);
-
-    const refreshTokenPayload = await this.refreshTokensService.issue({
-      userId: identity.userId,
-      workspaceId: identity.workspaceId,
-    });
+  async getCurrentUser(authorizationHeader?: string): Promise<
+    AuthUser & {
+      workspaceId?: string | null;
+    }
+  > {
+    const { payload, user } = await this.resolveVerifiedUserContext(
+      authorizationHeader,
+    );
 
     return {
-      accessToken,
-      expiresIn: this.getJwtExpiry(),
-      refreshToken: refreshTokenPayload.refreshToken,
-      role: identity.role,
-      userId: identity.userId,
-      workspaceId: identity.workspaceId ?? null,
+      ...user,
+      workspaceId:
+        this.readFirstString(
+          payload.workspaceId,
+          payload.workspace_id,
+          payload.tenantId,
+          payload.tenant_id,
+        ) ?? null,
     };
+  }
+
+  async login(input: LoginInput): Promise<AuthSession> {
+    const user = await this.identityService.validateCredentials(input);
+    return this.issueSession(user, input.workspaceId);
   }
 
   async logout(input: LogoutInput): Promise<{ revoked: true }> {
@@ -55,18 +68,31 @@ export class AuthService {
     const refreshTokenPayload = await this.refreshTokensService.rotate(
       input.refreshToken,
     );
+    const user = await this.identityService.getAuthUserById(
+      refreshTokenPayload.userId,
+    );
     const accessToken = await this.signAccessToken({
+      role: user.role,
+      roles: user.roles,
       userId: refreshTokenPayload.userId,
       workspaceId: refreshTokenPayload.workspaceId ?? undefined,
     });
 
     return {
       accessToken,
+      email: user.email,
       expiresIn: this.getJwtExpiry(),
       refreshToken: refreshTokenPayload.refreshToken,
+      role: user.role,
+      roles: user.roles,
       userId: refreshTokenPayload.userId,
       workspaceId: refreshTokenPayload.workspaceId ?? null,
     };
+  }
+
+  async register(input: RegisterInput): Promise<AuthSession> {
+    const user = await this.identityService.register(input);
+    return this.issueSession(user, input.workspaceId);
   }
 
   async signAccessToken(input: SignAccessTokenInput): Promise<string> {
@@ -74,7 +100,8 @@ export class AuthService {
     const jwtConfig = this.configurationService.getAuthJwtConfig();
     const { SignJWT } = await import('jose');
     const jwt = new SignJWT({
-      role: input.role,
+      role: input.role ?? input.roles?.[0],
+      roles: input.roles,
       workspaceId: input.workspaceId,
     })
       .setProtectedHeader({ alg: 'HS256', typ: 'JWT' })
@@ -94,26 +121,32 @@ export class AuthService {
   }
 
   async verifyAccessToken(authorizationHeader?: string): Promise<AuthIdentity> {
-    const token = this.extractBearerToken(authorizationHeader);
-    const secret = this.getJwtSecret();
-    const jwtConfig = this.configurationService.getAuthJwtConfig();
+    const { payload, user, userId } = await this.resolveVerifiedUserContext(
+      authorizationHeader,
+    );
 
-    const verificationOptions = {
-      algorithms: ['HS256'],
-      audience: jwtConfig.audience,
-      issuer: jwtConfig.issuer,
+    return {
+      roles: user.roles,
+      userId,
+      role: user.role,
+      workspaceId: this.readFirstString(
+        payload.workspaceId,
+        payload.workspace_id,
+        payload.tenantId,
+        payload.tenant_id,
+      ),
     };
+  }
 
-    let payload: JwtPayload;
-
-    try {
-      const { jwtVerify } = await import('jose');
-      const verified = await jwtVerify(token, secret, verificationOptions);
-      payload = verified.payload as JwtPayload;
-    } catch (error) {
-      throw this.mapVerifyError(error);
-    }
-
+  private async resolveVerifiedUserContext(
+    authorizationHeader?: string,
+  ): Promise<{
+    payload: JwtPayload;
+    user: AuthUser;
+    userId: string;
+  }> {
+    const token = this.extractBearerToken(authorizationHeader);
+    const payload = await this.verifyJwt(token);
     const userId = this.readFirstString(
       payload.sub,
       payload.userId,
@@ -127,16 +160,38 @@ export class AuthService {
       });
     }
 
+    const user = await this.identityService.getAuthUserById(userId);
+
+    if (!user.isActive) {
+      throw new UnauthorizedException({
+        code: 'USER_INACTIVE',
+        message: 'User account is inactive',
+      });
+    }
+
     return {
+      payload,
+      user,
       userId,
-      role: this.resolveRole(payload),
-      workspaceId: this.readFirstString(
-        payload.workspaceId,
-        payload.workspace_id,
-        payload.tenantId,
-        payload.tenant_id,
-      ),
     };
+  }
+
+  private async verifyJwt(token: string): Promise<JwtPayload> {
+    const secret = this.getJwtSecret();
+    const jwtConfig = this.configurationService.getAuthJwtConfig();
+    const verificationOptions = {
+      algorithms: ['HS256'],
+      audience: jwtConfig.audience,
+      issuer: jwtConfig.issuer,
+    };
+
+    try {
+      const { jwtVerify } = await import('jose');
+      const verified = await jwtVerify(token, secret, verificationOptions);
+      return verified.payload as JwtPayload;
+    } catch (error) {
+      throw this.mapVerifyError(error);
+    }
   }
 
   private extractBearerToken(authorizationHeader?: string): string {
@@ -213,16 +268,6 @@ export class AuthService {
     );
   }
 
-  private resolveRole(payload: JwtPayload): string | undefined {
-    if (Array.isArray(payload.roles)) {
-      return payload.roles.find(
-        (role) => typeof role === 'string' && role.length > 0,
-      );
-    }
-
-    return this.readFirstString(payload.role, payload.roles);
-  }
-
   private assertRefreshTokenInput(input: RefreshSessionInput): void {
     if (!input.refreshToken || input.refreshToken.trim().length === 0) {
       throw new UnauthorizedException({
@@ -232,18 +277,30 @@ export class AuthService {
     }
   }
 
-  private normalizeIdentity(input: LoginInput): SignAccessTokenInput {
-    if (!input.userId || input.userId.trim().length === 0) {
-      throw new UnauthorizedException({
-        code: 'LOGIN_IDENTITY_INVALID',
-        message: 'User id is required to issue a session',
-      });
-    }
+  private async issueSession(
+    user: AuthUser,
+    workspaceId?: string,
+  ): Promise<AuthSession> {
+    const accessToken = await this.signAccessToken({
+      role: user.role,
+      roles: user.roles,
+      userId: user.userId,
+      workspaceId,
+    });
+    const refreshTokenPayload = await this.refreshTokensService.issue({
+      userId: user.userId,
+      workspaceId,
+    });
 
     return {
-      role: input.role,
-      userId: input.userId,
-      workspaceId: input.workspaceId,
+      accessToken,
+      email: user.email,
+      expiresIn: this.getJwtExpiry(),
+      refreshToken: refreshTokenPayload.refreshToken,
+      role: user.role,
+      roles: user.roles,
+      userId: user.userId,
+      workspaceId: workspaceId ?? null,
     };
   }
 }
