@@ -3,6 +3,7 @@ import { ConfigurationModule } from '@/configuration/configuration.module';
 import { DatabaseModule } from '@/modules/database/database.module';
 import { EmailsModule } from '@/modules/emails/emails.module';
 import { GraphileWorkerModule } from '@/modules/graphile-worker/graphile-worker.module';
+import { IdentityModule } from '@/modules/identity/identity.module';
 import { RefreshTokensModule } from '@/modules/refresh-tokens/refresh-tokens.module';
 import { RedisModule } from '@/modules/redis/redis.module';
 import { AuthGrpcController } from './auth.grpc.controller';
@@ -15,6 +16,7 @@ import { AuthService } from './app.service';
     DatabaseModule,
     EmailsModule,
     GraphileWorkerModule,
+    IdentityModule,
     RefreshTokensModule,
     RedisModule,
   ],
