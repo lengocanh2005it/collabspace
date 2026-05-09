@@ -1,5 +1,17 @@
 http:
   routers:
+    auth-me-router:
+      rule: "Path(`/auth/me`)"
+      service: auth-service
+      priority: 100
+      entryPoints:
+        - web
+      middlewares:
+        - forward-auth
+        - auth-header
+        - rate-limit
+        - cors-headers
+
     auth-router:
       rule: "PathPrefix(`/auth`)"
       service: auth-service
@@ -16,6 +28,7 @@ http:
       entryPoints:
         - web
       middlewares:
+        - forward-auth
         - rate-limit
         - cors-headers
 
@@ -25,6 +38,7 @@ http:
       entryPoints:
         - web
       middlewares:
+        - forward-auth
         - rate-limit
         - cors-headers
 
@@ -34,6 +48,7 @@ http:
       entryPoints:
         - web
       middlewares:
+        - forward-auth
         - rate-limit
         - cors-headers
 
@@ -43,6 +58,7 @@ http:
       entryPoints:
         - web
       middlewares:
+        - forward-auth
         - rate-limit
         - cors-headers
 

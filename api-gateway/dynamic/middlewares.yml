@@ -1,5 +1,19 @@
 http:
   middlewares:
+    forward-auth:
+      forwardAuth:
+        address: "http://auth-service:3000/auth/verify"
+        trustForwardHeader: true
+        authRequestHeaders:
+          - "Authorization"
+          - "Cookie"
+          - "X-Request-Id"
+        authResponseHeaders:
+          - "X-User-Id"
+          - "X-Role"
+          - "X-Workspace-Id"
+          - "X-Request-Id"
+
     auth-header:
       headers:
         customRequestHeaders:
