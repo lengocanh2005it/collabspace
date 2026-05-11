@@ -3,11 +3,16 @@ import {
   SendHtmlEmailInput,
   SendTextEmailInput,
 } from '@/common/types/email.type';
+import {
+  isOperationTimeoutError,
+  withTimeout,
+} from '@/common/utils/timeout.util';
 import { ConfigurationService } from '@/configuration/configuration.service';
 import { GraphileWorkerService } from '@/modules/graphile-worker/graphile-worker.service';
 import {
   Inject,
   Injectable,
+  Logger,
   Optional,
   ServiceUnavailableException,
   forwardRef,
@@ -18,6 +23,8 @@ import { EmailsSenderService } from './emails-sender.service';
 
 @Injectable()
 export class EmailsService {
+  private readonly logger = new Logger(EmailsService.name);
+
   constructor(
     private readonly emailsSenderService: EmailsSenderService,
     private readonly configurationService: ConfigurationService,
@@ -50,7 +57,15 @@ export class EmailsService {
   }
 
   async sendMailNow(options: SendEmailJobPayload): Promise<SentMessageInfo> {
-    return this.emailsSenderService.send(options);
+    try {
+      return await withTimeout(
+        this.emailsSenderService.send(options),
+        this.getDeliveryTimeoutMs(),
+        'Direct email delivery',
+      );
+    } catch (error) {
+      this.rethrowDeliveryError(error);
+    }
   }
 
   async sendText(input: SendTextEmailInput): Promise<Job | SentMessageInfo> {
@@ -77,9 +92,17 @@ export class EmailsService {
       });
     }
 
-    return this.graphileWorkerService.addJob('emails.send', options, {
-      queueName: 'emails',
-    });
+    try {
+      return await withTimeout(
+        this.graphileWorkerService.addJob('emails.send', options, {
+          queueName: 'emails',
+        }),
+        this.getDeliveryTimeoutMs(),
+        'Queued email delivery',
+      );
+    } catch (error) {
+      this.rethrowDeliveryError(error);
+    }
   }
 
   private shouldQueueEmails(): boolean {
@@ -91,5 +114,33 @@ export class EmailsService {
       !!graphileWorkerConfig.connectionString &&
       !!this.graphileWorkerService
     );
+  }
+
+  private getDeliveryTimeoutMs(): number {
+    return this.configurationService.getEmailConfig().deliveryTimeoutMs;
+  }
+
+  private rethrowDeliveryError(error: unknown): never {
+    if (error instanceof ServiceUnavailableException) {
+      throw error;
+    }
+
+    const timeoutMs = this.getDeliveryTimeoutMs();
+
+    if (isOperationTimeoutError(error)) {
+      this.logger.warn(`Email delivery timed out after ${timeoutMs}ms`);
+      throw new ServiceUnavailableException({
+        code: 'EMAIL_DELIVERY_TIMEOUT',
+        message: `Email delivery timed out after ${timeoutMs}ms`,
+      });
+    }
+
+    const message =
+      error instanceof Error ? error.message : 'Email delivery failed';
+    this.logger.warn(`Email delivery failed: ${message}`);
+    throw new ServiceUnavailableException({
+      code: 'EMAIL_DELIVERY_FAILED',
+      message,
+    });
   }
 }

@@ -62,6 +62,7 @@ export default () => ({
     url: process.env.DATABASE_URL,
   },
   email: {
+    deliveryTimeoutMs: toNumber(process.env.MAIL_DELIVERY_TIMEOUT_MS, 5000),
     from: process.env.MAIL_FROM ?? 'no-reply@collabspace.local',
     host: process.env.MAIL_HOST ?? '127.0.0.1',
     ignoreTls: toBoolean(process.env.MAIL_IGNORE_TLS, false),
@@ -84,6 +85,7 @@ export default () => ({
   rabbitmq: {
     enabled: toBoolean(process.env.RABBITMQ_ENABLED, false),
     noAck: toBoolean(process.env.RABBITMQ_NO_ACK, false),
+    publishTimeoutMs: toNumber(process.env.RABBITMQ_PUBLISH_TIMEOUT_MS, 3000),
     prefetchCount: toNumber(process.env.RABBITMQ_PREFETCH_COUNT, 10),
     queue: process.env.RABBITMQ_QUEUE ?? 'auth-service',
     queueDurable: toBoolean(process.env.RABBITMQ_QUEUE_DURABLE, true),
@@ -105,5 +107,6 @@ export default () => ({
   },
   userService: {
     grpcUrl: process.env.USER_SERVICE_GRPC_URL ?? 'user-service:50052',
+    grpcTimeoutMs: toNumber(process.env.USER_SERVICE_GRPC_TIMEOUT_MS, 3000),
   },
 });

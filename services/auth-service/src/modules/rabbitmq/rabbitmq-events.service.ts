@@ -1,7 +1,12 @@
 import { AUTH_EMAIL_VERIFIED_EVENT } from '@/common/constants/events.constant';
+import {
+  isOperationTimeoutError,
+  withTimeout,
+} from '@/common/utils/timeout.util';
 import { ConfigurationService } from '@/configuration/configuration.service';
 import {
   Injectable,
+  Logger,
   OnModuleDestroy,
   ServiceUnavailableException,
 } from '@nestjs/common';
@@ -20,6 +25,7 @@ type AuthEmailVerifiedEvent = {
 
 @Injectable()
 export class RabbitMqEventsService implements OnModuleDestroy {
+  private readonly logger = new Logger(RabbitMqEventsService.name);
   private client: ClientProxy | null = null;
 
   constructor(private readonly configurationService: ConfigurationService) {}
@@ -28,8 +34,42 @@ export class RabbitMqEventsService implements OnModuleDestroy {
     payload: AuthEmailVerifiedEvent,
   ): Promise<void> {
     const client = this.getClient();
-    await client.connect();
-    await lastValueFrom(client.emit(AUTH_EMAIL_VERIFIED_EVENT, payload));
+    const { publishTimeoutMs } = this.configurationService.getRabbitMqConfig();
+
+    try {
+      await withTimeout(
+        client.connect(),
+        publishTimeoutMs,
+        'RabbitMQ connect',
+      );
+      await withTimeout(
+        lastValueFrom(client.emit(AUTH_EMAIL_VERIFIED_EVENT, payload)),
+        publishTimeoutMs,
+        'RabbitMQ publish',
+      );
+    } catch (error) {
+      if (error instanceof ServiceUnavailableException) {
+        throw error;
+      }
+
+      if (isOperationTimeoutError(error)) {
+        this.logger.warn(
+          `RabbitMQ auth event publish timed out after ${publishTimeoutMs}ms`,
+        );
+        throw new ServiceUnavailableException({
+          code: 'RABBITMQ_PUBLISH_TIMEOUT',
+          message: `RabbitMQ publish timed out after ${publishTimeoutMs}ms`,
+        });
+      }
+
+      const message =
+        error instanceof Error ? error.message : 'RabbitMQ publish failed';
+      this.logger.warn(`RabbitMQ auth event publish failed: ${message}`);
+      throw new ServiceUnavailableException({
+        code: 'RABBITMQ_PUBLISH_FAILED',
+        message,
+      });
+    }
   }
 
   async onModuleDestroy(): Promise<void> {

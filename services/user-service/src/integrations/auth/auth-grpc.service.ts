@@ -1,12 +1,13 @@
 import {
   Inject,
   Injectable,
+  Logger,
   OnModuleInit,
   ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common';
 import type { ClientGrpc } from '@nestjs/microservices';
-import { firstValueFrom, Observable } from 'rxjs';
+import { TimeoutError, firstValueFrom, Observable, timeout } from 'rxjs';
 
 export const AUTH_GRPC_CLIENT = 'AUTH_GRPC_CLIENT';
 
@@ -41,6 +42,7 @@ export type AuthIdentity = {
 
 @Injectable()
 export class AuthGrpcService implements OnModuleInit {
+  private readonly logger = new Logger(AuthGrpcService.name);
   private readonly client: ClientGrpc;
   private authService?: AuthGrpcClient;
 
@@ -69,9 +71,13 @@ export class AuthGrpcService implements OnModuleInit {
       });
     }
 
+    const timeoutMs = this.getGrpcTimeoutMs();
+
     try {
       const response = await firstValueFrom(
-        this.authService.verifyAccessToken({ authorization }),
+        this.authService
+          .verifyAccessToken({ authorization })
+          .pipe(timeout({ first: timeoutMs })),
       );
 
       if (!response.authenticated || !response.userId) {
@@ -94,23 +100,76 @@ export class AuthGrpcService implements OnModuleInit {
         throw error;
       }
 
-      if (
-        error instanceof Error &&
-        error.message.toLowerCase().includes('unauthenticated')
-      ) {
-        throw new UnauthorizedException({
-          code: 'TOKEN_INVALID',
-          message: error.message,
+      if (this.isTimeoutError(error)) {
+        this.logger.warn(
+          `AuthService.VerifyAccessToken timed out after ${timeoutMs}ms`,
+        );
+        throw new ServiceUnavailableException({
+          code: 'AUTH_SERVICE_GRPC_TIMEOUT',
+          message: `Auth gRPC verification timed out after ${timeoutMs}ms`,
         });
       }
 
+      if (this.isUnauthenticatedError(error)) {
+        const message = this.extractErrorMessage(
+          error,
+          'Access token is invalid',
+        );
+        throw new UnauthorizedException({
+          code: 'TOKEN_INVALID',
+          message,
+        });
+      }
+
+      const message = this.extractErrorMessage(
+        error,
+        'Auth gRPC verification request failed',
+      );
+      this.logger.warn(`AuthService.VerifyAccessToken failed: ${message}`);
       throw new ServiceUnavailableException({
         code: 'AUTH_SERVICE_GRPC_REQUEST_FAILED',
-        message:
-          error instanceof Error
-            ? error.message
-            : 'Auth gRPC verification request failed',
+        message,
       });
     }
+  }
+
+  private extractErrorMessage(error: unknown, fallback: string): string {
+    if (error instanceof Error && error.message) {
+      return error.message;
+    }
+
+    if (
+      typeof error === 'object' &&
+      error &&
+      'details' in error &&
+      typeof (error as { details?: unknown }).details === 'string'
+    ) {
+      return (error as { details: string }).details;
+    }
+
+    return fallback;
+  }
+
+  private getGrpcTimeoutMs(): number {
+    const timeoutMs = Number(process.env.AUTH_SERVICE_GRPC_TIMEOUT_MS ?? 3000);
+    return Number.isFinite(timeoutMs) && timeoutMs > 0 ? timeoutMs : 3000;
+  }
+
+  private isTimeoutError(error: unknown): boolean {
+    return error instanceof TimeoutError;
+  }
+
+  private isUnauthenticatedError(error: unknown): boolean {
+    if (
+      typeof error === 'object' &&
+      error &&
+      'code' in error &&
+      (error as { code?: unknown }).code === 16
+    ) {
+      return true;
+    }
+
+    const message = this.extractErrorMessage(error, '').toLowerCase();
+    return message.includes('unauthenticated');
   }
 }

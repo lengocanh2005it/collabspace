@@ -44,6 +44,7 @@ export type DatabaseConfig = {
 };
 
 export type EmailConfig = {
+  deliveryTimeoutMs: number;
   from: string;
   host: string;
   ignoreTls: boolean;
@@ -78,6 +79,7 @@ export type RefreshTokenConfig = {
 export type RabbitMqConfig = {
   enabled: boolean;
   noAck: boolean;
+  publishTimeoutMs: number;
   prefetchCount: number;
   queue: string;
   queueDurable: boolean;
@@ -97,6 +99,7 @@ export type RedisConfig = {
 
 export type UserServiceConfig = {
   grpcUrl: string;
+  grpcTimeoutMs: number;
 };
 
 @Injectable()
@@ -184,6 +187,8 @@ export class ConfigurationService {
 
   getEmailConfig(): EmailConfig {
     return {
+      deliveryTimeoutMs:
+        this.configService.get<number>('email.deliveryTimeoutMs') ?? 5000,
       from:
         this.configService.get<string>('email.from') ??
         'no-reply@collabspace.local',
@@ -263,6 +268,8 @@ export class ConfigurationService {
     return {
       enabled: this.configService.get<boolean>('rabbitmq.enabled') ?? false,
       noAck: this.configService.get<boolean>('rabbitmq.noAck') ?? false,
+      publishTimeoutMs:
+        this.configService.get<number>('rabbitmq.publishTimeoutMs') ?? 3000,
       prefetchCount:
         this.configService.get<number>('rabbitmq.prefetchCount') ?? 10,
       queue: this.configService.get<string>('rabbitmq.queue') ?? 'auth-service',
@@ -331,6 +338,8 @@ export class ConfigurationService {
       grpcUrl:
         this.configService.get<string>('userService.grpcUrl') ??
         'user-service:50052',
+      grpcTimeoutMs:
+        this.configService.get<number>('userService.grpcTimeoutMs') ?? 3000,
     };
   }
 }
