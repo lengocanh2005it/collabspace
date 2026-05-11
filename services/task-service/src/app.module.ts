@@ -6,6 +6,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 
 import { TaskController } from './presentation/controllers/task.controller';
 import { TaskCommentController } from './presentation/controllers/task-comment.controller';
+import { TaskEventController } from './presentation/controllers/internal/task-event-internal.controller';
+import { UserEventController } from './presentation/controllers/internal/user-event-internal.controller'; 
 
 // Command & Query Handlers
 import { CreateTaskHandler } from './application/usecases/create-task.handler';
@@ -21,6 +23,8 @@ import { CreateCommentHandler } from './application/usecases/comments/create/cre
 import { GetTaskCommentsHandler } from './application/usecases/comments/get/get-task-comments.handler';
 import { EditCommentHandler } from './application/usecases/comments/edit/edit-comment.handler';
 import { DeleteCommentHandler } from './application/usecases/comments/delete/delete-comment.handler';
+// 👇 THÊM HANDLER ĐỒNG BỘ USER
+import { SyncUserReplicaHandler } from './application/usecases/sync-user-replica.handler';
 
 // Services
 import { AzureBlobService } from './infrastructure/services/azure-blob.service';
@@ -36,6 +40,12 @@ import { TaskSchema, TaskPersistence } from './infrastructure/persistence/task.s
 import { ICommentRepository, COMMENT_REPOSITORY_TOKEN } from './domain/repositories/comment.repository.interface';
 import { CommentRepository } from './infrastructure/repositories/comment.repository';
 import { TaskComment, TaskCommentSchema } from './infrastructure/persistence/task-comment.schema';
+import { UserReplica, UserReplicaSchema } from './infrastructure/persistence/user-replica.schema';
+import { IUserReplicaRepository } from './application/ports/IUserReplicaRepository'; // Dùng Symbol 2-trong-1
+import { UserReplicaRepository } from './infrastructure/repositories/mongo-user-replica.repository';
+
+import { RabbitMqModule } from './infrastructure/messaging/rabbitmq/rabbitmq.module'; 
+import { ConfigurationModule } from './configuration/configuration.module';
 
 const Handlers = [
   CreateTaskHandler,
@@ -51,6 +61,7 @@ const Handlers = [
   GetTaskCommentsHandler,
   EditCommentHandler,
   DeleteCommentHandler,
+  SyncUserReplicaHandler, // 👈 Đăng ký Handler ở đây
 ];
 
 @Module({
@@ -59,6 +70,8 @@ const Handlers = [
       isGlobal: true,
     }),
 
+    ConfigurationModule,
+    RabbitMqModule,
     CqrsModule,
 
     MongooseModule.forRootAsync({
@@ -72,9 +85,15 @@ const Handlers = [
     MongooseModule.forFeature([
       { name: TaskPersistence.name, schema: TaskSchema },
       { name: TaskComment.name, schema: TaskCommentSchema },
+      { name: UserReplica.name, schema: UserReplicaSchema }, // 👈 Đăng ký bảng UserReplica vào Mongoose
     ]),
   ],
-  controllers: [TaskController, TaskCommentController],
+  controllers: [
+    TaskController, 
+    TaskCommentController, 
+    TaskEventController, 
+    UserEventController // 👈 Gắn cái lỗ tai nghe Event của RabbitMQ vào đây
+  ],
   providers: [
     ...Handlers,
     AzureBlobService,
@@ -87,6 +106,10 @@ const Handlers = [
     {
       provide: COMMENT_REPOSITORY_TOKEN,
       useClass: CommentRepository,
+    },
+    {
+      provide: IUserReplicaRepository,
+      useClass: UserReplicaRepository,
     },
   ],
 })

@@ -1,13 +1,37 @@
-import 'reflect-metadata'; // DÒNG NÀY PHẢI Ở TRÊN CÙNG
+import 'reflect-metadata'; 
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { MicroserviceOptions, Transport } from '@nestjs/microservices';
+import { ConfigurationService } from './configuration/configuration.service'; // Import service của bạn
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   
-  // Enable global validation pipe
+  // --- PHẦN MỚI: CẤU HÌNH MICROSERVICE ---
+  const configService = app.get(ConfigurationService);
+  const rmqConfig = configService.getRabbitMqConfig();
+
+  if (rmqConfig.enabled) {
+    app.connectMicroservice<MicroserviceOptions>({
+      transport: Transport.RMQ,
+      options: {
+        urls: [rmqConfig.url],
+        queue: rmqConfig.queue, // 'user-service' hoặc 'task-service' tùy config
+        queueOptions: {
+          durable: rmqConfig.queueDurable,
+        },
+        noAck: rmqConfig.noAck,
+        prefetchCount: rmqConfig.prefetchCount,
+      },
+    });
+    // Bắt đầu lắng nghe các event từ RabbitMQ
+    await app.startAllMicroservices();
+    console.log(`📡 RabbitMQ Microservice is connected and listening`);
+  }
+  // ---------------------------- 
+
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -19,16 +43,13 @@ async function bootstrap() {
     })
   );
 
-  // Enable CORS
   app.enableCors({
     origin: '*',
     credentials: true,
   });
 
-  // Set global prefix
   app.setGlobalPrefix('api');
   
-  // Swagger configuration
   const config = new DocumentBuilder()
     .setTitle('CollabSpace - Task Service API')
     .setDescription('Complete CRUD API with Clean Architecture + CQRS pattern')
