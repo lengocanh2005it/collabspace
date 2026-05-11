@@ -15,36 +15,35 @@ export class TaskMapper {
       status: domainTask.getStatus().getValue(),
       workspaceId: domainTask.getWorkspaceId(),
       assigneeId: domainTask.getAssigneeId(),
-      createdBy: {
-        userId: domainTask.getCreatedBy().getUserId(),
-        name: domainTask.getCreatedBy().getName(),
-        avatarUrl: domainTask.getCreatedBy().getAvatarUrl(),
-      },
-      assignedTo: domainTask.getAssignedTo()
-        ? {
-            userId: domainTask.getAssignedTo()!.getUserId(),
-            name: domainTask.getAssignedTo()!.getName(),
-            avatarUrl: domainTask.getAssignedTo()!.getAvatarUrl(),
-          }
-        : null,
+      
+      // 👇 Dùng luôn toPlainObject() cho lẹ và sạch code
+      createdBy: domainTask.getCreatedBy().toPlainObject(),
+      assignedTo: domainTask.getAssignedTo() ? domainTask.getAssignedTo()!.toPlainObject() : null,
+      
       attachments: domainTask.getAttachments(),
       createdAt: domainTask.getCreatedAt(),
       updatedAt: domainTask.getUpdatedAt(),
     };
   }
 
-  static toDomain(rawDoc: TaskPersistence): TaskDomain {
+  static toDomain(rawDoc: any): TaskDomain {
     const taskId = new TaskId(rawDoc._id);
+    
+    // 👇 Truyền đủ 5 tham số từ DB lên để dựng lại Snapshot
     const creator = UserSnapshot.create(
       rawDoc.createdBy.userId,
-      rawDoc.createdBy.name,
+      rawDoc.createdBy.email,
+      rawDoc.createdBy.fullName,
+      rawDoc.createdBy.displayName,
       rawDoc.createdBy.avatarUrl
     );
 
     const assignedTo = rawDoc.assignedTo
       ? UserSnapshot.create(
           rawDoc.assignedTo.userId,
-          rawDoc.assignedTo.name,
+          rawDoc.assignedTo.email,
+          rawDoc.assignedTo.fullName,
+          rawDoc.assignedTo.displayName,
           rawDoc.assignedTo.avatarUrl
         )
       : null;
@@ -73,18 +72,11 @@ export class TaskMapper {
       status: domainTask.getStatus().getValue(),
       workspaceId: domainTask.getWorkspaceId(),
       assigneeId: domainTask.getAssigneeId(),
-      createdBy: {
-        userId: domainTask.getCreatedBy().getUserId(),
-        name: domainTask.getCreatedBy().getName(),
-        avatarUrl: domainTask.getCreatedBy().getAvatarUrl(),
-      },
-      assignedTo: domainTask.getAssignedTo()
-        ? {
-            userId: domainTask.getAssignedTo()!.getUserId(),
-            name: domainTask.getAssignedTo()!.getName(),
-            avatarUrl: domainTask.getAssignedTo()!.getAvatarUrl(),
-          }
-        : null,
+      
+      // 👇 Trả về Response cũng dùng form chuẩn 5 tham số
+      createdBy: domainTask.getCreatedBy().toPlainObject(),
+      assignedTo: domainTask.getAssignedTo() ? domainTask.getAssignedTo()!.toPlainObject() : null,
+      
       attachments: domainTask.getAttachments(),
       createdAt: domainTask.getCreatedAt(),
       updatedAt: domainTask.getUpdatedAt(),
