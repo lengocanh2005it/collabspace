@@ -29,22 +29,35 @@ import type {
 } from '@/common/types/identity.type';
 import type { Request, Response } from 'express';
 import { IdentityService } from '@/modules/identity/identity.service';
+import { AuthHealthService } from './health/auth-health.service';
 import { AuthService } from './app.service';
 
 @Controller('auth')
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
+    private readonly authHealthService: AuthHealthService,
     private readonly identityService: IdentityService,
   ) {}
 
   @Get('health')
+  async getHealth(@Res({ passthrough: true }) response: Response) {
+    const report = await this.authHealthService.getReadiness();
+    response.status(report.ready ? 200 : 503);
+    return report;
+  }
+
+  @Get('health/live')
   @HttpCode(200)
-  getHealth() {
-    return {
-      service: 'auth-service',
-      status: 'ok',
-    };
+  getLiveness() {
+    return this.authHealthService.getLiveness();
+  }
+
+  @Get('health/ready')
+  async getReadiness(@Res({ passthrough: true }) response: Response) {
+    const report = await this.authHealthService.getReadiness();
+    response.status(report.ready ? 200 : 503);
+    return report;
   }
 
   @Post('login')

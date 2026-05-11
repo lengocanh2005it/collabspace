@@ -31,6 +31,13 @@ type AuthGrpcClient = {
   ): Observable<VerifyAccessTokenResponse>;
 };
 
+type ReadyGrpcClient = {
+  waitForReady(
+    deadline: number,
+    callback: (error?: Error | null) => void,
+  ): void;
+};
+
 export type AuthIdentity = {
   emailVerified?: boolean;
   permissions?: string[];
@@ -44,6 +51,7 @@ export type AuthIdentity = {
 export class AuthGrpcService implements OnModuleInit {
   private readonly logger = new Logger(AuthGrpcService.name);
   private readonly client: ClientGrpc;
+  private authClient?: ReadyGrpcClient;
   private authService?: AuthGrpcClient;
 
   constructor(@Inject(AUTH_GRPC_CLIENT) client: unknown) {
@@ -52,6 +60,50 @@ export class AuthGrpcService implements OnModuleInit {
 
   onModuleInit(): void {
     this.authService = this.client.getService<AuthGrpcClient>('AuthService');
+    this.authClient = this.client.getClientByServiceName<ReadyGrpcClient>(
+      'AuthService',
+    );
+  }
+
+  async ping(): Promise<void> {
+    if (!this.authClient) {
+      throw new ServiceUnavailableException({
+        code: 'AUTH_SERVICE_GRPC_UNAVAILABLE',
+        message: 'Auth gRPC client is not initialized',
+      });
+    }
+
+    const timeoutMs = this.getGrpcTimeoutMs();
+
+    try {
+      await new Promise<void>((resolve, reject) => {
+        this.authClient?.waitForReady(Date.now() + timeoutMs, (error) => {
+          if (error) {
+            reject(error);
+            return;
+          }
+
+          resolve();
+        });
+      });
+    } catch (error) {
+      const message = this.extractErrorMessage(
+        error,
+        'Auth gRPC readiness check failed',
+      );
+
+      if (message.toLowerCase().includes('deadline')) {
+        throw new ServiceUnavailableException({
+          code: 'AUTH_SERVICE_GRPC_TIMEOUT',
+          message: `Auth gRPC readiness timed out after ${timeoutMs}ms`,
+        });
+      }
+
+      throw new ServiceUnavailableException({
+        code: 'AUTH_SERVICE_GRPC_REQUEST_FAILED',
+        message,
+      });
+    }
   }
 
   async verifyAccessToken(authorizationHeader?: string): Promise<AuthIdentity> {

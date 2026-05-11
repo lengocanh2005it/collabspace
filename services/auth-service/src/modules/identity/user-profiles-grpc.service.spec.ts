@@ -5,6 +5,9 @@ import { UserProfilesGrpcService } from './user-profiles-grpc.service';
 describe('UserProfilesGrpcService', () => {
   const createPendingProfileMock = jest.fn();
   const getProfileMock = jest.fn();
+  const waitForReadyMock = jest.fn((_: number, callback: (error?: Error | null) => void) =>
+    callback(null),
+  );
   const configurationServiceMock = {
     getUserServiceConfig: jest.fn(() => ({
       grpcTimeoutMs: 3000,
@@ -12,6 +15,9 @@ describe('UserProfilesGrpcService', () => {
     })),
   } as unknown as ConfigurationService;
   const clientMock = {
+    getClientByServiceName: jest.fn(() => ({
+      waitForReady: waitForReadyMock,
+    })),
     getService: jest.fn(() => ({
       createPendingProfile: createPendingProfileMock,
       getProfile: getProfileMock,

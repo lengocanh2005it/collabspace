@@ -4,7 +4,13 @@ import { AuthGrpcService } from './auth-grpc.service';
 
 describe('AuthGrpcService', () => {
   const verifyAccessTokenMock = jest.fn();
+  const waitForReadyMock = jest.fn((_: number, callback: (error?: Error | null) => void) =>
+    callback(null),
+  );
   const clientMock = {
+    getClientByServiceName: jest.fn(() => ({
+      waitForReady: waitForReadyMock,
+    })),
     getService: jest.fn(() => ({
       verifyAccessToken: verifyAccessTokenMock,
     })),

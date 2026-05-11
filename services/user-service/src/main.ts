@@ -1,9 +1,11 @@
 import { NestFactory } from '@nestjs/core';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
+import { Logger } from '@nestjs/common';
 import { join } from 'node:path';
 import { DataSource } from 'typeorm';
 import { AppModule } from './app.module';
 import { configureHttpApp } from './app.setup';
+import { UserHealthService } from './health/user-health.service';
 
 const toBoolean = (value: string | undefined, fallback: boolean): boolean => {
   if (!value) {
@@ -70,6 +72,16 @@ async function bootstrap() {
   if (hasConnectedMicroservice) {
     await app.startAllMicroservices();
   }
+
+  const readiness = await app.get(UserHealthService).getReadiness();
+  Logger.log(
+    `Startup mode=${readiness.mode} ready=${readiness.ready} checks=${Object.entries(
+      readiness.checks,
+    )
+      .map(([name, check]) => `${name}:${check.status}`)
+      .join(', ')}`,
+    'Bootstrap',
+  );
 
   await app.listen(process.env.PORT ?? 3000);
 }

@@ -4,6 +4,7 @@ import { MicroserviceOptions } from '@nestjs/microservices';
 import { NestFactory } from '@nestjs/core';
 import { DatabaseService } from '@/modules/database/database.service';
 import { AppModule } from './app.module';
+import { AuthHealthService } from './health/auth-health.service';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -38,6 +39,16 @@ async function bootstrap() {
   if (hasConnectedMicroservice) {
     await app.startAllMicroservices();
   }
+
+  const readiness = await app.get(AuthHealthService).getReadiness();
+  Logger.log(
+    `Startup mode=${readiness.mode} ready=${readiness.ready} checks=${Object.entries(
+      readiness.checks,
+    )
+      .map(([name, check]) => `${name}:${check.status}`)
+      .join(', ')}`,
+    'Bootstrap',
+  );
 
   await app.listen(configurationService.getAppConfig().port);
 }

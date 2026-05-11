@@ -18,6 +18,7 @@ import { TypeOrmUserProfileRepository } from './infrastructure/repositories/type
 import { UsersController } from './presentation/http/users.controller';
 import { UserProfilesGrpcController } from './presentation/grpc/user-profiles.grpc.controller';
 import { AuthEventsController } from './presentation/rabbitmq/auth-events.controller';
+import { UserHealthService } from './health/user-health.service';
 
 @Module({
   imports: [AuthModule, DatabaseModule],
@@ -32,6 +33,7 @@ import { AuthEventsController } from './presentation/rabbitmq/auth-events.contro
     InMemoryUserProfileRepository,
     ListUserSummariesUseCase,
     TypeOrmUserProfileRepository,
+    UserHealthService,
     UpdateUserPreferencesUseCase,
     UpdateUserProfileUseCase,
     UpdateUserStatusUseCase,

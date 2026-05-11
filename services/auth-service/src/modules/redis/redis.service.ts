@@ -40,6 +40,10 @@ export class RedisService implements OnModuleDestroy {
     return this.redisClient.incr(key);
   }
 
+  async ping(): Promise<boolean> {
+    return (await this.redisClient.ping()) === 'PONG';
+  }
+
   async set(
     key: string,
     value: string,

@@ -9,6 +9,7 @@ import { RefreshTokensModule } from '@/modules/refresh-tokens/refresh-tokens.mod
 import { RedisModule } from '@/modules/redis/redis.module';
 import { AuthGrpcController } from './auth.grpc.controller';
 import { AuthController } from './app.controller';
+import { AuthHealthService } from './health/auth-health.service';
 import { AuthService } from './app.service';
 
 @Module({
@@ -23,6 +24,6 @@ import { AuthService } from './app.service';
     RedisModule,
   ],
   controllers: [AuthController, AuthGrpcController],
-  providers: [AuthService],
+  providers: [AuthService, AuthHealthService],
 })
 export class AppModule {}

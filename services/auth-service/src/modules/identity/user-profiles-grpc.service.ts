@@ -46,10 +46,18 @@ type UserProfilesGrpcClient = {
   getProfile(request: GetProfileRequest): Observable<GetProfileResponse>;
 };
 
+type ReadyGrpcClient = {
+  waitForReady(
+    deadline: number,
+    callback: (error?: Error | null) => void,
+  ): void;
+};
+
 @Injectable()
 export class UserProfilesGrpcService implements OnModuleInit {
   private readonly logger = new Logger(UserProfilesGrpcService.name);
   private readonly client: ClientGrpc;
+  private userProfilesClient?: ReadyGrpcClient;
   private userProfilesService?: UserProfilesGrpcClient;
 
   constructor(
@@ -64,6 +72,55 @@ export class UserProfilesGrpcService implements OnModuleInit {
     this.userProfilesService = this.client.getService<UserProfilesGrpcClient>(
       'UserProfilesService',
     );
+    this.userProfilesClient = this.client.getClientByServiceName<ReadyGrpcClient>(
+      'UserProfilesService',
+    );
+  }
+
+  async ping(): Promise<void> {
+    if (!this.userProfilesClient) {
+      throw new ServiceUnavailableException({
+        code: 'USER_SERVICE_GRPC_UNAVAILABLE',
+        message: 'User profiles gRPC client is not initialized',
+      });
+    }
+
+    const { grpcTimeoutMs, grpcUrl } =
+      this.configurationService.getUserServiceConfig();
+
+    try {
+      await new Promise<void>((resolve, reject) => {
+        this.userProfilesClient?.waitForReady(
+          Date.now() + grpcTimeoutMs,
+          (error) => {
+            if (error) {
+              reject(error);
+              return;
+            }
+
+            resolve();
+          },
+        );
+      });
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        error.message.toLowerCase().includes('deadline')
+      ) {
+        throw new ServiceUnavailableException({
+          code: 'USER_SERVICE_GRPC_TIMEOUT',
+          message: `User service gRPC readiness timed out after ${grpcTimeoutMs}ms via ${grpcUrl}`,
+        });
+      }
+
+      throw new ServiceUnavailableException({
+        code: 'USER_SERVICE_GRPC_REQUEST_FAILED',
+        message:
+          error instanceof Error
+            ? error.message
+            : `User service gRPC readiness check failed via ${grpcUrl}`,
+      });
+    }
   }
 
   async createPendingProfile(input: CreatePendingProfileInput): Promise<void> {

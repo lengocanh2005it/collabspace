@@ -9,6 +9,7 @@ import { UserProfilesGrpcService } from '../src/modules/identity/user-profiles-g
 import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
 import { AuthService } from '../src/app.service';
+import { AuthHealthService } from '../src/health/auth-health.service';
 
 describe('AuthController (e2e)', () => {
   let app: INestApplication<App>;
@@ -39,6 +40,10 @@ describe('AuthController (e2e)', () => {
   };
   const userProfilesGrpcServiceMock = {
     getProfile: jest.fn(),
+  };
+  const authHealthServiceMock = {
+    getLiveness: jest.fn(),
+    getReadiness: jest.fn(),
   };
   const jwtSecret = 'test-secret';
 
@@ -82,6 +87,31 @@ describe('AuthController (e2e)', () => {
       fullName: 'Member Example',
       userId: 'user-123',
     });
+    authHealthServiceMock.getLiveness.mockReturnValue({
+      service: 'auth-service',
+      status: 'ok',
+      timestamp: '2026-05-11T00:00:00.000Z',
+      uptimeSeconds: 42,
+    });
+    authHealthServiceMock.getReadiness.mockResolvedValue({
+      checks: {
+        database: {
+          required: true,
+          responseTimeMs: 3,
+          status: 'up',
+        },
+        redis: {
+          required: true,
+          responseTimeMs: 2,
+          status: 'up',
+        },
+      },
+      mode: 'full',
+      ready: true,
+      service: 'auth-service',
+      status: 'ok',
+      timestamp: '2026-05-11T00:00:00.000Z',
+    });
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
@@ -94,6 +124,8 @@ describe('AuthController (e2e)', () => {
       .useValue(redisServiceMock)
       .overrideProvider(EmailsService)
       .useValue(emailsServiceMock)
+      .overrideProvider(AuthHealthService)
+      .useValue(authHealthServiceMock)
       .overrideProvider(UserProfilesGrpcService)
       .useValue(userProfilesGrpcServiceMock)
       .compile();
@@ -108,9 +140,46 @@ describe('AuthController (e2e)', () => {
     return request(app.getHttpServer())
       .get('/api/v1/auth/health')
       .expect(200)
-      .expect({
-        service: 'auth-service',
-        status: 'ok',
+      .expect((response) => {
+        expect(response.body.ready).toBe(true);
+        expect(response.body.status).toBe('ok');
+        expect(response.body.service).toBe('auth-service');
+      });
+  });
+
+  it('/api/v1/auth/health/live (GET)', () => {
+    return request(app.getHttpServer())
+      .get('/api/v1/auth/health/live')
+      .expect(200)
+      .expect((response) => {
+        expect(response.body.status).toBe('ok');
+        expect(response.body.uptimeSeconds).toBe(42);
+      });
+  });
+
+  it('/api/v1/auth/health/ready (GET) returns 503 when required dependency is down', async () => {
+    authHealthServiceMock.getReadiness.mockResolvedValueOnce({
+      checks: {
+        database: {
+          detail: 'connection refused',
+          required: true,
+          responseTimeMs: 5,
+          status: 'down',
+        },
+      },
+      mode: 'degraded',
+      ready: false,
+      service: 'auth-service',
+      status: 'error',
+      timestamp: '2026-05-11T00:00:00.000Z',
+    });
+
+    await request(app.getHttpServer())
+      .get('/api/v1/auth/health/ready')
+      .expect(503)
+      .expect((response) => {
+        expect(response.body.ready).toBe(false);
+        expect(response.body.status).toBe('error');
       });
   });
 

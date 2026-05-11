@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
+import { DatabaseService } from './database.service';
 import { UserProfileOrmEntity } from './entities/user-profile.orm-entity';
 import { UserPreferencesOrmEntity } from './entities/user-preferences.orm-entity';
 import { UserStatusOrmEntity } from './entities/user-status.orm-entity';
@@ -36,6 +37,7 @@ const createDatabaseOptions = (): TypeOrmModuleOptions => ({
       UserStatusOrmEntity,
     ]),
   ],
-  exports: [TypeOrmModule],
+  providers: [DatabaseService],
+  exports: [TypeOrmModule, DatabaseService],
 })
 export class DatabaseModule {}

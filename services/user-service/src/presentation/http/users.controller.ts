@@ -1,4 +1,5 @@
-import { BadRequestException, Body, Controller, Get, Headers, Param, Patch, Post, Query } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Headers, Param, Patch, Post, Query, Res } from '@nestjs/common';
+import type { Response } from 'express';
 import { GetUserProfileUseCase } from '../../application/use-cases/get-user-profile.use-case';
 import { GetUserSummaryUseCase } from '../../application/use-cases/get-user-summary.use-case';
 import { ListUserSummariesUseCase } from '../../application/use-cases/list-user-summaries.use-case';
@@ -16,11 +17,13 @@ import { SearchUsersQueryDto } from './dto/search-users-query.dto';
 import { UpdateCurrentUserPreferencesDto } from './dto/update-current-user-preferences.dto';
 import { UpdateCurrentUserProfileDto } from './dto/update-current-user-profile.dto';
 import { UpdateCurrentUserStatusDto } from './dto/update-current-user-status.dto';
+import { UserHealthService } from '../../health/user-health.service';
 
 @Controller('users')
 export class UsersController {
   constructor(
     private readonly authGrpcService: AuthGrpcService,
+    private readonly userHealthService: UserHealthService,
     private readonly getUserProfileUseCase: GetUserProfileUseCase,
     private readonly getUserSummaryUseCase: GetUserSummaryUseCase,
     private readonly listUserSummariesUseCase: ListUserSummariesUseCase,
@@ -33,11 +36,22 @@ export class UsersController {
   ) {}
 
   @Get('health')
-  getHealth() {
-    return {
-      service: 'user-service',
-      status: 'ok',
-    };
+  async getHealth(@Res({ passthrough: true }) response: Response) {
+    const report = await this.userHealthService.getReadiness();
+    response.status(report.ready ? 200 : 503);
+    return report;
+  }
+
+  @Get('health/live')
+  getLiveness() {
+    return this.userHealthService.getLiveness();
+  }
+
+  @Get('health/ready')
+  async getReadiness(@Res({ passthrough: true }) response: Response) {
+    const report = await this.userHealthService.getReadiness();
+    response.status(report.ready ? 200 : 503);
+    return report;
   }
 
   @Get('me')

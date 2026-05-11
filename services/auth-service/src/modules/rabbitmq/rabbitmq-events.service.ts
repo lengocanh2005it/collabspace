@@ -72,6 +72,36 @@ export class RabbitMqEventsService implements OnModuleDestroy {
     }
   }
 
+  async ping(): Promise<void> {
+    const client = this.getClient();
+    const { publishTimeoutMs } = this.configurationService.getRabbitMqConfig();
+
+    try {
+      await withTimeout(
+        client.connect(),
+        publishTimeoutMs,
+        'RabbitMQ connect',
+      );
+    } catch (error) {
+      if (error instanceof ServiceUnavailableException) {
+        throw error;
+      }
+
+      if (isOperationTimeoutError(error)) {
+        throw new ServiceUnavailableException({
+          code: 'RABBITMQ_PUBLISH_TIMEOUT',
+          message: `RabbitMQ readiness timed out after ${publishTimeoutMs}ms`,
+        });
+      }
+
+      throw new ServiceUnavailableException({
+        code: 'RABBITMQ_PUBLISH_FAILED',
+        message:
+          error instanceof Error ? error.message : 'RabbitMQ readiness failed',
+      });
+    }
+  }
+
   async onModuleDestroy(): Promise<void> {
     if (!this.client) {
       return;
