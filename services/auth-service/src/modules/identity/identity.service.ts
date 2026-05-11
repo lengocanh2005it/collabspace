@@ -216,6 +216,31 @@ export class IdentityService {
     };
   }
 
+  async findUserByEmail(email: string): Promise<AuthUser | null> {
+    const normalizedEmail = this.normalizeEmail(email);
+    const user = await this.userRepository.findOne({
+      relations: {
+        userRoles: {
+          role: {
+            rolePermissions: {
+              permission: true,
+            },
+          },
+        },
+      },
+      where: {
+        email: normalizedEmail,
+      },
+      withDeleted: true,
+    });
+
+    if (!user || user.deletedAt) {
+      return null;
+    }
+
+    return this.toAuthUser(user);
+  }
+
   async markEmailVerified(userId: string): Promise<AuthUser> {
     const user = await this.loadUserById(userId);
 

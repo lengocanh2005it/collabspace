@@ -35,6 +35,7 @@ import { RabbitMqEventsService } from '@/modules/rabbitmq/rabbitmq-events.servic
 import { RedisService } from '@/modules/redis/redis.service';
 import { RefreshTokensService } from '@/modules/refresh-tokens/refresh-tokens.service';
 import {
+  ConflictException,
   HttpException,
   HttpStatus,
   Injectable,
@@ -190,7 +191,7 @@ export class AuthService {
   }
 
   async register(input: RegisterInput): Promise<RegisterPendingResult> {
-    const user = await this.identityService.register(input);
+    const user = await this.registerOrRecoverPendingUser(input);
     await this.userProfilesGrpcService.createPendingProfile({
       fullName: input.fullName,
       userId: user.userId,
@@ -246,6 +247,16 @@ export class AuthService {
       });
     }
 
+    const existingUser = await this.identityService.getAuthUserById(input.userId);
+
+    if (existingUser.emailVerified) {
+      return {
+        email: existingUser.email,
+        emailVerified: true,
+        verified: true,
+      };
+    }
+
     const otpPayload =
       await this.redisService.getJson<EmailVerificationOtpPayload>(
         this.buildEmailVerificationOtpKey(input.userId),
@@ -296,6 +307,14 @@ export class AuthService {
     const token = this.generatePasswordResetToken();
     const tokenHash = this.hashPasswordResetToken(token);
     const ttlSeconds = this.configurationService.getPasswordResetConfig().ttlSeconds;
+    const activeTokenKey = this.buildPasswordResetUserKey(user.userId);
+    const previousTokenHash = await this.redisService.get(activeTokenKey);
+
+    if (previousTokenHash) {
+      await this.redisService.delete(
+        this.buildPasswordResetTokenKey(previousTokenHash),
+      );
+    }
 
     await this.redisService.setJson(
       this.buildPasswordResetTokenKey(tokenHash),
@@ -305,6 +324,7 @@ export class AuthService {
       } satisfies PasswordResetTokenPayload,
       ttlSeconds,
     );
+    await this.redisService.set(activeTokenKey, tokenHash, ttlSeconds);
 
     await this.emailsService.sendText({
       subject: 'Reset your CollabSpace password',
@@ -333,8 +353,12 @@ export class AuthService {
     const payload = await this.redisService.getJson<PasswordResetTokenPayload>(
       this.buildPasswordResetTokenKey(this.hashPasswordResetToken(token)),
     );
+    const activeTokenHash = await this.redisService.get(
+      this.buildPasswordResetUserKey(payload?.userId ?? ''),
+    );
+    const tokenHash = this.hashPasswordResetToken(token);
 
-    if (!payload) {
+    if (!payload || (activeTokenHash && activeTokenHash !== tokenHash)) {
       throw new UnauthorizedException({
         code: 'PASSWORD_RESET_INVALID',
         message: 'Password reset token is invalid or expired',
@@ -343,7 +367,10 @@ export class AuthService {
 
     await this.identityService.resetPassword(payload.userId, input.newPassword);
     await this.redisService.delete(
-      this.buildPasswordResetTokenKey(this.hashPasswordResetToken(token)),
+      [
+        this.buildPasswordResetTokenKey(tokenHash),
+        this.buildPasswordResetUserKey(payload.userId),
+      ],
     );
     const revokedSessionCount = await this.refreshTokensService.revokeAllForUser(
       payload.userId,
@@ -525,6 +552,10 @@ export class AuthService {
     return `password-reset:token:${tokenHash}`;
   }
 
+  private buildPasswordResetUserKey(userId: string): string {
+    return `password-reset:user:${userId}`;
+  }
+
   private buildEmailVerificationResendCooldownKey(userId: string): string {
     return `email-verification:resend:cooldown:${userId}`;
   }
@@ -604,6 +635,44 @@ export class AuthService {
 
   private hashPasswordResetToken(token: string): string {
     return createHash('sha256').update(token).digest('hex');
+  }
+
+  private isUserAlreadyExistsConflict(error: unknown): boolean {
+    if (!(error instanceof ConflictException)) {
+      return false;
+    }
+
+    const response = error.getResponse();
+    return (
+      typeof response === 'object' &&
+      response !== null &&
+      'code' in response &&
+      (response as { code?: unknown }).code === 'USER_ALREADY_EXISTS'
+    );
+  }
+
+  private async registerOrRecoverPendingUser(
+    input: RegisterInput,
+  ): Promise<AuthUser> {
+    try {
+      return await this.identityService.register(input);
+    } catch (error) {
+      if (!this.isUserAlreadyExistsConflict(error)) {
+        throw error;
+      }
+
+      const existingUser = await this.identityService.findUserByEmail(input.email);
+
+      if (!existingUser || existingUser.emailVerified || !existingUser.isActive) {
+        throw error;
+      }
+
+      this.logger.warn(
+        `Recovered pending registration for ${existingUser.userId} via duplicate register request`,
+      );
+
+      return existingUser;
+    }
   }
 
   private async assertEmailVerificationResendAllowed(

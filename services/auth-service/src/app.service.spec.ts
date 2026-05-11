@@ -5,7 +5,11 @@ import { UserProfilesGrpcService } from '@/modules/identity/user-profiles-grpc.s
 import { RabbitMqEventsService } from '@/modules/rabbitmq/rabbitmq-events.service';
 import { RedisService } from '@/modules/redis/redis.service';
 import { RefreshTokensService } from '@/modules/refresh-tokens/refresh-tokens.service';
-import { HttpException, UnauthorizedException } from '@nestjs/common';
+import {
+  ConflictException,
+  HttpException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { AuthService } from './app.service';
 
 describe('AuthService', () => {
@@ -45,6 +49,7 @@ describe('AuthService', () => {
     delete: jest.fn(),
     exists: jest.fn(),
     expire: jest.fn(),
+    get: jest.fn(),
     getJson: jest.fn(),
     increment: jest.fn(),
     setJson: jest.fn(),
@@ -53,6 +58,7 @@ describe('AuthService', () => {
   } as unknown as RedisService;
   const identityServiceMock = {
     changePassword: jest.fn(),
+    findUserByEmail: jest.fn(),
     findUserByEmailForPasswordReset: jest.fn(),
     getAuthUserById: jest.fn(),
     markEmailVerified: jest.fn(),
@@ -79,6 +85,7 @@ describe('AuthService', () => {
       fullName: 'Admin User',
       userId: 'user-1',
     });
+    jest.spyOn(redisServiceMock, 'get').mockResolvedValue(null);
     authService = new AuthService(
       configurationServiceMock,
       emailsServiceMock,
@@ -266,6 +273,49 @@ describe('AuthService', () => {
     });
   });
 
+  it('recovers pending registration for an existing unverified user', async () => {
+    const existingPendingUser = {
+      email: 'new@collabspace.dev',
+      emailVerified: false,
+      isActive: true,
+      permissions: [],
+      role: 'user',
+      roles: ['user'],
+      userId: 'user-3',
+    };
+    jest.spyOn(identityServiceMock, 'register').mockRejectedValue(
+      new ConflictException({
+        code: 'USER_ALREADY_EXISTS',
+        message: 'User new@collabspace.dev already exists',
+      }),
+    );
+    jest.spyOn(identityServiceMock, 'findUserByEmail').mockResolvedValue(
+      existingPendingUser,
+    );
+    jest
+      .spyOn(userProfilesGrpcServiceMock, 'createPendingProfile')
+      .mockResolvedValue(undefined);
+    jest.spyOn(redisServiceMock, 'setJson').mockResolvedValue('OK');
+    jest.spyOn(emailsServiceMock, 'sendText').mockResolvedValue({} as never);
+
+    const result = await authService.register({
+      email: 'new@collabspace.dev',
+      fullName: 'New User',
+      password: 'password123',
+    });
+
+    expect(result).toEqual({
+      email: 'new@collabspace.dev',
+      emailVerified: false,
+      otpExpiresInSeconds: 600,
+      userId: 'user-3',
+      verificationRequired: true,
+    });
+    expect(identityServiceMock.findUserByEmail).toHaveBeenCalledWith(
+      'new@collabspace.dev',
+    );
+  });
+
   it('accepts forgot password requests and sends reset token email for known users', async () => {
     jest
       .spyOn(identityServiceMock, 'findUserByEmailForPasswordReset')
@@ -285,7 +335,15 @@ describe('AuthService', () => {
       accepted: true,
     });
 
+    expect(redisServiceMock.get).toHaveBeenCalledWith(
+      'password-reset:user:user-2',
+    );
     expect(redisServiceMock.setJson).toHaveBeenCalled();
+    expect(redisServiceMock.set).toHaveBeenCalledWith(
+      'password-reset:user:user-2',
+      expect.any(String),
+      1800,
+    );
     expect(emailsServiceMock.sendText).toHaveBeenCalledWith(
       expect.objectContaining({
         subject: 'Reset your CollabSpace password',
@@ -309,6 +367,9 @@ describe('AuthService', () => {
   });
 
   it('resets password from a valid reset token and revokes sessions', async () => {
+    jest.spyOn(redisServiceMock, 'get').mockResolvedValue(
+      '0de6c8537636194b8edc06f57df89b9ce680eaa961ccad1b0e8ab614f89fa12e',
+    );
     jest.spyOn(redisServiceMock, 'getJson').mockResolvedValue({
       email: 'member@collabspace.dev',
       userId: 'user-2',
@@ -327,6 +388,25 @@ describe('AuthService', () => {
       revokedSessionCount: 3,
       userId: 'user-2',
     });
+    expect(redisServiceMock.delete).toHaveBeenCalledWith([
+      'password-reset:token:0de6c8537636194b8edc06f57df89b9ce680eaa961ccad1b0e8ab614f89fa12e',
+      'password-reset:user:user-2',
+    ]);
+  });
+
+  it('rejects reset password for a superseded token', async () => {
+    jest.spyOn(redisServiceMock, 'getJson').mockResolvedValue({
+      email: 'member@collabspace.dev',
+      userId: 'user-2',
+    });
+    jest.spyOn(redisServiceMock, 'get').mockResolvedValue('another-token-hash');
+
+    await expect(
+      authService.resetPassword({
+        newPassword: 'new-password-123',
+        token: 'reset-token-1',
+      }),
+    ).rejects.toThrow(UnauthorizedException);
   });
 
   it('changes password for the authenticated user and revokes sessions', async () => {
@@ -442,6 +522,15 @@ describe('AuthService', () => {
   });
 
   it('verifies email otp and marks profile as verified', async () => {
+    jest.spyOn(identityServiceMock, 'getAuthUserById').mockResolvedValue({
+      email: 'new@collabspace.dev',
+      emailVerified: false,
+      isActive: true,
+      permissions: [],
+      role: 'user',
+      roles: ['user'],
+      userId: 'user-3',
+    });
     jest.spyOn(redisServiceMock, 'getJson').mockResolvedValue({
       email: 'new@collabspace.dev',
       otpHash:
@@ -479,6 +568,31 @@ describe('AuthService', () => {
         userId: 'user-3',
       }),
     );
+  });
+
+  it('treats verify email as idempotent for already verified users', async () => {
+    jest.spyOn(identityServiceMock, 'getAuthUserById').mockResolvedValue({
+      email: 'verified@collabspace.dev',
+      emailVerified: true,
+      isActive: true,
+      permissions: [],
+      role: 'user',
+      roles: ['user'],
+      userId: 'user-9',
+    });
+
+    await expect(
+      authService.verifyEmailOtp({
+        otp: '123456',
+        userId: 'user-9',
+      }),
+    ).resolves.toEqual({
+      email: 'verified@collabspace.dev',
+      emailVerified: true,
+      verified: true,
+    });
+    expect(identityServiceMock.markEmailVerified).not.toHaveBeenCalled();
+    expect(rabbitMqEventsServiceMock.publishAuthEmailVerified).not.toHaveBeenCalled();
   });
 
   it('returns the current authenticated user', async () => {

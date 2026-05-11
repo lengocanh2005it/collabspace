@@ -25,6 +25,7 @@ describe('AuthController (e2e)', () => {
   };
   const identityServiceMock = {
     changePassword: jest.fn(),
+    findUserByEmail: jest.fn(),
     findUserByEmailForPasswordReset: jest.fn(),
     getAuthUserById: jest.fn(),
     resetPassword: jest.fn(),
@@ -32,7 +33,9 @@ describe('AuthController (e2e)', () => {
   };
   const redisServiceMock = {
     delete: jest.fn(),
+    get: jest.fn(),
     getJson: jest.fn(),
+    set: jest.fn(),
     setJson: jest.fn(),
   };
   const emailsServiceMock = {
@@ -74,9 +77,20 @@ describe('AuthController (e2e)', () => {
       isActive: true,
       userId: 'user-123',
     });
+    identityServiceMock.findUserByEmail.mockResolvedValue({
+      email: 'member@example.com',
+      emailVerified: false,
+      isActive: true,
+      permissions: ['users.read'],
+      role: 'member',
+      roles: ['member'],
+      userId: 'user-123',
+    });
     identityServiceMock.resetPassword.mockResolvedValue(undefined);
     identityServiceMock.changePassword.mockResolvedValue(undefined);
+    redisServiceMock.get.mockResolvedValue(null);
     redisServiceMock.setJson.mockResolvedValue('OK');
+    redisServiceMock.set.mockResolvedValue('OK');
     redisServiceMock.getJson.mockResolvedValue({
       email: 'member@example.com',
       userId: 'user-123',
