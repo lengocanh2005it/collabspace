@@ -1,5 +1,5 @@
 // src/presentation/controllers/task-comment.controller.ts
-import { Controller, Post, Get, Patch, Delete, Body, Param, Query, UseGuards, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Get, Patch, Delete, Body, Param, Query, UseGuards, HttpStatus, Req } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { CreateCommentRequest } from '../dtos/create-comment.request';
 import { EditCommentRequest } from '../dtos/edit-comment.request';
@@ -30,14 +30,19 @@ export class TaskCommentController {
   async createComment(
     @Param('taskId') taskId: string,
     @Body() request: CreateCommentRequest,
+    @Req() req: any // Thêm Req vào đây để sau này lấy JWT
   ): Promise<{ statusCode: number; data: CreateCommentResponse }> {
+    
+    // Tạm thời mock ID người đang đăng nhập (Tương lai sẽ lấy từ req.user.id do Guard cấp)
+    // Nếu hiện tại ông vẫn test chay thì cứ lấy từ request.authorId cũng được, nhưng tuyệt đối bỏ Name và Avatar
+    const authorId = req?.user?.id || 'admin-001'; 
+
+    // Khởi tạo Command với đúng 4 tham số cực kỳ gọn gàng
     const command = new CreateCommentCommand(
       taskId,
-      request.authorId,
-      request.authorName,
+      authorId, // Truyền đúng cái ID 
       request.content,
-      request.authorAvatarUrl,
-      request.parentId,
+      request.parentId || null
     );
 
     const result = await this.commandBus.execute(command);

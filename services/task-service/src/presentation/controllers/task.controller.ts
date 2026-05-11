@@ -157,6 +157,7 @@ async createTask(
   /**
    * PATCH /tasks/:id/assignee - Gán người phụ trách task
    */
+  // src/presentation/controllers/task.controller.ts
   @Patch(':id/assignee')
   @HttpCode(HttpStatus.OK)
   async assignTask(
@@ -164,38 +165,22 @@ async createTask(
     @Body() request: AssignTaskRequest,
     @Req() req?: any
   ): Promise<any> {
+    
+    // Mock tạm ID user đi giao (Assigner) - Sau này lấy từ req.user.id (JWT)
+    const assignerId = 'admin-001';
+
+    // Khởi tạo Command với ĐÚNG 3 THAM SỐ
     const command = new AssignTaskCommand(
       taskId,
-      request.assigneeId || null,
-      request.assigneeName,
-      request.assigneeAvatarUrl
+      assignerId,
+      request.assigneeId || null
     );
+
+    console.log('🔍 NỘI DUNG COMMAND MỚI (CHỈ CÓ ID):', JSON.stringify(command, null, 2));
 
     await this.commandBus.execute(command);
 
-    return ok(
-      { message: 'Gán người phụ trách thành công' },
-      req?.headers['x-request-id']
-    );
-  }
-
-  /**
-   * DELETE /tasks/:id - Xóa task
-   */
-  @Delete(':id')
-  @HttpCode(HttpStatus.OK)
-  async deleteTask(
-    @Param('id') taskId: string,
-    @Req() req?: any
-  ): Promise<any> {
-    const command = new DeleteTaskCommand(taskId);
-
-    await this.commandBus.execute(command);
-
-    return ok(
-      { message: 'Xóa công việc thành công' },
-      req?.headers['x-request-id']
-    );
+    return { message: 'Gán người phụ trách thành công' };
   }
 
   /**
