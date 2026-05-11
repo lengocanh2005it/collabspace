@@ -4,29 +4,68 @@ import { BusinessRuleException } from '../exceptions/BusinessRuleException';
 export class UserSnapshot {
   private constructor(
     private readonly userId: string,
-    private readonly name: string,
-    private readonly avatarUrl?: string // Avatar có thể không bắt buộc
+    private readonly email: string,         // Bổ sung Email
+    private readonly fullName: string,      // Tên thật
+    private readonly displayName: string,   // Tên hiển thị (Nickname)
+    private readonly avatarUrl?: string | null
   ) {}
 
-  public static create(userId: string, name: string, avatarUrl?: string): UserSnapshot {
+  public static create(
+    userId: string, 
+    email: string, 
+    fullName: string, 
+    displayName?: string | null, 
+    avatarUrl?: string | null
+  ): UserSnapshot {
     if (!userId || userId.trim() === '') {
       throw new BusinessRuleException('User ID của Snapshot không được để trống', 'SNAPSHOT_USER_ID_EMPTY');
     }
-    if (!name || name.trim() === '') {
-      throw new BusinessRuleException('Tên User không được để trống', 'SNAPSHOT_NAME_EMPTY');
+    if (!fullName || fullName.trim() === '') {
+      throw new BusinessRuleException('Tên User không được để trống', 'SNAPSHOT_FULLNAME_EMPTY');
     }
 
-    return new UserSnapshot(userId, name, avatarUrl);
+    // Nếu không có displayName, tự động fallback về fullName cho đồng bộ
+    const resolvedDisplayName = displayName?.trim() ? displayName : fullName;
+
+    return new UserSnapshot(userId, email, fullName, resolvedDisplayName, avatarUrl);
   }
 
-  // Chỉ có Getter, tuyệt đối KHÔNG có Setter (để đảm bảo tính bất biến)
+  // ========================================================
+  // GETTERS (Tuyệt đối KHÔNG có Setter)
+  // ========================================================
   public getUserId(): string { return this.userId; }
-  public getName(): string { return this.name; }
-  public getAvatarUrl(): string | undefined { return this.avatarUrl; }
+  public getEmail(): string { return this.email; }
+  public getFullName(): string { return this.fullName; }
+  public getDisplayName(): string { return this.displayName; }
+  public getAvatarUrl(): string | null | undefined { return this.avatarUrl; }
 
-  // So sánh 2 Snapshot: Nếu cùng ID và Name thì coi như là một
+  // ========================================================
+  // HÀM SO SÁNH (Structural Equality của Value Object)
+  // ========================================================
   public equals(other: UserSnapshot | null | undefined): boolean {
     if (!other) return false;
-    return this.userId === other.getUserId() && this.name === other.getName();
+    
+    // Phải so sánh TOÀN BỘ property, lệch 1 ly là tính ra VO mới ngay
+    return (
+      this.userId === other.getUserId() &&
+      this.email === other.getEmail() &&
+      this.fullName === other.getFullName() &&
+      this.displayName === other.getDisplayName() &&
+      this.avatarUrl === other.getAvatarUrl()
+    );
+  }
+
+  // ========================================================
+  // HÀM TIỆN ÍCH CHO MONGOOSE (Serialization)
+  // ========================================================
+  // Vì Mongoose cần object thuần (Plain Object) để lưu DB
+  public toPlainObject(): Record<string, any> {
+    return {
+      userId: this.userId,
+      email: this.email,
+      fullName: this.fullName,
+      displayName: this.displayName,
+      avatarUrl: this.avatarUrl || null,
+    };
   }
 }
