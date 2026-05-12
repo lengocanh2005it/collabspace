@@ -3,7 +3,7 @@ import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { Inject } from '@nestjs/common';
 import { AssignTaskCommand } from '../commands/assign-task.command';
 import { ITaskRepository } from '../ports/ITaskRepository';
-import { IUserReplicaRepository } from '../ports/IUserReplicaRepository'; 
+import { IUserReplicaRepository, USER_REPLICA_REPOSITORY_TOKEN } from '../ports/IUserReplicaRepository';
 import { TaskId } from '../../domain/value-objects/TaskId';
 import { UserSnapshot } from '../../domain/value-objects/UserSnapshot';
 import { EntityNotFoundException } from '../../domain/exceptions/EntityNotFoundException';
@@ -14,7 +14,7 @@ import { RabbitMqEventsService } from 'src/infrastructure/messaging/rabbitmq/rab
 export class AssignTaskHandler implements ICommandHandler<AssignTaskCommand, void> {
   constructor(
     @Inject(ITaskRepository) private readonly taskRepository: ITaskRepository,
-    @Inject(IUserReplicaRepository) private readonly userReplicaRepo: IUserReplicaRepository,
+    @Inject(USER_REPLICA_REPOSITORY_TOKEN) private readonly userReplicaRepo: IUserReplicaRepository,
     private readonly rabbitMqEvents: RabbitMqEventsService,
   ) {}
 
