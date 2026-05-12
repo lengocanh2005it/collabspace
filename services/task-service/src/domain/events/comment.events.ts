@@ -12,7 +12,7 @@ export interface TaskCommentedEventPayload {
   
   actorId: string;     // Người thực hiện hành động (Người comment)
   actorName: string;
-  actorAvatarUrl: string;
+  actorAvatarUrl?: string;
   
   commentId: string;      // ID của comment vừa tạo
   commentPreview: string; // Trích xuất nội dung ngắn

@@ -23,8 +23,8 @@ import { CreateCommentHandler } from './application/usecases/comments/create/cre
 import { GetTaskCommentsHandler } from './application/usecases/comments/get/get-task-comments.handler';
 import { EditCommentHandler } from './application/usecases/comments/edit/edit-comment.handler';
 import { DeleteCommentHandler } from './application/usecases/comments/delete/delete-comment.handler';
-// 👇 THÊM HANDLER ĐỒNG BỘ USER
 import { SyncUserReplicaHandler } from './application/usecases/sync-user-replica.handler';
+import { CreateUserReplicaHandler } from './application/usecases/create-user-replica.handler';
 
 // Services
 import { AzureBlobService } from './infrastructure/services/azure-blob.service';
@@ -41,7 +41,7 @@ import { ICommentRepository, COMMENT_REPOSITORY_TOKEN } from './domain/repositor
 import { CommentRepository } from './infrastructure/repositories/comment.repository';
 import { TaskComment, TaskCommentSchema } from './infrastructure/persistence/task-comment.schema';
 import { UserReplica, UserReplicaSchema } from './infrastructure/persistence/user-replica.schema';
-import { IUserReplicaRepository } from './application/ports/IUserReplicaRepository'; // Dùng Symbol 2-trong-1
+import { IUserReplicaRepository, USER_REPLICA_REPOSITORY_TOKEN} from './application/ports/IUserReplicaRepository'; // Dùng Symbol 2-trong-1
 import { UserReplicaRepository } from './infrastructure/repositories/mongo-user-replica.repository';
 
 import { RabbitMqModule } from './infrastructure/messaging/rabbitmq/rabbitmq.module'; 
@@ -61,7 +61,8 @@ const Handlers = [
   GetTaskCommentsHandler,
   EditCommentHandler,
   DeleteCommentHandler,
-  SyncUserReplicaHandler, // 👈 Đăng ký Handler ở đây
+  SyncUserReplicaHandler,
+  CreateUserReplicaHandler,
 ];
 
 @Module({
@@ -108,7 +109,7 @@ const Handlers = [
       useClass: CommentRepository,
     },
     {
-      provide: IUserReplicaRepository,
+      provide: USER_REPLICA_REPOSITORY_TOKEN,
       useClass: UserReplicaRepository,
     },
   ],

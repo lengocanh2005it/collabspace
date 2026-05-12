@@ -2,22 +2,25 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 
-@Schema({ 
-  collection: 'user_replicas', // Tên bảng trong MongoDB 
-  timestamps: true 
-})
-export class UserReplica extends Document {
-  @Prop({ required: true, unique: true, index: true })
-  userId: string; // Lưu ý: Đây là ID gốc bắn sang từ Identity Service
+@Schema({ collection: 'user_replicas' })
+export class UserReplica {
+  @Prop({ type: String, required: true, unique: true, index: true })
+  userId: string;
 
-  @Prop({ required: true })
-  name: string;
+  @Prop({ type: String, required: true })
+  email: string;
 
-  @Prop({ default: 'https://default-avatar.com/avatar.png' })
-  avatarUrl: string;
+  @Prop({ type: String, required: true })
+  fullName: string;
 
-  @Prop({ default: true })
-  isActive: boolean; // Cực kỳ quan trọng: Lỡ bên Identity nó khóa mõm user này thì bên Task phải biết để không cho assign task nữa
+  @Prop({ type: String, default: null })
+  displayName?: string | null;
+
+  @Prop({ type: Boolean, default: true })
+  isActive: boolean;
+
+  @Prop({ type: String, default: null })
+  avatarUrl?: string | null;
 }
 
 export const UserReplicaSchema = SchemaFactory.createForClass(UserReplica);

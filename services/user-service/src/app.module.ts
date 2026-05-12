@@ -18,9 +18,11 @@ import { TypeOrmUserProfileRepository } from './infrastructure/repositories/type
 import { UsersController } from './presentation/http/users.controller';
 import { UserProfilesGrpcController } from './presentation/grpc/user-profiles.grpc.controller';
 import { AuthEventsController } from './presentation/rabbitmq/auth-events.controller';
+import { RabbitMqModule } from './infrastructure/messaging/rabbitmq/rabbitmq.module'; 
+import { ConfigurationModule } from './configuration/configuration.module';
 
 @Module({
-  imports: [AuthModule, DatabaseModule],
+  imports: [ConfigurationModule, AuthModule, DatabaseModule, RabbitMqModule],
   controllers: [UsersController, UserProfilesGrpcController, AuthEventsController],
   providers: [
     BulkGetUserProfilesUseCase,

@@ -2,9 +2,9 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { Inject, BadRequestException } from '@nestjs/common';
 import { CreateCommentCommand } from './create-comment.command';
+import { IUserReplicaRepository, USER_REPLICA_REPOSITORY_TOKEN } from 'src/application/ports/IUserReplicaRepository';
 import { ICommentRepository, COMMENT_REPOSITORY_TOKEN } from '../../../../domain/repositories/comment.repository.interface';
 import { ITaskRepository } from '../../../ports/ITaskRepository';
-import { IUserReplicaRepository } from '../../../ports/IUserReplicaRepository';
 import { Comment } from '../../../../domain/entities/comment.entity';
 import { TaskId } from '../../../../domain/value-objects/TaskId';
 import { RabbitMqEventsService } from '../../../../infrastructure/messaging/rabbitmq/rabbitmq-events.service';
@@ -25,7 +25,7 @@ export class CreateCommentHandler implements ICommandHandler<CreateCommentComman
     @Inject(ITaskRepository)
     private readonly taskRepository: ITaskRepository,
     
-    @Inject(IUserReplicaRepository)
+    @Inject(USER_REPLICA_REPOSITORY_TOKEN)
     private readonly userReplicaRepo: IUserReplicaRepository,
     
     private readonly rabbitMqEvents: RabbitMqEventsService,
@@ -54,7 +54,7 @@ export class CreateCommentHandler implements ICommandHandler<CreateCommentComman
       command.taskId,
       command.authorId,
       authorRecord.fullName,  // ✅ Tên thật từ hệ thống
-      authorRecord.avatarUrl, // ✅ Avatar thật từ hệ thống
+      authorRecord.avatarUrl || undefined, // ✅ Avatar thật từ hệ thống
       command.content,
       command.parentId || null,
     );
@@ -75,7 +75,7 @@ export class CreateCommentHandler implements ICommandHandler<CreateCommentComman
           recipientId: assigneeId,    // ✅ Gửi thẳng cho người phụ trách
           actorId: authorRecord.userId,
           actorName: authorRecord.fullName,
-          actorAvatarUrl: authorRecord.avatarUrl,
+          actorAvatarUrl: authorRecord.avatarUrl || '',
           commentId: savedCommentId,
           // Cắt gọn nội dung comment nếu nó quá dài để làm preview
           commentPreview: command.content.length > 50 

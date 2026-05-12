@@ -29,7 +29,7 @@ const createDatabaseOptions = (): TypeOrmModuleOptions => ({
 
 @Module({
   imports: [
-    TypeOrmModule.forRoot(createDatabaseOptions()),
+    TypeOrmModule.forRootAsync({ useFactory: () => createDatabaseOptions() }),
     TypeOrmModule.forFeature([
       UserProfileOrmEntity,
       UserPreferencesOrmEntity,

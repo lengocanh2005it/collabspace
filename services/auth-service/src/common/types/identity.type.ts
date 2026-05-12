@@ -1,3 +1,11 @@
+import { ApiProperty } from '@nestjs/swagger';
+import {
+  IsEmail,
+  IsOptional,
+  IsString,
+  MinLength,
+} from 'class-validator';
+
 export type AuthUser = {
   email: string;
   emailVerified: boolean;
@@ -8,13 +16,40 @@ export type AuthUser = {
   userId: string;
 };
 
-export type RegisterInput = {
+export class RegisterInput {
+  @ApiProperty({
+    example: 'tin@example.com',
+  })
+  @IsEmail()
   email: string;
+
+  @ApiProperty({
+    example: 'Tin Vo',
+  })
+  @IsString()
   fullName: string;
+
+  @ApiProperty({
+    example: '123456',
+  })
+  @IsString()
+  @MinLength(6)
   password: string;
+
+  @ApiProperty({
+    example: ['USER'],
+    required: false,
+  })
+  @IsOptional()
   roleNames?: string[];
+
+  @ApiProperty({
+    example: 'workspace-id',
+    required: false,
+  })
+  @IsOptional()
   workspaceId?: string;
-};
+}
 
 export type RegisterPendingResult = {
   email: string;
