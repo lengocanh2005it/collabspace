@@ -48,7 +48,7 @@ export class RabbitMqEventsService implements OnModuleDestroy {
       transport: Transport.RMQ,
       options: {
         urls: [rmqUrl],
-        queue: 'notification-service', // Trỏ thẳng vào queue theo cấu hình JSON của bạn
+        queue: 'task-service', // Trỏ thẳng vào queue theo cấu hình JSON của bạn
         queueOptions: {
           durable: true,
         },
