@@ -329,8 +329,8 @@ export class ConfigurationService {
   getUserServiceConfig(): UserServiceConfig {
     return {
       grpcUrl:
-        this.configService.get<string>('userService.grpcUrl') ??
-        'user-service:50052',
+        this.configService.get<string>('userService.USER_SERVICE_GRPC_URL') ??
+        '127.0.0.1:50052',
     };
   }
 }
