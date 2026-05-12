@@ -18,6 +18,9 @@ export class UserReplica {
 
   @Prop({ type: Boolean, default: true })
   isActive: boolean;
+
+  @Prop({ type: String, default: null })
+  avatarUrl?: string | null;
 }
 
 export const UserReplicaSchema = SchemaFactory.createForClass(UserReplica);

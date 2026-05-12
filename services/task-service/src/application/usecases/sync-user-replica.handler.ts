@@ -1,21 +1,18 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { Inject } from '@nestjs/common';
-import { SyncUserReplicaCommand } from 'src/application/commands/sync-user-replica.command';
-import { IUserReplicaRepository } from '../ports/IUserReplicaRepository';
+import { SyncUserReplicaCommand } from '../commands/sync-user-replica.command';
+import { IUserReplicaRepository, USER_REPLICA_REPOSITORY_TOKEN } from '../ports/IUserReplicaRepository';
 
 @CommandHandler(SyncUserReplicaCommand)
 export class SyncUserReplicaHandler implements ICommandHandler<SyncUserReplicaCommand> {
-  constructor(
-    @Inject(IUserReplicaRepository)
-    private readonly userReplicaRepo: IUserReplicaRepository,
-  ) {}
+  constructor(@Inject(USER_REPLICA_REPOSITORY_TOKEN) private readonly repo: IUserReplicaRepository) {}
 
   async execute(command: SyncUserReplicaCommand): Promise<void> {
-    console.log(`[CQRS] Đang đồng bộ UserReplica cho user: ${command.userId}`);
-    await this.userReplicaRepo.upsertAsync(
-      command.userId, 
-      command.name, 
-      command.avatarUrl
-    );
+    // Gọi hàm patch (updateFields) để không ghi đè dữ liệu cũ
+    await this.repo.updateFieldsAsync(command.userId, {
+      fullName: command.fullName,
+      displayName: command.displayName,
+      avatarUrl: command.avatarUrl,
+    });
   }
 }
