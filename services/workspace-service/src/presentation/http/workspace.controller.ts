@@ -29,11 +29,6 @@ export class WorkspaceController {
     private readonly listMembersUseCase: ListMembersUseCase,
   ) {}
 
-  @Get('health')
-  healthCheck() {
-    return { status: 'ok', timestamp: new Date().toISOString() };
-  }
-
   @Post()
   async createWorkspace(
     @UserId() userId: string,

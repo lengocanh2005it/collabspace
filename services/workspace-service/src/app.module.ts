@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { DatabaseModule } from './infrastructure/database/database.module';
 import { RabbitMqModule } from './infrastructure/messaging/rabbitmq.module';
 import { WorkspaceController } from './presentation/http/workspace.controller';
+import { HealthController } from './presentation/http/health.controller';
 import { ProjectController } from './presentation/http/project.controller';
 import { InvitationController } from './presentation/http/invitation.controller';
 import { CreateWorkspaceUseCase } from './application/use-cases/workspace/create-workspace.use-case';
@@ -19,7 +20,12 @@ import { RejectInvitationUseCase } from './application/use-cases/invitation/reje
 
 @Module({
   imports: [DatabaseModule, RabbitMqModule],
-  controllers: [WorkspaceController, ProjectController, InvitationController],
+  controllers: [
+    HealthController,
+    WorkspaceController,
+    ProjectController,
+    InvitationController,
+  ],
   providers: [
     CreateWorkspaceUseCase,
     GetWorkspaceUseCase,
