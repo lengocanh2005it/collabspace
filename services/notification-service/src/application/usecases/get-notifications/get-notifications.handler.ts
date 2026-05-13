@@ -1,8 +1,11 @@
 // src/application/usecases/get-notifications/get-notifications.handler.ts
-import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
-import { Inject, Injectable } from '@nestjs/common';
-import { GetNotificationsQuery } from './get-notifications.query';
-import { INotificationRepository, NOTIFICATION_REPOSITORY_TOKEN } from '../../../domain/repositories/INotificationRepository';
+import { IQueryHandler, QueryHandler } from "@nestjs/cqrs";
+import { Inject, Injectable } from "@nestjs/common";
+import { GetNotificationsQuery } from "./get-notifications.query";
+import {
+  INotificationRepository,
+  NOTIFICATION_REPOSITORY_TOKEN,
+} from "../../../domain/repositories/INotificationRepository";
 
 export interface NotificationResponseDto {
   id: string;
@@ -33,21 +36,33 @@ export interface GetNotificationsResponse {
 
 @Injectable()
 @QueryHandler(GetNotificationsQuery)
-export class GetNotificationsHandler implements IQueryHandler<GetNotificationsQuery, GetNotificationsResponse> {
+export class GetNotificationsHandler implements IQueryHandler<
+  GetNotificationsQuery,
+  GetNotificationsResponse
+> {
   constructor(
     @Inject(NOTIFICATION_REPOSITORY_TOKEN)
     private readonly notificationRepository: INotificationRepository,
   ) {}
 
-  async execute(query: GetNotificationsQuery): Promise<GetNotificationsResponse> {
+  async execute(
+    query: GetNotificationsQuery,
+  ): Promise<GetNotificationsResponse> {
     // Step 1: Get notifications with pagination
-    const notifications = await this.notificationRepository.findByRecipientIdAsync(query.recipientId, {
-      skip: query.skip,
-      limit: query.limit,
-    });
+    const notifications =
+      await this.notificationRepository.findByRecipientIdAsync(
+        query.recipientId,
+        {
+          skip: query.skip,
+          limit: query.limit,
+        },
+      );
 
     // Step 2: Get unread count
-    const unreadCount = await this.notificationRepository.countUnreadByRecipientIdAsync(query.recipientId);
+    const unreadCount =
+      await this.notificationRepository.countUnreadByRecipientIdAsync(
+        query.recipientId,
+      );
 
     // Step 3: Map to response DTOs
     const responseNotifications = notifications.map((notification) => ({
@@ -55,7 +70,7 @@ export class GetNotificationsHandler implements IQueryHandler<GetNotificationsQu
       recipientId: notification.getRecipientId(),
       actor: {
         id: notification.getActorId(),
-        name: notification.getMetadata().actorName || 'Unknown',
+        name: notification.getMetadata().actorName || "Unknown",
         avatarUrl: notification.getMetadata().actorAvatarUrl,
       },
       type: notification.getType(),

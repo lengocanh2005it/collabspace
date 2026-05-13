@@ -1,13 +1,16 @@
 // src/infrastructure/database/repositories/notification.repository.ts
-import { Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
-import { Notification as NotificationEntity } from '../../../domain/entities/Notification';
-import { INotificationRepository } from '../../../domain/repositories/INotificationRepository';
-import { Notification, NotificationDocument } from '../schemas/notification.schema';
-import { NotificationMapper } from '../../mappers/notification.mapper';
-import { NotificationStatus } from '../../../domain/value-objects/NotificationStatus';
-import { NotificationType } from '../../../domain/value-objects/NotificationType';
+import { Injectable } from "@nestjs/common";
+import { InjectModel } from "@nestjs/mongoose";
+import { Model } from "mongoose";
+import { Notification as NotificationEntity } from "../../../domain/entities/Notification";
+import { INotificationRepository } from "../../../domain/repositories/INotificationRepository";
+import {
+  Notification,
+  NotificationDocument,
+} from "../schemas/notification.schema";
+import { NotificationMapper } from "../../mappers/notification.mapper";
+import { NotificationStatus } from "../../../domain/value-objects/NotificationStatus";
+import { NotificationType } from "../../../domain/value-objects/NotificationType";
 
 /**
  * Notification Repository - Infrastructure Layer Adapter
@@ -26,7 +29,8 @@ export class NotificationRepository implements INotificationRepository {
    */
   async createAsync(notification: NotificationEntity): Promise<string> {
     const notificationDocument = NotificationMapper.toPersistence(notification);
-    const createdNotification = await this.notificationModel.create(notificationDocument);
+    const createdNotification =
+      await this.notificationModel.create(notificationDocument);
     return createdNotification._id.toString();
   }
 
@@ -48,7 +52,9 @@ export class NotificationRepository implements INotificationRepository {
     recipientId: string,
     options?: { skip?: number; limit?: number },
   ): Promise<NotificationEntity[]> {
-    let query = this.notificationModel.find({ recipientId }).sort({ createdAt: -1 });
+    let query = this.notificationModel
+      .find({ recipientId })
+      .sort({ createdAt: -1 });
 
     if (options?.skip) {
       query = query.skip(options.skip);
@@ -65,7 +71,9 @@ export class NotificationRepository implements INotificationRepository {
   /**
    * Tìm notification chưa đọc của một user
    */
-  async findUnreadByRecipientIdAsync(recipientId: string): Promise<NotificationEntity[]> {
+  async findUnreadByRecipientIdAsync(
+    recipientId: string,
+  ): Promise<NotificationEntity[]> {
     const documents = await this.notificationModel
       .find({
         recipientId,
@@ -129,7 +137,10 @@ export class NotificationRepository implements INotificationRepository {
   /**
    * Tìm notification theo type
    */
-  async findByTypeAsync(recipientId: string, type: NotificationType): Promise<NotificationEntity[]> {
+  async findByTypeAsync(
+    recipientId: string,
+    type: NotificationType,
+  ): Promise<NotificationEntity[]> {
     const documents = await this.notificationModel
       .find({
         recipientId: recipientId,

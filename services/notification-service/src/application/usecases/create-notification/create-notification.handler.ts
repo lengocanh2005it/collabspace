@@ -1,9 +1,12 @@
 // src/application/usecases/create-notification/create-notification.handler.ts
-import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { Inject, Injectable } from '@nestjs/common';
-import { CreateNotificationCommand } from './create-notification.command';
-import { Notification } from '../../../domain/entities/Notification';
-import { INotificationRepository, NOTIFICATION_REPOSITORY_TOKEN } from '../../../domain/repositories/INotificationRepository';
+import { CommandHandler, ICommandHandler } from "@nestjs/cqrs";
+import { Inject, Injectable } from "@nestjs/common";
+import { CreateNotificationCommand } from "./create-notification.command";
+import { Notification } from "../../../domain/entities/Notification";
+import {
+  INotificationRepository,
+  NOTIFICATION_REPOSITORY_TOKEN,
+} from "../../../domain/repositories/INotificationRepository";
 
 export interface CreateNotificationResponse {
   notificationId: string;
@@ -11,13 +14,18 @@ export interface CreateNotificationResponse {
 }
 
 @CommandHandler(CreateNotificationCommand)
-export class CreateNotificationHandler implements ICommandHandler<CreateNotificationCommand, CreateNotificationResponse> {
+export class CreateNotificationHandler implements ICommandHandler<
+  CreateNotificationCommand,
+  CreateNotificationResponse
+> {
   constructor(
     @Inject(NOTIFICATION_REPOSITORY_TOKEN)
     private readonly notificationRepository: INotificationRepository,
   ) {}
 
-  async execute(command: CreateNotificationCommand): Promise<CreateNotificationResponse> {
+  async execute(
+    command: CreateNotificationCommand,
+  ): Promise<CreateNotificationResponse> {
     // Step 1: Create notification entity with validation
     const notification = Notification.create(
       command.recipientId,
@@ -31,12 +39,13 @@ export class CreateNotificationHandler implements ICommandHandler<CreateNotifica
     );
 
     // Step 2: Persist notification to database
-    const savedNotificationId = await this.notificationRepository.createAsync(notification);
+    const savedNotificationId =
+      await this.notificationRepository.createAsync(notification);
 
     // Step 3: Return response
     return {
       notificationId: savedNotificationId,
-      message: 'Notification created successfully',
+      message: "Notification created successfully",
     };
   }
 }

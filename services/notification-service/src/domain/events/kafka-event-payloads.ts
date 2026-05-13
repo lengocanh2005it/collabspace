@@ -12,8 +12,8 @@
  */
 
 // Re-export everything for backward compatibility
-export * from './task-events';
-export * from './comment-events';
-export * from './workspace-events';
-export * from './attachment-events';
-export * from './kafka-event-wrapper';
+export * from "./task-events";
+export * from "./comment-events";
+export * from "./workspace-events";
+export * from "./attachment-events";
+export * from "./kafka-event-wrapper";

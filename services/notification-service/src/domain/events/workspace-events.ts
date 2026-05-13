@@ -12,7 +12,7 @@ export interface WorkspaceInvitedEventPayload {
   invitedById: string;
   invitedByName: string;
   invitedByAvatarUrl?: string;
-  role?: string;          // 'member', 'admin', etc.
+  role?: string; // 'member', 'admin', etc.
   inviteEmail?: string;
 }
 

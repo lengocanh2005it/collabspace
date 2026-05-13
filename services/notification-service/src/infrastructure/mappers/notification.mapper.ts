@@ -1,7 +1,7 @@
 // src/infrastructure/mappers/notification.mapper.ts
-import { Notification as NotificationEntity } from '../../domain/entities/Notification';
-import { NotificationDocument } from '../database/schemas/notification.schema';
-import { NotificationStatus } from '../../domain/value-objects/NotificationStatus';
+import { Notification as NotificationEntity } from "../../domain/entities/Notification";
+import { NotificationDocument } from "../database/schemas/notification.schema";
+import { NotificationStatus } from "../../domain/value-objects/NotificationStatus";
 
 /**
  * Notification Mapper
@@ -14,7 +14,9 @@ export class NotificationMapper {
    * Chuyển từ Domain Entity sang Persistence Document
    * Dùng khi: Save notification vào database
    */
-  public static toPersistence(notification: NotificationEntity): Partial<NotificationDocument> {
+  public static toPersistence(
+    notification: NotificationEntity,
+  ): Partial<NotificationDocument> {
     return {
       recipientId: notification.getRecipientId(),
       actorId: notification.getActorId(),
@@ -44,7 +46,7 @@ export class NotificationMapper {
       raw.message,
       raw.targetId,
       raw.targetType,
-      raw.status as NotificationStatus,
+      raw.status,
       raw.metadata,
       raw.createdAt,
       raw.updatedAt,
@@ -61,7 +63,7 @@ export class NotificationMapper {
       recipientId: raw.recipientId,
       actor: {
         id: raw.actorId,
-        name: raw.metadata?.actorName || 'Unknown',
+        name: raw.metadata?.actorName || "Unknown",
         avatarUrl: raw.metadata?.actorAvatarUrl,
       },
       type: raw.type,

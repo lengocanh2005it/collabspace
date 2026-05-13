@@ -1,6 +1,6 @@
-import { Global, Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
-import { ConfigurationService } from './configuration.service';
+import { Global, Module } from "@nestjs/common";
+import { ConfigModule } from "@nestjs/config";
+import { ConfigurationService } from "./configuration.service";
 
 @Global() // Đặt là Global để các module khác (Task, Notification, v.v.) dùng được luôn mà không cần import lại
 @Module({

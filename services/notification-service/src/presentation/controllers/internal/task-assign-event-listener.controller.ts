@@ -1,32 +1,54 @@
-import { Controller, Logger } from '@nestjs/common';
-import { Ctx, EventPattern, Payload, RmqContext } from '@nestjs/microservices';
+import { Controller, Logger } from "@nestjs/common";
+import { Ctx, EventPattern, Payload, RmqContext } from "@nestjs/microservices";
 // Định nghĩa lại Type này (hoặc import từ thư viện shared của team)
-import { TaskAssignedEventPayload } from '../../../domain/events';
+import { TaskAssignedEventPayload } from "../../../domain/events";
+
+import { CreateNotificationCommand } from "../../../application/usecases/create-notification/create-notification.command";
+import { NotificationType } from "../../../domain/value-objects/NotificationType";
+import { CommandBus } from "@nestjs/cqrs";
 
 @Controller()
 export class TaskEventController {
   private readonly logger = new Logger(TaskEventController.name);
 
-  // constructor(private readonly processNotificationUseCase: ProcessNotificationUseCase) {}
+  constructor(private readonly commandBus: CommandBus) {}
 
-  @EventPattern('task_assigned') // Trùng với TASK_ASSIGNED_EVENT đã định nghĩa ở bên gửi
+  @EventPattern("task_assigned") // Trùng với TASK_ASSIGNED_EVENT đã định nghĩa ở bên gửi
   async handleTaskAssignedEvent(
     @Payload() data: TaskAssignedEventPayload,
-    @Ctx() context: RmqContext
+    @Ctx() context: RmqContext,
   ) {
     try {
-      this.logger.log(`📥 Nhận được event giao task cho User: ${data.recipientId}`);
-      
+      this.logger.log(
+        `📥 Nhận được event giao task cho User: ${data.recipientId}`,
+      );
+
       // 1. Gọi Use Case để lưu vào MongoDB
-      // await this.processNotificationUseCase.execute(data);
+      await this.commandBus.execute(
+        new CreateNotificationCommand(
+          data.recipientId,
+          data.actorId,
+          NotificationType.TASK_ASSIGNED,
+          "Giao việc mới",
+          `${data.actorName} đã giao task "${data.taskTitle}" cho bạn`,
+          data.taskId,
+          "TASK",
+          {
+            actorName: data.actorName,
+            actorAvatarUrl: data.actorAvatarUrl,
+            taskTitle: data.taskTitle,
+            assignedAt: data.assignedAt,
+            workspaceId: data.workspaceId,
+          },
+        ),
+      );
 
       // 2. Xác nhận (Ack) đã xử lý thành công để RabbitMQ xóa message khỏi queue
       const channel = context.getChannelRef();
       const originalMsg = context.getMessage();
       channel.ack(originalMsg);
-
     } catch (error) {
-      this.logger.error('❌ Lỗi khi xử lý event task_assigned', error);
+      this.logger.error("❌ Lỗi khi xử lý event task_assigned", error);
       // Logic xử lý lỗi (ví dụ đẩy sang Dead Letter Queue)
     }
   }

@@ -6,17 +6,21 @@
  */
 
 // Event wrappers and types
-export { KafkaEventWrapper, KafkaEventType, createKafkaEventWrapper } from './kafka-event-wrapper';
+export {
+  KafkaEventWrapper,
+  KafkaEventType,
+  createKafkaEventWrapper,
+} from "./kafka-event-wrapper";
 
 // Task events
 export type {
   TaskAssignedEventPayload,
-//   TaskStatusChangedEventPayload,
-//   TaskDueDateApproachingEventPayload,
-//   TaskDeletedEventPayload,
-//   TaskCreatedEventPayload,
-//   TaskUpdatedEventPayload,
-} from './task-events';
+  //   TaskStatusChangedEventPayload,
+  //   TaskDueDateApproachingEventPayload,
+  //   TaskDeletedEventPayload,
+  //   TaskCreatedEventPayload,
+  //   TaskUpdatedEventPayload,
+} from "./task-events";
 
 // Comment events
 export type {
@@ -26,7 +30,7 @@ export type {
   CommentEditedEventPayload,
   CommentDeletedEventPayload,
   CommentReactionAddedEventPayload,
-} from './comment-events';
+} from "./comment-events";
 
 // Workspace events
 export type {
@@ -37,11 +41,11 @@ export type {
   WorkspaceCreatedEventPayload,
   WorkspaceUpdatedEventPayload,
   WorkspaceDeletedEventPayload,
-} from './workspace-events';
+} from "./workspace-events";
 
 // Attachment events
 export type {
   AttachmentAddedEventPayload,
   AttachmentDeletedEventPayload,
   AttachmentDownloadedEventPayload,
-} from './attachment-events';
+} from "./attachment-events";
