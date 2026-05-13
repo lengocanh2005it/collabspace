@@ -1,7 +1,8 @@
 // src/domain/entities/Notification.ts
 import { NotificationType } from "../value-objects/NotificationType";
 import { NotificationStatus } from "../value-objects/NotificationStatus";
-import { v4 as uuid } from "uuid";
+import { randomUUID } from "node:crypto";
+import type { NotificationMetadata } from "../types/notification-metadata";
 
 /**
  * Notification Domain Entity
@@ -19,7 +20,7 @@ export class Notification {
     private readonly targetId: string, // ID của resource (taskId, commentId, etc)
     private readonly targetType: string, // Loại resource (TASK, COMMENT, etc)
     private status: NotificationStatus,
-    private readonly metadata: Record<string, any>, // Dữ liệu thêm (actorName, actorAvatar, etc)
+    private readonly metadata: NotificationMetadata, // Dữ liệu thêm (actorName, actorAvatar, etc)
     private readonly createdAt: Date,
     private updatedAt: Date,
   ) {}
@@ -35,7 +36,7 @@ export class Notification {
     message: string,
     targetId: string,
     targetType: string,
-    metadata?: Record<string, any>,
+    metadata?: NotificationMetadata,
   ): Notification {
     // Validation
     if (!recipientId || !recipientId.trim()) {
@@ -58,7 +59,7 @@ export class Notification {
     }
 
     return new Notification(
-      uuid(),
+      randomUUID(),
       recipientId,
       actorId,
       type,
@@ -67,7 +68,7 @@ export class Notification {
       targetId,
       targetType,
       NotificationStatus.UNREAD,
-      metadata || {},
+      metadata ?? {},
       new Date(),
       new Date(),
     );
@@ -86,7 +87,7 @@ export class Notification {
     targetId: string,
     targetType: string,
     status: NotificationStatus,
-    metadata: Record<string, any>,
+    metadata: NotificationMetadata,
     createdAt: Date,
     updatedAt: Date,
   ): Notification {
@@ -192,7 +193,7 @@ export class Notification {
     return this.status;
   }
 
-  public getMetadata(): Record<string, any> {
+  public getMetadata(): NotificationMetadata {
     return { ...this.metadata };
   }
 

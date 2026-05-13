@@ -3,9 +3,13 @@ import { IQueryHandler, QueryHandler } from "@nestjs/cqrs";
 import { Inject, Injectable } from "@nestjs/common";
 import { GetNotificationsQuery } from "./get-notifications.query";
 import {
-  INotificationRepository,
+  type INotificationRepository,
   NOTIFICATION_REPOSITORY_TOKEN,
 } from "../../../domain/repositories/INotificationRepository";
+import {
+  getMetadataString,
+  type NotificationMetadata,
+} from "../../../domain/types/notification-metadata";
 
 export interface NotificationResponseDto {
   id: string;
@@ -21,7 +25,7 @@ export interface NotificationResponseDto {
   targetId: string;
   targetType: string;
   status: string;
-  metadata: Record<string, any>;
+  metadata: NotificationMetadata;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -65,29 +69,33 @@ export class GetNotificationsHandler implements IQueryHandler<
       );
 
     // Step 3: Map to response DTOs
-    const responseNotifications = notifications.map((notification) => ({
-      id: notification.getId(),
-      recipientId: notification.getRecipientId(),
-      actor: {
-        id: notification.getActorId(),
-        name: notification.getMetadata().actorName || "Unknown",
-        avatarUrl: notification.getMetadata().actorAvatarUrl,
-      },
-      type: notification.getType(),
-      title: notification.getTitle(),
-      message: notification.getMessage(),
-      targetId: notification.getTargetId(),
-      targetType: notification.getTargetType(),
-      status: notification.getStatus(),
-      metadata: notification.getMetadata(),
-      createdAt: notification.getCreatedAt(),
-      updatedAt: notification.getUpdatedAt(),
-    }));
+    const mappedNotifications = notifications.map((notification) => {
+      const metadata = notification.getMetadata();
+
+      return {
+        id: notification.getId(),
+        recipientId: notification.getRecipientId(),
+        actor: {
+          id: notification.getActorId(),
+          name: getMetadataString(metadata, "actorName") || "Unknown",
+          avatarUrl: getMetadataString(metadata, "actorAvatarUrl"),
+        },
+        type: notification.getType(),
+        title: notification.getTitle(),
+        message: notification.getMessage(),
+        targetId: notification.getTargetId(),
+        targetType: notification.getTargetType(),
+        status: notification.getStatus(),
+        metadata,
+        createdAt: notification.getCreatedAt(),
+        updatedAt: notification.getUpdatedAt(),
+      };
+    });
 
     // Step 4: Return response
     return {
-      notifications: responseNotifications,
-      total: responseNotifications.length,
+      notifications: mappedNotifications,
+      total: mappedNotifications.length,
       skip: query.skip,
       limit: query.limit,
       unreadCount,

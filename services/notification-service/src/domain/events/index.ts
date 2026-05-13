@@ -6,11 +6,8 @@
  */
 
 // Event wrappers and types
-export {
-  KafkaEventWrapper,
-  KafkaEventType,
-  createKafkaEventWrapper,
-} from "./kafka-event-wrapper";
+export { KafkaEventType, createKafkaEventWrapper } from "./kafka-event-wrapper";
+export type { KafkaEventWrapper } from "./kafka-event-wrapper";
 
 // Task events
 export type {

@@ -5,6 +5,8 @@
  * Events triggered when workspace operations occur
  */
 
+export const WORKSPACE_INVITED_EVENT = "workspace_invited";
+
 export interface WorkspaceInvitedEventPayload {
   workspaceId: string;
   workspaceName: string;

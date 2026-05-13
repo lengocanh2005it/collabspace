@@ -64,12 +64,13 @@ export class ConfigurationService {
     }
 
     return {
-      // Ép kiểu từ String sang Boolean chuẩn xác
-      enabled: this.configService.get<string>("RABBITMQ_ENABLED") === "true",
+      enabled: this.configService.get<string>("RABBITMQ_ENABLED") !== "false",
 
       url,
 
-      queue: this.configService.get<string>("RABBITMQ_QUEUE") ?? "user-service",
+      queue:
+        this.configService.get<string>("RABBITMQ_QUEUE") ??
+        "notification-service",
 
       // Mặc định là true, trừ khi cố tình ghi 'false'
       queueDurable:

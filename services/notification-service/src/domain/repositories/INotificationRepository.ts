@@ -1,6 +1,5 @@
 // src/domain/repositories/INotificationRepository.ts
 import { Notification } from "../entities/Notification";
-import { NotificationStatus } from "../value-objects/NotificationStatus";
 
 /**
  * Notification Repository Interface (Port)

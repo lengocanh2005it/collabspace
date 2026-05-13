@@ -7,6 +7,7 @@ import { ConfigurationModule } from "./configuration/configuartion.module";
 import { ConfigurationService } from "./configuration/configuration.service";
 import { TaskEventController } from "./presentation/controllers/internal/task-assign-event-listener.controller";
 import { CommentEventListenerController } from "./presentation/controllers/internal/task-comment-event-listener.controller";
+import { WorkspaceInviteEventListenerController } from "./presentation/controllers/internal/workspace-invite-event-listener.controller";
 
 // Handlers & Persistence (Giữ nguyên các import của bạn)
 import {
@@ -35,7 +36,11 @@ const Handlers = [CreateNotificationHandler, GetNotificationsHandler];
       { name: Notification.name, schema: NotificationSchema },
     ]),
   ],
-  controllers: [TaskEventController, CommentEventListenerController], // Thêm cả 2 controller hứng event
+  controllers: [
+    TaskEventController,
+    CommentEventListenerController,
+    WorkspaceInviteEventListenerController,
+  ],
   providers: [
     ...Handlers,
     {

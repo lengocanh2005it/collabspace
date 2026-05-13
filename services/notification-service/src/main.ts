@@ -40,4 +40,4 @@ async function bootstrap() {
   console.log(`✅ Notification HTTP API is running on port ${port}`);
 }
 
-bootstrap();
+void bootstrap();

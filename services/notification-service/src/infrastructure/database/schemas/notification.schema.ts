@@ -1,10 +1,11 @@
 // src/infrastructure/database/schemas/notification.schema.ts
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { Document } from "mongoose";
+import type { HydratedDocument } from "mongoose";
 import { NotificationType } from "../../../domain/value-objects/NotificationType";
 import { NotificationStatus } from "../../../domain/value-objects/NotificationStatus";
+import type { NotificationMetadata } from "../../../domain/types/notification-metadata";
 
-export type NotificationDocument = Notification & Document;
+export type NotificationDocument = HydratedDocument<Notification>;
 
 @Schema({ collection: "notifications", timestamps: true })
 export class Notification {
@@ -38,7 +39,7 @@ export class Notification {
   status!: NotificationStatus; // Trạng thái: UNREAD, READ, ARCHIVED
 
   @Prop({ type: Object, default: {} })
-  metadata!: Record<string, any>; // Metadata thêm (actorName, actorAvatar, taskPriority, etc)
+  metadata!: NotificationMetadata; // Metadata thêm (actorName, actorAvatar, taskPriority, etc)
 
   @Prop({ type: Date, default: () => new Date() })
   createdAt!: Date;

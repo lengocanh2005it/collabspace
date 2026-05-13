@@ -1,5 +1,6 @@
 // src/application/usecases/create-notification/create-notification.command.ts
 import { NotificationType } from "../../../domain/value-objects/NotificationType";
+import type { NotificationMetadata } from "../../../domain/types/notification-metadata";
 
 export class CreateNotificationCommand {
   constructor(
@@ -10,6 +11,6 @@ export class CreateNotificationCommand {
     public readonly message: string,
     public readonly targetId: string,
     public readonly targetType: string,
-    public readonly metadata?: Record<string, any>,
+    public readonly metadata?: NotificationMetadata,
   ) {}
 }

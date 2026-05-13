@@ -1,10 +1,10 @@
 // src/application/usecases/create-notification/create-notification.handler.ts
 import { CommandHandler, ICommandHandler } from "@nestjs/cqrs";
-import { Inject, Injectable } from "@nestjs/common";
+import { Inject } from "@nestjs/common";
 import { CreateNotificationCommand } from "./create-notification.command";
 import { Notification } from "../../../domain/entities/Notification";
 import {
-  INotificationRepository,
+  type INotificationRepository,
   NOTIFICATION_REPOSITORY_TOKEN,
 } from "../../../domain/repositories/INotificationRepository";
 
