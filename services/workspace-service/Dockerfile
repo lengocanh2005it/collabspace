@@ -17,7 +17,9 @@ WORKDIR /app
 RUN apk add --no-cache wget
 RUN corepack enable
 
-COPY --from=builder /app ./
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json ./
 
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 USER appuser
