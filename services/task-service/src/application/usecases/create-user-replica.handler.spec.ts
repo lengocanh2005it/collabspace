@@ -1,8 +1,8 @@
-import { CreateUserReplicaHandler } from './create-user-replica.handler';
-import { CreateUserReplicaCommand } from '../commands/create-user-replica.command';
-import { IUserReplicaRepository } from '../ports/IUserReplicaRepository';
+import { CreateUserReplicaHandler } from "./create-user-replica.handler";
+import { CreateUserReplicaCommand } from "../commands/create-user-replica.command";
+import { IUserReplicaRepository } from "../ports/IUserReplicaRepository";
 
-describe('CreateUserReplicaHandler', () => {
+describe("CreateUserReplicaHandler", () => {
   let handler: CreateUserReplicaHandler;
   let mockUserReplicaRepo: jest.Mocked<IUserReplicaRepository>;
 
@@ -18,14 +18,14 @@ describe('CreateUserReplicaHandler', () => {
     handler = new CreateUserReplicaHandler(mockUserReplicaRepo);
   });
 
-  it('should create user replica successfully', async () => {
-    const command = new CreateUserReplicaCommand('user-123', 'Full Name');
+  it("should create user replica successfully", async () => {
+    const command = new CreateUserReplicaCommand("user-123", "Full Name");
 
     await handler.execute(command);
 
     expect(mockUserReplicaRepo.upsertAsync).toHaveBeenCalledWith({
-      userId: 'user-123',
-      fullName: 'Full Name',
+      userId: "user-123",
+      fullName: "Full Name",
       isActive: true,
     });
   });

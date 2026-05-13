@@ -1,8 +1,8 @@
-import { SyncUserReplicaHandler } from './sync-user-replica.handler';
-import { SyncUserReplicaCommand } from '../commands/sync-user-replica.command';
-import { IUserReplicaRepository } from '../ports/IUserReplicaRepository';
+import { SyncUserReplicaHandler } from "./sync-user-replica.handler";
+import { SyncUserReplicaCommand } from "../commands/sync-user-replica.command";
+import { IUserReplicaRepository } from "../ports/IUserReplicaRepository";
 
-describe('SyncUserReplicaHandler', () => {
+describe("SyncUserReplicaHandler", () => {
   let handler: SyncUserReplicaHandler;
   let mockUserReplicaRepo: jest.Mocked<IUserReplicaRepository>;
 
@@ -18,15 +18,23 @@ describe('SyncUserReplicaHandler', () => {
     handler = new SyncUserReplicaHandler(mockUserReplicaRepo);
   });
 
-  it('should sync user replica successfully', async () => {
-    const command = new SyncUserReplicaCommand('user-123', 'Full Name', 'Display Name', 'Avatar URL');
+  it("should sync user replica successfully", async () => {
+    const command = new SyncUserReplicaCommand(
+      "user-123",
+      "Full Name",
+      "Display Name",
+      "Avatar URL",
+    );
 
     await handler.execute(command);
 
-    expect(mockUserReplicaRepo.updateFieldsAsync).toHaveBeenCalledWith('user-123', {
-      fullName: 'Full Name',
-      displayName: 'Display Name',
-      avatarUrl: 'Avatar URL',
-    });
+    expect(mockUserReplicaRepo.updateFieldsAsync).toHaveBeenCalledWith(
+      "user-123",
+      {
+        fullName: "Full Name",
+        displayName: "Display Name",
+        avatarUrl: "Avatar URL",
+      },
+    );
   });
 });
