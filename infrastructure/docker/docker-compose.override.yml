@@ -1,15 +1,20 @@
 services:
   auth-service:
+    command: pnpm run start:dev
     volumes:
       - ../../services/auth-service:/app
+      - /app/node_modules
     ports:
       - "3000:3000"
 
   user-service:
+    command: pnpm run start:dev
     volumes:
       - ../../services/user-service:/app
+      - /app/node_modules
     ports:
       - "3001:3000"
+      - "50052:50052"
 
   workspace-service:
     volumes:
@@ -18,13 +23,17 @@ services:
       - "3002:8080"
 
   task-service:
+    command: npm run start:dev
     volumes:
       - ../../services/task-service:/app
+      - /app/node_modules
     ports:
       - "3003:3000"
 
   notification-service:
+    command: npm run start:dev
     volumes:
       - ../../services/notification-service:/app
+      - /app/node_modules
     ports:
       - "3004:3000"

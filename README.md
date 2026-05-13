@@ -363,4 +363,17 @@ This project is for educational purposes.
 ---
 
 **Infrastructure Engineer**: Phan Phu Tho  
-**Last Updated**: 2026-04-03
+**Last Updated**: 2026-05-11
+
+---
+
+## 🏗 Platform Foundation V2 (Convergence Hardening)
+
+The infrastructure has been converged with the service implementations (`auth`, `user`, `task`, `notification` on NestJS, `workspace` on Java).
+
+### Key Upgrades:
+- **API Gateway**: Migrated all routes to `/api/v1/*` with true `forward-auth` middleware leveraging `auth-service`.
+- **Docker Tooling**: Upgraded to Node 20, NestJS builds, and `pnpm` where applicable. Restart policies and memory limits applied.
+- **K8s Manifests**: Real health check probes (`/api/v1/*/health`), HPAs added, and shared ConfigMaps implemented.
+- **Observability**: Prometheus metrics enabled with Node exporters (Postgres, Redis, MongoDB). Grafana dashboards auto-provisioned.
+- **Dev Tooling**: Re-created `infrastructure/dev/` tooling (`dev.bat`, `stop_all.bat`, `dev-mode.ps1`) for frictionless local startup.

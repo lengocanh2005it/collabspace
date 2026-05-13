@@ -2,8 +2,6 @@
 # Traefik IngressRoute — External client routing
 # Infrastructure Engineer: Phan Phu Tho
 # ================================================
-# This uses Traefik CRD IngressRoute (kubernetesCRD provider).
-# Traefik deployment already enables kubernetesCRD + kubernetesIngress.
 
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
@@ -18,7 +16,7 @@ spec:
     - websecure
   routes:
     # Auth Service — protected self-lookup endpoint
-    - match: Path(`/auth/me`)
+    - match: Path(`/api/v1/auth/me`)
       kind: Rule
       priority: 100
       services:
@@ -29,8 +27,8 @@ spec:
         - name: rate-limit
         - name: cors-headers
 
-    # Auth Service — /auth/*
-    - match: PathPrefix(`/auth`)
+    # Auth Service — /api/v1/auth/*
+    - match: PathPrefix(`/api/v1/auth`)
       kind: Rule
       services:
         - name: auth-service
@@ -39,8 +37,8 @@ spec:
         - name: rate-limit
         - name: cors-headers
 
-    # User Service — /users/*
-    - match: PathPrefix(`/users`)
+    # User Service — /api/v1/users/*
+    - match: PathPrefix(`/api/v1/users`)
       kind: Rule
       services:
         - name: user-service
@@ -50,8 +48,8 @@ spec:
         - name: rate-limit
         - name: cors-headers
 
-    # Workspace Service — /workspaces/* (Java, port 8080)
-    - match: PathPrefix(`/workspaces`)
+    # Workspace Service — /api/v1/workspaces/*
+    - match: PathPrefix(`/api/v1/workspaces`)
       kind: Rule
       services:
         - name: workspace-service
@@ -61,8 +59,8 @@ spec:
         - name: rate-limit
         - name: cors-headers
 
-    # Task Service — /tasks/*
-    - match: PathPrefix(`/tasks`)
+    # Task Service — /api/v1/tasks/*
+    - match: PathPrefix(`/api/v1/tasks`)
       kind: Rule
       services:
         - name: task-service
@@ -72,8 +70,8 @@ spec:
         - name: rate-limit
         - name: cors-headers
 
-    # Notification Service — /notifications/*
-    - match: PathPrefix(`/notifications`)
+    # Notification Service — /api/v1/notifications/*
+    - match: PathPrefix(`/api/v1/notifications`)
       kind: Rule
       services:
         - name: notification-service
@@ -84,7 +82,6 @@ spec:
         - name: cors-headers
 
 ---
-# Middlewares referenced by IngressRoute
 apiVersion: traefik.io/v1alpha1
 kind: Middleware
 metadata:
@@ -92,7 +89,7 @@ metadata:
   namespace: collabspace
 spec:
   forwardAuth:
-    address: http://auth-service.collabspace.svc.cluster.local:3000/auth/verify
+    address: http://auth-service.collabspace.svc.cluster.local:3000/api/v1/auth/verify
     trustForwardHeader: true
     authRequestHeaders:
       - Authorization

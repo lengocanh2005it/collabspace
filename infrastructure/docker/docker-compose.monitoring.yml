@@ -10,6 +10,7 @@ services:
       - "9090:9090"
     volumes:
       - ../monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ../monitoring/alert-rules.yml:/etc/prometheus/alert-rules.yml
       - prometheus_data:/prometheus
     networks:
       - collabspace-network
@@ -20,6 +21,7 @@ services:
     ports:
       - "3005:3000"
     volumes:
+      - ../monitoring/grafana-provisioning:/etc/grafana/provisioning
       - ../monitoring/grafana-dashboards:/var/lib/grafana/dashboards
       - grafana_data:/var/lib/grafana
     networks:

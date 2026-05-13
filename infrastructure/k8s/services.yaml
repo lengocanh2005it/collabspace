@@ -50,6 +50,10 @@ spec:
       port: 3000
       targetPort: 3000
       protocol: TCP
+    - name: grpc
+      port: 50052
+      targetPort: 50052
+      protocol: TCP
 
 ---
 # CRITICAL: workspace-service runs on port 8080 (Java/Kotlin)
