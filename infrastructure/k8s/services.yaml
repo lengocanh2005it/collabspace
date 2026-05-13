@@ -6,7 +6,7 @@
 # CRITICAL PORT REMINDER:
 # - auth-service: 3000 (Node.js)
 # - user-service: 3000 (Node.js)
-# - workspace-service: 8080 (Java/Kotlin) <-- DIFFERENT!
+# - workspace-service: 8080 (NestJS)
 # - task-service: 3000 (Node.js)
 # - notification-service: 3000 (Node.js)
 
@@ -56,7 +56,7 @@ spec:
       protocol: TCP
 
 ---
-# CRITICAL: workspace-service runs on port 8080 (Java/Kotlin)
+# CRITICAL: workspace-service runs on port 8080 (NestJS)
 apiVersion: v1
 kind: Service
 metadata:
@@ -69,7 +69,7 @@ metadata:
     app.kubernetes.io/part-of: collabspace
   annotations:
     # Note for other developers
-    description: "Java/Kotlin service - uses port 8080, NOT 3000"
+    description: "NestJS service - uses port 8080, NOT 3000"
 spec:
   type: ClusterIP
   selector:

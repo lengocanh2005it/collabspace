@@ -18,24 +18,21 @@ metadata:
     app.kubernetes.io/component: backend
     app.kubernetes.io/part-of: collabspace
 data:
-  # Java/Spring Boot environment
-  SPRING_PROFILES_ACTIVE: "production"
-  SERVER_PORT: "8080"
+  # Node.js / NestJS environment
+  NODE_ENV: "production"
+  PORT: "8080"
   # Database
-  SPRING_DATASOURCE_URL: "jdbc:postgresql://postgres:5432/collabspace_workspace"
-  SPRING_FLYWAY_ENABLED: "true"
+  DATABASE_URL: "postgresql://postgres:postgres@postgres:5432/collabspace_workspace"
+  DATABASE_SCHEMA: "public"
+  DATABASE_LOGGING: "false"
+  DATABASE_SYNCHRONIZE: "true" # In production use migrations instead
   # RabbitMQ
-  SPRING_RABBITMQ_HOST: "rabbitmq"
-  SPRING_RABBITMQ_PORT: "5672"
-  SPRING_RABBITMQ_VIRTUAL_HOST: "collabspace"
+  RABBITMQ_URL: "amqp://guest:guest@rabbitmq:5672/collabspace"
   # Service discovery
   AUTH_SERVICE_URL: "http://auth-service:3000"
   USER_SERVICE_URL: "http://user-service:3000"
   # Tracing
-  JAEGER_AGENT_HOST: "jaeger"
-  JAEGER_AGENT_PORT: "6831"
-  # JVM options
-  JAVA_OPTS: "-Xms256m -Xmx512m -XX:+UseG1GC"
+  JAEGER_ENDPOINT: "http://jaeger:14268/api/traces"
 
 ---
 apiVersion: v1
@@ -47,11 +44,7 @@ metadata:
     app: workspace-service
 type: Opaque
 stringData:
-  SPRING_DATASOURCE_USERNAME: "postgres"
-  SPRING_DATASOURCE_PASSWORD: "postgres"  # CHANGE IN PRODUCTION
   JWT_SECRET: "change-me-in-production"  # CHANGE IN PRODUCTION
-  SPRING_RABBITMQ_USERNAME: "guest"  # CHANGE IN PRODUCTION
-  SPRING_RABBITMQ_PASSWORD: "guest"  # CHANGE IN PRODUCTION
 
 ---
 apiVersion: apps/v1
@@ -105,16 +98,16 @@ spec:
                 name: workspace-service-secrets
           resources:
             requests:
-              memory: "256Mi"  # Java needs more memory
-              cpu: "200m"
+              memory: "128Mi"
+              cpu: "100m"
             limits:
-              memory: "512Mi"
-              cpu: "500m"
+              memory: "256Mi"
+              cpu: "300m"
           readinessProbe:
             httpGet:
               path: /api/v1/workspaces/health
               port: 8080
-            initialDelaySeconds: 30  # Java apps take longer to start
+            initialDelaySeconds: 10
             periodSeconds: 5
             timeoutSeconds: 3
             successThreshold: 1
@@ -123,7 +116,7 @@ spec:
             httpGet:
               path: /api/v1/workspaces/health
               port: 8080
-            initialDelaySeconds: 60  # Give Java app time to fully start
+            initialDelaySeconds: 15
             periodSeconds: 10
             timeoutSeconds: 5
             successThreshold: 1
