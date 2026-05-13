@@ -2,10 +2,10 @@
 # Agent BRAVO - Infrastructure Engineer: Phan Phu Tho
 # Last updated: 2026-04-03
 #
-# CRITICAL: Port 8080 (Java/Kotlin - NOT 3000 like Node.js services)
-# Health: /workspaces/health
+# CRITICAL: Port 8080 (NestJS Node.js service)
+# Health: /api/v1/workspaces/health
 # Database: PostgreSQL (collabspace_workspace)
-# Migrations: Flyway (NOT Prisma)
+# Migrations: TypeORM synchronize / migrations
 
 apiVersion: v1
 kind: ConfigMap
@@ -89,7 +89,7 @@ spec:
           imagePullPolicy: Always
           ports:
             - name: http
-              containerPort: 8080  # CRITICAL: 8080 for Java, NOT 3000
+              containerPort: 8080  # NestJS workspace-service port
               protocol: TCP
           envFrom:
             - configMapRef:

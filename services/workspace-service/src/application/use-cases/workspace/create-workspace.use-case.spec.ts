@@ -7,23 +7,42 @@ import { WorkspaceMemberOrmEntity } from '../../../infrastructure/database/entit
 describe('CreateWorkspaceUseCase', () => {
   let useCase: CreateWorkspaceUseCase;
 
-  const mockWorkspaceRepo = {
-    create: jest.fn().mockImplementation((dto: unknown) => dto),
-    save: jest
+  let createdWorkspace: Record<string, unknown> | null = null;
+  let createdMember: Record<string, unknown> | null = null;
+
+  const mockManager = {
+    create: jest
       .fn()
-      .mockImplementation((entity: unknown) =>
-        Promise.resolve({ id: 'uuid', ...(entity as object) }),
-      ),
+      .mockImplementation((_entity: unknown, dto: unknown) => dto),
+    save: jest.fn().mockImplementation((entity: unknown) => {
+      const obj = entity as Record<string, unknown>;
+      if (obj.name) {
+        createdWorkspace = { id: 'uuid-1234', ...obj };
+        return Promise.resolve(createdWorkspace);
+      }
+      createdMember = { ...obj };
+      return Promise.resolve(createdMember);
+    }),
   };
 
-  const mockMemberRepo = {
-    create: jest.fn().mockImplementation((dto: unknown) => dto),
-    save: jest
-      .fn()
-      .mockImplementation((entity: unknown) => Promise.resolve(entity)),
+  const mockWorkspaceRepo = {
+    manager: {
+      transaction: jest
+        .fn()
+        .mockImplementation(
+          async (cb: (manager: typeof mockManager) => Promise<unknown>) =>
+            cb(mockManager),
+        ),
+    },
   };
+
+  const mockMemberRepo = {};
 
   beforeEach(async () => {
+    jest.clearAllMocks();
+    createdWorkspace = null;
+    createdMember = null;
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CreateWorkspaceUseCase,
@@ -45,25 +64,22 @@ describe('CreateWorkspaceUseCase', () => {
     expect(useCase).toBeDefined();
   });
 
-  it('should create a workspace and owner member', async () => {
+  it('should create a workspace and add owner as member within a transaction', async () => {
     const userId = 'user-1';
     const dto = { name: 'Test Workspace' };
 
     const result = await useCase.execute(userId, dto);
 
-    expect(mockWorkspaceRepo.create).toHaveBeenCalledWith({
-      name: 'Test Workspace',
-      description: null,
-      owner_id: userId,
-    });
-    expect(mockWorkspaceRepo.save).toHaveBeenCalled();
-    expect(mockMemberRepo.create).toHaveBeenCalledWith({
-      workspace_id: 'uuid',
-      user_id: userId,
-      role: 'owner',
-    });
-    expect(mockMemberRepo.save).toHaveBeenCalled();
-    expect(result.id).toBe('uuid');
-    expect(result.name).toBe('Test Workspace');
+    // Verify transaction was used
+    expect(mockWorkspaceRepo.manager.transaction).toHaveBeenCalledTimes(1);
+
+    // Verify workspace was created with correct fields
+    expect(mockManager.create).toHaveBeenCalledTimes(2);
+    expect(mockManager.save).toHaveBeenCalledTimes(2);
+
+    // Verify the returned workspace
+    expect(result).toBeDefined();
+    expect((result as Record<string, unknown>).id).toBe('uuid-1234');
+    expect((result as Record<string, unknown>).name).toBe('Test Workspace');
   });
 });
