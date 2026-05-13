@@ -10,12 +10,12 @@ const BASE_URL = __ENV.BASE_URL || "http://localhost";
 
 export default function () {
   group("Workspace Service Health", function () {
-    let res = http.get(`${BASE_URL}/workspaces/health`);
+    let res = http.get(`${BASE_URL}/api/v1/workspaces/health`);
     check(res, { "health status 200": (r) => r.status === 200 });
   });
 
   group("List Workspaces", function () {
-    let res = http.get(`${BASE_URL}/workspaces`, {
+    let res = http.get(`${BASE_URL}/api/v1/workspaces`, {
       headers: { Authorization: `Bearer ${__ENV.TEST_TOKEN || ''}` },
     });
     check(res, {

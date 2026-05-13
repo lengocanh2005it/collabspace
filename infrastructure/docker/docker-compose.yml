@@ -2,19 +2,22 @@ services:
   rabbitmq:
     build: ../rabbitmq
     container_name: rabbitmq
+    restart: unless-stopped
     env_file:
       - ../rabbitmq/.env
     ports:
       - "5672:5672"  
-      - "15672:15672"  # Management UI
+      - "15672:15672"
     volumes:
-      - ../rabbitmq/data:/var/lib/rabbitmq   # persistent data
+      - ../rabbitmq/data:/var/lib/rabbitmq
     networks:
       - collabspace-network
 
   auth-service:
     build: ../../services/auth-service
     container_name: auth-service
+    restart: unless-stopped
+    mem_limit: 512m
     env_file:
       - ../../services/auth-service/.env
     depends_on:
@@ -28,9 +31,13 @@ services:
   user-service:
     build: ../../services/user-service
     container_name: user-service
+    restart: unless-stopped
+    mem_limit: 512m
     env_file:
       - ../../services/user-service/.env
     depends_on:
+      rabbitmq:
+        condition: service_started
       postgres:
         condition: service_healthy
     networks:
@@ -39,6 +46,8 @@ services:
   workspace-service:
     build: ../../services/workspace-service
     container_name: workspace-service
+    restart: unless-stopped
+    mem_limit: 512m
     env_file:
       - ../../services/workspace-service/.env
     depends_on:
@@ -52,6 +61,8 @@ services:
   task-service:
     build: ../../services/task-service
     container_name: task-service
+    restart: unless-stopped
+    mem_limit: 512m
     env_file:
       - ../../services/task-service/.env
     depends_on:
@@ -65,6 +76,10 @@ services:
   notification-service:
     build: ../../services/notification-service
     container_name: notification-service
+    restart: unless-stopped
+    mem_limit: 512m
+    environment:
+      - PORT=3000
     env_file:
       - ../../services/notification-service/.env
     depends_on:

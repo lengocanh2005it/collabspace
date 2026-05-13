@@ -15,8 +15,9 @@ pipeline {
 
         stage('Build & Test') {
             steps {
-                sh './gradlew build --no-daemon'
-                sh './gradlew test --no-daemon'
+                sh 'pnpm install'
+                sh 'pnpm run build'
+                sh 'pnpm test'
             }
         }
 

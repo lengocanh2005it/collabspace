@@ -38,7 +38,27 @@ http:
           - "Content-Type"
           - "Authorization"
           - "X-Requested-With"
+          - "X-Request-Id"
         accessControlAllowOriginList:
           - "*"
         accessControlMaxAge: 3600
         addVaryHeader: true
+
+    security-headers:
+      headers:
+        frameDeny: true
+        contentTypeNosniff: true
+        browserXssFilter: true
+        referrerPolicy: "strict-origin-when-cross-origin"
+        customResponseHeaders:
+          X-Powered-By: ""
+          Server: ""
+
+    retry-policy:
+      retry:
+        attempts: 3
+        initialInterval: 100ms
+
+    circuit-breaker:
+      circuitBreaker:
+        expression: "NetworkErrorRatio() > 0.3"
