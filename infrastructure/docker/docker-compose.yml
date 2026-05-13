@@ -36,6 +36,8 @@ services:
     env_file:
       - ../../services/user-service/.env
     depends_on:
+      rabbitmq:
+        condition: service_started
       postgres:
         condition: service_healthy
     networks:
@@ -45,7 +47,7 @@ services:
     build: ../../services/workspace-service
     container_name: workspace-service
     restart: unless-stopped
-    mem_limit: 1024m
+    mem_limit: 512m
     env_file:
       - ../../services/workspace-service/.env
     depends_on:

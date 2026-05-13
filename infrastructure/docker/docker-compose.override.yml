@@ -17,13 +17,15 @@ services:
       - "50052:50052"
 
   workspace-service:
+    command: pnpm run start:dev
     volumes:
       - ../../services/workspace-service:/app
+      - /app/node_modules
     ports:
       - "3002:8080"
 
   task-service:
-    command: npm run start:dev
+    command: pnpm run start:dev
     volumes:
       - ../../services/task-service:/app
       - /app/node_modules
@@ -31,7 +33,7 @@ services:
       - "3003:3000"
 
   notification-service:
-    command: npm run start:dev
+    command: pnpm run start:dev
     volumes:
       - ../../services/notification-service:/app
       - /app/node_modules
