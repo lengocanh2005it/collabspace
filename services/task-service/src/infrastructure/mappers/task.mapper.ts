@@ -1,12 +1,42 @@
 // src/infrastructure/mappers/TaskMapper.ts
 
 import { Task as TaskDomain } from "../../domain/entities/Task";
-import { TaskPersistence } from "../persistence/task.schema";
+import type {
+  TaskDocument,
+  TaskPersistence,
+  TaskUserSnapshotPersistence,
+} from "../persistence/task.schema";
 import { TaskId } from "../../domain/value-objects/TaskId";
 import { UserSnapshot } from "../../domain/value-objects/UserSnapshot";
+import type {
+  TaskResponseData,
+  TaskUserResponse,
+} from "../../presentation/dtos/task.response";
 
 export class TaskMapper {
-  static toPersistence(domainTask: TaskDomain): any {
+  private static toSnapshotPersistence(
+    snapshot: UserSnapshot,
+  ): TaskUserSnapshotPersistence {
+    return {
+      userId: snapshot.getUserId(),
+      email: snapshot.getEmail(),
+      fullName: snapshot.getFullName(),
+      displayName: snapshot.getDisplayName(),
+      avatarUrl: snapshot.getAvatarUrl(),
+    };
+  }
+
+  private static toResponseUser(snapshot: UserSnapshot): TaskUserResponse {
+    return {
+      userId: snapshot.getUserId(),
+      email: snapshot.getEmail(),
+      fullName: snapshot.getFullName(),
+      displayName: snapshot.getDisplayName(),
+      avatarUrl: snapshot.getAvatarUrl(),
+    };
+  }
+
+  static toPersistence(domainTask: TaskDomain): TaskPersistence {
     return {
       _id: domainTask.getId().getValue(),
       title: domainTask.getTitle(),
@@ -15,10 +45,10 @@ export class TaskMapper {
       workspaceId: domainTask.getWorkspaceId(),
       assigneeId: domainTask.getAssigneeId(),
 
-      // 👇 Dùng luôn toPlainObject() cho lẹ và sạch code
-      createdBy: domainTask.getCreatedBy().toPlainObject(),
+      // 👇 Dùng payload typed rõ ràng để tránh trôi schema giữa các layer
+      createdBy: this.toSnapshotPersistence(domainTask.getCreatedBy()),
       assignedTo: domainTask.getAssignedTo()
-        ? domainTask.getAssignedTo()!.toPlainObject()
+        ? this.toSnapshotPersistence(domainTask.getAssignedTo()!)
         : null,
 
       attachments: domainTask.getAttachments(),
@@ -27,7 +57,7 @@ export class TaskMapper {
     };
   }
 
-  static toDomain(rawDoc: any): TaskDomain {
+  static toDomain(rawDoc: TaskDocument): TaskDomain {
     const taskId = new TaskId(rawDoc._id);
 
     // 👇 Truyền đủ 5 tham số từ DB lên để dựng lại Snapshot
@@ -65,7 +95,7 @@ export class TaskMapper {
   }
 
   // Chuyển đổi từ Domain Entity sang Response DTO
-  static toResponse(domainTask: TaskDomain): any {
+  static toResponse(domainTask: TaskDomain): TaskResponseData {
     return {
       id: domainTask.getId().getValue(),
       title: domainTask.getTitle(),
@@ -74,10 +104,10 @@ export class TaskMapper {
       workspaceId: domainTask.getWorkspaceId(),
       assigneeId: domainTask.getAssigneeId(),
 
-      // 👇 Trả về Response cũng dùng form chuẩn 5 tham số
-      createdBy: domainTask.getCreatedBy().toPlainObject(),
+      // 👇 Trả về response typed rõ ràng thay vì object any
+      createdBy: this.toResponseUser(domainTask.getCreatedBy()),
       assignedTo: domainTask.getAssignedTo()
-        ? domainTask.getAssignedTo()!.toPlainObject()
+        ? this.toResponseUser(domainTask.getAssignedTo()!)
         : null,
 
       attachments: domainTask.getAttachments(),

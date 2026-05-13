@@ -14,32 +14,46 @@ import {
   UseInterceptors,
   UseGuards,
   UploadedFile,
-  Headers,
   ParseFilePipe,
   MaxFileSizeValidator,
 } from "@nestjs/common";
 import { ApiConsumes, ApiBody } from "@nestjs/swagger";
 import { FileInterceptor } from "@nestjs/platform-express";
-import type { Express, Request } from "express";
 import { CommandBus, QueryBus } from "@nestjs/cqrs";
+import type { UploadedFile as TaskUploadedFile } from "../../common/types/uploaded-file";
 import { CreateTaskRequest } from "../dtos/create-task.request";
 import { UpdateTaskDetailsRequest } from "../dtos/update-task-details.request";
 import { ChangeTaskStatusRequest } from "../dtos/change-task-status.request";
 import { AssignTaskRequest } from "../dtos/assign-task.request";
 import { CreateTaskResponse } from "../dtos/create-task.response";
-import { TaskResponse } from "../dtos/task.response";
+import type { TaskResponseData } from "../dtos/task.response";
 import { GetTasksResponse } from "../dtos/get-tasks.response";
 import { CreateTaskCommand } from "../../application/commands/create-task.command";
 import { UpdateTaskDetailsCommand } from "../../application/commands/update-task-details.command";
 import { ChangeTaskStatusCommand } from "../../application/commands/change-task-status.command";
 import { AssignTaskCommand } from "../../application/commands/assign-task.command";
-import { DeleteTaskCommand } from "../../application/commands/delete-task.command";
 import { UploadAttachmentCommand } from "../../application/commands/upload-attachment.command";
 import { DeleteAttachmentCommand } from "../../application/commands/delete-attachment.command";
 import { GetTaskByIdQuery } from "../../application/queries/get-task-by-id.query";
 import { GetTasksQuery } from "../../application/queries/get-tasks.query";
+import type { UploadAttachmentResponse } from "../../application/usecases/upload-attachment.handler";
 import { created, ok } from "../common/response/api-response.wrapper";
 import { WorkspaceValidationGuard } from "../guards/workspace-validation.guard";
+import { getHeaderValue } from "../http/request-context";
+import type { AppRequest } from "../http/request-context";
+
+function assertUploadedFile(file: unknown): asserts file is TaskUploadedFile {
+  if (
+    !file ||
+    typeof file !== "object" ||
+    !("originalname" in file) ||
+    !("mimetype" in file) ||
+    !("size" in file) ||
+    !("buffer" in file)
+  ) {
+    throw new Error("File is required");
+  }
+}
 
 @Controller("v1/tasks")
 @UseGuards(WorkspaceValidationGuard)
@@ -51,9 +65,10 @@ export class TaskController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  async createTask(@Body() request: CreateTaskRequest, @Req() req: any) {
-    const currentUserId = "user-002";
-    const currentUserName = "Người Dùng Hệ Thống";
+  async createTask(@Body() request: CreateTaskRequest, @Req() req: AppRequest) {
+    const currentUserId = req.user.id;
+    const currentUserName = req.user.name;
+    const requestId = getHeaderValue(req.headers, "x-request-id");
 
     const command = new CreateTaskCommand(
       request.title,
@@ -63,9 +78,11 @@ export class TaskController {
       request.workspaceId,
     );
 
-    const taskId: string = await this.commandBus.execute(command);
+    const taskId = await this.commandBus.execute<CreateTaskCommand, string>(
+      command,
+    );
 
-    return created(new CreateTaskResponse(taskId), req.headers["x-request-id"]);
+    return created(new CreateTaskResponse(taskId), requestId);
   }
 
   /**
@@ -75,17 +92,17 @@ export class TaskController {
   @HttpCode(HttpStatus.OK)
   async getTasks(
     @Query("workspaceId") workspaceId: string,
+    @Req() req: AppRequest,
     @Query("status") status?: string,
     @Query("assigneeId") assigneeId?: string,
-    @Req() req?: any,
   ): Promise<any> {
     const query = new GetTasksQuery(workspaceId, status, assigneeId);
-    const result = await this.queryBus.execute(query);
-
-    return ok(
-      new GetTasksResponse(result.tasks, result.total),
-      req?.headers["x-request-id"],
+    const requestId = getHeaderValue(req.headers, "x-request-id");
+    const result = await this.queryBus.execute<GetTasksQuery, GetTasksResponse>(
+      query,
     );
+
+    return ok(new GetTasksResponse(result.tasks, result.total), requestId);
   }
 
   /**
@@ -95,12 +112,16 @@ export class TaskController {
   @HttpCode(HttpStatus.OK)
   async getTaskById(
     @Param("id") taskId: string,
-    @Req() req?: any,
+    @Req() req: AppRequest,
   ): Promise<any> {
     const query = new GetTaskByIdQuery(taskId);
-    const result = await this.queryBus.execute(query);
+    const requestId = getHeaderValue(req.headers, "x-request-id");
+    const result = await this.queryBus.execute<
+      GetTaskByIdQuery,
+      TaskResponseData
+    >(query);
 
-    return ok(result, req?.headers["x-request-id"]);
+    return ok(result, requestId);
   }
 
   /**
@@ -111,8 +132,9 @@ export class TaskController {
   async updateTaskDetails(
     @Param("id") taskId: string,
     @Body() request: UpdateTaskDetailsRequest,
-    @Req() req?: any,
+    @Req() req: AppRequest,
   ): Promise<any> {
+    const requestId = getHeaderValue(req.headers, "x-request-id");
     const command = new UpdateTaskDetailsCommand(
       taskId,
       request.title,
@@ -123,7 +145,7 @@ export class TaskController {
 
     return ok(
       { message: "Cập nhật thông tin công việc thành công" },
-      req?.headers["x-request-id"],
+      requestId,
     );
   }
 
@@ -135,16 +157,14 @@ export class TaskController {
   async changeTaskStatus(
     @Param("id") taskId: string,
     @Body() request: ChangeTaskStatusRequest,
-    @Req() req?: any,
+    @Req() req: AppRequest,
   ): Promise<any> {
+    const requestId = getHeaderValue(req.headers, "x-request-id");
     const command = new ChangeTaskStatusCommand(taskId, request.status);
 
     await this.commandBus.execute(command);
 
-    return ok(
-      { message: "Đổi trạng thái công việc thành công" },
-      req?.headers["x-request-id"],
-    );
+    return ok({ message: "Đổi trạng thái công việc thành công" }, requestId);
   }
 
   /**
@@ -156,26 +176,20 @@ export class TaskController {
   async assignTask(
     @Param("id") taskId: string,
     @Body() request: AssignTaskRequest,
-    @Req() req?: any,
+    @Req() req: AppRequest,
   ): Promise<any> {
-    // Mock tạm ID user đi giao (Assigner) - Sau này lấy từ req.user.id (JWT)
-    const assignerId = "admin-001";
+    const assignerId = req.user.id;
+    const requestId = getHeaderValue(req.headers, "x-request-id");
 
-    // Khởi tạo Command với ĐÚNG 3 THAM SỐ
     const command = new AssignTaskCommand(
       taskId,
       assignerId,
       request.assigneeId || null,
     );
 
-    console.log(
-      "🔍 NỘI DUNG COMMAND MỚI (CHỈ CÓ ID):",
-      JSON.stringify(command, null, 2),
-    );
-
     await this.commandBus.execute(command);
 
-    return { message: "Gán người phụ trách thành công" };
+    return ok({ message: "Gán người phụ trách thành công" }, requestId);
   }
 
   /**
@@ -205,22 +219,24 @@ export class TaskController {
         fileIsRequired: true,
       }),
     )
-    file: Express.Multer.File,
-    @Req() req: any,
+    file: unknown,
+    @Req() req: AppRequest,
   ): Promise<any> {
-    if (!file) {
-      throw new Error("File is required");
-    }
+    assertUploadedFile(file);
 
+    const requestId = getHeaderValue(req.headers, "x-request-id");
     const command = new UploadAttachmentCommand(taskId, file);
-    const result = await this.commandBus.execute(command);
+    const result = await this.commandBus.execute<
+      UploadAttachmentCommand,
+      UploadAttachmentResponse
+    >(command);
 
     return created(
       {
         message: "File uploaded successfully",
         data: result,
       },
-      req?.headers["x-request-id"],
+      requestId,
     );
   }
 
@@ -233,18 +249,16 @@ export class TaskController {
   async deleteAttachment(
     @Param("id") taskId: string,
     @Query("fileUrl") fileUrl: string,
-    @Req() req: any,
+    @Req() req: AppRequest,
   ): Promise<any> {
     if (!fileUrl) {
       throw new Error("fileUrl query parameter is required");
     }
 
+    const requestId = getHeaderValue(req.headers, "x-request-id");
     const command = new DeleteAttachmentCommand(taskId, fileUrl);
     await this.commandBus.execute(command);
 
-    return ok(
-      { message: "File deleted successfully" },
-      req?.headers["x-request-id"],
-    );
+    return ok({ message: "File deleted successfully" }, requestId);
   }
 }

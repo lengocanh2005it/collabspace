@@ -37,7 +37,7 @@ export class UserReplicaRepository implements IUserReplicaRepository {
     // Lọc bỏ các giá trị undefined.
     // Ví dụ gửi { fullName: 'Tin', displayName: undefined } => Chỉ giữ lại { fullName: 'Tin' }
     const updateData = Object.fromEntries(
-      Object.entries(data).filter(([_, v]) => v !== undefined),
+      Object.entries(data).filter(([, value]) => value !== undefined),
     );
 
     if (Object.keys(updateData).length > 0) {

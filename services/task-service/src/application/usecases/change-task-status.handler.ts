@@ -2,7 +2,8 @@
 import { CommandHandler, ICommandHandler } from "@nestjs/cqrs";
 import { Inject } from "@nestjs/common";
 import { ChangeTaskStatusCommand } from "../commands/change-task-status.command";
-import { ITaskRepository } from "../ports/ITaskRepository";
+import { ITaskRepository as ITaskRepositoryToken } from "../ports/ITaskRepository";
+import type { ITaskRepository } from "../ports/ITaskRepository";
 import { TaskId } from "../../domain/value-objects/TaskId";
 import { EntityNotFoundException } from "../../domain/exceptions/EntityNotFoundException";
 
@@ -12,7 +13,7 @@ export class ChangeTaskStatusHandler implements ICommandHandler<
   void
 > {
   constructor(
-    @Inject(ITaskRepository)
+    @Inject(ITaskRepositoryToken)
     private readonly taskRepository: ITaskRepository,
   ) {}
 

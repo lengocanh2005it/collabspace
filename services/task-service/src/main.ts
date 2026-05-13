@@ -69,4 +69,4 @@ async function bootstrap() {
   console.log(`✅ Task Service is running on port ${port}`);
   console.log(`📚 API Documentation: http://localhost:${port}/api/docs`);
 }
-bootstrap();
+void bootstrap();

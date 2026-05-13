@@ -4,7 +4,7 @@ import { IsString, IsOptional, IsNotEmpty } from "class-validator";
 export class CreateCommentRequest {
   @IsString()
   @IsNotEmpty()
-  content: string;
+  content!: string;
 
   @IsString()
   @IsOptional()

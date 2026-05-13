@@ -5,19 +5,19 @@ import { Document } from "mongoose";
 @Schema({ collection: "user_replicas" })
 export class UserReplica {
   @Prop({ type: String, required: true, unique: true, index: true })
-  userId: string;
+  userId!: string;
 
   @Prop({ type: String, required: true })
-  email: string;
+  email!: string;
 
   @Prop({ type: String, required: true })
-  fullName: string;
+  fullName!: string;
 
   @Prop({ type: String, default: null })
   displayName?: string | null;
 
   @Prop({ type: Boolean, default: true })
-  isActive: boolean;
+  isActive!: boolean;
 
   @Prop({ type: String, default: null })
   avatarUrl?: string | null;

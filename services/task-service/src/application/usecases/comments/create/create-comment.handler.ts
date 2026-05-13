@@ -3,14 +3,15 @@ import { CommandHandler, ICommandHandler } from "@nestjs/cqrs";
 import { Inject, BadRequestException } from "@nestjs/common";
 import { CreateCommentCommand } from "./create-comment.command";
 import {
-  IUserReplicaRepository,
+  type IUserReplicaRepository,
   USER_REPLICA_REPOSITORY_TOKEN,
 } from "../../../ports/IUserReplicaRepository";
 import {
-  ICommentRepository,
+  type ICommentRepository,
   COMMENT_REPOSITORY_TOKEN,
 } from "../../../../domain/repositories/comment.repository.interface";
-import { ITaskRepository } from "../../../ports/ITaskRepository";
+import { ITaskRepository as ITaskRepositoryToken } from "../../../ports/ITaskRepository";
+import type { ITaskRepository } from "../../../ports/ITaskRepository";
 import { Comment } from "../../../../domain/entities/comment.entity";
 import { TaskId } from "../../../../domain/value-objects/TaskId";
 import { RabbitMqEventsService } from "../../../../infrastructure/messaging/rabbitmq/rabbitmq-events.service";
@@ -31,7 +32,7 @@ export class CreateCommentHandler implements ICommandHandler<
     private readonly commentRepository: ICommentRepository,
 
     // 👇 Inject các vũ khí cần thiết
-    @Inject(ITaskRepository)
+    @Inject(ITaskRepositoryToken)
     private readonly taskRepository: ITaskRepository,
 
     @Inject(USER_REPLICA_REPOSITORY_TOKEN)
@@ -100,11 +101,11 @@ export class CreateCommentHandler implements ICommandHandler<
           createdAt: new Date().toISOString(),
         });
         console.log(
-          `📤 Bắn event task_commented thành công cho Task: ${command.taskId}`,
+          `📤 Bắn event comment_created thành công cho Task: ${command.taskId}`,
         );
       } catch (error) {
         // Log lỗi nhưng không văng lỗi làm chết luồng chính
-        console.error("❌ RabbitMQ Publish task_commented Error:", error);
+        console.error("❌ RabbitMQ Publish comment_created Error:", error);
       }
     }
 

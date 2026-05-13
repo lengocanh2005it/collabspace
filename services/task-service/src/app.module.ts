@@ -40,10 +40,7 @@ import {
   TaskSchema,
   TaskPersistence,
 } from "./infrastructure/persistence/task.schema";
-import {
-  ICommentRepository,
-  COMMENT_REPOSITORY_TOKEN,
-} from "./domain/repositories/comment.repository.interface";
+import { COMMENT_REPOSITORY_TOKEN } from "./domain/repositories/comment.repository.interface";
 import { CommentRepository } from "./infrastructure/repositories/comment.repository";
 import {
   TaskComment,
@@ -53,10 +50,7 @@ import {
   UserReplica,
   UserReplicaSchema,
 } from "./infrastructure/persistence/user-replica.schema";
-import {
-  IUserReplicaRepository,
-  USER_REPLICA_REPOSITORY_TOKEN,
-} from "./application/ports/IUserReplicaRepository"; // Dùng Symbol 2-trong-1
+import { USER_REPLICA_REPOSITORY_TOKEN } from "./application/ports/IUserReplicaRepository"; // Dùng Symbol 2-trong-1
 import { UserReplicaRepository } from "./infrastructure/repositories/mongo-user-replica.repository";
 
 import { RabbitMqModule } from "./infrastructure/messaging/rabbitmq/rabbitmq.module";
@@ -92,7 +86,7 @@ const Handlers = [
 
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
+      useFactory: (configService: ConfigService) => ({
         uri: configService.get<string>("MONGO_URI"),
       }),
       inject: [ConfigService],

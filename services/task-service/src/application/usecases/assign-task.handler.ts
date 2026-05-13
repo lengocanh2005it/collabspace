@@ -2,9 +2,10 @@
 import { CommandHandler, ICommandHandler } from "@nestjs/cqrs";
 import { Inject } from "@nestjs/common";
 import { AssignTaskCommand } from "../commands/assign-task.command";
-import { ITaskRepository } from "../ports/ITaskRepository";
+import { ITaskRepository as ITaskRepositoryToken } from "../ports/ITaskRepository";
+import type { ITaskRepository } from "../ports/ITaskRepository";
 import {
-  IUserReplicaRepository,
+  type IUserReplicaRepository,
   USER_REPLICA_REPOSITORY_TOKEN,
 } from "../ports/IUserReplicaRepository";
 import { TaskId } from "../../domain/value-objects/TaskId";
@@ -19,7 +20,8 @@ export class AssignTaskHandler implements ICommandHandler<
   void
 > {
   constructor(
-    @Inject(ITaskRepository) private readonly taskRepository: ITaskRepository,
+    @Inject(ITaskRepositoryToken)
+    private readonly taskRepository: ITaskRepository,
     @Inject(USER_REPLICA_REPOSITORY_TOKEN)
     private readonly userReplicaRepo: IUserReplicaRepository,
     private readonly rabbitMqEvents: RabbitMqEventsService,

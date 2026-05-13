@@ -119,8 +119,8 @@ export class WorkspaceMockService {
    * @param workspaceId Workspace ID
    * @returns Workspace or null if not found
    */
-  async getWorkspaceAsync(workspaceId: string): Promise<Workspace | null> {
-    return this.mockWorkspaces.get(workspaceId) || null;
+  getWorkspaceAsync(workspaceId: string): Promise<Workspace | null> {
+    return Promise.resolve(this.mockWorkspaces.get(workspaceId) || null);
   }
 
   /**
@@ -128,14 +128,14 @@ export class WorkspaceMockService {
    * @param userId User ID
    * @returns Array of workspaces
    */
-  async getWorkspacesForUserAsync(userId: string): Promise<Workspace[]> {
+  getWorkspacesForUserAsync(userId: string): Promise<Workspace[]> {
     const workspaces: Workspace[] = [];
     this.mockWorkspaces.forEach((workspace) => {
       if (workspace.members.some((member) => member.userId === userId)) {
         workspaces.push(workspace);
       }
     });
-    return workspaces;
+    return Promise.resolve(workspaces);
   }
 
   /**
@@ -143,8 +143,8 @@ export class WorkspaceMockService {
    * @param workspaceId Workspace ID
    * @returns True if workspace exists
    */
-  async validateWorkspaceAsync(workspaceId: string): Promise<boolean> {
-    return this.mockWorkspaces.has(workspaceId);
+  validateWorkspaceAsync(workspaceId: string): Promise<boolean> {
+    return Promise.resolve(this.mockWorkspaces.has(workspaceId));
   }
 
   /**
@@ -159,7 +159,9 @@ export class WorkspaceMockService {
   ): Promise<WorkspaceMember | null> {
     const workspace = this.mockWorkspaces.get(workspaceId);
     if (!workspace) return null;
-    return workspace.members.find((member) => member.userId === userId) || null;
+    return Promise.resolve(
+      workspace.members.find((member) => member.userId === userId) || null,
+    );
   }
 
   /**
@@ -167,11 +169,9 @@ export class WorkspaceMockService {
    * @param workspaceId Workspace ID
    * @returns Array of workspace members
    */
-  async getWorkspaceMembersAsync(
-    workspaceId: string,
-  ): Promise<WorkspaceMember[]> {
+  getWorkspaceMembersAsync(workspaceId: string): Promise<WorkspaceMember[]> {
     const workspace = this.mockWorkspaces.get(workspaceId);
-    return workspace ? workspace.members : [];
+    return Promise.resolve(workspace ? workspace.members : []);
   }
 
   /**

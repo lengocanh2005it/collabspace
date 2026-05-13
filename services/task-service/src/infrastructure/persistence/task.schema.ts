@@ -1,8 +1,16 @@
 // src/infrastructure/persistence/task.schema.ts
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { Document } from "mongoose";
+import type { HydratedDocument } from "mongoose";
 
-export type TaskDocument = Document;
+export interface TaskUserSnapshotPersistence {
+  userId: string;
+  email: string;
+  fullName: string;
+  displayName: string;
+  avatarUrl?: string | null;
+}
+
+export type TaskDocument = HydratedDocument<TaskPersistence>;
 
 @Schema({ timestamps: true, collection: "tasks" })
 export class TaskPersistence {
@@ -25,18 +33,10 @@ export class TaskPersistence {
   assigneeId?: string | null; // ID của người được gán task
 
   @Prop({ type: Object, required: true })
-  createdBy!: {
-    userId: string;
-    name: string;
-    avatarUrl?: string;
-  };
+  createdBy!: TaskUserSnapshotPersistence;
 
   @Prop({ type: Object, default: null })
-  assignedTo?: {
-    userId: string;
-    name: string;
-    avatarUrl?: string;
-  } | null;
+  assignedTo?: TaskUserSnapshotPersistence | null;
 
   @Prop({ type: [String], default: [] })
   attachments!: string[]; // Array of S3 file URLs

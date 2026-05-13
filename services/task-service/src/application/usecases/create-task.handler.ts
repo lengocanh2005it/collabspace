@@ -5,9 +5,10 @@ import { CreateTaskCommand } from "../commands/create-task.command";
 import { Task } from "../../domain/entities/Task";
 import { TaskId } from "../../domain/value-objects/TaskId";
 import { UserSnapshot } from "../../domain/value-objects/UserSnapshot";
-import { ITaskRepository } from "../ports/ITaskRepository";
+import { ITaskRepository as ITaskRepositoryToken } from "../ports/ITaskRepository";
+import type { ITaskRepository } from "../ports/ITaskRepository";
 import {
-  IUserReplicaRepository,
+  type IUserReplicaRepository,
   USER_REPLICA_REPOSITORY_TOKEN,
 } from "../ports/IUserReplicaRepository";
 
@@ -17,7 +18,7 @@ export class CreateTaskHandler implements ICommandHandler<
   string
 > {
   constructor(
-    @Inject(ITaskRepository)
+    @Inject(ITaskRepositoryToken)
     private readonly taskRepository: ITaskRepository,
 
     // 👇 Inject thêm Replica Repo vào đây

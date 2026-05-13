@@ -8,10 +8,11 @@ import {
 } from "@nestjs/common";
 import { EditCommentCommand } from "./edit-comment.command";
 import {
-  ICommentRepository,
+  type ICommentRepository,
   COMMENT_REPOSITORY_TOKEN,
 } from "../../../../domain/repositories/comment.repository.interface";
-import { ITaskRepository } from "../../../../application/ports/ITaskRepository";
+import { ITaskRepository as ITaskRepositoryToken } from "../../../../application/ports/ITaskRepository";
+import type { ITaskRepository } from "../../../../application/ports/ITaskRepository";
 import { TaskId } from "../../../../domain/value-objects/TaskId";
 
 export interface EditCommentResponse {
@@ -28,7 +29,7 @@ export class EditCommentHandler implements ICommandHandler<
   constructor(
     @Inject(COMMENT_REPOSITORY_TOKEN)
     private readonly commentRepository: ICommentRepository,
-    @Inject(ITaskRepository)
+    @Inject(ITaskRepositoryToken)
     private readonly taskRepository: ITaskRepository,
   ) {}
 

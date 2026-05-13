@@ -3,7 +3,7 @@ import { IQueryHandler, QueryHandler } from "@nestjs/cqrs";
 import { Inject } from "@nestjs/common";
 import { GetTaskCommentsQuery } from "./get-task-comments.query";
 import {
-  ICommentRepository,
+  type ICommentRepository,
   COMMENT_REPOSITORY_TOKEN,
 } from "../../../../domain/repositories/comment.repository.interface";
 import { Comment } from "../../../../domain/entities/comment.entity";

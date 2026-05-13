@@ -25,8 +25,9 @@ import { CreateCommentResponse } from "../../application/usecases/comments/creat
 import { EditCommentResponse } from "../../application/usecases/comments/edit/edit-comment.handler";
 import { DeleteCommentResponse } from "../../application/usecases/comments/delete/delete-comment.handler";
 import { GetTaskCommentsResponse } from "../../application/usecases/comments/get/get-task-comments.handler";
+import type { AppRequest } from "../http/request-context";
 
-@Controller("api/v1/tasks/:taskId/comments")
+@Controller("v1/tasks/:taskId/comments")
 @UseGuards(WorkspaceValidationGuard)
 export class TaskCommentController {
   constructor(
@@ -42,21 +43,21 @@ export class TaskCommentController {
   async createComment(
     @Param("taskId") taskId: string,
     @Body() request: CreateCommentRequest,
-    @Req() req: any, // Thêm Req vào đây để sau này lấy JWT
+    @Req() req: AppRequest,
   ): Promise<{ statusCode: number; data: CreateCommentResponse }> {
-    // Tạm thời mock ID người đang đăng nhập (Tương lai sẽ lấy từ req.user.id do Guard cấp)
-    // Nếu hiện tại ông vẫn test chay thì cứ lấy từ request.authorId cũng được, nhưng tuyệt đối bỏ Name và Avatar
-    const authorId = req?.user?.id || "admin-001";
+    const authorId = req.user.id;
 
-    // Khởi tạo Command với đúng 4 tham số cực kỳ gọn gàng
     const command = new CreateCommentCommand(
       taskId,
-      authorId, // Truyền đúng cái ID
+      authorId,
       request.content,
       request.parentId || null,
     );
 
-    const result = await this.commandBus.execute(command);
+    const result = await this.commandBus.execute<
+      CreateCommentCommand,
+      CreateCommentResponse
+    >(command);
 
     return {
       statusCode: HttpStatus.CREATED,
@@ -124,10 +125,9 @@ export class TaskCommentController {
     @Param("taskId") taskId: string,
     @Param("commentId") commentId: string,
     @Body() request: EditCommentRequest,
+    @Req() req: AppRequest,
   ): Promise<{ statusCode: number; data: EditCommentResponse }> {
-    // Get authorId from request header or session
-    // For now, we'll use a hardcoded value - in production, get from JWT token
-    const authorId = "user-123"; // TODO: Extract from JWT token
+    const authorId = req.user.id;
 
     const command = new EditCommentCommand(
       commentId,
@@ -136,7 +136,10 @@ export class TaskCommentController {
       request.content,
     );
 
-    const result = await this.commandBus.execute(command);
+    const result = await this.commandBus.execute<
+      EditCommentCommand,
+      EditCommentResponse
+    >(command);
 
     return {
       statusCode: HttpStatus.OK,
@@ -152,14 +155,16 @@ export class TaskCommentController {
   async deleteComment(
     @Param("taskId") taskId: string,
     @Param("commentId") commentId: string,
+    @Req() req: AppRequest,
   ): Promise<{ statusCode: number; data: DeleteCommentResponse }> {
-    // Get authorId from request header or session
-    // For now, we'll use a hardcoded value - in production, get from JWT token
-    const authorId = "user-123"; // TODO: Extract from JWT token
+    const authorId = req.user.id;
 
     const command = new DeleteCommentCommand(commentId, taskId, authorId);
 
-    const result = await this.commandBus.execute(command);
+    const result = await this.commandBus.execute<
+      DeleteCommentCommand,
+      DeleteCommentResponse
+    >(command);
 
     return {
       statusCode: HttpStatus.OK,

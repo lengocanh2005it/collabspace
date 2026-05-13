@@ -1,5 +1,5 @@
 // src/presentation/dtos/create-task.request.ts
-import { IsString, IsNotEmpty, IsMongoId, IsOptional } from "class-validator";
+import { IsString, IsNotEmpty, IsOptional } from "class-validator";
 
 export class CreateTaskRequest {
   @IsString()

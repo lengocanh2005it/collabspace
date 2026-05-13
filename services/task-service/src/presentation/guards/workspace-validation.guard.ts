@@ -4,8 +4,37 @@ import {
   CanActivate,
   ExecutionContext,
   ForbiddenException,
+  Inject,
 } from "@nestjs/common";
+import { ITaskRepository as ITaskRepositoryToken } from "../../application/ports/ITaskRepository";
+import type { ITaskRepository } from "../../application/ports/ITaskRepository";
+import { TaskId } from "../../domain/value-objects/TaskId";
 import { WorkspaceMockService } from "../../infrastructure/services/workspace.mock.service";
+import { getHeaderValue } from "../http/request-context";
+import type { AppRequest } from "../http/request-context";
+
+interface WorkspaceGuardBody {
+  workspaceId?: string;
+}
+
+interface WorkspaceGuardQuery extends Record<
+  string,
+  string | string[] | undefined
+> {
+  workspaceId?: string;
+}
+
+interface WorkspaceGuardParams extends Record<string, string | undefined> {
+  taskId?: string;
+  id?: string;
+}
+
+type WorkspaceGuardRequest = AppRequest<
+  WorkspaceGuardParams,
+  unknown,
+  WorkspaceGuardBody,
+  WorkspaceGuardQuery
+>;
 
 /**
  * Guard để validate workspace tồn tại và user có quyền truy cập
@@ -17,25 +46,25 @@ import { WorkspaceMockService } from "../../infrastructure/services/workspace.mo
  */
 @Injectable()
 export class WorkspaceValidationGuard implements CanActivate {
-  constructor(private readonly workspaceService: WorkspaceMockService) {}
+  constructor(
+    private readonly workspaceService: WorkspaceMockService,
+    @Inject(ITaskRepositoryToken)
+    private readonly taskRepository: ITaskRepository,
+  ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest();
+    const request = context.switchToHttp().getRequest<WorkspaceGuardRequest>();
 
     // Lấy userId từ headers (giả định được gửi từ API Gateway sau khi xác thực)
     // Nếu không có, dùng mock user vì User Service chưa implement
-    const userId = request.headers["x-user-id"] || "user-123";
-    const userName = request.headers["x-user-name"] || "Mock User";
+    const userId = getHeaderValue(request.headers, "x-user-id") || "user-123";
+    const userName =
+      getHeaderValue(request.headers, "x-user-name") || "Mock User";
 
     // Lấy workspaceId từ body (nếu POST/PUT) hoặc query params
-    const workspaceId = request.body?.workspaceId || request.query?.workspaceId;
-
-    // Nếu không tìm thấy, có thể cần lấy từ resource ID (ví dụ: GET /tasks/:id)
-    // Lúc này sẽ validate khi fetch task và check workspace
+    const workspaceId = await this.resolveWorkspaceId(request);
 
     if (!workspaceId) {
-      // Cho phép tiếp tục, validation sẽ xảy ra ở handler level
-      // Attach mock user vào request
       request.user = { id: userId, name: userName };
       return true;
     }
@@ -64,5 +93,27 @@ export class WorkspaceValidationGuard implements CanActivate {
     request.user = { id: userId, name: userName };
 
     return true;
+  }
+
+  private async resolveWorkspaceId(
+    request: WorkspaceGuardRequest,
+  ): Promise<string | undefined> {
+    const directWorkspaceId =
+      request.body?.workspaceId || request.query?.workspaceId;
+    if (typeof directWorkspaceId === "string" && directWorkspaceId.length > 0) {
+      return directWorkspaceId;
+    }
+
+    const taskId = request.params?.taskId || request.params?.id;
+    if (typeof taskId !== "string" || taskId.length === 0) {
+      return undefined;
+    }
+
+    try {
+      const task = await this.taskRepository.findByIdAsync(new TaskId(taskId));
+      return task?.getWorkspaceId();
+    } catch {
+      return undefined;
+    }
   }
 }

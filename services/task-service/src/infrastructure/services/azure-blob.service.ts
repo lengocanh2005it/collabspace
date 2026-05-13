@@ -3,6 +3,7 @@ import { ConfigService } from "@nestjs/config";
 import { Injectable, OnModuleInit, Logger } from "@nestjs/common";
 import { BlobServiceClient } from "@azure/storage-blob";
 import { v4 as uuid } from "uuid";
+import type { UploadedFile } from "../../common/types/uploaded-file";
 
 export interface AzureBlobUploadResponse {
   url: string;
@@ -10,19 +11,16 @@ export interface AzureBlobUploadResponse {
   containerName: string;
 }
 
-declare global {
-  namespace Express {
-    namespace Multer {
-      interface File {
-        fieldname: string;
-        originalname: string;
-        encoding: string;
-        mimetype: string;
-        size: number;
-        buffer: Buffer;
-      }
-    }
-  }
+function hasErrorCode(
+  error: unknown,
+  expectedCode: string,
+): error is { code: string } {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code?: unknown }).code === expectedCode
+  );
 }
 
 /**
@@ -79,8 +77,8 @@ export class AzureBlobService implements OnModuleInit {
         this.logger.log(
           `✅ Connected to existing Azure Blob Storage container: ${this.containerName}`,
         );
-      } catch (error: any) {
-        if (error?.code === "ContainerNotFound") {
+      } catch (error: unknown) {
+        if (hasErrorCode(error, "ContainerNotFound")) {
           this.logger.warn(
             `Container "${this.containerName}" not found. Creating it...`,
           );
@@ -94,9 +92,9 @@ export class AzureBlobService implements OnModuleInit {
             this.logger.log(
               `✅ Created new Azure Blob Storage container: ${this.containerName}`,
             );
-          } catch (createError: any) {
+          } catch (createError: unknown) {
             // ── Ignore race condition where another instance already created the container ──
-            if (createError?.code !== "ContainerAlreadyExists") {
+            if (!hasErrorCode(createError, "ContainerAlreadyExists")) {
               throw createError;
             }
             this.logger.log(
@@ -167,7 +165,7 @@ export class AzureBlobService implements OnModuleInit {
    * @param taskId Task ID for organizing files in blob path
    * @returns Azure Blob file URL
    */
-  async uploadFile(file: Express.Multer.File, taskId: string): Promise<string> {
+  async uploadFile(file: UploadedFile, taskId: string): Promise<string> {
     // ── Basic validation ──
     if (!file) {
       throw new Error("File is required");
@@ -227,6 +225,7 @@ export class AzureBlobService implements OnModuleInit {
       this.logger.error(`Failed to upload file to Azure: ${errorMessage}`);
       throw new Error(
         `Failed to upload file to Azure Blob Storage: ${errorMessage}`,
+        { cause: error },
       );
     }
   }
@@ -263,6 +262,7 @@ export class AzureBlobService implements OnModuleInit {
       this.logger.error(`Failed to delete file from Azure: ${errorMessage}`);
       throw new Error(
         `Failed to delete file from Azure Blob Storage: ${errorMessage}`,
+        { cause: error },
       );
     }
   }
