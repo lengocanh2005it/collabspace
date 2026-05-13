@@ -1,10 +1,10 @@
 // src/infrastructure/persistence/task-comment.schema.ts
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document, Types } from 'mongoose';
+import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
+import { Document, Types } from "mongoose";
 
 export type TaskCommentDocument = TaskComment & Document;
 
-@Schema({ collection: 'task_comments', timestamps: true })
+@Schema({ collection: "task_comments", timestamps: true })
 export class TaskComment {
   @Prop({ type: String, required: true, index: true })
   taskId!: string; // UUID từ Task
@@ -15,7 +15,7 @@ export class TaskComment {
   @Prop({ type: String, required: true })
   authorName!: string; // Tên người bình luận (snapshot)
 
-  @Prop({ type: String, default: '' })
+  @Prop({ type: String, default: "" })
   authorAvatarUrl?: string; // Avatar URL (snapshot)
 
   @Prop({ type: String, required: true })

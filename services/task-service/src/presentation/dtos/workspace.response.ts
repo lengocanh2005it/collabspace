@@ -1,5 +1,5 @@
 // src/presentation/dtos/workspace.response.ts
-import { Exclude, Expose } from 'class-transformer';
+import { Exclude, Expose } from "class-transformer";
 
 export class WorkspaceMemberDto {
   @Expose()
@@ -12,7 +12,7 @@ export class WorkspaceMemberDto {
   email!: string;
 
   @Expose()
-  role!: 'owner' | 'admin' | 'member';
+  role!: "owner" | "admin" | "member";
 
   @Expose()
   avatarUrl?: string;

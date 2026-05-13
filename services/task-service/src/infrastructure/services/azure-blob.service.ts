@@ -1,8 +1,8 @@
 // src/infrastructure/services/azure-blob.service.ts
-import { ConfigService } from '@nestjs/config';
-import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
-import { BlobServiceClient } from '@azure/storage-blob';
-import { v4 as uuid } from 'uuid';
+import { ConfigService } from "@nestjs/config";
+import { Injectable, OnModuleInit, Logger } from "@nestjs/common";
+import { BlobServiceClient } from "@azure/storage-blob";
+import { v4 as uuid } from "uuid";
 
 export interface AzureBlobUploadResponse {
   url: string;
@@ -40,39 +40,50 @@ export class AzureBlobService implements OnModuleInit {
 
   constructor(private configService: ConfigService) {
     this.containerName =
-      this.configService.get<string>('AZURE_STORAGE_CONTAINER_NAME') || 'task-attachments';
+      this.configService.get<string>("AZURE_STORAGE_CONTAINER_NAME") ||
+      "task-attachments";
     this.maxFileSize =
-      this.configService.get<number>('AZURE_STORAGE_MAX_FILE_SIZE') || 5 * 1024 * 1024; // 5MB default
+      this.configService.get<number>("AZURE_STORAGE_MAX_FILE_SIZE") ||
+      5 * 1024 * 1024; // 5MB default
   }
 
   async onModuleInit() {
     try {
-      const connectionString = this.configService.get<string>('AZURE_STORAGE_CONNECTION_STRING');
+      const connectionString = this.configService.get<string>(
+        "AZURE_STORAGE_CONNECTION_STRING",
+      );
 
       // ── Guard: skip real Azure setup if connection string is missing or is a placeholder ──
-      if (!connectionString || connectionString.includes('your_')) {
+      if (!connectionString || connectionString.includes("your_")) {
         this.logger.warn(
-          '⚠️  Azure Blob Storage not configured - running in MOCK MODE (file uploads not persisted)',
+          "⚠️  Azure Blob Storage not configured - running in MOCK MODE (file uploads not persisted)",
         );
         this.logger.warn(
-          'To enable real Azure Blob Storage, configure AZURE_STORAGE_CONNECTION_STRING in .env',
+          "To enable real Azure Blob Storage, configure AZURE_STORAGE_CONNECTION_STRING in .env",
         );
         return;
       }
 
       // ── Initialize the top-level BlobServiceClient from the connection string ──
-      this.blobServiceClient = BlobServiceClient.fromConnectionString(connectionString);
+      this.blobServiceClient =
+        BlobServiceClient.fromConnectionString(connectionString);
 
       // ── Get a reference to the target container ──
-      const containerClient = this.blobServiceClient.getContainerClient(this.containerName);
+      const containerClient = this.blobServiceClient.getContainerClient(
+        this.containerName,
+      );
 
       try {
         // ── Try to reach the container; throws ContainerNotFound if it does not exist ──
         await containerClient.getProperties();
-        this.logger.log(`✅ Connected to existing Azure Blob Storage container: ${this.containerName}`);
+        this.logger.log(
+          `✅ Connected to existing Azure Blob Storage container: ${this.containerName}`,
+        );
       } catch (error: any) {
-        if (error?.code === 'ContainerNotFound') {
-          this.logger.warn(`Container "${this.containerName}" not found. Creating it...`);
+        if (error?.code === "ContainerNotFound") {
+          this.logger.warn(
+            `Container "${this.containerName}" not found. Creating it...`,
+          );
           try {
             // ── FIX 1: Do NOT pass `access: 'blob'` here.
             //    Accounts with Hierarchical Namespace (ADLS Gen2) enabled do not support
@@ -80,13 +91,17 @@ export class AzureBlobService implements OnModuleInit {
             //    For standard Blob Storage accounts this is also safer: rely on
             //    storage-account-level access policies instead of per-container public access. ──
             await containerClient.create();
-            this.logger.log(`✅ Created new Azure Blob Storage container: ${this.containerName}`);
+            this.logger.log(
+              `✅ Created new Azure Blob Storage container: ${this.containerName}`,
+            );
           } catch (createError: any) {
             // ── Ignore race condition where another instance already created the container ──
-            if (createError?.code !== 'ContainerAlreadyExists') {
+            if (createError?.code !== "ContainerAlreadyExists") {
               throw createError;
             }
-            this.logger.log(`Container already exists (race condition handled): ${this.containerName}`);
+            this.logger.log(
+              `Container already exists (race condition handled): ${this.containerName}`,
+            );
           }
         } else {
           throw error;
@@ -94,11 +109,16 @@ export class AzureBlobService implements OnModuleInit {
       }
 
       this.isConnected = true;
-      this.logger.log(`✅ Connected to Azure Blob Storage (container: ${this.containerName})`);
+      this.logger.log(
+        `✅ Connected to Azure Blob Storage (container: ${this.containerName})`,
+      );
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      this.logger.error(`Failed to connect to Azure Blob Storage: ${errorMessage}`);
-      this.logger.warn('Falling back to MOCK MODE for development');
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      this.logger.error(
+        `Failed to connect to Azure Blob Storage: ${errorMessage}`,
+      );
+      this.logger.warn("Falling back to MOCK MODE for development");
       this.blobServiceClient = null;
       this.isConnected = false;
     }
@@ -119,10 +139,10 @@ export class AzureBlobService implements OnModuleInit {
   // ────────────────────────────────────────────────────────────────────────────
   private sanitizeFileName(originalName: string): string {
     return originalName
-      .replace(/\s+/g, '_')                  // spaces → underscore
-      .replace(/[^a-zA-Z0-9.\-_]/g, '_')    // unsafe chars → underscore
-      .replace(/_{2,}/g, '_')               // collapse consecutive underscores
-      .replace(/^[.\-_]+|[.\-_]+$/g, '');  // trim leading/trailing punctuation
+      .replace(/\s+/g, "_") // spaces → underscore
+      .replace(/[^a-zA-Z0-9.\-_]/g, "_") // unsafe chars → underscore
+      .replace(/_{2,}/g, "_") // collapse consecutive underscores
+      .replace(/^[.\-_]+|[.\-_]+$/g, ""); // trim leading/trailing punctuation
   }
 
   // ────────────────────────────────────────────────────────────────────────────
@@ -138,7 +158,7 @@ export class AzureBlobService implements OnModuleInit {
   // ────────────────────────────────────────────────────────────────────────────
   private sanitizeMetadataValue(value: string): string {
     // Keep only printable ASCII characters (codes 32–126)
-    return value.replace(/[^\x20-\x7E]/g, '');
+    return value.replace(/[^\x20-\x7E]/g, "");
   }
 
   /**
@@ -150,7 +170,7 @@ export class AzureBlobService implements OnModuleInit {
   async uploadFile(file: Express.Multer.File, taskId: string): Promise<string> {
     // ── Basic validation ──
     if (!file) {
-      throw new Error('File is required');
+      throw new Error("File is required");
     }
 
     if (file.size > this.maxFileSize) {
@@ -177,7 +197,9 @@ export class AzureBlobService implements OnModuleInit {
       }
 
       // ── Real mode: obtain a BlockBlobClient for the target blob path ──
-      const containerClient = this.blobServiceClient.getContainerClient(this.containerName);
+      const containerClient = this.blobServiceClient.getContainerClient(
+        this.containerName,
+      );
       const blockBlobClient = containerClient.getBlockBlobClient(blobName);
 
       // ── Upload the file buffer with correct content-type and safe metadata ──
@@ -191,8 +213,8 @@ export class AzureBlobService implements OnModuleInit {
           //   Keys use camelCase (no hyphens) — Azure requires C#-identifier-style keys.
           //   Values are sanitized to printable ASCII only.
           originalName: this.sanitizeMetadataValue(file.originalname),
-          uploadedAt:   new Date().toISOString(),   // already ASCII-safe
-          taskId:       this.sanitizeMetadataValue(taskId),
+          uploadedAt: new Date().toISOString(), // already ASCII-safe
+          taskId: this.sanitizeMetadataValue(taskId),
         },
       });
 
@@ -200,9 +222,12 @@ export class AzureBlobService implements OnModuleInit {
       this.logger.log(`✅ File uploaded: ${fileUrl}`);
       return fileUrl;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       this.logger.error(`Failed to upload file to Azure: ${errorMessage}`);
-      throw new Error(`Failed to upload file to Azure Blob Storage: ${errorMessage}`);
+      throw new Error(
+        `Failed to upload file to Azure Blob Storage: ${errorMessage}`,
+      );
     }
   }
 
@@ -215,7 +240,7 @@ export class AzureBlobService implements OnModuleInit {
       // ── Derive the blob name from the full URL before attempting deletion ──
       const blobName = this.extractBlobNameFromUrl(fileUrl);
       if (!blobName) {
-        throw new Error('Invalid file URL');
+        throw new Error("Invalid file URL");
       }
 
       // ── Mock mode: just log; no real deletion ──
@@ -225,15 +250,20 @@ export class AzureBlobService implements OnModuleInit {
       }
 
       // ── Real mode: obtain a client for the specific blob and delete it ──
-      const containerClient = this.blobServiceClient.getContainerClient(this.containerName);
+      const containerClient = this.blobServiceClient.getContainerClient(
+        this.containerName,
+      );
       const blockBlobClient = containerClient.getBlockBlobClient(blobName);
 
       await blockBlobClient.delete();
       this.logger.log(`✅ File deleted: ${blobName}`);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       this.logger.error(`Failed to delete file from Azure: ${errorMessage}`);
-      throw new Error(`Failed to delete file from Azure Blob Storage: ${errorMessage}`);
+      throw new Error(
+        `Failed to delete file from Azure Blob Storage: ${errorMessage}`,
+      );
     }
   }
 
@@ -248,13 +278,13 @@ export class AzureBlobService implements OnModuleInit {
       //    URL pathname: /<containerName>/<blobName>
       //    We skip pathParts[0] (the container) and rejoin the rest as the blob name.
       const url = new URL(fileUrl);
-      const pathParts = url.pathname.split('/').filter((p) => p.length > 0);
+      const pathParts = url.pathname.split("/").filter((p) => p.length > 0);
 
       if (pathParts.length < 2) {
         return null;
       }
 
-      return pathParts.slice(1).join('/');
+      return pathParts.slice(1).join("/");
     } catch {
       return null;
     }
@@ -271,9 +301,13 @@ export class AzureBlobService implements OnModuleInit {
   /**
    * Get storage mode info
    */
-  getStorageInfo(): { mode: 'real' | 'mock'; containerName: string; connected: boolean } {
+  getStorageInfo(): {
+    mode: "real" | "mock";
+    containerName: string;
+    connected: boolean;
+  } {
     return {
-      mode: this.isConnected ? 'real' : 'mock',
+      mode: this.isConnected ? "real" : "mock",
       containerName: this.containerName,
       connected: this.isConnected,
     };

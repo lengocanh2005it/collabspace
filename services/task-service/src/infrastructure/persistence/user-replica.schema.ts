@@ -1,8 +1,8 @@
 // src/infrastructure/persistence/user-replica.schema.ts
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
+import { Document } from "mongoose";
 
-@Schema({ collection: 'user_replicas' })
+@Schema({ collection: "user_replicas" })
 export class UserReplica {
   @Prop({ type: String, required: true, unique: true, index: true })
   userId: string;

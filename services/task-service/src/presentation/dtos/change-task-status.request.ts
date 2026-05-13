@@ -1,5 +1,5 @@
 // src/presentation/dtos/change-task-status.request.ts
-import { IsString, IsNotEmpty, IsEnum, IsUUID } from 'class-validator';
+import { IsString, IsNotEmpty, IsEnum, IsUUID } from "class-validator";
 
 export class ChangeTaskStatusRequest {
   @IsUUID()
@@ -7,8 +7,8 @@ export class ChangeTaskStatusRequest {
   public readonly taskId!: string;
 
   @IsString()
-  @IsEnum(['TODO', 'DOING', 'DONE'], {
-    message: 'Status phải là TODO, DOING hoặc DONE',
+  @IsEnum(["TODO", "DOING", "DONE"], {
+    message: "Status phải là TODO, DOING hoặc DONE",
   })
   @IsNotEmpty()
   public readonly status!: string;

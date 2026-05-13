@@ -1,5 +1,5 @@
 // src/infrastructure/services/workspace.mock.service.ts
-import { Injectable } from '@nestjs/common';
+import { Injectable } from "@nestjs/common";
 
 export interface Workspace {
   id: string;
@@ -15,7 +15,7 @@ export interface WorkspaceMember {
   userId: string;
   name: string;
   email: string;
-  role: 'owner' | 'admin' | 'member';
+  role: "owner" | "admin" | "member";
   avatarUrl?: string;
   joinedAt: Date;
 }
@@ -33,81 +33,81 @@ export class WorkspaceMockService {
    */
   private initializeMockData(): void {
     const mockWorkspace: Workspace = {
-      id: 'workspace-001',
-      name: 'Collabspace Dev Team',
-      description: 'Main development workspace for Collabspace project',
-      ownerId: 'user-001',
+      id: "workspace-001",
+      name: "Collabspace Dev Team",
+      description: "Main development workspace for Collabspace project",
+      ownerId: "user-001",
       members: [
         {
-          userId: 'user-001',
-          name: 'Vincent Nguyen',
-          email: 'vincent@collabspace.dev',
-          role: 'owner',
-          avatarUrl: 'https://api.example.com/avatars/user-001.jpg',
-          joinedAt: new Date('2024-01-01'),
+          userId: "user-001",
+          name: "Vincent Nguyen",
+          email: "vincent@collabspace.dev",
+          role: "owner",
+          avatarUrl: "https://api.example.com/avatars/user-001.jpg",
+          joinedAt: new Date("2024-01-01"),
         },
         {
-          userId: 'user-002',
-          name: 'Alice Johnson',
-          email: 'alice@collabspace.dev',
-          role: 'admin',
-          avatarUrl: 'https://api.example.com/avatars/user-002.jpg',
-          joinedAt: new Date('2024-01-15'),
+          userId: "user-002",
+          name: "Alice Johnson",
+          email: "alice@collabspace.dev",
+          role: "admin",
+          avatarUrl: "https://api.example.com/avatars/user-002.jpg",
+          joinedAt: new Date("2024-01-15"),
         },
         {
-          userId: 'user-003',
-          name: 'Bob Smith',
-          email: 'bob@collabspace.dev',
-          role: 'member',
-          avatarUrl: 'https://api.example.com/avatars/user-003.jpg',
-          joinedAt: new Date('2024-02-01'),
+          userId: "user-003",
+          name: "Bob Smith",
+          email: "bob@collabspace.dev",
+          role: "member",
+          avatarUrl: "https://api.example.com/avatars/user-003.jpg",
+          joinedAt: new Date("2024-02-01"),
         },
         {
-          userId: 'user-123',
-          name: 'Mock Developer',
-          email: 'dev@collabspace.dev',
-          role: 'member',
-          avatarUrl: 'https://api.example.com/avatars/user-123.jpg',
-          joinedAt: new Date('2024-03-01'),
+          userId: "user-123",
+          name: "Mock Developer",
+          email: "dev@collabspace.dev",
+          role: "member",
+          avatarUrl: "https://api.example.com/avatars/user-123.jpg",
+          joinedAt: new Date("2024-03-01"),
         },
       ],
-      createdAt: new Date('2024-01-01'),
-      updatedAt: new Date('2024-05-04'),
+      createdAt: new Date("2024-01-01"),
+      updatedAt: new Date("2024-05-04"),
     };
 
     const mockWorkspace2: Workspace = {
-      id: 'workspace-002',
-      name: 'Product Team',
-      description: 'Product management and design workspace',
-      ownerId: 'user-002',
+      id: "workspace-002",
+      name: "Product Team",
+      description: "Product management and design workspace",
+      ownerId: "user-002",
       members: [
         {
-          userId: 'user-002',
-          name: 'Alice Johnson',
-          email: 'alice@collabspace.dev',
-          role: 'owner',
-          avatarUrl: 'https://api.example.com/avatars/user-002.jpg',
-          joinedAt: new Date('2024-02-01'),
+          userId: "user-002",
+          name: "Alice Johnson",
+          email: "alice@collabspace.dev",
+          role: "owner",
+          avatarUrl: "https://api.example.com/avatars/user-002.jpg",
+          joinedAt: new Date("2024-02-01"),
         },
         {
-          userId: 'user-004',
-          name: 'Charlie Davis',
-          email: 'charlie@collabspace.dev',
-          role: 'member',
-          avatarUrl: 'https://api.example.com/avatars/user-004.jpg',
-          joinedAt: new Date('2024-02-15'),
+          userId: "user-004",
+          name: "Charlie Davis",
+          email: "charlie@collabspace.dev",
+          role: "member",
+          avatarUrl: "https://api.example.com/avatars/user-004.jpg",
+          joinedAt: new Date("2024-02-15"),
         },
         {
-          userId: 'user-123',
-          name: 'Mock Developer',
-          email: 'dev@collabspace.dev',
-          role: 'member',
-          avatarUrl: 'https://api.example.com/avatars/user-123.jpg',
-          joinedAt: new Date('2024-03-15'),
+          userId: "user-123",
+          name: "Mock Developer",
+          email: "dev@collabspace.dev",
+          role: "member",
+          avatarUrl: "https://api.example.com/avatars/user-123.jpg",
+          joinedAt: new Date("2024-03-15"),
         },
       ],
-      createdAt: new Date('2024-02-01'),
-      updatedAt: new Date('2024-05-04'),
+      createdAt: new Date("2024-02-01"),
+      updatedAt: new Date("2024-05-04"),
     };
 
     this.mockWorkspaces.set(mockWorkspace.id, mockWorkspace);
@@ -167,7 +167,9 @@ export class WorkspaceMockService {
    * @param workspaceId Workspace ID
    * @returns Array of workspace members
    */
-  async getWorkspaceMembersAsync(workspaceId: string): Promise<WorkspaceMember[]> {
+  async getWorkspaceMembersAsync(
+    workspaceId: string,
+  ): Promise<WorkspaceMember[]> {
     const workspace = this.mockWorkspaces.get(workspaceId);
     return workspace ? workspace.members : [];
   }
@@ -182,7 +184,7 @@ export class WorkspaceMockService {
   async checkUserPermissionAsync(
     workspaceId: string,
     userId: string,
-    requiredRole: 'owner' | 'admin' | 'member' = 'member',
+    requiredRole: "owner" | "admin" | "member" = "member",
   ): Promise<boolean> {
     const member = await this.getWorkspaceMemberAsync(workspaceId, userId);
     if (!member) return false;

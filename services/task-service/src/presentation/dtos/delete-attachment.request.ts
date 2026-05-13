@@ -1,5 +1,5 @@
 // src/presentation/dtos/delete-attachment.request.ts
-import { IsUUID, IsUrl, IsNotEmpty } from 'class-validator';
+import { IsUUID, IsUrl, IsNotEmpty } from "class-validator";
 
 export class DeleteAttachmentRequest {
   @IsUUID()

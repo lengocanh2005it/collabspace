@@ -1,5 +1,5 @@
 // src/application/commands/upload-attachment.command.ts
-import type { Express } from 'express';
+import type { Express } from "express";
 
 export class UploadAttachmentCommand {
   constructor(

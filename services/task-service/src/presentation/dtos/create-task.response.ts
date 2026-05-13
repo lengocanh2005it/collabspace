@@ -8,7 +8,7 @@ export class CreateTaskResponse {
 
   constructor(taskId: string) {
     this.success = true;
-    this.message = 'Tạo công việc thành công';
+    this.message = "Tạo công việc thành công";
     this.data = { taskId };
   }
 }

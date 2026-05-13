@@ -1,11 +1,11 @@
 // src/application/usecases/delete-attachment.handler.ts
-import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { Inject } from '@nestjs/common';
-import { DeleteAttachmentCommand } from '../commands/delete-attachment.command';
-import { ITaskRepository } from '../ports/ITaskRepository';
-import { AzureBlobService } from '../../infrastructure/services/azure-blob.service';
-import { TaskId } from '../../domain/value-objects/TaskId';
-import { EntityNotFoundException } from '../../domain/exceptions/EntityNotFoundException';
+import { CommandHandler, ICommandHandler } from "@nestjs/cqrs";
+import { Inject } from "@nestjs/common";
+import { DeleteAttachmentCommand } from "../commands/delete-attachment.command";
+import { ITaskRepository } from "../ports/ITaskRepository";
+import { AzureBlobService } from "../../infrastructure/services/azure-blob.service";
+import { TaskId } from "../../domain/value-objects/TaskId";
+import { EntityNotFoundException } from "../../domain/exceptions/EntityNotFoundException";
 
 @CommandHandler(DeleteAttachmentCommand)
 export class DeleteAttachmentHandler implements ICommandHandler<DeleteAttachmentCommand> {
@@ -20,7 +20,7 @@ export class DeleteAttachmentHandler implements ICommandHandler<DeleteAttachment
     const taskId = new TaskId(command.taskId);
     const task = await this.taskRepository.findByIdAsync(taskId);
     if (!task) {
-      throw new EntityNotFoundException('Task', command.taskId);
+      throw new EntityNotFoundException("Task", command.taskId);
     }
 
     // Step 2: Delete file from Azure Blob Storage using full file URL

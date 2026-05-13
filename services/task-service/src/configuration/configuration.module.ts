@@ -1,6 +1,6 @@
-import { Global, Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
-import { ConfigurationService } from './configuration.service';
+import { Global, Module } from "@nestjs/common";
+import { ConfigModule } from "@nestjs/config";
+import { ConfigurationService } from "./configuration.service";
 
 @Global() // Đặt Global để khỏi phải import module này ở khắp mọi nơi
 @Module({

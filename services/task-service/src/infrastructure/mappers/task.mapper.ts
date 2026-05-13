@@ -1,12 +1,11 @@
 // src/infrastructure/mappers/TaskMapper.ts
 
-import { Task as TaskDomain } from '../../domain/entities/Task';
-import { TaskPersistence } from '../persistence/task.schema';
-import { TaskId } from '../../domain/value-objects/TaskId';
-import { UserSnapshot } from '../../domain/value-objects/UserSnapshot';
+import { Task as TaskDomain } from "../../domain/entities/Task";
+import { TaskPersistence } from "../persistence/task.schema";
+import { TaskId } from "../../domain/value-objects/TaskId";
+import { UserSnapshot } from "../../domain/value-objects/UserSnapshot";
 
 export class TaskMapper {
-  
   static toPersistence(domainTask: TaskDomain): any {
     return {
       _id: domainTask.getId().getValue(),
@@ -15,11 +14,13 @@ export class TaskMapper {
       status: domainTask.getStatus().getValue(),
       workspaceId: domainTask.getWorkspaceId(),
       assigneeId: domainTask.getAssigneeId(),
-      
+
       // 👇 Dùng luôn toPlainObject() cho lẹ và sạch code
       createdBy: domainTask.getCreatedBy().toPlainObject(),
-      assignedTo: domainTask.getAssignedTo() ? domainTask.getAssignedTo()!.toPlainObject() : null,
-      
+      assignedTo: domainTask.getAssignedTo()
+        ? domainTask.getAssignedTo()!.toPlainObject()
+        : null,
+
       attachments: domainTask.getAttachments(),
       createdAt: domainTask.getCreatedAt(),
       updatedAt: domainTask.getUpdatedAt(),
@@ -28,14 +29,14 @@ export class TaskMapper {
 
   static toDomain(rawDoc: any): TaskDomain {
     const taskId = new TaskId(rawDoc._id);
-    
+
     // 👇 Truyền đủ 5 tham số từ DB lên để dựng lại Snapshot
     const creator = UserSnapshot.create(
       rawDoc.createdBy.userId,
       rawDoc.createdBy.email,
       rawDoc.createdBy.fullName,
       rawDoc.createdBy.displayName,
-      rawDoc.createdBy.avatarUrl
+      rawDoc.createdBy.avatarUrl,
     );
 
     const assignedTo = rawDoc.assignedTo
@@ -44,14 +45,14 @@ export class TaskMapper {
           rawDoc.assignedTo.email,
           rawDoc.assignedTo.fullName,
           rawDoc.assignedTo.displayName,
-          rawDoc.assignedTo.avatarUrl
+          rawDoc.assignedTo.avatarUrl,
         )
       : null;
 
     return TaskDomain.restore(
       taskId,
       rawDoc.title,
-      rawDoc.description || '',
+      rawDoc.description || "",
       rawDoc.status,
       rawDoc.workspaceId,
       rawDoc.assigneeId || null,
@@ -59,7 +60,7 @@ export class TaskMapper {
       creator,
       new Date(rawDoc.createdAt),
       new Date(rawDoc.updatedAt),
-      rawDoc.attachments || []
+      rawDoc.attachments || [],
     );
   }
 
@@ -72,11 +73,13 @@ export class TaskMapper {
       status: domainTask.getStatus().getValue(),
       workspaceId: domainTask.getWorkspaceId(),
       assigneeId: domainTask.getAssigneeId(),
-      
+
       // 👇 Trả về Response cũng dùng form chuẩn 5 tham số
       createdBy: domainTask.getCreatedBy().toPlainObject(),
-      assignedTo: domainTask.getAssignedTo() ? domainTask.getAssignedTo()!.toPlainObject() : null,
-      
+      assignedTo: domainTask.getAssignedTo()
+        ? domainTask.getAssignedTo()!.toPlainObject()
+        : null,
+
       attachments: domainTask.getAttachments(),
       createdAt: domainTask.getCreatedAt(),
       updatedAt: domainTask.getUpdatedAt(),

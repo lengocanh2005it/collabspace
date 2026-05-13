@@ -1,5 +1,5 @@
 // src/presentation/dtos/edit-comment.request.ts
-import { IsString, MaxLength, MinLength } from 'class-validator';
+import { IsString, MaxLength, MinLength } from "class-validator";
 
 export class EditCommentRequest {
   @IsString()

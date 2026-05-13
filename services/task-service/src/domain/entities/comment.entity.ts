@@ -1,5 +1,5 @@
 // src/domain/entities/comment.entity.ts
-import { BusinessRuleException } from '../exceptions/BusinessRuleException';
+import { BusinessRuleException } from "../exceptions/BusinessRuleException";
 
 /**
  * Comment Domain Entity
@@ -36,15 +36,17 @@ export class Comment {
     parentId: string | null = null,
   ): Comment {
     if (!content || content.trim().length === 0) {
-      throw new BusinessRuleException('Comment content cannot be empty');
+      throw new BusinessRuleException("Comment content cannot be empty");
     }
 
     if (content.length > 5000) {
-      throw new BusinessRuleException('Comment content exceeds maximum length of 5000 characters');
+      throw new BusinessRuleException(
+        "Comment content exceeds maximum length of 5000 characters",
+      );
     }
 
     if (!authorId) {
-      throw new BusinessRuleException('Author ID is required');
+      throw new BusinessRuleException("Author ID is required");
     }
 
     return new Comment(
@@ -104,15 +106,17 @@ export class Comment {
    */
   public updateContent(newContent: string): void {
     if (this.isDeleted()) {
-      throw new BusinessRuleException('Cannot edit a deleted comment');
+      throw new BusinessRuleException("Cannot edit a deleted comment");
     }
 
     if (!newContent || newContent.trim().length === 0) {
-      throw new BusinessRuleException('Comment content cannot be empty');
+      throw new BusinessRuleException("Comment content cannot be empty");
     }
 
     if (newContent.length > 5000) {
-      throw new BusinessRuleException('Comment content exceeds maximum length of 5000 characters');
+      throw new BusinessRuleException(
+        "Comment content exceeds maximum length of 5000 characters",
+      );
     }
 
     this.content = newContent;
@@ -125,7 +129,7 @@ export class Comment {
    */
   public markAsDeleted(): void {
     if (this.isDeleted()) {
-      throw new BusinessRuleException('Comment is already deleted');
+      throw new BusinessRuleException("Comment is already deleted");
     }
 
     this.deletedAt = new Date();
@@ -137,7 +141,7 @@ export class Comment {
    */
   public restore(): void {
     if (!this.isDeleted()) {
-      throw new BusinessRuleException('Comment is not deleted');
+      throw new BusinessRuleException("Comment is not deleted");
     }
 
     this.deletedAt = null;
@@ -149,11 +153,13 @@ export class Comment {
    */
   public addMention(userId: string): void {
     if (this.isDeleted()) {
-      throw new BusinessRuleException('Cannot mention in a deleted comment');
+      throw new BusinessRuleException("Cannot mention in a deleted comment");
     }
 
     if (this.mentions.includes(userId)) {
-      throw new BusinessRuleException('User is already mentioned in this comment');
+      throw new BusinessRuleException(
+        "User is already mentioned in this comment",
+      );
     }
 
     this.mentions.push(userId);
@@ -165,12 +171,14 @@ export class Comment {
    */
   public removeMention(userId: string): void {
     if (this.isDeleted()) {
-      throw new BusinessRuleException('Cannot remove mention from a deleted comment');
+      throw new BusinessRuleException(
+        "Cannot remove mention from a deleted comment",
+      );
     }
 
     const index = this.mentions.indexOf(userId);
     if (index === -1) {
-      throw new BusinessRuleException('User is not mentioned in this comment');
+      throw new BusinessRuleException("User is not mentioned in this comment");
     }
 
     this.mentions.splice(index, 1);
@@ -182,7 +190,7 @@ export class Comment {
    */
   public incrementReactionCount(): void {
     if (this.isDeleted()) {
-      throw new BusinessRuleException('Cannot react to a deleted comment');
+      throw new BusinessRuleException("Cannot react to a deleted comment");
     }
 
     this.reactionCount++;
@@ -194,7 +202,9 @@ export class Comment {
    */
   public decrementReactionCount(): void {
     if (this.isDeleted()) {
-      throw new BusinessRuleException('Cannot remove reaction from a deleted comment');
+      throw new BusinessRuleException(
+        "Cannot remove reaction from a deleted comment",
+      );
     }
 
     if (this.reactionCount > 0) {

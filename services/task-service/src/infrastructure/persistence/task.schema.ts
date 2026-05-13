@@ -1,10 +1,10 @@
 // src/infrastructure/persistence/task.schema.ts
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
+import { Document } from "mongoose";
 
 export type TaskDocument = Document;
 
-@Schema({ timestamps: true, collection: 'tasks' })
+@Schema({ timestamps: true, collection: "tasks" })
 export class TaskPersistence {
   @Prop({ required: true, type: String })
   _id!: string; // UUID của task
@@ -12,10 +12,10 @@ export class TaskPersistence {
   @Prop({ required: true })
   title!: string;
 
-  @Prop({ default: '' })
+  @Prop({ default: "" })
   description?: string;
 
-  @Prop({ required: true, enum: ['TODO', 'DOING', 'DONE'] })
+  @Prop({ required: true, enum: ["TODO", "DOING", "DONE"] })
   status!: string;
 
   @Prop({ required: true })

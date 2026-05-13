@@ -1,4 +1,4 @@
-export const USER_REGISTERED_EVENT = 'user_registered';
+export const USER_REGISTERED_EVENT = "user_registered";
 
 // Payload Đăng ký: Bắt buộc phải có email và fullName
 export interface UserRegisteredEventPayload {

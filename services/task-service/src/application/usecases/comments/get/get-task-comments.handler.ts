@@ -1,9 +1,12 @@
 // src/application/usecases/comments/get/get-task-comments.handler.ts
-import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
-import { Inject } from '@nestjs/common';
-import { GetTaskCommentsQuery } from './get-task-comments.query';
-import { ICommentRepository, COMMENT_REPOSITORY_TOKEN } from '../../../../domain/repositories/comment.repository.interface';
-import { Comment } from '../../../../domain/entities/comment.entity';
+import { IQueryHandler, QueryHandler } from "@nestjs/cqrs";
+import { Inject } from "@nestjs/common";
+import { GetTaskCommentsQuery } from "./get-task-comments.query";
+import {
+  ICommentRepository,
+  COMMENT_REPOSITORY_TOKEN,
+} from "../../../../domain/repositories/comment.repository.interface";
+import { Comment } from "../../../../domain/entities/comment.entity";
 
 export interface CommentResponseDto {
   id: string;
@@ -29,7 +32,10 @@ export interface GetTaskCommentsResponse {
 }
 
 @QueryHandler(GetTaskCommentsQuery)
-export class GetTaskCommentsHandler implements IQueryHandler<GetTaskCommentsQuery, GetTaskCommentsResponse> {
+export class GetTaskCommentsHandler implements IQueryHandler<
+  GetTaskCommentsQuery,
+  GetTaskCommentsResponse
+> {
   constructor(
     @Inject(COMMENT_REPOSITORY_TOKEN)
     private readonly commentRepository: ICommentRepository,
@@ -37,10 +43,13 @@ export class GetTaskCommentsHandler implements IQueryHandler<GetTaskCommentsQuer
 
   async execute(query: GetTaskCommentsQuery): Promise<GetTaskCommentsResponse> {
     // Step 1: Get all comments for the task (with pagination)
-    const comments = await this.commentRepository.findByTaskIdAsync(query.taskId, {
-      skip: query.skip,
-      limit: query.limit,
-    });
+    const comments = await this.commentRepository.findByTaskIdAsync(
+      query.taskId,
+      {
+        skip: query.skip,
+        limit: query.limit,
+      },
+    );
 
     // Step 2: Filter out deleted comments and map to response DTO
     const responseComments = comments
