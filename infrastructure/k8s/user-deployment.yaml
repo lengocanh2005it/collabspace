@@ -71,7 +71,7 @@ spec:
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/port: "3000"
-        prometheus.io/path: "/users/metrics"
+        prometheus.io/path: "/api/v1/users/metrics"
     spec:
       serviceAccountName: default
       securityContext:
@@ -85,6 +85,9 @@ spec:
           ports:
             - name: http
               containerPort: 3000
+              protocol: TCP
+            - name: grpc
+              containerPort: 50052
               protocol: TCP
           envFrom:
             - configMapRef:
@@ -100,7 +103,7 @@ spec:
               cpu: "250m"
           readinessProbe:
             httpGet:
-              path: /users/health
+              path: /api/v1/users/health
               port: 3000
             initialDelaySeconds: 10
             periodSeconds: 5
@@ -109,7 +112,7 @@ spec:
             failureThreshold: 3
           livenessProbe:
             httpGet:
-              path: /users/health
+              path: /api/v1/users/health
               port: 3000
             initialDelaySeconds: 30
             periodSeconds: 10

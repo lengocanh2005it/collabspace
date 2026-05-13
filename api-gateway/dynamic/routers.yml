@@ -1,69 +1,145 @@
 http:
   routers:
+    # ============================================================
+    # Auth Service — prefix: /api/v1/auth (NestJS globalPrefix: api/v1)
+    # ============================================================
+    auth-me-router:
+      rule: "Path(`/api/v1/auth/me`)"
+      service: auth-service
+      priority: 100
+      entryPoints:
+        - web
+      middlewares:
+        - forward-auth
+        - auth-header
+        - rate-limit
+        - cors-headers
+        - security-headers
+        - retry-policy
+        - circuit-breaker
+
     auth-router:
-      rule: "PathPrefix(`/auth`)"
+      rule: "PathPrefix(`/api/v1/auth`)"
       service: auth-service
       entryPoints:
         - web
       middlewares:
-        - auth-header
         - rate-limit
         - cors-headers
+        - security-headers
+        - retry-policy
+        - circuit-breaker
 
+    # ============================================================
+    # User Service — prefix: /api/v1/users (NestJS globalPrefix: api/v1)
+    # ============================================================
     user-router:
-      rule: "PathPrefix(`/users`)"
+      rule: "PathPrefix(`/api/v1/users`)"
       service: user-service
       entryPoints:
         - web
       middlewares:
+        - forward-auth
         - rate-limit
         - cors-headers
+        - security-headers
+        - retry-policy
+        - circuit-breaker
 
+    # ============================================================
+    # Workspace Service — prefix: /api/v1/workspaces (Java Spring Boot)
+    # ============================================================
     workspace-router:
-      rule: "PathPrefix(`/workspaces`)"
+      rule: "PathPrefix(`/api/v1/workspaces`)"
       service: workspace-service
       entryPoints:
         - web
       middlewares:
+        - forward-auth
         - rate-limit
         - cors-headers
+        - security-headers
+        - retry-policy
+        - circuit-breaker
 
+    # ============================================================
+    # Task Service — prefix: /api/tasks (NestJS globalPrefix: api)
+    # CRITICAL: Task service uses `api` prefix, NOT `api/v1`!
+    # ============================================================
     task-router:
-      rule: "PathPrefix(`/tasks`)"
+      rule: "PathPrefix(`/api/tasks`)"
       service: task-service
       entryPoints:
         - web
       middlewares:
+        - forward-auth
         - rate-limit
         - cors-headers
+        - security-headers
+        - retry-policy
+        - circuit-breaker
 
+    task-docs-router:
+      rule: "PathPrefix(`/docs`) && Headers(`X-Service`, `task`)"
+      service: task-service
+      entryPoints:
+        - web
+
+    # ============================================================
+    # Notification Service — prefix: /api/notifications (NestJS globalPrefix: api)
+    # CRITICAL: Notification service uses `api` prefix, NOT `api/v1`!
+    # ============================================================
     notification-router:
-      rule: "PathPrefix(`/notifications`)"
+      rule: "PathPrefix(`/api/notifications`)"
       service: notification-service
       entryPoints:
         - web
       middlewares:
+        - forward-auth
         - rate-limit
         - cors-headers
+        - security-headers
+        - retry-policy
+        - circuit-breaker
 
   services:
     auth-service:
       loadBalancer:
         servers:
           - url: "http://auth-service:3000"
+        healthCheck:
+          path: /api/v1/auth/health
+          interval: 10s
+          timeout: 3s
     user-service:
       loadBalancer:
         servers:
           - url: "http://user-service:3000"
+        healthCheck:
+          path: /api/v1/users/health
+          interval: 10s
+          timeout: 3s
     workspace-service:
       loadBalancer:
         servers:
           - url: "http://workspace-service:8080"
+        healthCheck:
+          path: /api/v1/workspaces/health
+          interval: 10s
+          timeout: 5s
     task-service:
       loadBalancer:
         servers:
           - url: "http://task-service:3000"
+        healthCheck:
+          path: /api/tasks/health
+          interval: 10s
+          timeout: 3s
     notification-service:
       loadBalancer:
         servers:
           - url: "http://notification-service:3000"
+        healthCheck:
+          path: /api/notifications/health
+          interval: 10s
+          timeout: 3s
