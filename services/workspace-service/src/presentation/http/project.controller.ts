@@ -1,0 +1,71 @@
+import {
+  Controller,
+  Post,
+  Get,
+  Patch,
+  Delete,
+  Param,
+  Body,
+  UseGuards,
+  ParseUUIDPipe,
+} from '@nestjs/common';
+import { UserId } from './decorators/user-id.decorator';
+import { CreateProjectDto } from '../../application/dto/create-project.dto';
+import { UpdateProjectDto } from '../../application/dto/update-project.dto';
+import { CreateProjectUseCase } from '../../application/use-cases/project/create-project.use-case';
+import { ListProjectsUseCase } from '../../application/use-cases/project/list-projects.use-case';
+import { UpdateProjectUseCase } from '../../application/use-cases/project/update-project.use-case';
+import { DeleteProjectUseCase } from '../../application/use-cases/project/delete-project.use-case';
+import { UserIdGuard } from './guards/user-id.guard';
+
+@Controller('workspaces/:workspaceId/projects')
+@UseGuards(UserIdGuard)
+export class ProjectController {
+  constructor(
+    private readonly createProjectUseCase: CreateProjectUseCase,
+    private readonly listProjectsUseCase: ListProjectsUseCase,
+    private readonly updateProjectUseCase: UpdateProjectUseCase,
+    private readonly deleteProjectUseCase: DeleteProjectUseCase,
+  ) {}
+
+  @Post()
+  async createProject(
+    @UserId() userId: string,
+    @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
+    @Body() dto: CreateProjectDto,
+  ) {
+    return this.createProjectUseCase.execute(userId, workspaceId, dto);
+  }
+
+  @Get()
+  async listProjects(
+    @UserId() userId: string,
+    @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
+  ) {
+    return this.listProjectsUseCase.execute(userId, workspaceId);
+  }
+
+  @Patch(':id')
+  async updateProject(
+    @UserId() userId: string,
+    @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
+    @Param('id', ParseUUIDPipe) projectId: string,
+    @Body() dto: UpdateProjectDto,
+  ) {
+    return this.updateProjectUseCase.execute(
+      userId,
+      workspaceId,
+      projectId,
+      dto,
+    );
+  }
+
+  @Delete(':id')
+  async deleteProject(
+    @UserId() userId: string,
+    @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
+    @Param('id', ParseUUIDPipe) projectId: string,
+  ) {
+    return this.deleteProjectUseCase.execute(userId, workspaceId, projectId);
+  }
+}
