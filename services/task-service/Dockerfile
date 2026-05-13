@@ -1,36 +1,43 @@
-# ================================
-# Task Service Dockerfile
-# Stack: NestJS + MongoDB (CQRS)
-# Internal Port: 3000
-# Build: nest build requires @nestjs/cli
-# ================================
-
 # --- Stage 1: Build ---
 FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-COPY package*.json ./
-COPY nest-cli.json ./
-COPY tsconfig*.json ./
-RUN npm ci
-# task-service doesn't have @nestjs/cli in deps — install it for build
-RUN npx --yes @nestjs/cli --version || npm install --save-dev @nestjs/cli @nestjs/schematics
+# Enable corepack for pnpm
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+COPY pnpm-lock.yaml package.json ./
+RUN pnpm install --frozen-lockfile
 
 COPY . .
-RUN npx nest build
+RUN pnpm run build
 
-# --- Stage 2: Production ---
-FROM node:20-alpine
+# --- Stage 2: Production Dependencies ---
+FROM node:20-alpine AS prod-deps
 
 WORKDIR /app
 
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+COPY pnpm-lock.yaml package.json ./
+RUN pnpm install --prod --frozen-lockfile
+
+# --- Stage 3: Production Runner ---
+FROM node:20-alpine AS runner
+
+WORKDIR /app
+
+ENV NODE_ENV=production
+
+# Install wget for healthcheck
 RUN apk add --no-cache wget
 
-COPY --from=builder /app/node_modules ./node_modules
+# Copy only necessary files
+COPY --from=prod-deps /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/package.json ./
 
+# Security: Non-root user
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 USER appuser
 
