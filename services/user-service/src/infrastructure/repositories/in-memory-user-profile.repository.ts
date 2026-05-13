@@ -5,8 +5,8 @@ import { UserPreferences } from '../../domain/entities/user-preferences.entity';
 import { UserStatus } from '../../domain/entities/user-status.entity';
 import {
   CreatePendingUserProfileInput,
-  ListUserProfilesResult,
   ListUserProfilesInput,
+  ListUserProfilesResult,
   UpdateUserPreferencesInput,
   UpdateUserProfileInput,
   UpdateUserStatusInput,
@@ -23,14 +23,7 @@ export class InMemoryUserProfileRepository implements UserProfileRepository {
       'Jane Doe',
       'Jane',
       'https://cdn.example.com/avatar-1.png',
-      null,
       'Product designer',
-      'Design Lead',
-      'Design',
-      'Ho Chi Minh City',
-      'Asia/Saigon',
-      'vi-VN',
-      true,
       null,
       new Date('2026-01-01T00:00:00.000Z'),
       new Date('2026-01-02T00:00:00.000Z'),
@@ -44,17 +37,11 @@ export class InMemoryUserProfileRepository implements UserProfileRepository {
       null,
       null,
       null,
-      null,
-      null,
-      null,
-      'UTC',
-      'en-US',
-      true,
-      null,
       new Date('2026-01-03T00:00:00.000Z'),
       new Date('2026-01-04T00:00:00.000Z'),
     ),
   ];
+
   private preferences = [
     new UserPreferences(
       'user-1',
@@ -87,6 +74,7 @@ export class InMemoryUserProfileRepository implements UserProfileRepository {
       new Date('2026-01-04T00:00:00.000Z'),
     ),
   ];
+
   private statuses = [
     new UserStatus(
       'user-1',
@@ -132,7 +120,9 @@ export class InMemoryUserProfileRepository implements UserProfileRepository {
   }
 
   async getStatus(userId: string): Promise<UserStatus> {
-    const existingStatus = this.statuses.find((status) => status.userId === userId);
+    const existingStatus = this.statuses.find(
+      (status) => status.userId === userId,
+    );
 
     if (existingStatus) {
       return existingStatus;
@@ -159,13 +149,7 @@ export class InMemoryUserProfileRepository implements UserProfileRepository {
     const limit = Math.max(input.limit ?? 20, 1);
     const filtered = query
       ? this.profiles.filter((profile) =>
-          [
-            profile.fullName,
-            profile.displayName,
-            profile.username,
-            profile.department,
-            profile.jobTitle,
-          ]
+          [profile.fullName, profile.displayName, profile.username]
             .filter((value): value is string => Boolean(value))
             .some((value) => value.toLowerCase().includes(query)),
         )
@@ -177,43 +161,6 @@ export class InMemoryUserProfileRepository implements UserProfileRepository {
       offset,
       total: filtered.length,
     };
-  }
-
-  async markEmailVerified(userId: string): Promise<UserProfile> {
-    const profile = await this.findByUserId(userId);
-
-    if (!profile) {
-      throw new NotFoundException({
-        code: 'USER_PROFILE_NOT_FOUND',
-        message: `Profile for user ${userId} was not found`,
-      });
-    }
-
-    const updatedProfile = new UserProfile(
-      profile.id,
-      profile.userId,
-      profile.username,
-      profile.fullName,
-      profile.displayName,
-      profile.avatarUrl,
-      profile.coverUrl,
-      profile.bio,
-      profile.jobTitle,
-      profile.department,
-      profile.location,
-      profile.timezone,
-      profile.locale,
-      true,
-      profile.deletedAt,
-      profile.createdAt,
-      new Date(),
-    );
-
-    this.profiles = this.profiles.map((item) =>
-      item.userId === userId ? updatedProfile : item,
-    );
-
-    return updatedProfile;
   }
 
   async upsertPending(
@@ -229,14 +176,7 @@ export class InMemoryUserProfileRepository implements UserProfileRepository {
       input.fullName,
       existingProfile?.displayName ?? null,
       existingProfile?.avatarUrl ?? null,
-      existingProfile?.coverUrl ?? null,
       existingProfile?.bio ?? null,
-      existingProfile?.jobTitle ?? null,
-      existingProfile?.department ?? null,
-      existingProfile?.location ?? null,
-      existingProfile?.timezone ?? null,
-      existingProfile?.locale ?? null,
-      existingProfile?.emailVerified ?? false,
       null,
       existingProfile?.createdAt ?? now,
       now,
@@ -273,14 +213,7 @@ export class InMemoryUserProfileRepository implements UserProfileRepository {
       input.fullName ?? profile.fullName,
       input.displayName === undefined ? profile.displayName : input.displayName,
       profile.avatarUrl,
-      input.coverUrl === undefined ? profile.coverUrl : input.coverUrl,
       input.bio === undefined ? profile.bio : input.bio,
-      input.jobTitle === undefined ? profile.jobTitle : input.jobTitle,
-      input.department === undefined ? profile.department : input.department,
-      input.location === undefined ? profile.location : input.location,
-      input.timezone === undefined ? profile.timezone : input.timezone,
-      input.locale === undefined ? profile.locale : input.locale,
-      profile.emailVerified,
       profile.deletedAt,
       profile.createdAt,
       new Date(),

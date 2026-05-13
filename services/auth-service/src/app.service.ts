@@ -1,22 +1,15 @@
 import {
-  AuthSessionInfo,
   AuthSession,
   LogoutInput,
-  LogoutOtherSessionsInput,
-  RevokeSessionResult,
   RefreshSessionInput,
 } from '@/common/types/auth-session.type';
 import {
   AuthUser,
   ChangePasswordInput,
   ChangePasswordResult,
-  ForgotPasswordInput,
-  ForgotPasswordResult,
   LoginInput,
   RegisterInput,
   RegisterPendingResult,
-  ResetPasswordInput,
-  ResetPasswordResult,
   ResendEmailVerificationOtpInput,
   ResendEmailVerificationOtpResult,
   VerifyEmailOtpInput,
@@ -28,10 +21,9 @@ import {
   SignAccessTokenInput,
 } from '@/common/types/jwt.type';
 import { ConfigurationService } from '@/configuration/configuration.service';
-import { EmailsService } from '@/modules/emails/emails.service';
 import { IdentityService } from '@/modules/identity/identity.service';
+import { AuthOutboxService } from '@/modules/outbox/auth-outbox.service';
 import { UserProfilesGrpcService } from '@/modules/identity/user-profiles-grpc.service';
-import { RabbitMqEventsService } from '@/modules/rabbitmq/rabbitmq-events.service';
 import { RedisService } from '@/modules/redis/redis.service';
 import { RefreshTokensService } from '@/modules/refresh-tokens/refresh-tokens.service';
 import {
@@ -42,16 +34,10 @@ import {
   Logger,
   UnauthorizedException,
 } from '@nestjs/common';
-import { createHash, createSecretKey, randomBytes, randomInt } from 'crypto';
-
+import { createHash, createSecretKey, randomInt } from 'crypto';
 type EmailVerificationOtpPayload = {
   email: string;
   otpHash: string;
-};
-
-type PasswordResetTokenPayload = {
-  email: string;
-  userId: string;
 };
 
 type EmailVerificationOtpDispatchResult = {
@@ -60,15 +46,19 @@ type EmailVerificationOtpDispatchResult = {
   userId: string;
 };
 
+type ResolvedUserProfileIdentity = {
+  fullName?: string;
+  username?: string;
+};
+
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
 
   constructor(
     private readonly configurationService: ConfigurationService,
-    private readonly emailsService: EmailsService,
+    private readonly authOutboxService: AuthOutboxService,
     private readonly identityService: IdentityService,
-    private readonly rabbitMqEventsService: RabbitMqEventsService,
     private readonly redisService: RedisService,
     private readonly refreshTokensService: RefreshTokensService,
     private readonly userProfilesGrpcService: UserProfilesGrpcService,
@@ -76,14 +66,19 @@ export class AuthService {
 
   async getCurrentUser(authorizationHeader?: string): Promise<
     AuthUser & {
+      fullName?: string;
+      username?: string;
       workspaceId?: string | null;
     }
   > {
     const { payload, user } =
       await this.resolveVerifiedUserContext(authorizationHeader);
+    const profileIdentity = await this.resolveUserProfileIdentity(user.userId);
 
     return {
       ...user,
+      fullName: profileIdentity.fullName,
+      username: profileIdentity.username,
       workspaceId:
         this.readFirstString(
           payload.workspaceId,
@@ -107,60 +102,6 @@ export class AuthService {
     );
 
     return { revoked: true };
-  }
-
-  async getSessions(
-    authorizationHeader?: string,
-  ): Promise<AuthSessionInfo[]> {
-    const { userId } = await this.resolveVerifiedUserContext(authorizationHeader);
-    const sessions = await this.refreshTokensService.listSessionsByUserId(userId);
-
-    return sessions.map((session) => ({
-      expiresAt: session.expiresAt.toISOString(),
-      familyId: session.familyId,
-      isActive: !session.revokedAt && session.expiresAt.getTime() > Date.now(),
-      lastUsedAt: session.lastUsedAt?.toISOString() ?? null,
-      revokeReason: session.revokeReason,
-      revokedAt: session.revokedAt?.toISOString() ?? null,
-      tokenId: session.id,
-      userId: session.userId,
-      workspaceId: session.workspaceId ?? null,
-    }));
-  }
-
-  async logoutAll(authorizationHeader?: string): Promise<RevokeSessionResult> {
-    const { userId } = await this.resolveVerifiedUserContext(authorizationHeader);
-    const revokedCount = await this.refreshTokensService.revokeAllForUser(userId);
-
-    return { revokedCount };
-  }
-
-  async logoutOthers(
-    authorizationHeader: string | undefined,
-    input: LogoutOtherSessionsInput,
-  ): Promise<RevokeSessionResult> {
-    this.assertRefreshTokenInput(input);
-    const { userId } = await this.resolveVerifiedUserContext(authorizationHeader);
-    const revokedCount =
-      await this.refreshTokensService.revokeOtherFamiliesForUser(
-        userId,
-        input.refreshToken,
-      );
-
-    return { revokedCount };
-  }
-
-  async revokeSession(
-    authorizationHeader: string | undefined,
-    familyId: string,
-  ): Promise<RevokeSessionResult> {
-    const { userId } = await this.resolveVerifiedUserContext(authorizationHeader);
-    const revokedCount = await this.refreshTokensService.revokeFamilyForUser(
-      userId,
-      familyId,
-    );
-
-    return { revokedCount };
   }
 
   async refresh(input: RefreshSessionInput): Promise<AuthSession> {
@@ -277,11 +218,6 @@ export class AuthService {
     }
 
     const user = await this.identityService.markEmailVerified(input.userId);
-    await this.rabbitMqEventsService.publishAuthEmailVerified({
-      email: user.email,
-      userId: input.userId,
-      verifiedAt: new Date().toISOString(),
-    });
     await this.redisService.delete(
       this.buildEmailVerificationOtpKey(input.userId),
     );
@@ -290,97 +226,6 @@ export class AuthService {
       email: user.email,
       emailVerified: true,
       verified: true,
-    };
-  }
-
-  async forgotPassword(
-    input: ForgotPasswordInput,
-  ): Promise<ForgotPasswordResult> {
-    const user = await this.identityService.findUserByEmailForPasswordReset(
-      input.email,
-    );
-
-    if (!user || !user.isActive) {
-      return { accepted: true };
-    }
-
-    const token = this.generatePasswordResetToken();
-    const tokenHash = this.hashPasswordResetToken(token);
-    const ttlSeconds = this.configurationService.getPasswordResetConfig().ttlSeconds;
-    const activeTokenKey = this.buildPasswordResetUserKey(user.userId);
-    const previousTokenHash = await this.redisService.get(activeTokenKey);
-
-    if (previousTokenHash) {
-      await this.redisService.delete(
-        this.buildPasswordResetTokenKey(previousTokenHash),
-      );
-    }
-
-    await this.redisService.setJson(
-      this.buildPasswordResetTokenKey(tokenHash),
-      {
-        email: user.email,
-        userId: user.userId,
-      } satisfies PasswordResetTokenPayload,
-      ttlSeconds,
-    );
-    await this.redisService.set(activeTokenKey, tokenHash, ttlSeconds);
-
-    await this.emailsService.sendText({
-      subject: 'Reset your CollabSpace password',
-      text: [
-        `Use this password reset token: ${token}.`,
-        `It expires in ${ttlSeconds} seconds.`,
-      ].join(' '),
-      to: user.email,
-    });
-
-    return { accepted: true };
-  }
-
-  async resetPassword(
-    input: ResetPasswordInput,
-  ): Promise<ResetPasswordResult> {
-    const token = input.token?.trim();
-
-    if (!token) {
-      throw new UnauthorizedException({
-        code: 'PASSWORD_RESET_INVALID',
-        message: 'Password reset token is required',
-      });
-    }
-
-    const payload = await this.redisService.getJson<PasswordResetTokenPayload>(
-      this.buildPasswordResetTokenKey(this.hashPasswordResetToken(token)),
-    );
-    const activeTokenHash = await this.redisService.get(
-      this.buildPasswordResetUserKey(payload?.userId ?? ''),
-    );
-    const tokenHash = this.hashPasswordResetToken(token);
-
-    if (!payload || (activeTokenHash && activeTokenHash !== tokenHash)) {
-      throw new UnauthorizedException({
-        code: 'PASSWORD_RESET_INVALID',
-        message: 'Password reset token is invalid or expired',
-      });
-    }
-
-    await this.identityService.resetPassword(payload.userId, input.newPassword);
-    await this.redisService.delete(
-      [
-        this.buildPasswordResetTokenKey(tokenHash),
-        this.buildPasswordResetUserKey(payload.userId),
-      ],
-    );
-    const revokedSessionCount = await this.refreshTokensService.revokeAllForUser(
-      payload.userId,
-      'password_reset',
-    );
-
-    return {
-      reset: true,
-      revokedSessionCount,
-      userId: payload.userId,
     };
   }
 
@@ -434,15 +279,16 @@ export class AuthService {
   async verifyAccessToken(authorizationHeader?: string): Promise<AuthIdentity> {
     const { payload, user, userId } =
       await this.resolveVerifiedUserContext(authorizationHeader);
-    const fullName = await this.resolveUserFullName(userId);
+    const profileIdentity = await this.resolveUserProfileIdentity(userId);
 
     return {
       emailVerified: user.emailVerified,
-      fullName,
+      fullName: profileIdentity.fullName,
       permissions: user.permissions,
       roles: user.roles,
       userId,
       role: user.role,
+      username: profileIdentity.username,
       workspaceId: this.readFirstString(
         payload.workspaceId,
         payload.workspace_id,
@@ -490,16 +336,21 @@ export class AuthService {
     };
   }
 
-  private async resolveUserFullName(userId: string): Promise<string | undefined> {
+  private async resolveUserProfileIdentity(
+    userId: string,
+  ): Promise<ResolvedUserProfileIdentity> {
     try {
       const profile = await this.userProfilesGrpcService.getProfile({ userId });
-      return profile.fullName?.trim() || undefined;
+      return {
+        fullName: profile.fullName?.trim() || undefined,
+        username: profile.username?.trim() || undefined,
+      };
     } catch (error) {
       const reason = error instanceof Error ? error.message : String(error);
       this.logger.warn(
-        `Unable to resolve full name for user ${userId}: ${reason}`,
+        `Unable to resolve profile identity for user ${userId}: ${reason}`,
       );
-      return undefined;
+      return {};
     }
   }
 
@@ -546,14 +397,6 @@ export class AuthService {
 
   private buildEmailVerificationOtpKey(userId: string): string {
     return `email-verification:otp:${userId}`;
-  }
-
-  private buildPasswordResetTokenKey(tokenHash: string): string {
-    return `password-reset:token:${tokenHash}`;
-  }
-
-  private buildPasswordResetUserKey(userId: string): string {
-    return `password-reset:user:${userId}`;
   }
 
   private buildEmailVerificationResendCooldownKey(userId: string): string {
@@ -624,17 +467,8 @@ export class AuthService {
     return otp.toString().padStart(otpLength, '0');
   }
 
-  private generatePasswordResetToken(): string {
-    const { tokenByteLength } = this.configurationService.getPasswordResetConfig();
-    return randomBytes(tokenByteLength).toString('hex');
-  }
-
   private hashOtp(otp: string): string {
     return createHash('sha256').update(otp).digest('hex');
-  }
-
-  private hashPasswordResetToken(token: string): string {
-    return createHash('sha256').update(token).digest('hex');
   }
 
   private isUserAlreadyExistsConflict(error: unknown): boolean {
@@ -736,14 +570,11 @@ export class AuthService {
       } satisfies EmailVerificationOtpPayload,
       otpTtlSeconds,
     );
-
-    await this.emailsService.sendText({
-      subject: 'Verify your CollabSpace email',
-      text: [
-        `Your CollabSpace verification code is ${otp}.`,
-        `This code expires in ${otpTtlSeconds} seconds.`,
-      ].join(' '),
-      to: user.email,
+    await this.authOutboxService.enqueueEmailVerificationOtp({
+      email: user.email,
+      otp,
+      otpTtlSeconds,
+      userId: user.userId,
     });
 
     return {

@@ -1,7 +1,7 @@
 import { ConfigurationService } from '@/configuration/configuration.service';
 import { UserProfilesGrpcService } from '@/modules/identity/user-profiles-grpc.service';
 import { DatabaseService } from '@/modules/database/database.service';
-import { RabbitMqEventsService } from '@/modules/rabbitmq/rabbitmq-events.service';
+import { AuthOutboxService } from '@/modules/outbox/auth-outbox.service';
 import { RedisService } from '@/modules/redis/redis.service';
 import { Injectable } from '@nestjs/common';
 
@@ -36,8 +36,8 @@ export class AuthHealthService {
   constructor(
     private readonly configurationService: ConfigurationService,
     private readonly databaseService: DatabaseService,
+    private readonly authOutboxService: AuthOutboxService,
     private readonly redisService: RedisService,
-    private readonly rabbitMqEventsService: RabbitMqEventsService,
     private readonly userProfilesGrpcService: UserProfilesGrpcService,
   ) {}
 
@@ -51,11 +51,29 @@ export class AuthHealthService {
   }
 
   async getReadiness(): Promise<ReadinessReport> {
-    const rabbitMqConfig = this.configurationService.getRabbitMqConfig();
+    const outboxConfig = this.configurationService.getOutboxConfig();
     const checks: Record<string, HealthCheckResult> = {
       database: await this.runCheck(true, async () => {
         await this.databaseService.ping();
       }),
+      outbox:
+        outboxConfig.enabled
+          ? await this.runCheck(false, async () => {
+              const stats = await this.authOutboxService.getStats();
+
+              if (
+                stats.failedCount >= outboxConfig.degradedFailedThreshold ||
+                stats.pendingCount >= outboxConfig.degradedPendingThreshold ||
+                stats.staleProcessingCount > 0
+              ) {
+                throw new Error(this.buildOutboxHealthDetail(stats));
+              }
+            })
+          : {
+              detail: 'Auth outbox processor is disabled',
+              required: false,
+              status: 'disabled',
+            },
       redis: await this.runCheck(true, async () => {
         const isAlive = await this.redisService.ping();
 
@@ -63,22 +81,25 @@ export class AuthHealthService {
           throw new Error('Redis ping returned a non-PONG response');
         }
       }),
-      rabbitmq:
-        rabbitMqConfig.enabled && rabbitMqConfig.url
-          ? await this.runCheck(false, async () => {
-              await this.rabbitMqEventsService.ping();
-            })
-          : {
-              detail: 'RabbitMQ publishing is disabled',
-              required: false,
-              status: 'disabled',
-            },
       userProfilesGrpc: await this.runCheck(false, async () => {
         await this.userProfilesGrpcService.ping();
       }),
     };
 
     return this.toReadinessReport('auth-service', checks);
+  }
+
+  private buildOutboxHealthDetail(
+    stats: Awaited<ReturnType<AuthOutboxService['getStats']>>,
+  ): string {
+    return [
+      `failed=${stats.failedCount}`,
+      `pending=${stats.pendingCount}`,
+      `processing=${stats.processingCount}`,
+      `staleProcessing=${stats.staleProcessingCount}`,
+      `oldestPendingAt=${stats.oldestPendingAt ?? 'none'}`,
+      `oldestFailedAt=${stats.oldestFailedAt ?? 'none'}`,
+    ].join(' ');
   }
 
   private async runCheck(

@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
+import { join } from 'node:path';
 import { DataSource } from 'typeorm';
 import { UserProfileOrmEntity } from './infrastructure/database/entities/user-profile.orm-entity';
 import { UserPreferencesOrmEntity } from './infrastructure/database/entities/user-preferences.orm-entity';
@@ -9,13 +9,10 @@ import { UserStatusOrmEntity } from './infrastructure/database/entities/user-sta
 type SeedProfile = {
   avatarUrl: string;
   bio: string;
-  department: string;
   fullName: string;
   id: string;
-  jobTitle: string;
-  locale: string;
-  location: string;
-  timezone: string;
+  preferredLanguage: string;
+  preferredTimezone: string;
   userId: string;
   username: string;
 };
@@ -24,65 +21,50 @@ const SEED_PROFILES: SeedProfile[] = [
   {
     avatarUrl: 'https://api.dicebear.com/9.x/initials/svg?seed=Phan%20Phu%20Tho',
     bio: 'Infrastructure engineer managing Docker, CI/CD, API gateway, monitoring, tracing, and logging.',
-    department: 'Platform',
     fullName: 'Phan Phu Tho',
     id: 'a1111111-1111-4111-8111-111111111111',
-    jobTitle: 'Infrastructure Engineer',
-    locale: 'vi-VN',
-    location: 'Ho Chi Minh City',
-    timezone: 'Asia/Saigon',
+    preferredLanguage: 'vi',
+    preferredTimezone: 'Asia/Saigon',
     userId: '11111111-1111-4111-8111-111111111111',
     username: 'phan.phu.tho',
   },
   {
     avatarUrl: 'https://api.dicebear.com/9.x/initials/svg?seed=Le%20Ngoc%20Anh',
     bio: 'Owns JWT auth, RBAC, and user profile APIs for the collaboration platform.',
-    department: 'Platform',
     fullName: 'Le Ngoc Anh',
     id: 'b2222222-2222-4222-8222-222222222222',
-    jobTitle: 'Backend Engineer',
-    locale: 'vi-VN',
-    location: 'Ho Chi Minh City',
-    timezone: 'Asia/Saigon',
+    preferredLanguage: 'vi',
+    preferredTimezone: 'Asia/Saigon',
     userId: '22222222-2222-4222-8222-222222222222',
     username: 'le.ngoc.anh',
   },
   {
     avatarUrl: 'https://api.dicebear.com/9.x/initials/svg?seed=Ngo%20Quang%20Tien',
     bio: 'Builds workspace CRUD flows, member invitations, and workspace membership management.',
-    department: 'Collaboration',
     fullName: 'Ngo Quang Tien',
     id: 'c3333333-3333-4333-8333-333333333333',
-    jobTitle: 'Backend Engineer',
-    locale: 'vi-VN',
-    location: 'Ho Chi Minh City',
-    timezone: 'Asia/Saigon',
+    preferredLanguage: 'vi',
+    preferredTimezone: 'Asia/Saigon',
     userId: '33333333-3333-4333-8333-333333333333',
     username: 'ngo.quang.tien',
   },
   {
     avatarUrl: 'https://api.dicebear.com/9.x/initials/svg?seed=Vo%20Trung%20Tin',
     bio: 'Focuses on task workflows, comments, notifications, and event-driven delivery.',
-    department: 'Collaboration',
     fullName: 'Vo Trung Tin',
     id: 'd4444444-4444-4444-8444-444444444444',
-    jobTitle: 'Backend Engineer',
-    locale: 'vi-VN',
-    location: 'Ho Chi Minh City',
-    timezone: 'Asia/Saigon',
+    preferredLanguage: 'vi',
+    preferredTimezone: 'Asia/Saigon',
     userId: '44444444-4444-4444-8444-444444444444',
     username: 'vo.trung.tin',
   },
   {
     avatarUrl: 'https://api.dicebear.com/9.x/initials/svg?seed=Demo%20Reviewer',
     bio: 'Read-only stakeholder account for reviewing workspace, task, and notification flows in demos.',
-    department: 'Stakeholder',
     fullName: 'Demo Reviewer',
     id: 'e5555555-5555-4555-8555-555555555555',
-    jobTitle: 'Reviewer',
-    locale: 'en-US',
-    location: 'Remote',
-    timezone: 'UTC',
+    preferredLanguage: 'en',
+    preferredTimezone: 'UTC',
     userId: '55555555-5555-4555-8555-555555555555',
     username: 'demo.reviewer',
   },
@@ -177,17 +159,10 @@ async function main(): Promise<void> {
         repository.create({
           avatarUrl: seedProfile.avatarUrl,
           bio: seedProfile.bio,
-          coverUrl: existingProfile?.coverUrl ?? null,
-          department: seedProfile.department,
           deletedAt: null,
           displayName: existingProfile?.displayName ?? seedProfile.fullName,
-          emailVerified: true,
           fullName: seedProfile.fullName,
           id: existingProfile?.id ?? seedProfile.id,
-          jobTitle: seedProfile.jobTitle,
-          locale: seedProfile.locale,
-          location: seedProfile.location,
-          timezone: seedProfile.timezone,
           userId: seedProfile.userId,
           username: seedProfile.username,
         }),
@@ -208,12 +183,14 @@ async function main(): Promise<void> {
           emailNotificationsEnabled:
             existingPreferences?.emailNotificationsEnabled ?? true,
           id: existingPreferences?.id ?? randomUUID(),
-          language: existingPreferences?.language ?? seedProfile.locale.slice(0, 2),
+          language:
+            existingPreferences?.language ?? seedProfile.preferredLanguage,
           pushNotificationsEnabled:
             existingPreferences?.pushNotificationsEnabled ?? true,
           theme: existingPreferences?.theme ?? 'system',
           timeFormat: existingPreferences?.timeFormat ?? '24h',
-          timezone: existingPreferences?.timezone ?? seedProfile.timezone,
+          timezone:
+            existingPreferences?.timezone ?? seedProfile.preferredTimezone,
           userId: seedProfile.userId,
           weekStartsOn: existingPreferences?.weekStartsOn ?? 'monday',
         }),

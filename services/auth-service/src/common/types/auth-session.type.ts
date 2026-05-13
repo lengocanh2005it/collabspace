@@ -10,26 +10,6 @@ export type LogoutInput = {
   refreshToken: string;
 };
 
-export type LogoutOtherSessionsInput = {
-  refreshToken: string;
-};
-
-export type AuthSessionInfo = {
-  expiresAt: string;
-  familyId: string;
-  isActive: boolean;
-  lastUsedAt?: string | null;
-  revokeReason?: string | null;
-  revokedAt?: string | null;
-  tokenId: string;
-  userId: string;
-  workspaceId?: string | null;
-};
-
-export type RevokeSessionResult = {
-  revokedCount: number;
-};
-
 export type AuthSession = {
   accessToken: string;
   email: string;

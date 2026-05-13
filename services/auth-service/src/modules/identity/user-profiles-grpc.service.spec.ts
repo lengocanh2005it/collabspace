@@ -40,6 +40,7 @@ describe('UserProfilesGrpcService', () => {
       of({
         fullName: 'Member Example',
         userId: 'user-1',
+        username: 'member.example',
       }),
     );
 
@@ -50,6 +51,7 @@ describe('UserProfilesGrpcService', () => {
     ).resolves.toEqual({
       fullName: 'Member Example',
       userId: 'user-1',
+      username: 'member.example',
     });
   });
 

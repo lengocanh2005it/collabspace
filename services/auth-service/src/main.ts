@@ -23,19 +23,6 @@ async function bootstrap() {
     Logger.log(`gRPC server configured on ${grpcConfig.url}`, 'Bootstrap');
   }
 
-  const rabbitMqConfig = configurationService.getRabbitMqConfig();
-
-  if (rabbitMqConfig.enabled && rabbitMqConfig.url) {
-    app.connectMicroservice<MicroserviceOptions>(
-      configurationService.getRabbitMqMicroserviceOptions(),
-    );
-    hasConnectedMicroservice = true;
-    Logger.log(
-      `RabbitMQ consumer configured for queue ${rabbitMqConfig.queue}`,
-      'Bootstrap',
-    );
-  }
-
   if (hasConnectedMicroservice) {
     await app.startAllMicroservices();
   }

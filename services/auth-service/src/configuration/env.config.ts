@@ -78,6 +78,24 @@ export default () => ({
     pollInterval: toNumber(process.env.GRAPHILE_WORKER_POLL_INTERVAL, 2000),
     schema: process.env.GRAPHILE_WORKER_SCHEMA ?? 'graphile_worker',
   },
+  outbox: {
+    batchSize: toNumber(process.env.OUTBOX_BATCH_SIZE, 20),
+    degradedFailedThreshold: toNumber(
+      process.env.OUTBOX_DEGRADED_FAILED_THRESHOLD,
+      1,
+    ),
+    degradedPendingThreshold: toNumber(
+      process.env.OUTBOX_DEGRADED_PENDING_THRESHOLD,
+      50,
+    ),
+    enabled: toBoolean(process.env.OUTBOX_ENABLED, true),
+    maxAttempts: toNumber(process.env.OUTBOX_MAX_ATTEMPTS, 10),
+    pollIntervalMs: toNumber(process.env.OUTBOX_POLL_INTERVAL_MS, 5000),
+    staleClaimThresholdMs: toNumber(
+      process.env.OUTBOX_STALE_CLAIM_THRESHOLD_MS,
+      60000,
+    ),
+  },
   grpc: {
     enabled: toBoolean(process.env.GRPC_ENABLED, false),
     url: process.env.GRPC_URL ?? '0.0.0.0:50051',

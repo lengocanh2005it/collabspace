@@ -37,6 +37,7 @@ type GetProfileRequest = {
 type GetProfileResponse = {
   fullName?: string;
   userId: string;
+  username?: string;
 };
 
 type UserProfilesGrpcClient = {

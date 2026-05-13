@@ -171,35 +171,25 @@ sh ./scripts/seed.sh
 ### Auth Service (`/auth`)
 Base prefix: `/api/v1`
 - `GET /api/v1/auth/health` - Health check
+- `GET /api/v1/auth/health/live` - Liveness check
+- `GET /api/v1/auth/health/ready` - Readiness check
 - `POST /api/v1/auth/register` - Register user, create pending profile in `user-service`, send email verification OTP
+- `POST /api/v1/auth/resend-verification-otp` - Resend email verification OTP with cooldown and max-attempt limits
+- `POST /api/v1/auth/verify-email` - Verify email OTP and mark email as verified
 - `POST /api/v1/auth/login` - Login and return access token + refresh token
 - `POST /api/v1/auth/refresh` - Rotate refresh token and issue a new session
 - `POST /api/v1/auth/logout` - Revoke one refresh token
-- `POST /api/v1/auth/logout-all` - Revoke all sessions for the authenticated user
-- `POST /api/v1/auth/logout-others` - Revoke all other session families except the current one
-- `GET /api/v1/auth/sessions` - List current user's refresh-token sessions
-- `DELETE /api/v1/auth/sessions/{familyId}` - Revoke a specific session family
-- `GET /api/v1/auth/me` - Get current authenticated user from access token
-- `GET /api/v1/auth/verify` - Verify bearer token and return identity; also sets `X-User-Id`, `X-User-Name`, `X-Role`, `X-Roles`, `X-Permissions`, `X-Email-Verified`, `X-Workspace-Id`, `X-Request-Id`
-- `POST /api/v1/auth/resend-verification-otp` - Resend email verification OTP with cooldown and max-attempt limits
-- `POST /api/v1/auth/verify-email` - Verify email OTP and mark email as verified
-- `POST /api/v1/auth/forgot-password` - Accept password reset request and send reset token by email
-- `POST /api/v1/auth/reset-password` - Reset password with reset token and revoke existing sessions
 - `POST /api/v1/auth/change-password` - Change password for authenticated user and revoke existing sessions
-- `POST /api/v1/auth/roles` - Create role
-- `POST /api/v1/auth/permissions` - Create permission
-- `POST /api/v1/auth/users/{userId}/roles` - Assign a role to a user
-- `POST /api/v1/auth/roles/{roleId}/permissions` - Assign a permission to a role
+- `GET /api/v1/auth/me` - Get current authenticated user from access token
+- `GET /api/v1/auth/verify` - Verify bearer token and return identity; also sets `X-User-Id`, `X-User-Name`, `X-Username`, `X-Role`, `X-Roles`, `X-Permissions`, `X-Email-Verified`, `X-Workspace-Id`, `X-Request-Id`
 
 ### User Service (`/users`)
 Base prefix: `/api/v1`
 - `GET /api/v1/users/health` - Health check
+- `GET /api/v1/users/health/live` - Liveness check
+- `GET /api/v1/users/health/ready` - Readiness check
 - `GET /api/v1/users/me` - Get current user profile
 - `PATCH /api/v1/users/me` - Update current user profile
-- `GET /api/v1/users/me/preferences` - Get current user preferences
-- `PATCH /api/v1/users/me/preferences` - Update current user preferences
-- `PATCH /api/v1/users/me/status` - Update current user presence/status (`status`, `statusText`, `emoji`, `clearAt`, `lastSeenAt`)
-- `GET /api/v1/users/presence?userIds=...` - Get statuses for multiple users
 - `POST /api/v1/users/bulk` - Fetch multiple user profiles by `userIds`
 - `GET /api/v1/users?limit=&offset=&q=` - List user summaries with pagination and optional search query
 - `GET /api/v1/users/search?q=&limit=&offset=` - Search user summaries
@@ -208,11 +198,9 @@ Base prefix: `/api/v1`
 
 Internal service contracts:
 - `auth-service` exposes gRPC `AuthService.VerifyAccessToken` for downstream auth checks
-- `auth-service` publishes `AUTH_EMAIL_VERIFIED_EVENT` after successful email verification
 - `user-service` exposes gRPC `UserProfilesService.CreatePendingProfile` so `auth-service` can bootstrap pending profiles at registration time
-- `user-service` exposes gRPC `UserProfilesService.GetProfile` for full-name/profile hydration
+- `user-service` exposes gRPC `UserProfilesService.GetProfile` for full-name and username hydration
 - `user-service` exposes gRPC `UserProfilesService.GetProfiles` for bulk profile hydration
-- `user-service` consumes `AUTH_EMAIL_VERIFIED_EVENT` to mark the corresponding profile as email-verified
 
 ### Workspace Service (`/workspaces`)
 - `POST /workspaces` - Create workspace

@@ -17,6 +17,7 @@ export type AuthIdentity = {
   permissions: string[];
   roles: string[];
   role?: string;
+  username?: string;
   workspaceId?: string;
   userId: string;
 };

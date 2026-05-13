@@ -63,6 +63,16 @@ export type GraphileWorkerConfig = {
   schema: string;
 };
 
+export type OutboxConfig = {
+  batchSize: number;
+  degradedFailedThreshold: number;
+  degradedPendingThreshold: number;
+  enabled: boolean;
+  maxAttempts: number;
+  pollIntervalMs: number;
+  staleClaimThresholdMs: number;
+};
+
 export type GrpcConfig = {
   enabled: boolean;
   includeDirs: string[];
@@ -228,6 +238,22 @@ export class ConfigurationService {
       pollInterval: graphileWorkerConfig.pollInterval,
       schema: graphileWorkerConfig.schema,
       taskList: {},
+    };
+  }
+
+  getOutboxConfig(): OutboxConfig {
+    return {
+      batchSize: this.configService.get<number>('outbox.batchSize') ?? 20,
+      degradedFailedThreshold:
+        this.configService.get<number>('outbox.degradedFailedThreshold') ?? 1,
+      degradedPendingThreshold:
+        this.configService.get<number>('outbox.degradedPendingThreshold') ?? 50,
+      enabled: this.configService.get<boolean>('outbox.enabled') ?? true,
+      maxAttempts: this.configService.get<number>('outbox.maxAttempts') ?? 10,
+      pollIntervalMs:
+        this.configService.get<number>('outbox.pollIntervalMs') ?? 5000,
+      staleClaimThresholdMs:
+        this.configService.get<number>('outbox.staleClaimThresholdMs') ?? 60000,
     };
   }
 
