@@ -2,14 +2,14 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = "myorg/workspace-service"
+        IMAGE_NAME = "collabspace/workspace-service"
         DOCKER_REGISTRY = "docker.io"
     }
 
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/myorg/workspace-service.git'
+                git branch: 'main', url: 'https://github.com/lengocanh2005it/collabspace.git'
             }
         }
 
