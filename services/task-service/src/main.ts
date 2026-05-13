@@ -1,14 +1,14 @@
-import 'reflect-metadata'; 
-import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
-import { AppModule } from './app.module';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { MicroserviceOptions, Transport } from '@nestjs/microservices';
-import { ConfigurationService } from './configuration/configuration.service'; // Import service của bạn
+import "reflect-metadata";
+import { NestFactory } from "@nestjs/core";
+import { ValidationPipe } from "@nestjs/common";
+import { AppModule } from "./app.module";
+import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
+import { MicroserviceOptions, Transport } from "@nestjs/microservices";
+import { ConfigurationService } from "./configuration/configuration.service"; // Import service của bạn
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  
+
   // --- PHẦN MỚI: CẤU HÌNH MICROSERVICE ---
   const configService = app.get(ConfigurationService);
   const rmqConfig = configService.getRabbitMqConfig();
@@ -30,7 +30,7 @@ async function bootstrap() {
     await app.startAllMicroservices();
     console.log(`📡 RabbitMQ Microservice is connected and listening`);
   }
-  // ---------------------------- 
+  // ----------------------------
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -40,33 +40,33 @@ async function bootstrap() {
       transformOptions: {
         enableImplicitConversion: true,
       },
-    })
+    }),
   );
 
   app.enableCors({
-    origin: '*',
+    origin: "*",
     credentials: true,
   });
 
-  app.setGlobalPrefix('api');
-  
+  app.setGlobalPrefix("api");
+
   const config = new DocumentBuilder()
-    .setTitle('CollabSpace - Task Service API')
-    .setDescription('Complete CRUD API with Clean Architecture + CQRS pattern')
-    .setVersion('1.0.0')
-    .addTag('tasks', 'Task management endpoints')
+    .setTitle("CollabSpace - Task Service API")
+    .setDescription("Complete CRUD API with Clean Architecture + CQRS pattern")
+    .setVersion("1.0.0")
+    .addTag("tasks", "Task management endpoints")
     .addBearerAuth(
-      { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
-      'JWT'
+      { type: "http", scheme: "bearer", bearerFormat: "JWT" },
+      "JWT",
     )
     .build();
-    
+
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('docs', app, document);
+  SwaggerModule.setup("docs", app, document);
 
   const port = process.env.PORT || 3000;
   await app.listen(port);
   console.log(`✅ Task Service is running on port ${port}`);
   console.log(`📚 API Documentation: http://localhost:${port}/api/docs`);
 }
-bootstrap();
+void bootstrap();

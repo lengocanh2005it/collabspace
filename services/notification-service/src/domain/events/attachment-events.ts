@@ -14,8 +14,8 @@ export interface AttachmentAddedEventPayload {
   uploadedByAvatarUrl?: string;
   fileName: string;
   fileSize: number;
-  fileType: string;       // 'image', 'document', 'video', etc.
-  fileUrl?: string;       // Pre-signed URL if applicable
+  fileType: string; // 'image', 'document', 'video', etc.
+  fileUrl?: string; // Pre-signed URL if applicable
   workspaceId: string;
   taskAssigneeId?: string; // Notify người được gán task
 }

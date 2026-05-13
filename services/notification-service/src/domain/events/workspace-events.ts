@@ -5,6 +5,8 @@
  * Events triggered when workspace operations occur
  */
 
+export const WORKSPACE_INVITED_EVENT = "workspace_invited";
+
 export interface WorkspaceInvitedEventPayload {
   workspaceId: string;
   workspaceName: string;
@@ -12,7 +14,7 @@ export interface WorkspaceInvitedEventPayload {
   invitedById: string;
   invitedByName: string;
   invitedByAvatarUrl?: string;
-  role?: string;          // 'member', 'admin', etc.
+  role?: string; // 'member', 'admin', etc.
   inviteEmail?: string;
 }
 

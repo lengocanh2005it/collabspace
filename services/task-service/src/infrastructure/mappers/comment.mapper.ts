@@ -1,6 +1,23 @@
 // src/infrastructure/mappers/comment.mapper.ts
-import { Comment } from '../../domain/entities/comment.entity';
-import { TaskCommentDocument } from '../persistence/task-comment.schema';
+import { Comment } from "../../domain/entities/comment.entity";
+import { TaskCommentDocument } from "../persistence/task-comment.schema";
+
+interface CommentMapperResponse {
+  id: string;
+  taskId: string;
+  author: {
+    id: string;
+    name: string;
+    avatarUrl?: string;
+  };
+  content: string;
+  parentId: string | null | undefined;
+  mentions: string[];
+  isEdited: boolean;
+  reactionCount: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 /**
  * Comment Mapper
@@ -58,7 +75,7 @@ export class CommentMapper {
    * Dùng khi: Gửi response về client
    * Sẽ được gọi từ presentation layer
    */
-  public static toResponse(raw: TaskCommentDocument): any {
+  public static toResponse(raw: TaskCommentDocument): CommentMapperResponse {
     return {
       id: raw._id.toString(),
       taskId: raw.taskId,
@@ -80,7 +97,9 @@ export class CommentMapper {
   /**
    * Chuyển collection Document sang DTOs
    */
-  public static toResponses(comments: TaskCommentDocument[]): any[] {
+  public static toResponses(
+    comments: TaskCommentDocument[],
+  ): CommentMapperResponse[] {
     return comments.map((comment) => this.toResponse(comment));
   }
 }

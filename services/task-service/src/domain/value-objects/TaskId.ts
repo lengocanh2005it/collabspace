@@ -1,20 +1,23 @@
-import { validate as isUuid, v4 as uuidv4 } from 'uuid';
-import { BusinessRuleException } from '../exceptions/BusinessRuleException';
+import { validate as isUuid, v4 as uuidv4 } from "uuid";
+import { BusinessRuleException } from "../exceptions/BusinessRuleException";
 
 export class TaskId {
   private readonly value: string;
 
   constructor(value: string) {
     // 1. Kiểm tra rỗng
-    if (!value || value.trim() === '') {
-      throw new BusinessRuleException('Task ID không được để trống', 'TASK_ID_EMPTY');
+    if (!value || value.trim() === "") {
+      throw new BusinessRuleException(
+        "Task ID không được để trống",
+        "TASK_ID_EMPTY",
+      );
     }
-    
+
     // 2. Kiểm tra định dạng UUID
     if (!isUuid(value)) {
       throw new BusinessRuleException(
-        `Định dạng UUID không hợp lệ: ${value}`, 
-        'INVALID_UUID_FORMAT'
+        `Định dạng UUID không hợp lệ: ${value}`,
+        "INVALID_UUID_FORMAT",
       );
     }
 

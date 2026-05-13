@@ -1,8 +1,8 @@
 // src/application/ports/ITaskRepository.ts
-import { Task } from '../../domain/entities/Task';
-import { TaskId } from '../../domain/value-objects/TaskId';
+import { Task } from "../../domain/entities/Task";
+import { TaskId } from "../../domain/value-objects/TaskId";
 
-export const ITaskRepository = Symbol('ITaskRepository'); // Token cho Dependency Injection
+export const ITaskRepository = Symbol("ITaskRepository"); // Token cho Dependency Injection
 
 export interface ITaskRepository {
   addAsync(task: Task): Promise<void>;

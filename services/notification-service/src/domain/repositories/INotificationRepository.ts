@@ -1,6 +1,5 @@
 // src/domain/repositories/INotificationRepository.ts
-import { Notification } from '../entities/Notification';
-import { NotificationStatus } from '../value-objects/NotificationStatus';
+import { Notification } from "../entities/Notification";
 
 /**
  * Notification Repository Interface (Port)
@@ -84,4 +83,4 @@ export interface INotificationRepository {
   deleteOldNotificationsAsync(daysOld: number): Promise<number>;
 }
 
-export const NOTIFICATION_REPOSITORY_TOKEN = 'INotificationRepository';
+export const NOTIFICATION_REPOSITORY_TOKEN = "INotificationRepository";

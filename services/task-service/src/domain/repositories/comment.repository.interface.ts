@@ -1,5 +1,5 @@
 // src/domain/repositories/comment.repository.interface.ts
-import { Comment } from '../entities/comment.entity';
+import { Comment } from "../entities/comment.entity";
 
 /**
  * Comment Repository Interface (Port)
@@ -97,4 +97,4 @@ export interface ICommentRepository {
   deleteByTaskIdAsync(taskId: string): Promise<number>;
 }
 
-export const COMMENT_REPOSITORY_TOKEN = 'ICommentRepository';
+export const COMMENT_REPOSITORY_TOKEN = "ICommentRepository";

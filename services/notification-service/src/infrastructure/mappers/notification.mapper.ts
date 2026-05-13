@@ -1,7 +1,29 @@
 // src/infrastructure/mappers/notification.mapper.ts
-import { Notification as NotificationEntity } from '../../domain/entities/Notification';
-import { NotificationDocument } from '../database/schemas/notification.schema';
-import { NotificationStatus } from '../../domain/value-objects/NotificationStatus';
+import { Notification as NotificationEntity } from "../../domain/entities/Notification";
+import type { NotificationDocument } from "../database/schemas/notification.schema";
+import {
+  getMetadataString,
+  type NotificationMetadata,
+} from "../../domain/types/notification-metadata";
+
+interface NotificationResponseDto {
+  id: string;
+  recipientId: string;
+  actor: {
+    id: string;
+    name: string;
+    avatarUrl?: string;
+  };
+  type: string;
+  title: string;
+  message: string;
+  targetId: string;
+  targetType: string;
+  status: string;
+  metadata: NotificationMetadata;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 /**
  * Notification Mapper
@@ -14,7 +36,9 @@ export class NotificationMapper {
    * Chuyển từ Domain Entity sang Persistence Document
    * Dùng khi: Save notification vào database
    */
-  public static toPersistence(notification: NotificationEntity): Partial<NotificationDocument> {
+  public static toPersistence(
+    notification: NotificationEntity,
+  ): Partial<NotificationDocument> {
     return {
       recipientId: notification.getRecipientId(),
       actorId: notification.getActorId(),
@@ -44,7 +68,7 @@ export class NotificationMapper {
       raw.message,
       raw.targetId,
       raw.targetType,
-      raw.status as NotificationStatus,
+      raw.status,
       raw.metadata,
       raw.createdAt,
       raw.updatedAt,
@@ -55,14 +79,16 @@ export class NotificationMapper {
    * Chuyển từ Persistence Document sang Response DTO
    * Dùng khi: Gửi response về client
    */
-  public static toResponse(raw: NotificationDocument): any {
+  public static toResponse(raw: NotificationDocument): NotificationResponseDto {
+    const metadata = raw.metadata;
+
     return {
       id: raw._id.toString(),
       recipientId: raw.recipientId,
       actor: {
         id: raw.actorId,
-        name: raw.metadata?.actorName || 'Unknown',
-        avatarUrl: raw.metadata?.actorAvatarUrl,
+        name: getMetadataString(metadata, "actorName") || "Unknown",
+        avatarUrl: getMetadataString(metadata, "actorAvatarUrl"),
       },
       type: raw.type,
       title: raw.title,
@@ -70,7 +96,7 @@ export class NotificationMapper {
       targetId: raw.targetId,
       targetType: raw.targetType,
       status: raw.status,
-      metadata: raw.metadata,
+      metadata,
       createdAt: raw.createdAt,
       updatedAt: raw.updatedAt,
     };
@@ -79,7 +105,9 @@ export class NotificationMapper {
   /**
    * Chuyển collection Document sang DTOs
    */
-  public static toResponses(notifications: NotificationDocument[]): any[] {
+  public static toResponses(
+    notifications: NotificationDocument[],
+  ): NotificationResponseDto[] {
     return notifications.map((notification) => this.toResponse(notification));
   }
 }

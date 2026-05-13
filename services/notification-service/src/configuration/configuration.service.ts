@@ -1,5 +1,5 @@
-import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { Injectable } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 
 export type MongoConfig = {
   uri: string;
@@ -26,60 +26,67 @@ export class ConfigurationService {
   constructor(private readonly configService: ConfigService) {}
 
   getMongoConfig(): MongoConfig {
-    const uri = this.configService.get<string>('MONGO_URI');
-    
+    const uri = this.configService.get<string>("MONGO_URI");
+
     if (!uri) {
-      throw new Error('MONGO_URI is missing in environment variables!');
+      throw new Error("MONGO_URI is missing in environment variables!");
     }
 
     return { uri };
   }
 
   getAzureStorageConfig(): AzureStorageConfig {
-    const connectionString = this.configService.get<string>('AZURE_STORAGE_CONNECTION_STRING');
-    
+    const connectionString = this.configService.get<string>(
+      "AZURE_STORAGE_CONNECTION_STRING",
+    );
+
     if (!connectionString) {
-      throw new Error('AZURE_STORAGE_CONNECTION_STRING is missing!');
+      throw new Error("AZURE_STORAGE_CONNECTION_STRING is missing!");
     }
 
     return {
       connectionString,
-      containerName: 
-        this.configService.get<string>('AZURE_STORAGE_CONTAINER_NAME') ?? 'task-attachments',
-      maxFileSize: 
-        Number(this.configService.get<number>('AZURE_STORAGE_MAX_FILE_SIZE')) || 5242880, 
+      containerName:
+        this.configService.get<string>("AZURE_STORAGE_CONTAINER_NAME") ??
+        "task-attachments",
+      maxFileSize:
+        Number(this.configService.get<number>("AZURE_STORAGE_MAX_FILE_SIZE")) ||
+        5242880,
     };
   }
 
   // 2. Thêm hàm lấy cấu hình RabbitMQ
   getRabbitMqConfig(): RabbitMqConfig {
-    const url = this.configService.get<string>('RABBITMQ_URL');
-    
+    const url = this.configService.get<string>("RABBITMQ_URL");
+
     if (!url) {
-      throw new Error('RABBITMQ_URL is missing in environment variables!');
+      throw new Error("RABBITMQ_URL is missing in environment variables!");
     }
 
     return {
-      // Ép kiểu từ String sang Boolean chuẩn xác
-      enabled: this.configService.get<string>('RABBITMQ_ENABLED') === 'true',
-      
+      enabled: this.configService.get<string>("RABBITMQ_ENABLED") !== "false",
+
       url,
-      
-      queue: this.configService.get<string>('RABBITMQ_QUEUE') ?? 'user-service',
-      
+
+      queue:
+        this.configService.get<string>("RABBITMQ_QUEUE") ??
+        "notification-service",
+
       // Mặc định là true, trừ khi cố tình ghi 'false'
-      queueDurable: this.configService.get<string>('RABBITMQ_QUEUE_DURABLE') !== 'false', 
-      
+      queueDurable:
+        this.configService.get<string>("RABBITMQ_QUEUE_DURABLE") !== "false",
+
       // Ép kiểu từ String sang Number
-      prefetchCount: Number(this.configService.get<number>('RABBITMQ_PREFETCH_COUNT')) || 10,
-      
-      noAck: this.configService.get<string>('RABBITMQ_NO_ACK') === 'true',
+      prefetchCount:
+        Number(this.configService.get<number>("RABBITMQ_PREFETCH_COUNT")) || 10,
+
+      noAck: this.configService.get<string>("RABBITMQ_NO_ACK") === "true",
     };
   }
 
   getJwtConfig() {
     return {
-      secret: this.configService.get<string>('JWT_SECRET'),
+      secret: this.configService.get<string>("JWT_SECRET"),
     };
   }
 }

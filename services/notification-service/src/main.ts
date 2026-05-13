@@ -1,12 +1,12 @@
-import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
-import { MicroserviceOptions, Transport } from '@nestjs/microservices';
-import { ConfigurationService } from './configuration/configuration.service';
-import { ValidationPipe } from '@nestjs/common';
+import { NestFactory } from "@nestjs/core";
+import { AppModule } from "./app.module";
+import { MicroserviceOptions, Transport } from "@nestjs/microservices";
+import { ConfigurationService } from "./configuration/configuration.service";
+import { ValidationPipe } from "@nestjs/common";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  
+
   const configService = app.get(ConfigurationService);
   const rmqConfig = configService.getRabbitMqConfig();
 
@@ -23,19 +23,21 @@ async function bootstrap() {
       },
     });
     await app.startAllMicroservices();
-    console.log(`📡 Notification Service is listening to RabbitMQ: ${rmqConfig.queue}`);
+    console.log(
+      `📡 Notification Service is listening to RabbitMQ: ${rmqConfig.queue}`,
+    );
   }
-app.enableCors({
-    origin: '*',
+  app.enableCors({
+    origin: "*",
     credentials: true,
   });
   // 2. Cấu hình HTTP API
   app.useGlobalPipes(new ValidationPipe({ transform: true }));
-  app.setGlobalPrefix('api');
+  app.setGlobalPrefix("api");
 
   const port = process.env.PORT || 3002;
   await app.listen(port);
   console.log(`✅ Notification HTTP API is running on port ${port}`);
 }
 
-bootstrap();
+void bootstrap();

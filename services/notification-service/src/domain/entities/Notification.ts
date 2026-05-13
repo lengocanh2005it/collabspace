@@ -1,7 +1,8 @@
 // src/domain/entities/Notification.ts
-import { NotificationType } from '../value-objects/NotificationType';
-import { NotificationStatus } from '../value-objects/NotificationStatus';
-import { v4 as uuid } from 'uuid';
+import { NotificationType } from "../value-objects/NotificationType";
+import { NotificationStatus } from "../value-objects/NotificationStatus";
+import { randomUUID } from "node:crypto";
+import type { NotificationMetadata } from "../types/notification-metadata";
 
 /**
  * Notification Domain Entity
@@ -12,14 +13,14 @@ export class Notification {
   private constructor(
     private readonly id: string,
     private readonly recipientId: string, // User ID của người nhận
-    private readonly actorId: string,     // User ID của người tạo hành động
+    private readonly actorId: string, // User ID của người tạo hành động
     private readonly type: NotificationType,
     private readonly title: string,
     private readonly message: string,
-    private readonly targetId: string,    // ID của resource (taskId, commentId, etc)
-    private readonly targetType: string,  // Loại resource (TASK, COMMENT, etc)
+    private readonly targetId: string, // ID của resource (taskId, commentId, etc)
+    private readonly targetType: string, // Loại resource (TASK, COMMENT, etc)
     private status: NotificationStatus,
-    private readonly metadata: Record<string, any>, // Dữ liệu thêm (actorName, actorAvatar, etc)
+    private readonly metadata: NotificationMetadata, // Dữ liệu thêm (actorName, actorAvatar, etc)
     private readonly createdAt: Date,
     private updatedAt: Date,
   ) {}
@@ -35,30 +36,30 @@ export class Notification {
     message: string,
     targetId: string,
     targetType: string,
-    metadata?: Record<string, any>,
+    metadata?: NotificationMetadata,
   ): Notification {
     // Validation
     if (!recipientId || !recipientId.trim()) {
-      throw new Error('Recipient ID is required');
+      throw new Error("Recipient ID is required");
     }
     if (!actorId || !actorId.trim()) {
-      throw new Error('Actor ID is required');
+      throw new Error("Actor ID is required");
     }
     if (!title || !title.trim()) {
-      throw new Error('Title is required');
+      throw new Error("Title is required");
     }
     if (!message || !message.trim()) {
-      throw new Error('Message is required');
+      throw new Error("Message is required");
     }
     if (!targetId || !targetId.trim()) {
-      throw new Error('Target ID is required');
+      throw new Error("Target ID is required");
     }
     if (!targetType || !targetType.trim()) {
-      throw new Error('Target Type is required');
+      throw new Error("Target Type is required");
     }
 
     return new Notification(
-      uuid(),
+      randomUUID(),
       recipientId,
       actorId,
       type,
@@ -67,7 +68,7 @@ export class Notification {
       targetId,
       targetType,
       NotificationStatus.UNREAD,
-      metadata || {},
+      metadata ?? {},
       new Date(),
       new Date(),
     );
@@ -86,7 +87,7 @@ export class Notification {
     targetId: string,
     targetType: string,
     status: NotificationStatus,
-    metadata: Record<string, any>,
+    metadata: NotificationMetadata,
     createdAt: Date,
     updatedAt: Date,
   ): Notification {
@@ -111,7 +112,7 @@ export class Notification {
    */
   public markAsRead(): void {
     if (this.status === NotificationStatus.READ) {
-      throw new Error('Notification is already read');
+      throw new Error("Notification is already read");
     }
     this.status = NotificationStatus.READ;
     this.updatedAt = new Date();
@@ -122,7 +123,7 @@ export class Notification {
    */
   public markAsUnread(): void {
     if (this.status === NotificationStatus.UNREAD) {
-      throw new Error('Notification is already unread');
+      throw new Error("Notification is already unread");
     }
     this.status = NotificationStatus.UNREAD;
     this.updatedAt = new Date();
@@ -133,7 +134,7 @@ export class Notification {
    */
   public archive(): void {
     if (this.status === NotificationStatus.ARCHIVED) {
-      throw new Error('Notification is already archived');
+      throw new Error("Notification is already archived");
     }
     this.status = NotificationStatus.ARCHIVED;
     this.updatedAt = new Date();
@@ -192,7 +193,7 @@ export class Notification {
     return this.status;
   }
 
-  public getMetadata(): Record<string, any> {
+  public getMetadata(): NotificationMetadata {
     return { ...this.metadata };
   }
 

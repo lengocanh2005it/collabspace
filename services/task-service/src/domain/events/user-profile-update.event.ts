@@ -1,4 +1,4 @@
-export const USER_PROFILE_UPDATED_EVENT = 'user_profile_updated';
+export const USER_PROFILE_UPDATED_EVENT = "user_profile_updated";
 
 // Payload Cập nhật: Tất cả đều là optional trừ userId
 export interface UserProfileUpdatedEventPayload {

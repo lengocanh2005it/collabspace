@@ -1,10 +1,10 @@
 // src/presentation/dtos/create-comment.request.ts
-import { IsString, IsOptional, IsNotEmpty } from 'class-validator';
+import { IsString, IsOptional, IsNotEmpty } from "class-validator";
 
 export class CreateCommentRequest {
   @IsString()
   @IsNotEmpty()
-  content: string;
+  content!: string;
 
   @IsString()
   @IsOptional()

@@ -2,8 +2,13 @@
 import { DomainException } from "./DomainException";
 
 export class BusinessRuleException extends DomainException {
-  constructor(message: string, private readonly code: string = 'BUSINESS_RULE_VIOLATION') {
+  constructor(
+    message: string,
+    private readonly code: string = "BUSINESS_RULE_VIOLATION",
+  ) {
     super(message);
   }
-  getErrorCode() { return this.code; }
+  getErrorCode() {
+    return this.code;
+  }
 }

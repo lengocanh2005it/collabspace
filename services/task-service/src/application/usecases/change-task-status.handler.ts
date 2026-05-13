@@ -1,15 +1,19 @@
 // src/application/usecases/change-task-status.handler.ts
-import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { Inject } from '@nestjs/common';
-import { ChangeTaskStatusCommand } from '../commands/change-task-status.command';
-import { ITaskRepository } from '../ports/ITaskRepository';
-import { TaskId } from '../../domain/value-objects/TaskId';
-import { EntityNotFoundException } from '../../domain/exceptions/EntityNotFoundException';
+import { CommandHandler, ICommandHandler } from "@nestjs/cqrs";
+import { Inject } from "@nestjs/common";
+import { ChangeTaskStatusCommand } from "../commands/change-task-status.command";
+import { ITaskRepository as ITaskRepositoryToken } from "../ports/ITaskRepository";
+import type { ITaskRepository } from "../ports/ITaskRepository";
+import { TaskId } from "../../domain/value-objects/TaskId";
+import { EntityNotFoundException } from "../../domain/exceptions/EntityNotFoundException";
 
 @CommandHandler(ChangeTaskStatusCommand)
-export class ChangeTaskStatusHandler implements ICommandHandler<ChangeTaskStatusCommand, void> {
+export class ChangeTaskStatusHandler implements ICommandHandler<
+  ChangeTaskStatusCommand,
+  void
+> {
   constructor(
-    @Inject(ITaskRepository)
+    @Inject(ITaskRepositoryToken)
     private readonly taskRepository: ITaskRepository,
   ) {}
 
@@ -18,7 +22,7 @@ export class ChangeTaskStatusHandler implements ICommandHandler<ChangeTaskStatus
     const task = await this.taskRepository.findByIdAsync(taskId);
 
     if (!task) {
-      throw new EntityNotFoundException('Task', command.taskId);
+      throw new EntityNotFoundException("Task", command.taskId);
     }
 
     task.changeStatus(command.newStatus);

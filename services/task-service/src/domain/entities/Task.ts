@@ -1,8 +1,8 @@
 // src/domain/entities/Task.ts
-import { TaskId } from '../value-objects/TaskId';
-import { TaskStatus } from '../value-objects/TaskStatus';
-import { UserSnapshot } from '../value-objects/UserSnapshot';
-import { BusinessRuleException } from '../exceptions/BusinessRuleException';
+import { TaskId } from "../value-objects/TaskId";
+import { TaskStatus } from "../value-objects/TaskStatus";
+import { UserSnapshot } from "../value-objects/UserSnapshot";
+import { BusinessRuleException } from "../exceptions/BusinessRuleException";
 
 export class Task {
   private constructor(
@@ -16,7 +16,7 @@ export class Task {
     private readonly createdBy: UserSnapshot,
     private readonly createdAt: Date,
     private updatedAt: Date,
-    private attachments: string[] = []
+    private attachments: string[] = [],
   ) {}
 
   public static create(
@@ -24,22 +24,22 @@ export class Task {
     title: string,
     description: string,
     workspaceId: string,
-    createdBy: UserSnapshot
+    createdBy: UserSnapshot,
   ): Task {
-    if (!title) throw new BusinessRuleException('Title required');
-    if (!workspaceId) throw new BusinessRuleException('Workspace ID required');
-    
+    if (!title) throw new BusinessRuleException("Title required");
+    if (!workspaceId) throw new BusinessRuleException("Workspace ID required");
+
     return new Task(
       id,
       title,
       description,
-      new TaskStatus('TODO'),
+      new TaskStatus("TODO"),
       workspaceId,
       null,
       null,
       createdBy,
       new Date(),
-      new Date()
+      new Date(),
     );
   }
 
@@ -54,7 +54,7 @@ export class Task {
     createdBy: UserSnapshot,
     createdAt: Date,
     updatedAt: Date,
-    attachments: string[] = []
+    attachments: string[] = [],
   ): Task {
     const status = new TaskStatus(statusRaw);
     return new Task(
@@ -68,28 +68,31 @@ export class Task {
       createdBy,
       createdAt,
       updatedAt,
-      attachments
+      attachments,
     );
   }
 
   public changeStatus(newStatusRaw: string): void {
     const newStatus = new TaskStatus(newStatusRaw);
     if (!this.status.canTransitionTo(newStatus)) {
-      throw new BusinessRuleException('Business Rule Violated: Cannot move from DONE to TODO');
+      throw new BusinessRuleException(
+        "Business Rule Violated: Cannot move from DONE to TODO",
+      );
     }
     this.status = newStatus;
     this.updatedAt = new Date();
   }
 
   public updateDetails(title: string, description: string): void {
-    if (!title) throw new BusinessRuleException('Title cannot be empty');
+    if (!title) throw new BusinessRuleException("Title cannot be empty");
     this.title = title;
     this.description = description;
     this.updatedAt = new Date();
   }
 
   public assignTo(assigneeId: string, assignedTo: UserSnapshot): void {
-    if (!assigneeId) throw new BusinessRuleException('Assignee ID cannot be empty');
+    if (!assigneeId)
+      throw new BusinessRuleException("Assignee ID cannot be empty");
     this.assigneeId = assigneeId;
     this.assignedTo = assignedTo;
     this.updatedAt = new Date();
@@ -102,9 +105,9 @@ export class Task {
   }
 
   public addAttachment(fileUrl: string): void {
-    if (!fileUrl) throw new BusinessRuleException('File URL cannot be empty');
+    if (!fileUrl) throw new BusinessRuleException("File URL cannot be empty");
     if (this.attachments.includes(fileUrl)) {
-      throw new BusinessRuleException('This attachment already exists');
+      throw new BusinessRuleException("This attachment already exists");
     }
     this.attachments.push(fileUrl);
     this.updatedAt = new Date();
@@ -112,7 +115,7 @@ export class Task {
 
   public removeAttachment(fileUrl: string): void {
     const index = this.attachments.indexOf(fileUrl);
-    if (index === -1) throw new BusinessRuleException('Attachment not found');
+    if (index === -1) throw new BusinessRuleException("Attachment not found");
     this.attachments.splice(index, 1);
     this.updatedAt = new Date();
   }

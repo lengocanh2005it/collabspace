@@ -1,14 +1,18 @@
 // src/application/usecases/delete-task.handler.ts
-import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { Inject } from '@nestjs/common';
-import { DeleteTaskCommand } from '../commands/delete-task.command';
-import { ITaskRepository } from '../ports/ITaskRepository';
-import { TaskId } from '../../domain/value-objects/TaskId';
+import { CommandHandler, ICommandHandler } from "@nestjs/cqrs";
+import { Inject } from "@nestjs/common";
+import { DeleteTaskCommand } from "../commands/delete-task.command";
+import { ITaskRepository as ITaskRepositoryToken } from "../ports/ITaskRepository";
+import type { ITaskRepository } from "../ports/ITaskRepository";
+import { TaskId } from "../../domain/value-objects/TaskId";
 
 @CommandHandler(DeleteTaskCommand)
-export class DeleteTaskHandler implements ICommandHandler<DeleteTaskCommand, void> {
+export class DeleteTaskHandler implements ICommandHandler<
+  DeleteTaskCommand,
+  void
+> {
   constructor(
-    @Inject(ITaskRepository)
+    @Inject(ITaskRepositoryToken)
     private readonly taskRepository: ITaskRepository,
   ) {}
 

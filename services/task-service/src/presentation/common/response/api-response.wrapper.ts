@@ -1,4 +1,4 @@
-import { buildSuccess, buildError } from './response.helper';
+import { buildSuccess, buildError } from "./response.helper";
 
 export const ok = <T>(
   data: T,
@@ -13,10 +13,10 @@ export const created = <T>(
 ) => buildSuccess(data, requestId, meta);
 
 export const badRequest = (message: string, requestId?: string) =>
-  buildError(message, requestId, 'BAD_REQUEST');
+  buildError(message, requestId, "BAD_REQUEST");
 
-export const unauthorized = (message = 'Unauthorized', requestId?: string) =>
-  buildError(message, requestId, 'UNAUTHORIZED');
+export const unauthorized = (message = "Unauthorized", requestId?: string) =>
+  buildError(message, requestId, "UNAUTHORIZED");
 
-export const notFound = (message = 'Resource not found', requestId?: string) =>
-  buildError(message, requestId, 'NOT_FOUND');
+export const notFound = (message = "Resource not found", requestId?: string) =>
+  buildError(message, requestId, "NOT_FOUND");

@@ -25,6 +25,9 @@ data:
   REDIS_PORT: "6379"
   REDIS_DB: "0"
   # RabbitMQ configuration
+  RABBITMQ_URL: "amqp://guest:guest@rabbitmq:5672/collabspace"
+  RABBITMQ_ENABLED: "true"
+  RABBITMQ_QUEUE: "notification-service"
   RABBITMQ_HOST: "rabbitmq"
   RABBITMQ_PORT: "5672"
   RABBITMQ_VHOST: "collabspace"

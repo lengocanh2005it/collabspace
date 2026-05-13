@@ -5,5 +5,7 @@ export class EntityNotFoundException extends DomainException {
   constructor(entityName: string, id: string) {
     super(`${entityName} với ID ${id} không tồn tại.`);
   }
-  getErrorCode() { return 'ENTITY_NOT_FOUND'; }
+  getErrorCode() {
+    return "ENTITY_NOT_FOUND";
+  }
 }

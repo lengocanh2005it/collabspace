@@ -5,6 +5,6 @@ export class CreateTaskCommand {
     public readonly description: string,
     public readonly creatorId: string,
     public readonly creatorName: string,
-    public readonly workspaceId: string
+    public readonly workspaceId: string,
   ) {}
 }
