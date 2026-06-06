@@ -1,0 +1,101 @@
+# CollabSpace Claude Code Guide
+
+## Project Identity
+
+CollabSpace is a workspace collaboration management platform: a mini Notion/Slack/Jira hybrid built as a microservices learning/demo project.
+
+Current MVP goal: complete an end-to-end collaboration demo where users register, verify email, create workspaces, invite members, create projects/tasks, assign tasks, comment with mentions, and view notifications.
+
+Read these project docs before making broad changes:
+
+- Architecture handbook: `.claude/docs/project-architecture.md`
+- Service contracts: `.claude/docs/service-contracts.md`
+- Development workflows: `.claude/docs/development-workflows.md`
+- Coding conventions: `.claude/docs/coding-conventions.md`
+- MVP roadmap: `.claude/docs/mvp-roadmap.md`
+
+## Repository Shape
+
+- `services/auth-service`: NestJS + TypeORM authentication and identity service.
+- `services/user-service`: NestJS + TypeORM user profile/directory service.
+- `services/workspace-service`: planned Java/Kotlin + Flyway workspace service; currently mostly infrastructure shell.
+- `services/task-service`: planned Node.js + MongoDB task/project/comment service; currently mostly infrastructure shell.
+- `services/notification-service`: planned Node.js + Redis/Mongo notification service; currently mostly infrastructure shell.
+- `infrastructure/docker`: Docker Compose stack.
+- `infrastructure/k8s`: Kubernetes manifests.
+- `api-gateway`: Traefik static/dynamic config.
+- `docs/mvp-demo-scope.md`: human-facing MVP scope and current status.
+
+## Hard Project Facts
+
+- `workspace-service` runs on port `8080`, not `3000`.
+- HTTP APIs for implemented NestJS services use global prefix `/api/v1`.
+- Docker local mapped ports:
+  - auth: host `3000` -> container `3000`
+  - user: host `3001` -> container `3000`
+  - workspace: host `3002` -> container `8080`
+  - task: host `3003` -> container `3000`
+  - notification: host `3004` -> container `3000`
+- Auth and user services are the most complete codebases. Workspace/task/notification are the main MVP gaps.
+- There is no root `package.json`. Run `pnpm` commands from each service directory.
+- Use `pnpm`, not npm, for the NestJS services unless a service-specific file proves otherwise.
+
+## Default Working Style
+
+- Start by reading nearby code, DTOs, entities, repositories, migrations, and tests before editing.
+- Keep changes service-local unless the task explicitly crosses service boundaries.
+- Preserve existing module style:
+  - `auth-service`: feature modules under `src/modules/*`, configuration wrapper, TypeORM entities, Redis, gRPC, outbox.
+  - `user-service`: domain/application/infrastructure/presentation layering.
+- Add focused tests for new use cases, service methods, repository behavior, gRPC integrations, and controller behavior when the change has user-visible behavior.
+- Avoid broad rewrites, dependency churn, or formatting unrelated files.
+- Do not invent production secrets. Use `.env.example` patterns and document required variables.
+
+## Common Commands
+
+From `services/auth-service`:
+
+```sh
+pnpm install
+pnpm run build
+pnpm run test
+pnpm run test:e2e
+pnpm run lint
+pnpm run migrate
+pnpm run seed
+```
+
+From `services/user-service`:
+
+```sh
+pnpm install
+pnpm run build
+pnpm run test
+pnpm run test:e2e
+pnpm run lint
+pnpm run migrate
+pnpm run seed
+```
+
+From `infrastructure/docker`:
+
+```sh
+docker-compose -f docker-compose.yml -f docker-compose.db.yml -f docker-compose.override.yml up -d
+```
+
+Seed demo data in this order:
+
+```sh
+cd services/auth-service && pnpm run seed
+cd ../user-service && pnpm run seed
+```
+
+## Claude Code Skills
+
+Use project skills when the task matches:
+
+- `/collabspace-codebase`: understand architecture, current status, and service ownership.
+- `/nest-service-change`: implement or refactor auth/user NestJS service behavior.
+- `/mvp-feature-planner`: plan and slice workspace/task/notification MVP work.
+- `/local-dev-verify`: decide and run the right local verification steps.
+
