@@ -1,6 +1,7 @@
 import { UploadAttachmentHandler } from "./upload-attachment.handler";
 import { UploadAttachmentCommand } from "../commands/upload-attachment.command";
 import { ITaskRepository } from "../ports/ITaskRepository";
+import { createMockTaskRepository } from "../../test-utils/mock-task-repository";
 import { AzureBlobService } from "../../infrastructure/services/azure-blob.service";
 import { Task } from "../../domain/entities/Task";
 import { TaskId } from "../../domain/value-objects/TaskId";
@@ -14,15 +15,7 @@ describe("UploadAttachmentHandler", () => {
   let mockAzureBlobService: jest.Mocked<AzureBlobService>;
 
   beforeEach(() => {
-    mockTaskRepo = {
-      addAsync: jest.fn(),
-      updateAsync: jest.fn(),
-      deleteAsync: jest.fn(),
-      findByIdAsync: jest.fn(),
-      findByWorkspaceIdAsync: jest.fn(),
-      addAttachmentAsync: jest.fn(),
-      removeAttachmentAsync: jest.fn(),
-    };
+    mockTaskRepo = createMockTaskRepository();
 
     mockAzureBlobService = {
       uploadFile: jest.fn(),

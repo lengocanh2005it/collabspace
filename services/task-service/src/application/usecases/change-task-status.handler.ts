@@ -19,13 +19,13 @@ export class ChangeTaskStatusHandler implements ICommandHandler<
 
   async execute(command: ChangeTaskStatusCommand): Promise<void> {
     const taskId = new TaskId(command.taskId);
-    const task = await this.taskRepository.findByIdAsync(taskId);
+    const task = await this.taskRepository.loadAggregateByIdAsync(taskId);
 
     if (!task) {
       throw new EntityNotFoundException("Task", command.taskId);
     }
 
     task.changeStatus(command.newStatus);
-    await this.taskRepository.updateAsync(task);
+    await this.taskRepository.saveAsync(task);
   }
 }

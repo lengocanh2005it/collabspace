@@ -2,6 +2,8 @@
 
 **A workspace collaboration management platform** — a mini Notion/Slack/Jira hybrid built with microservices architecture.
 
+**Product features & status:** [docs/features.md](docs/features.md) · **MVP demo scope:** [docs/mvp-demo-scope.md](docs/mvp-demo-scope.md)
+
 ## Architecture
 
 ```
@@ -34,9 +36,9 @@
 |---------|-----------|------|----------|-----------------|
 | **auth-service** | NestJS + TypeORM | 3000 | PostgreSQL (`collabspace_auth`) | `/api/v1/auth/health` |
 | **user-service** | NestJS + TypeORM | 3000 | PostgreSQL (`collabspace_user`) | `/api/v1/users/health` |
-| **workspace-service** | Java/Kotlin + Flyway | **8080** | PostgreSQL (`collabspace_workspace`) | `/workspaces/health` |
-| **task-service** | Node.js + MongoDB | 3000 | MongoDB (`collabspace_task`) | `/tasks/health` |
-| **notification-service** | Node.js | 3000 | Redis / MongoDB | `/notifications/health` |
+| **workspace-service** | NestJS + TypeORM | **8080** | PostgreSQL (`collabspace_workspace`) | `/api/v1/workspaces/health/ready` |
+| **task-service** | NestJS + MongoDB | 3000 | MongoDB (`collabspace_task`) | `/api/v1/tasks/health/ready` |
+| **notification-service** | NestJS + MongoDB | 3000 | MongoDB | `/api/v1/notifications/health/ready` |
 
 > **CRITICAL**: `workspace-service` runs on port **8080** (Java/Kotlin), not 3000 like Node.js services.
 
@@ -202,22 +204,13 @@ Internal service contracts:
 - `user-service` exposes gRPC `UserProfilesService.GetProfile` for full-name and username hydration
 - `user-service` exposes gRPC `UserProfilesService.GetProfiles` for bulk profile hydration
 
-### Workspace Service (`/workspaces`)
-- `POST /workspaces` - Create workspace
-- `GET /workspaces` - List user's workspaces
-- `POST /workspaces/{id}/invite` - Invite member
-- `GET /workspaces/{id}/members` - List members
+### Workspace, Task, Notification
 
-### Task Service (`/tasks`)
-- `POST /tasks` - Create task
-- `GET /tasks` - List tasks (filtered by workspace)
-- `PATCH /tasks/{id}` - Update task
-- `POST /tasks/{id}/comments` - Add comment
-- `GET /tasks/health` - Health check
+Route prefixes and payloads: [`.claude/docs/service-contracts.md`](.claude/docs/service-contracts.md). Feature list: [`docs/features.md`](docs/features.md).
 
-### Notification Service
-- WebSocket: `/notifications/ws` - Real-time notifications
-- Consumes RabbitMQ events: `TASK_ASSIGNED`, `WORKSPACE_INVITED`, `COMMENT_CREATED`
+- **workspace-service** — prefix `/api/v1/workspaces` (port **8080**)
+- **task-service** — prefix `/api/v1/tasks` (port 3000)
+- **notification-service** — prefix `/api/v1/notifications`; consumes `workspace_invited`, `task_assigned`, `comment_created`
 
 ## Monitoring & Observability
 

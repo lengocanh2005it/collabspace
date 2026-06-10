@@ -4,17 +4,7 @@
 
 CollabSpace is a collaboration platform demo built around a microservices architecture. The product direction is a compact mix of workspace management, project boards, tasks, comments, mentions, identity, and notifications.
 
-The MVP demo should prove this path:
-
-1. User registers and verifies email.
-2. User logs in and receives tokens.
-3. User creates a workspace.
-4. User invites another member.
-5. User creates a project or board.
-6. User creates tasks and assigns them.
-7. Assignee moves a task across board statuses.
-8. User comments and mentions another user by username.
-9. Mentioned or assigned user can see a notification/activity item.
+**Features and current status:** [docs/features.md](../../docs/features.md). **Demo acceptance:** [docs/mvp-demo-scope.md](../../docs/mvp-demo-scope.md).
 
 ## High-Level Runtime Topology
 
@@ -294,23 +284,7 @@ When implementing new events, keep event name, routing key, queue name, payload 
 
 ## Current Completion Snapshot
 
-Done:
+See [docs/features.md](../../docs/features.md) for the canonical feature matrix (Done / Partial / Planned).
 
-- Auth and identity flows.
-- User profile/directory flows.
-- Auth-to-user pending profile bootstrap through gRPC.
-- Auth token verification for downstream identity.
-- Workspace/project/invite basics.
-- Task CRUD, assignment, comments, event publishing.
-- Notification consumers, dedupe, list API.
-- Health live/ready across services (Phase 1 resilience).
-- Basic infrastructure manifests.
-
-Pending / partial:
-
-- End-to-end demo hardening and gateway wiring verification.
-- Task-service real workspace membership client.
-- Transactional outbox for workspace/task events (Phase 2).
-- Mentions, activity feed, mark-notifications-read.
-- Per-service architecture details: `.claude/docs/service-architecture.md`.
+Architecture details per service: `.claude/docs/service-architecture.md`. Resilience status: `.claude/docs/resilience.md`.
 

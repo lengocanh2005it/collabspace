@@ -30,7 +30,7 @@ export class AssignTaskHandler implements ICommandHandler<
 
   async execute(command: AssignTaskCommand): Promise<void> {
     const taskId = new TaskId(command.taskId);
-    const task = await this.taskRepository.findByIdAsync(taskId);
+    const task = await this.taskRepository.loadAggregateByIdAsync(taskId);
 
     if (!task) {
       throw new EntityNotFoundException("Task", command.taskId);
@@ -85,7 +85,7 @@ export class AssignTaskHandler implements ICommandHandler<
       shouldNotify = true;
     }
 
-    await this.taskRepository.updateAsync(task);
+    await this.taskRepository.saveAsync(task);
 
     // 5. Bắn sự kiện sang RabbitMQ
     if (shouldNotify && assigneeSnapshot) {

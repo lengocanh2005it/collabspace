@@ -50,11 +50,17 @@ import { WorkspaceValidationGuard } from "./presentation/guards/workspace-valida
 
 // Repository & Schema
 import { ITaskRepository } from "./application/ports/ITaskRepository";
-import { MongoTaskRepository } from "./infrastructure/repositories/mongo-task.repository";
+import { EventSourcedMongoTaskRepository } from "./infrastructure/repositories/event-sourced-mongo-task.repository";
+import { MongoTaskEventStore } from "./infrastructure/repositories/mongo-task-event.store";
+import { ITaskEventStore } from "./application/ports/ITaskEventStore";
 import {
   TaskSchema,
   TaskPersistence,
 } from "./infrastructure/persistence/task.schema";
+import {
+  TaskEventPersistence,
+  TaskEventSchema,
+} from "./infrastructure/persistence/task-event.schema";
 import { COMMENT_REPOSITORY_TOKEN } from "./domain/repositories/comment.repository.interface";
 import { CommentRepository } from "./infrastructure/repositories/comment.repository";
 import {
@@ -111,6 +117,7 @@ const Handlers = [
 
     MongooseModule.forFeature([
       { name: TaskPersistence.name, schema: TaskSchema },
+      { name: TaskEventPersistence.name, schema: TaskEventSchema },
       { name: TaskComment.name, schema: TaskCommentSchema },
       { name: UserReplica.name, schema: UserReplicaSchema },
       { name: TaskOutboxEvent.name, schema: TaskOutboxEventSchema },
@@ -149,9 +156,14 @@ const Handlers = [
       },
       inject: [ConfigService, WorkspaceMockService, WorkspaceHttpClient],
     },
+    MongoTaskEventStore,
+    {
+      provide: ITaskEventStore,
+      useExisting: MongoTaskEventStore,
+    },
     {
       provide: ITaskRepository,
-      useClass: MongoTaskRepository,
+      useClass: EventSourcedMongoTaskRepository,
     },
     {
       provide: COMMENT_REPOSITORY_TOKEN,

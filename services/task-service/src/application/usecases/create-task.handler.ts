@@ -57,7 +57,7 @@ export class CreateTaskHandler implements ICommandHandler<
       creator,
     );
 
-    await this.taskRepository.addAsync(newTask);
+    await this.taskRepository.saveAsync(newTask);
 
     return taskId.getValue();
   }

@@ -1,6 +1,7 @@
 import { AssignTaskHandler } from "./assign-task.handler";
 import { AssignTaskCommand } from "../commands/assign-task.command";
 import { ITaskRepository } from "../ports/ITaskRepository";
+import { createMockTaskRepository } from "../../test-utils/mock-task-repository";
 import { IUserReplicaRepository } from "../ports/IUserReplicaRepository";
 import { TaskOutboxService } from "../../infrastructure/outbox/task-outbox.service";
 import { Task } from "../../domain/entities/Task";
@@ -17,13 +18,7 @@ describe("AssignTaskHandler", () => {
   let mockTaskOutboxService: jest.Mocked<TaskOutboxService>;
 
   beforeEach(() => {
-    mockTaskRepo = {
-      addAsync: jest.fn(),
-      updateAsync: jest.fn(),
-      deleteAsync: jest.fn(),
-      findByIdAsync: jest.fn(),
-      findByWorkspaceIdAsync: jest.fn(),
-    };
+    mockTaskRepo = createMockTaskRepository();
 
     mockUserReplicaRepo = {
       addAsync: jest.fn(),
@@ -78,7 +73,7 @@ describe("AssignTaskHandler", () => {
       "assignee-1",
     );
 
-    mockTaskRepo.findByIdAsync.mockResolvedValue(task);
+    mockTaskRepo.loadAggregateByIdAsync.mockResolvedValue(task);
     mockUserReplicaRepo.findByIdAsync.mockImplementation(async (id) => {
       if (id === "assigner-1") return createMockReplica("assigner-1", true);
       if (id === "assignee-1") return createMockReplica("assignee-1", true);
@@ -88,7 +83,7 @@ describe("AssignTaskHandler", () => {
     await handler.execute(command);
 
     expect(task.getAssigneeId()).toBe("assignee-1");
-    expect(mockTaskRepo.updateAsync).toHaveBeenCalledWith(task);
+    expect(mockTaskRepo.saveAsync).toHaveBeenCalledWith(task);
     expect(mockTaskOutboxService.enqueueTaskAssigned).toHaveBeenCalledTimes(1);
     expect(mockTaskOutboxService.enqueueTaskAssigned).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -113,7 +108,7 @@ describe("AssignTaskHandler", () => {
       "",
     );
 
-    mockTaskRepo.findByIdAsync.mockResolvedValue(task);
+    mockTaskRepo.loadAggregateByIdAsync.mockResolvedValue(task);
     mockUserReplicaRepo.findByIdAsync.mockImplementation(async (id) => {
       if (id === "assigner-1") return createMockReplica("assigner-1", true);
       return null;
@@ -122,7 +117,7 @@ describe("AssignTaskHandler", () => {
     await handler.execute(command);
 
     expect(task.getAssigneeId()).toBeNull();
-    expect(mockTaskRepo.updateAsync).toHaveBeenCalledWith(task);
+    expect(mockTaskRepo.saveAsync).toHaveBeenCalledWith(task);
     expect(mockTaskOutboxService.enqueueTaskAssigned).not.toHaveBeenCalled();
   });
 
@@ -132,7 +127,7 @@ describe("AssignTaskHandler", () => {
       "assigner-1",
       "assignee-1",
     );
-    mockTaskRepo.findByIdAsync.mockResolvedValue(null);
+    mockTaskRepo.loadAggregateByIdAsync.mockResolvedValue(null);
 
     await expect(handler.execute(command)).rejects.toThrow(
       EntityNotFoundException,
@@ -147,7 +142,7 @@ describe("AssignTaskHandler", () => {
       "assignee-1",
     );
 
-    mockTaskRepo.findByIdAsync.mockResolvedValue(task);
+    mockTaskRepo.loadAggregateByIdAsync.mockResolvedValue(task);
     mockUserReplicaRepo.findByIdAsync.mockImplementation(async (id) => {
       if (id === "assigner-1") return createMockReplica("assigner-1", false); // INACTIVE
       return null;
@@ -166,7 +161,7 @@ describe("AssignTaskHandler", () => {
       "assignee-1",
     );
 
-    mockTaskRepo.findByIdAsync.mockResolvedValue(task);
+    mockTaskRepo.loadAggregateByIdAsync.mockResolvedValue(task);
     mockUserReplicaRepo.findByIdAsync.mockImplementation(async (id) => {
       if (id === "assigner-1") return createMockReplica("assigner-1", true);
       if (id === "assignee-1") return createMockReplica("assignee-1", false); // INACTIVE

@@ -2,6 +2,7 @@ import { BadRequestException } from "@nestjs/common";
 import { CreateCommentHandler } from "./create-comment.handler";
 import { CreateCommentCommand } from "./create-comment.command";
 import { ITaskRepository } from "../../../ports/ITaskRepository";
+import { createMockTaskRepository } from "../../../../test-utils/mock-task-repository";
 import { IUserReplicaRepository } from "../../../ports/IUserReplicaRepository";
 import { ICommentRepository } from "../../../../domain/repositories/comment.repository.interface";
 import { TaskOutboxService } from "../../../../infrastructure/outbox/task-outbox.service";
@@ -27,13 +28,7 @@ describe("CreateCommentHandler", () => {
       updateAsync: jest.fn(),
     };
 
-    mockTaskRepo = {
-      addAsync: jest.fn(),
-      updateAsync: jest.fn(),
-      deleteAsync: jest.fn(),
-      findByIdAsync: jest.fn(),
-      findByWorkspaceIdAsync: jest.fn(),
-    };
+    mockTaskRepo = createMockTaskRepository();
 
     mockUserReplicaRepo = {
       addAsync: jest.fn(),

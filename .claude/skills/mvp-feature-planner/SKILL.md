@@ -11,6 +11,7 @@ Use this skill to slice pending MVP work into safe, demo-oriented increments.
 
 Read:
 
+- `docs/features.md`
 - `docs/mvp-demo-scope.md`
 - `.claude/docs/mvp-roadmap.md`
 - `.claude/docs/project-architecture.md`
@@ -18,13 +19,11 @@ Read:
 
 ## Default Priority
 
-If the user says "continue MVP" without a target, prioritize:
+If the user says "continue MVP" without a target, read `docs/features.md` for **Partial** items first. Typical gaps:
 
-1. Workspace service.
-2. Project/board in task service.
-3. Task CRUD/assignment/status.
-4. Comments/mentions/activity.
-5. Notification persistence/list API.
+1. Notification mark-read API and demo polish.
+2. Task delete HTTP endpoint, priority/due date, board/activity gaps.
+3. End-to-end gateway demo verification.
 
 ## Planning Rules
 

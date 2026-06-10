@@ -1,6 +1,7 @@
 import { ChangeTaskStatusHandler } from "./change-task-status.handler";
 import { ChangeTaskStatusCommand } from "../commands/change-task-status.command";
 import { ITaskRepository } from "../ports/ITaskRepository";
+import { createMockTaskRepository } from "../../test-utils/mock-task-repository";
 import { Task } from "../../domain/entities/Task";
 import { TaskId } from "../../domain/value-objects/TaskId";
 import { UserSnapshot } from "../../domain/value-objects/UserSnapshot";
@@ -12,13 +13,7 @@ describe("ChangeTaskStatusHandler", () => {
   let mockTaskRepo: jest.Mocked<ITaskRepository>;
 
   beforeEach(() => {
-    mockTaskRepo = {
-      addAsync: jest.fn(),
-      updateAsync: jest.fn(),
-      deleteAsync: jest.fn(),
-      findByIdAsync: jest.fn(),
-      findByWorkspaceIdAsync: jest.fn(),
-    };
+    mockTaskRepo = createMockTaskRepository();
 
     handler = new ChangeTaskStatusHandler(mockTaskRepo);
   });
@@ -53,12 +48,12 @@ describe("ChangeTaskStatusHandler", () => {
       "DOING",
     );
 
-    mockTaskRepo.findByIdAsync.mockResolvedValue(task);
+    mockTaskRepo.loadAggregateByIdAsync.mockResolvedValue(task);
 
     await handler.execute(command);
 
     expect(task.getStatus().getValue()).toBe("DOING");
-    expect(mockTaskRepo.updateAsync).toHaveBeenCalledWith(task);
+    expect(mockTaskRepo.saveAsync).toHaveBeenCalledWith(task);
   });
 
   it("should throw EntityNotFoundException if task does not exist", async () => {
@@ -66,12 +61,12 @@ describe("ChangeTaskStatusHandler", () => {
       "123e4567-e89b-12d3-a456-426614174000",
       "DOING",
     );
-    mockTaskRepo.findByIdAsync.mockResolvedValue(null);
+    mockTaskRepo.loadAggregateByIdAsync.mockResolvedValue(null);
 
     await expect(handler.execute(command)).rejects.toThrow(
       EntityNotFoundException,
     );
-    expect(mockTaskRepo.updateAsync).not.toHaveBeenCalled();
+    expect(mockTaskRepo.saveAsync).not.toHaveBeenCalled();
   });
 
   it("should throw BusinessRuleException when transitioning from DONE to TODO", async () => {
@@ -81,7 +76,7 @@ describe("ChangeTaskStatusHandler", () => {
       "TODO",
     );
 
-    mockTaskRepo.findByIdAsync.mockResolvedValue(task);
+    mockTaskRepo.loadAggregateByIdAsync.mockResolvedValue(task);
 
     await expect(handler.execute(command)).rejects.toThrow(
       BusinessRuleException,
@@ -92,7 +87,7 @@ describe("ChangeTaskStatusHandler", () => {
 
     // Status should remain unchanged
     expect(task.getStatus().getValue()).toBe("DONE");
-    expect(mockTaskRepo.updateAsync).not.toHaveBeenCalled();
+    expect(mockTaskRepo.saveAsync).not.toHaveBeenCalled();
   });
 
   it("should allow transitioning from TODO to DONE", async () => {
@@ -102,11 +97,11 @@ describe("ChangeTaskStatusHandler", () => {
       "DONE",
     );
 
-    mockTaskRepo.findByIdAsync.mockResolvedValue(task);
+    mockTaskRepo.loadAggregateByIdAsync.mockResolvedValue(task);
 
     await handler.execute(command);
 
     expect(task.getStatus().getValue()).toBe("DONE");
-    expect(mockTaskRepo.updateAsync).toHaveBeenCalledWith(task);
+    expect(mockTaskRepo.saveAsync).toHaveBeenCalledWith(task);
   });
 });

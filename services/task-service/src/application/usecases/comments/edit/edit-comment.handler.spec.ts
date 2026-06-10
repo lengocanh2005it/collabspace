@@ -2,6 +2,7 @@ import { ForbiddenException, NotFoundException } from "@nestjs/common";
 import { EditCommentHandler } from "./edit-comment.handler";
 import { EditCommentCommand } from "./edit-comment.command";
 import { ITaskRepository } from "../../../../application/ports/ITaskRepository";
+import { createMockTaskRepository } from "../../../../test-utils/mock-task-repository";
 import { ICommentRepository } from "../../../../domain/repositories/comment.repository.interface";
 import { Task } from "../../../../domain/entities/Task";
 import { TaskId } from "../../../../domain/value-objects/TaskId";
@@ -23,13 +24,7 @@ describe("EditCommentHandler", () => {
       findByTaskIdAsync: jest.fn(),
     } as any;
 
-    mockTaskRepo = {
-      addAsync: jest.fn(),
-      updateAsync: jest.fn(),
-      deleteAsync: jest.fn(),
-      findByIdAsync: jest.fn(),
-      findByWorkspaceIdAsync: jest.fn(),
-    };
+    mockTaskRepo = createMockTaskRepository();
 
     handler = new EditCommentHandler(mockCommentRepo, mockTaskRepo);
   });

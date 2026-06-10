@@ -57,7 +57,7 @@ export class TaskMapper {
     };
   }
 
-  static toDomain(rawDoc: TaskDocument): TaskDomain {
+  static toDomain(rawDoc: TaskDocument, streamVersion = 0): TaskDomain {
     const taskId = new TaskId(rawDoc._id);
 
     // 👇 Truyền đủ 5 tham số từ DB lên để dựng lại Snapshot
@@ -91,6 +91,7 @@ export class TaskMapper {
       new Date(rawDoc.createdAt),
       new Date(rawDoc.updatedAt),
       rawDoc.attachments || [],
+      streamVersion,
     );
   }
 

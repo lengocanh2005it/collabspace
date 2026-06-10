@@ -51,8 +51,9 @@ services/
 | HTTP/gRPC/events | `.claude/docs/service-contracts.md` |
 | Build, test, Docker, seed | `.claude/docs/development-workflows.md` |
 | NestJS style, DTOs, tests | `.claude/docs/coding-conventions.md` |
-| MVP gaps, build order | `.claude/docs/mvp-roadmap.md` |
-| Human MVP scope (Vietnamese) | `docs/mvp-demo-scope.md` |
+| Product features & status | `docs/features.md` |
+| MVP build order (agent) | `.claude/docs/mvp-roadmap.md` |
+| MVP demo acceptance | `docs/mvp-demo-scope.md` |
 
 ## Skills
 

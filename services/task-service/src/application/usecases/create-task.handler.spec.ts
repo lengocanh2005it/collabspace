@@ -2,6 +2,7 @@ import { BadRequestException } from "@nestjs/common";
 import { CreateTaskHandler } from "./create-task.handler";
 import { CreateTaskCommand } from "../commands/create-task.command";
 import { ITaskRepository } from "../ports/ITaskRepository";
+import { createMockTaskRepository } from "../../test-utils/mock-task-repository";
 import { IUserReplicaRepository } from "../ports/IUserReplicaRepository";
 import { UserReplica } from "../../infrastructure/persistence/user-replica.schema";
 
@@ -11,13 +12,7 @@ describe("CreateTaskHandler", () => {
   let mockUserReplicaRepo: jest.Mocked<IUserReplicaRepository>;
 
   beforeEach(() => {
-    mockTaskRepo = {
-      addAsync: jest.fn(),
-      updateAsync: jest.fn(),
-      deleteAsync: jest.fn(),
-      findByIdAsync: jest.fn(),
-      findByWorkspaceIdAsync: jest.fn(),
-    };
+    mockTaskRepo = createMockTaskRepository();
 
     mockUserReplicaRepo = {
       addAsync: jest.fn(),
@@ -49,7 +44,7 @@ describe("CreateTaskHandler", () => {
     };
 
     mockUserReplicaRepo.findByIdAsync.mockResolvedValue(mockReplica);
-    mockTaskRepo.addAsync.mockResolvedValue();
+    mockTaskRepo.saveAsync.mockResolvedValue();
 
     // Act
     const taskId = await handler.execute(command);
@@ -57,13 +52,13 @@ describe("CreateTaskHandler", () => {
     // Assert
     expect(taskId).toBeDefined();
     expect(mockUserReplicaRepo.findByIdAsync).toHaveBeenCalledWith("user-123");
-    expect(mockTaskRepo.addAsync).toHaveBeenCalledTimes(1);
+    expect(mockTaskRepo.saveAsync).toHaveBeenCalledTimes(1);
 
-    const savedTask = mockTaskRepo.addAsync.mock.calls[0][0];
-    expect(savedTask.title).toBe("New Task");
-    expect(savedTask.description).toBe("Task Description");
-    expect(savedTask.workspaceId).toBe("workspace-123");
-    expect(savedTask.createdBy.userId).toBe("user-123");
+    const savedTask = mockTaskRepo.saveAsync.mock.calls[0][0];
+    expect(savedTask.getTitle()).toBe("New Task");
+    expect(savedTask.getDescription()).toBe("Task Description");
+    expect(savedTask.getWorkspaceId()).toBe("workspace-123");
+    expect(savedTask.getCreatedBy().getUserId()).toBe("user-123");
   });
 
   it("should throw BadRequestException if creator does not exist", async () => {
@@ -83,7 +78,7 @@ describe("CreateTaskHandler", () => {
     await expect(handler.execute(command)).rejects.toThrow(
       "Tài khoản người tạo Task không tồn tại hoặc đã bị khóa!",
     );
-    expect(mockTaskRepo.addAsync).not.toHaveBeenCalled();
+    expect(mockTaskRepo.saveAsync).not.toHaveBeenCalled();
   });
 
   it("should throw BadRequestException if creator is inactive", async () => {
@@ -110,6 +105,6 @@ describe("CreateTaskHandler", () => {
 
     // Act & Assert
     await expect(handler.execute(command)).rejects.toThrow(BadRequestException);
-    expect(mockTaskRepo.addAsync).not.toHaveBeenCalled();
+    expect(mockTaskRepo.saveAsync).not.toHaveBeenCalled();
   });
 });

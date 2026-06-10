@@ -18,8 +18,9 @@ This repository uses **Claude Code**-style agent documentation. `CLAUDE.md` is t
 | `.claude/docs/service-contracts.md` | HTTP, gRPC, events, auth headers |
 | `.claude/docs/development-workflows.md` | Docker, migrate, seed, test, troubleshoot |
 | `.claude/docs/coding-conventions.md` | NestJS, DTO, TypeORM, test style |
-| `.claude/docs/mvp-roadmap.md` | MVP gaps and build order |
-| `docs/mvp-demo-scope.md` | Human-facing MVP scope |
+| `docs/features.md` | Product features and status (canonical) |
+| `.claude/docs/mvp-roadmap.md` | MVP build order for agents |
+| `docs/mvp-demo-scope.md` | MVP demo acceptance checklist |
 
 ## Automation
 

@@ -1,6 +1,7 @@
 import { UpdateTaskDetailsHandler } from "./update-task-details.handler";
 import { UpdateTaskDetailsCommand } from "../commands/update-task-details.command";
 import { ITaskRepository } from "../ports/ITaskRepository";
+import { createMockTaskRepository } from "../../test-utils/mock-task-repository";
 import { Task } from "../../domain/entities/Task";
 import { TaskId } from "../../domain/value-objects/TaskId";
 import { UserSnapshot } from "../../domain/value-objects/UserSnapshot";
@@ -12,13 +13,7 @@ describe("UpdateTaskDetailsHandler", () => {
   let mockTaskRepo: jest.Mocked<ITaskRepository>;
 
   beforeEach(() => {
-    mockTaskRepo = {
-      addAsync: jest.fn(),
-      updateAsync: jest.fn(),
-      deleteAsync: jest.fn(),
-      findByIdAsync: jest.fn(),
-      findByWorkspaceIdAsync: jest.fn(),
-    };
+    mockTaskRepo = createMockTaskRepository();
 
     handler = new UpdateTaskDetailsHandler(mockTaskRepo);
   });
@@ -54,13 +49,13 @@ describe("UpdateTaskDetailsHandler", () => {
       "New Desc",
     );
 
-    mockTaskRepo.findByIdAsync.mockResolvedValue(task);
+    mockTaskRepo.loadAggregateByIdAsync.mockResolvedValue(task);
 
     await handler.execute(command);
 
     expect(task.getTitle()).toBe("New Title");
     expect(task.getDescription()).toBe("New Desc");
-    expect(mockTaskRepo.updateAsync).toHaveBeenCalledWith(task);
+    expect(mockTaskRepo.saveAsync).toHaveBeenCalledWith(task);
   });
 
   it("should throw EntityNotFoundException if task does not exist", async () => {
@@ -69,12 +64,12 @@ describe("UpdateTaskDetailsHandler", () => {
       "New Title",
       "New Desc",
     );
-    mockTaskRepo.findByIdAsync.mockResolvedValue(null);
+    mockTaskRepo.loadAggregateByIdAsync.mockResolvedValue(null);
 
     await expect(handler.execute(command)).rejects.toThrow(
       EntityNotFoundException,
     );
-    expect(mockTaskRepo.updateAsync).not.toHaveBeenCalled();
+    expect(mockTaskRepo.saveAsync).not.toHaveBeenCalled();
   });
 
   it("should throw BusinessRuleException if title is empty", async () => {
@@ -85,11 +80,11 @@ describe("UpdateTaskDetailsHandler", () => {
       "New Desc",
     );
 
-    mockTaskRepo.findByIdAsync.mockResolvedValue(task);
+    mockTaskRepo.loadAggregateByIdAsync.mockResolvedValue(task);
 
     await expect(handler.execute(command)).rejects.toThrow(
       BusinessRuleException,
     );
-    expect(mockTaskRepo.updateAsync).not.toHaveBeenCalled();
+    expect(mockTaskRepo.saveAsync).not.toHaveBeenCalled();
   });
 });

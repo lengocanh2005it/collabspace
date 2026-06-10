@@ -19,13 +19,13 @@ export class UpdateTaskDetailsHandler implements ICommandHandler<
 
   async execute(command: UpdateTaskDetailsCommand): Promise<void> {
     const taskId = new TaskId(command.taskId);
-    const task = await this.taskRepository.findByIdAsync(taskId);
+    const task = await this.taskRepository.loadAggregateByIdAsync(taskId);
 
     if (!task) {
       throw new EntityNotFoundException("Task", command.taskId);
     }
 
     task.updateDetails(command.title, command.description);
-    await this.taskRepository.updateAsync(task);
+    await this.taskRepository.saveAsync(task);
   }
 }

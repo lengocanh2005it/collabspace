@@ -18,8 +18,9 @@ Read before broad changes:
 - Service contracts: `.claude/docs/service-contracts.md`
 - Workflows: `.claude/docs/development-workflows.md`
 - Conventions: `.claude/docs/coding-conventions.md`
+- Product features: `docs/features.md`
 - MVP roadmap: `.claude/docs/mvp-roadmap.md`
-- Human MVP scope: `docs/mvp-demo-scope.md`
+- MVP demo acceptance: `docs/mvp-demo-scope.md`
 
 Path-scoped rules load automatically from `.claude/rules/` when editing matching files.
 
@@ -35,7 +36,8 @@ Subagents in `.claude/agents/`: `nest-reviewer`, `mvp-implementer`, `contract-gu
 - `infrastructure/docker`: Docker Compose stack.
 - `infrastructure/k8s`: Kubernetes manifests.
 - `api-gateway`: Traefik static/dynamic config.
-- `docs/mvp-demo-scope.md`: human-facing MVP scope and current status.
+- `docs/features.md`: product features and implementation status (canonical).
+- `docs/mvp-demo-scope.md`: MVP demo acceptance checklist.
 
 ## Hard Project Facts
 

@@ -13,7 +13,15 @@ Detailed project context for AI agents. Keep root `CLAUDE.md` concise; put long 
 | `service-contracts.md` | HTTP routes, gRPC, events, auth headers |
 | `development-workflows.md` | Setup, Docker, migrations, seeding, testing, troubleshooting |
 | `coding-conventions.md` | NestJS, TypeORM, DTO, repository, error, test conventions |
-| `mvp-roadmap.md` | Implementation status, demo story, recommended build order |
+| `mvp-roadmap.md` | Recommended build order for agents (status → `docs/features.md`) |
+
+## Human-facing docs (`docs/`)
+
+| File | Purpose |
+|------|---------|
+| `features.md` | **Canonical** product features and implementation status |
+| `mvp-demo-scope.md` | MVP demo story and acceptance checklist |
+| `resilience-overview.md` | Resilience summary (Vietnamese) |
 
 ## Related config (not in this folder)
 

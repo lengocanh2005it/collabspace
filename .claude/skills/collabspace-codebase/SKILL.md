@@ -12,6 +12,7 @@ Use this skill to orient yourself before making project-wide or service-boundary
 Read these files as needed:
 
 - `README.md`
+- `docs/features.md`
 - `docs/mvp-demo-scope.md`
 - `.claude/docs/project-architecture.md`
 - `.claude/docs/service-architecture.md` (per-service folder layout and patterns)
