@@ -168,29 +168,39 @@ Rules:
 
 ## Seed Workflow
 
-Preferred order:
-
-```sh
-cd services/auth-service
-pnpm run seed
-
-cd ../user-service
-pnpm run seed
-```
-
-Root helper:
+Preferred order (loads shared demo data from `scripts/demo-seed-data.json`):
 
 ```sh
 sh ./scripts/seed.sh
 ```
 
+Per service:
+
+```sh
+cd services/auth-service && pnpm run seed
+cd ../user-service && pnpm run seed
+cd ../workspace-service && pnpm run seed
+cd ../task-service && pnpm run seed
+cd ../notification-service && pnpm run seed
+```
+
+What gets seeded:
+
+- **auth-service** — roles, permissions, verified demo users
+- **user-service** — profiles, preferences, status; optional RabbitMQ replica sync
+- **workspace-service** — demo workspace, members (User A owner + User B member), MVP project
+- **task-service** — user replicas, 3 tasks + event store entries, sample `@mention` comment
+- **notification-service** — sample TASK_ASSIGNED + COMMENT_MENTIONED notifications for User B
+
 Demo accounts after seed:
 
 - `tho@collabspace.dev` / `collabspace123`
-- `ngocanh@collabspace.dev` / `collabspace123`
-- `quangtien@collabspace.dev` / `collabspace123`
+- `ngocanh@collabspace.dev` / `collabspace123` (User A)
+- `quangtien@collabspace.dev` / `collabspace123` (User B)
 - `trungtin@collabspace.dev` / `collabspace123`
 - `reviewer@collabspace.dev` / `collabspace123`
+
+Run migrations before seeding. Requires Postgres (auth, user, workspace) and MongoDB (task, notification).
 
 ## Testing Strategy
 

@@ -10,4 +10,10 @@ describe("parseMentionUsernames", () => {
   it("returns empty array when no mentions", () => {
     expect(parseMentionUsernames("No mentions here")).toEqual([]);
   });
+
+  it("supports dotted demo usernames", () => {
+    expect(parseMentionUsernames("Ping @ngo.quang.tien please")).toEqual([
+      "ngo.quang.tien",
+    ]);
+  });
 });

@@ -104,6 +104,12 @@ Seed demo data in this order:
 ```sh
 cd services/auth-service && pnpm run seed
 cd ../user-service && pnpm run seed
+cd ../workspace-service && pnpm run seed
+cd ../task-service && pnpm run seed
+cd ../notification-service && pnpm run seed
+
+# or from repo root
+sh ./scripts/seed.sh
 ```
 
 ## Claude Code Skills

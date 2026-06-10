@@ -129,35 +129,37 @@ docker-compose -f docker-compose.yml -f docker-compose.db.yml -f docker-compose.
 
 ### Seeded Development Accounts
 
-After seeding `auth-service` and `user-service`, these demo accounts are available:
+After `./scripts/seed.sh` (or the per-service commands below), demo data includes:
 
-| Name | Email | Role | Password |
-|------|-------|------|----------|
-| Phan Phu Tho | `tho@collabspace.dev` | `admin` | `collabspace123` |
-| Le Ngoc Anh | `ngocanh@collabspace.dev` | `member` | `collabspace123` |
-| Ngo Quang Tien | `quangtien@collabspace.dev` | `member` | `collabspace123` |
-| Vo Trung Tin | `trungtin@collabspace.dev` | `member` | `collabspace123` |
-| Demo Reviewer | `reviewer@collabspace.dev` | `viewer` | `collabspace123` |
+| Name | Email | Username | Role | Password |
+|------|-------|----------|------|----------|
+| Phan Phu Tho | `tho@collabspace.dev` | `phan.phu.tho` | `admin` | `collabspace123` |
+| Le Ngoc Anh (User A) | `ngocanh@collabspace.dev` | `le.ngoc.anh` | `member` | `collabspace123` |
+| Ngo Quang Tien (User B) | `quangtien@collabspace.dev` | `ngo.quang.tien` | `member` | `collabspace123` |
+| Vo Trung Tin | `trungtin@collabspace.dev` | `vo.trung.tin` | `member` | `collabspace123` |
+| Demo Reviewer | `reviewer@collabspace.dev` | `demo.reviewer` | `viewer` | `collabspace123` |
 
-Seed order for aligned demo data:
+Also seeded: demo workspace **CollabSpace Demo**, project **MVP Sprint**, 3 tasks (one assigned to User B), sample `@ngo.quang.tien` comment, and sample notifications for User B.
+
+Source of truth: [`scripts/demo-seed-data.json`](scripts/demo-seed-data.json).
+
+Seed order (required):
 
 ```powershell
-cd services/auth-service
-npm run seed
-
-cd ../user-service
-npm run seed
+./scripts/seed.sh
 ```
 
-Or run the shell wrappers that are easier to reuse in Docker images and CI jobs:
+Or manually:
 
-```sh
-sh ./services/auth-service/scripts/seed.sh
-sh ./services/user-service/scripts/seed.sh
-
-# seed both in the correct order
-sh ./scripts/seed.sh
+```powershell
+cd services/auth-service; pnpm run seed
+cd ../user-service; pnpm run seed
+cd ../workspace-service; pnpm run seed
+cd ../task-service; pnpm run seed
+cd ../notification-service; pnpm run seed
 ```
+
+Prerequisites: run `./scripts/migrate.sh` first; Postgres + MongoDB must be reachable via each service `.env`.
 
 ## Team
 

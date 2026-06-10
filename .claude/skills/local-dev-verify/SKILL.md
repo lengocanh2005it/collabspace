@@ -82,6 +82,12 @@ Seed:
 ```sh
 cd services/auth-service && pnpm run seed
 cd ../user-service && pnpm run seed
+cd ../workspace-service && pnpm run seed
+cd ../task-service && pnpm run seed
+cd ../notification-service && pnpm run seed
+
+# or
+sh ./scripts/seed.sh
 ```
 
 ## Troubleshooting Rules

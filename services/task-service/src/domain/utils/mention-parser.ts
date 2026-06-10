@@ -1,4 +1,4 @@
-const MENTION_PATTERN = /@([a-zA-Z0-9_]{2,32})/g;
+const MENTION_PATTERN = /@([a-zA-Z0-9_.]{2,64})/g;
 
 export function parseMentionUsernames(content: string): string[] {
   const matches = content.matchAll(MENTION_PATTERN);

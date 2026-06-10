@@ -1,0 +1,142 @@
+{
+  "defaultPassword": "collabspace123",
+  "users": [
+    {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "profileId": "a1111111-1111-4111-8111-111111111111",
+      "email": "tho@collabspace.dev",
+      "fullName": "Phan Phu Tho",
+      "username": "phan.phu.tho",
+      "roleNames": ["admin"],
+      "bio": "Infrastructure engineer managing Docker, CI/CD, API gateway, monitoring, tracing, and logging.",
+      "preferredLanguage": "vi",
+      "preferredTimezone": "Asia/Saigon",
+      "avatarSeed": "Phan%20Phu%20Tho"
+    },
+    {
+      "id": "22222222-2222-4222-8222-222222222222",
+      "profileId": "b2222222-2222-4222-8222-222222222222",
+      "email": "ngocanh@collabspace.dev",
+      "fullName": "Le Ngoc Anh",
+      "username": "le.ngoc.anh",
+      "roleNames": ["member"],
+      "bio": "Owns JWT auth, RBAC, and user profile APIs for the collaboration platform.",
+      "preferredLanguage": "vi",
+      "preferredTimezone": "Asia/Saigon",
+      "avatarSeed": "Le%20Ngoc%20Anh"
+    },
+    {
+      "id": "33333333-3333-4333-8333-333333333333",
+      "profileId": "c3333333-3333-4333-8333-333333333333",
+      "email": "quangtien@collabspace.dev",
+      "fullName": "Ngo Quang Tien",
+      "username": "ngo.quang.tien",
+      "roleNames": ["member"],
+      "bio": "Builds workspace CRUD flows, member invitations, and workspace membership management.",
+      "preferredLanguage": "vi",
+      "preferredTimezone": "Asia/Saigon",
+      "avatarSeed": "Ngo%20Quang%20Tien"
+    },
+    {
+      "id": "44444444-4444-4444-8444-444444444444",
+      "profileId": "d4444444-4444-4444-8444-444444444444",
+      "email": "trungtin@collabspace.dev",
+      "fullName": "Vo Trung Tin",
+      "username": "vo.trung.tin",
+      "roleNames": ["member"],
+      "bio": "Focuses on task workflows, comments, notifications, and event-driven delivery.",
+      "preferredLanguage": "vi",
+      "preferredTimezone": "Asia/Saigon",
+      "avatarSeed": "Vo%20Trung%20Tin"
+    },
+    {
+      "id": "55555555-5555-4555-8555-555555555555",
+      "profileId": "e5555555-5555-4555-8555-555555555555",
+      "email": "reviewer@collabspace.dev",
+      "fullName": "Demo Reviewer",
+      "username": "demo.reviewer",
+      "roleNames": ["viewer"],
+      "bio": "Read-only stakeholder account for reviewing workspace, task, and notification flows in demos.",
+      "preferredLanguage": "en",
+      "preferredTimezone": "UTC",
+      "avatarSeed": "Demo%20Reviewer"
+    }
+  ],
+  "demo": {
+    "workspaceId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    "workspaceName": "CollabSpace Demo",
+    "workspaceDescription": "Shared workspace for the MVP demo story (User A invites User B).",
+    "ownerUserId": "22222222-2222-4222-8222-222222222222",
+    "members": [
+      {
+        "userId": "22222222-2222-4222-8222-222222222222",
+        "role": "owner"
+      },
+      {
+        "userId": "33333333-3333-4333-8333-833333333333",
+        "role": "member"
+      }
+    ],
+    "projectId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+    "projectName": "MVP Sprint",
+    "projectDescription": "Starter project with three demo tasks.",
+    "tasks": [
+      {
+        "id": "cccccccc-ccc1-4cc1-8cc1-ccccccccccc1",
+        "title": "Wire auth verify headers for gateway",
+        "description": "Ensure Traefik forward-auth receives X-User-Id and related headers.",
+        "status": "TODO",
+        "priority": "HIGH",
+        "labels": ["gateway", "auth"],
+        "assigneeUserId": "33333333-3333-4333-8333-333333333333",
+        "createdByUserId": "22222222-2222-4222-8222-222222222222"
+      },
+      {
+        "id": "cccccccc-ccc2-4cc2-8cc2-ccccccccccc2",
+        "title": "Document API routes per service",
+        "description": "Keep docs/api-routes.md aligned with implemented controllers.",
+        "status": "TODO",
+        "priority": "MEDIUM",
+        "labels": ["docs"],
+        "assigneeUserId": null,
+        "createdByUserId": "22222222-2222-4222-8222-222222222222"
+      },
+      {
+        "id": "cccccccc-ccc3-4cc3-8cc3-ccccccccccc3",
+        "title": "Validate notification consumers",
+        "description": "Smoke-test task_assigned and comment_mentioned flows.",
+        "status": "DONE",
+        "priority": "LOW",
+        "labels": ["notifications"],
+        "assigneeUserId": null,
+        "createdByUserId": "22222222-2222-4222-8222-222222222222"
+      }
+    ],
+    "sampleComment": {
+      "taskId": "cccccccc-ccc1-4cc1-8cc1-ccccccccccc1",
+      "authorUserId": "22222222-2222-4222-8222-222222222222",
+      "content": "Please pick this up @ngo.quang.tien and move it to in progress when you start.",
+      "mentionUserIds": ["33333333-3333-4333-8333-333333333333"]
+    },
+    "sampleNotifications": [
+      {
+        "recipientId": "33333333-3333-4333-8333-333333333333",
+        "actorId": "22222222-2222-4222-8222-222222222222",
+        "type": "TASK_ASSIGNED",
+        "title": "Task assigned to you",
+        "message": "Le Ngoc Anh assigned you: Wire auth verify headers for gateway",
+        "targetId": "cccccccc-ccc1-4cc1-8cc1-ccccccccccc1",
+        "targetType": "TASK"
+      },
+      {
+        "recipientId": "33333333-3333-4333-8333-333333333333",
+        "actorId": "22222222-2222-4222-8222-222222222222",
+        "type": "COMMENT_MENTIONED",
+        "title": "You were mentioned",
+        "message": "Le Ngoc Anh mentioned you in a comment on Wire auth verify headers for gateway",
+        "targetId": "cccccccc-ccc1-4cc1-8cc1-ccccccccccc1",
+        "targetType": "COMMENT"
+      }
+    ]
+  }
+}
