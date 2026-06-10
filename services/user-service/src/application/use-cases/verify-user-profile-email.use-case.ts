@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { USER_PROFILE_REPOSITORY } from '../../domain/repositories/user-profile.repository';
 import type { UserProfileRepository } from '../../domain/repositories/user-profile.repository';
 import {
@@ -14,7 +14,15 @@ export class VerifyUserProfileEmailUseCase {
   ) {}
 
   async execute(userId: string): Promise<UserProfileResponseDto> {
-    const profile = await this.userProfileRepository.markEmailVerified(userId);
+    const profile = await this.userProfileRepository.findByUserId(userId);
+
+    if (!profile) {
+      throw new NotFoundException({
+        code: 'USER_NOT_FOUND',
+        message: `User profile ${userId} was not found`,
+      });
+    }
+
     return toUserProfileResponseDto(profile);
   }
 }

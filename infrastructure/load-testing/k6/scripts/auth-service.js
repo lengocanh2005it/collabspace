@@ -6,7 +6,7 @@ export let options = {
   duration: "30s",
 };
 
-const BASE_URL = __ENV.BASE_URL || "http://localhost";
+const BASE_URL = __ENV.BASE_URL || "http://localhost:3000/api/v1";
 
 export default function () {
   group("Auth Service Health", function () {
@@ -30,6 +30,7 @@ export default function () {
   group("Auth Register", function () {
     let payload = JSON.stringify({
       email: `user_${Math.random().toString(36).substring(7)}@test.com`,
+      fullName: "Load Test User",
       password: "testpassword123",
     });
     let res = http.post(`${BASE_URL}/auth/register`, payload, {

@@ -1,5 +1,6 @@
 // src/infrastructure/services/workspace.mock.service.ts
 import { Injectable } from "@nestjs/common";
+import type { IWorkspaceClient } from "../../application/ports/IWorkspaceClient";
 
 export interface Workspace {
   id: string;
@@ -21,7 +22,7 @@ export interface WorkspaceMember {
 }
 
 @Injectable()
-export class WorkspaceMockService {
+export class WorkspaceMockService implements IWorkspaceClient {
   private mockWorkspaces: Map<string, Workspace> = new Map();
 
   constructor() {

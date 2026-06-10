@@ -3,8 +3,12 @@ import { AppModule } from "./app.module";
 import { MicroserviceOptions, Transport } from "@nestjs/microservices";
 import { ConfigurationService } from "./configuration/configuration.service";
 import { ValidationPipe } from "@nestjs/common";
+import { MetricsService } from "./metrics/metrics.service";
+import { registerMetricsMiddleware } from "./metrics/register-metrics.middleware";
+import { bootstrapTracing } from "./observability/tracing";
 
 async function bootstrap() {
+  bootstrapTracing("notification-service");
   const app = await NestFactory.create(AppModule);
 
   const configService = app.get(ConfigurationService);
@@ -34,8 +38,9 @@ async function bootstrap() {
   // 2. Cấu hình HTTP API
   app.useGlobalPipes(new ValidationPipe({ transform: true }));
   app.setGlobalPrefix("api");
+  registerMetricsMiddleware(app, app.get(MetricsService));
 
-  const port = process.env.PORT || 3002;
+  const port = process.env.PORT || 3000;
   await app.listen(port);
   console.log(`✅ Notification HTTP API is running on port ${port}`);
 }

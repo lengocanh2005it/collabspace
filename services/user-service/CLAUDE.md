@@ -37,4 +37,15 @@ pnpm run seed
 - Verifies tokens through auth-service `VerifyAccessToken`.
 - Serves profiles to auth-service and future task/workspace services.
 
-Deep docs: `@../../.claude/docs/coding-conventions.md`, `@../../.claude/docs/service-contracts.md`
+## Where to add code
+
+| Task | Path |
+|------|------|
+| HTTP route | `presentation/http/` |
+| Use case | `application/use-cases/*.use-case.ts` |
+| Response DTO | `application/dto/` + mapper |
+| Domain | `domain/entities/` |
+| Repository port | `domain/repositories/` |
+| TypeORM | `infrastructure/database/entities/`, `infrastructure/repositories/` |
+
+Deep docs: `@../../.claude/docs/service-architecture.md` (user section), `@../../.claude/docs/coding-conventions.md`, `@../../.claude/docs/service-contracts.md`

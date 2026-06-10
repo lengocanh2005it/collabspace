@@ -89,6 +89,79 @@ Validation:
 - DTOs should use `class-validator` and `class-transformer`.
 - Whitelist and forbid non-whitelisted input are enabled.
 
+## workspace-service Conventions
+
+Architecture style:
+
+```text
+presentation/http -> application/use-cases -> TypeORM Repository<OrmEntity>
+domain/events/    -> event constants and payload types only
+```
+
+Layer rules:
+
+- `presentation/http`: controllers, `UserIdGuard`, `@UserId()` decorator, filters.
+- `application/use-cases/<area>/`: one class per action (`*.use-case.ts`, `execute()`).
+- `application/dto/`: input DTOs with `class-validator`.
+- `infrastructure/database/entities/`: `*.orm-entity.ts` with snake_case columns.
+- `domain/events/`: routing keys and event payload types for RabbitMQ.
+
+Rules:
+
+- Do not add repository ports for small features; inject `Repository<OrmEntity>` like existing use cases.
+- Use `manager.transaction()` when multiple tables must commit together.
+- Publish events only after successful persistence; include `eventId` and `occurredAt`.
+- Port `8080`; global prefix `api/v1`.
+- Full folder guide: `.claude/docs/service-architecture.md`.
+
+## task-service Conventions
+
+Architecture style:
+
+```text
+presentation/controllers -> CommandBus/QueryBus -> application/usecases/*.handler.ts
+                         -> domain/entities -> application/ports -> infrastructure/repositories
+```
+
+Layer rules:
+
+- `application/commands/` and `application/queries/`: CQRS message classes.
+- `application/usecases/`: `@CommandHandler` / `@QueryHandler` implementations.
+- `domain/entities/`: rich entities with factories and business methods.
+- `infrastructure/persistence/`: Mongoose schemas; `infrastructure/mappers/` for mapping.
+- `presentation/controllers/internal/`: RabbitMQ `@EventPattern` listeners.
+
+Rules:
+
+- Register every new handler in `app.module.ts` `Handlers` array.
+- Global prefix `api`; put `v1/tasks` (or similar) on `@Controller()`.
+- Use double-quote style to match existing task-service files.
+- Wrap HTTP responses with `presentation/common/response/` helpers where applicable.
+- Full folder guide: `.claude/docs/service-architecture.md`.
+
+## notification-service Conventions
+
+Architecture style:
+
+```text
+presentation/controllers/internal -> CommandBus -> application/usecases/<feature>/
+                                                -> domain/entities -> infrastructure/database/
+```
+
+Layer rules:
+
+- `application/usecases/<name>/`: co-locate `*.command.ts`, `*.handler.ts`, `*.query.ts` per feature folder.
+- `domain/repositories/`: interfaces + injection tokens.
+- `infrastructure/database/schemas/`: Mongoose schemas including `processed_events` for dedupe.
+- `presentation/controllers/notifications.controller.ts`: HTTP list + health only unless expanded.
+
+Rules:
+
+- Pass `eventId` into `CreateNotificationCommand`; handler must dedupe via `ProcessedEventRepository`.
+- Ack RabbitMQ messages only after successful handler execution.
+- Global prefix `api`; controller `v1/notifications`.
+- Full folder guide: `.claude/docs/service-architecture.md`.
+
 ## DTO and API Conventions
 
 Request DTOs:

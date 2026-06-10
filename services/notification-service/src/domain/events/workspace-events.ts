@@ -7,7 +7,12 @@
 
 export const WORKSPACE_INVITED_EVENT = "workspace_invited";
 
-export interface WorkspaceInvitedEventPayload {
+export type EventEnvelopeFields = {
+  eventId: string;
+  occurredAt: string;
+};
+
+export interface WorkspaceInvitedEventPayload extends EventEnvelopeFields {
   workspaceId: string;
   workspaceName: string;
   invitedUserId: string;

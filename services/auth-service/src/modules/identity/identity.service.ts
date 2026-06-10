@@ -102,10 +102,7 @@ export class IdentityService {
       }),
     );
 
-    const roleNames =
-      input.roleNames && input.roleNames.length > 0
-        ? input.roleNames
-        : ['user'];
+    const roleNames = ['user'];
 
     for (const roleName of roleNames) {
       const role = await this.ensureRole(roleName);
@@ -118,6 +115,19 @@ export class IdentityService {
     }
 
     return this.getAuthUserById(user.id);
+  }
+
+  async rollbackNewRegistration(userId: string): Promise<void> {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+    });
+
+    if (!user || user.deletedAt || user.emailVerifiedAt) {
+      return;
+    }
+
+    await this.userRoleRepository.delete({ userId });
+    await this.userRepository.softDelete({ id: userId });
   }
 
   async validateCredentials(input: LoginInput): Promise<AuthUser> {

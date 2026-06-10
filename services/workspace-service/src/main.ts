@@ -2,12 +2,20 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { GlobalExceptionFilter } from './presentation/http/filters/global-exception.filter';
+import { DatabaseService } from './infrastructure/database/database.service';
+import { MetricsService } from './metrics/metrics.service';
+import { registerMetricsMiddleware } from './metrics/register-metrics.middleware';
+import { bootstrapTracing } from './observability/tracing';
 
 async function bootstrap() {
+  bootstrapTracing('workspace-service');
   const logger = new Logger('Bootstrap');
   const app = await NestFactory.create(AppModule);
 
+  await app.get(DatabaseService).initialize();
+
   app.setGlobalPrefix('api/v1');
+  registerMetricsMiddleware(app, app.get(MetricsService));
 
   app.useGlobalPipes(
     new ValidationPipe({

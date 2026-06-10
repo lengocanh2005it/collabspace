@@ -3,8 +3,13 @@
 // 1. Định nghĩa Routing Key (Tên sự kiện) để không bao giờ bị gõ sai chính tả
 export const TASK_COMMENTED_EVENT = "comment_created";
 
+export type EventEnvelopeFields = {
+  eventId: string;
+  occurredAt: string;
+};
+
 // 2. Định nghĩa cấu trúc Hợp đồng (Payload)
-export interface TaskCommentedEventPayload {
+export interface TaskCommentedEventPayload extends EventEnvelopeFields {
   taskId: string;
   taskTitle: string;
 

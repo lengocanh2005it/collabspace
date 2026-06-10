@@ -37,13 +37,6 @@ export class RegisterInput {
   password: string;
 
   @ApiProperty({
-    example: ['USER'],
-    required: false,
-  })
-  @IsOptional()
-  roleNames?: string[];
-
-  @ApiProperty({
     example: 'workspace-id',
     required: false,
   })
@@ -70,9 +63,13 @@ export type VerifyEmailOtpInput = {
   userId: string;
 };
 
-export type ResendEmailVerificationOtpInput = {
-  userId: string;
-};
+export class ResendEmailVerificationOtpInput {
+  @ApiProperty({
+    example: 'tin@example.com',
+  })
+  @IsEmail()
+  email: string;
+}
 
 export type ChangePasswordInput = {
   currentPassword: string;

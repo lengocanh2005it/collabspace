@@ -1,9 +1,12 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
+import { DatabaseService } from './database.service';
 import { WorkspaceOrmEntity } from './entities/workspace.orm-entity';
 import { WorkspaceMemberOrmEntity } from './entities/workspace-member.orm-entity';
 import { InvitationOrmEntity } from './entities/invitation.orm-entity';
 import { ProjectOrmEntity } from './entities/project.orm-entity';
+import { WorkspaceOutboxEventEntity } from '../outbox/entities/workspace-outbox-event.entity';
+import { IdempotencyRecordOrmEntity } from '../idempotency/entities/idempotency-record.orm-entity';
 
 const toBoolean = (value: string | undefined, fallback: boolean): boolean => {
   if (!value) {
@@ -35,8 +38,11 @@ const createDatabaseOptions = (): TypeOrmModuleOptions => ({
       WorkspaceMemberOrmEntity,
       InvitationOrmEntity,
       ProjectOrmEntity,
+      WorkspaceOutboxEventEntity,
+      IdempotencyRecordOrmEntity,
     ]),
   ],
-  exports: [TypeOrmModule],
+  providers: [DatabaseService],
+  exports: [TypeOrmModule, DatabaseService],
 })
 export class DatabaseModule {}

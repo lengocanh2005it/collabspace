@@ -5,11 +5,15 @@ import {
   ExecutionContext,
   ForbiddenException,
   Inject,
+  ServiceUnavailableException,
 } from "@nestjs/common";
 import { ITaskRepository as ITaskRepositoryToken } from "../../application/ports/ITaskRepository";
 import type { ITaskRepository } from "../../application/ports/ITaskRepository";
 import { TaskId } from "../../domain/value-objects/TaskId";
-import { WorkspaceMockService } from "../../infrastructure/services/workspace.mock.service";
+import {
+  type IWorkspaceClient,
+  WORKSPACE_CLIENT_TOKEN,
+} from "../../application/ports/IWorkspaceClient";
 import { getHeaderValue } from "../http/request-context";
 import type { AppRequest } from "../http/request-context";
 
@@ -47,7 +51,8 @@ type WorkspaceGuardRequest = AppRequest<
 @Injectable()
 export class WorkspaceValidationGuard implements CanActivate {
   constructor(
-    private readonly workspaceService: WorkspaceMockService,
+    @Inject(WORKSPACE_CLIENT_TOKEN)
+    private readonly workspaceService: IWorkspaceClient,
     @Inject(ITaskRepositoryToken)
     private readonly taskRepository: ITaskRepository,
   ) {}
@@ -69,19 +74,37 @@ export class WorkspaceValidationGuard implements CanActivate {
       return true;
     }
 
-    // Validate workspace tồn tại
-    const workspaceExists =
-      await this.workspaceService.validateWorkspaceAsync(workspaceId);
+    let workspaceExists = false;
+    let isMember = false;
+
+    try {
+      workspaceExists = await this.workspaceService.validateWorkspaceAsync(
+        workspaceId,
+        userId,
+      );
+      isMember = await this.workspaceService.checkUserPermissionAsync(
+        workspaceId,
+        userId,
+        "member",
+      );
+    } catch (error) {
+      if (error instanceof ServiceUnavailableException) {
+        throw error;
+      }
+
+      throw new ServiceUnavailableException({
+        code: "WORKSPACE_SERVICE_UNAVAILABLE",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Workspace service validation failed",
+      });
+    }
+
     if (!workspaceExists) {
       throw new ForbiddenException(`Workspace ${workspaceId} not found`);
     }
 
-    // Validate user là member của workspace
-    const isMember = await this.workspaceService.checkUserPermissionAsync(
-      workspaceId,
-      userId,
-      "member",
-    );
     if (!isMember) {
       throw new ForbiddenException(
         `User ${userId} does not have access to workspace ${workspaceId}`,

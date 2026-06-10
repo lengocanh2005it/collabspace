@@ -4,7 +4,7 @@ import { CreateCommentCommand } from "./create-comment.command";
 import { ITaskRepository } from "../../../ports/ITaskRepository";
 import { IUserReplicaRepository } from "../../../ports/IUserReplicaRepository";
 import { ICommentRepository } from "../../../../domain/repositories/comment.repository.interface";
-import { RabbitMqEventsService } from "../../../../infrastructure/messaging/rabbitmq/rabbitmq-events.service";
+import { TaskOutboxService } from "../../../../infrastructure/outbox/task-outbox.service";
 import { Task } from "../../../../domain/entities/Task";
 import { TaskId } from "../../../../domain/value-objects/TaskId";
 import { UserSnapshot } from "../../../../domain/value-objects/UserSnapshot";
@@ -16,7 +16,7 @@ describe("CreateCommentHandler", () => {
   let mockCommentRepo: jest.Mocked<ICommentRepository>;
   let mockTaskRepo: jest.Mocked<ITaskRepository>;
   let mockUserReplicaRepo: jest.Mocked<IUserReplicaRepository>;
-  let mockRabbitMqEvents: jest.Mocked<RabbitMqEventsService>;
+  let mockTaskOutboxService: jest.Mocked<TaskOutboxService>;
 
   beforeEach(() => {
     mockCommentRepo = {
@@ -41,16 +41,16 @@ describe("CreateCommentHandler", () => {
       findByIdAsync: jest.fn(),
     };
 
-    mockRabbitMqEvents = {
-      publishTaskAssigned: jest.fn(),
-      publishTaskCommented: jest.fn(),
+    mockTaskOutboxService = {
+      enqueueTaskAssigned: jest.fn(),
+      enqueueTaskCommented: jest.fn(),
     } as any;
 
     handler = new CreateCommentHandler(
       mockCommentRepo,
       mockTaskRepo,
       mockUserReplicaRepo,
-      mockRabbitMqEvents,
+      mockTaskOutboxService,
     );
   });
 
@@ -114,8 +114,8 @@ describe("CreateCommentHandler", () => {
 
     expect(result.commentId).toBe("123e4567-e89b-12d3-a456-426614174001");
     expect(mockCommentRepo.createAsync).toHaveBeenCalledTimes(1);
-    expect(mockRabbitMqEvents.publishTaskCommented).toHaveBeenCalledTimes(1);
-    expect(mockRabbitMqEvents.publishTaskCommented).toHaveBeenCalledWith(
+    expect(mockTaskOutboxService.enqueueTaskCommented).toHaveBeenCalledTimes(1);
+    expect(mockTaskOutboxService.enqueueTaskCommented).toHaveBeenCalledWith(
       expect.objectContaining({
         taskId: "123e4567-e89b-12d3-a456-426614174000",
         recipientId: "assignee-1",
@@ -142,7 +142,7 @@ describe("CreateCommentHandler", () => {
     await handler.execute(command);
 
     expect(mockCommentRepo.createAsync).toHaveBeenCalledTimes(1);
-    expect(mockRabbitMqEvents.publishTaskCommented).not.toHaveBeenCalled();
+    expect(mockTaskOutboxService.enqueueTaskCommented).not.toHaveBeenCalled();
   });
 
   it("should create comment but NOT emit event if author IS the assignee", async () => {
@@ -163,7 +163,7 @@ describe("CreateCommentHandler", () => {
     await handler.execute(command);
 
     expect(mockCommentRepo.createAsync).toHaveBeenCalledTimes(1);
-    expect(mockRabbitMqEvents.publishTaskCommented).not.toHaveBeenCalled();
+    expect(mockTaskOutboxService.enqueueTaskCommented).not.toHaveBeenCalled();
   });
 
   it("should throw BadRequestException if task does not exist", async () => {

@@ -6,4 +6,4 @@ SERVICE_DIR=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)
 
 cd "$SERVICE_DIR"
 echo "Seeding auth-service..."
-npm run seed
+pnpm run seed

@@ -12,5 +12,6 @@ export class CreateNotificationCommand {
     public readonly targetId: string,
     public readonly targetType: string,
     public readonly metadata?: NotificationMetadata,
+    public readonly eventId?: string,
   ) {}
 }

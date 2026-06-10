@@ -5,7 +5,9 @@ import { MongooseModule } from "@nestjs/mongoose";
 import { ConfigModule, ConfigService } from "@nestjs/config";
 
 import { TaskController } from "./presentation/controllers/task.controller";
+import { HealthController } from "./presentation/controllers/health.controller";
 import { TaskCommentController } from "./presentation/controllers/task-comment.controller";
+import { TaskHealthService } from "./health/task-health.service";
 import { TaskEventController } from "./presentation/controllers/internal/task-event-internal.controller";
 import { UserEventController } from "./presentation/controllers/internal/user-event-internal.controller";
 
@@ -28,7 +30,20 @@ import { CreateUserReplicaHandler } from "./application/usecases/create-user-rep
 
 // Services
 import { AzureBlobService } from "./infrastructure/services/azure-blob.service";
+import { WORKSPACE_CLIENT_TOKEN } from "./application/ports/IWorkspaceClient";
+import { WorkspaceHttpClient } from "./infrastructure/clients/workspace-http.client";
 import { WorkspaceMockService } from "./infrastructure/services/workspace.mock.service";
+import { TaskOutboxService } from "./infrastructure/outbox/task-outbox.service";
+import { TaskOutboxProcessor } from "./infrastructure/outbox/task-outbox.processor";
+import {
+  TaskOutboxEvent,
+  TaskOutboxEventSchema,
+} from "./infrastructure/outbox/task-outbox.schema";
+import { IdempotencyService } from "./infrastructure/idempotency/idempotency.service";
+import {
+  IdempotencyKeyRecord,
+  IdempotencyKeySchema,
+} from "./infrastructure/idempotency/idempotency-key.schema";
 
 // Guards
 import { WorkspaceValidationGuard } from "./presentation/guards/workspace-validation.guard";
@@ -55,6 +70,7 @@ import { UserReplicaRepository } from "./infrastructure/repositories/mongo-user-
 
 import { RabbitMqModule } from "./infrastructure/messaging/rabbitmq/rabbitmq.module";
 import { ConfigurationModule } from "./configuration/configuration.module";
+import { MetricsModule } from "./metrics/metrics.module";
 
 const Handlers = [
   CreateTaskHandler,
@@ -81,6 +97,7 @@ const Handlers = [
     }),
 
     ConfigurationModule,
+    MetricsModule,
     RabbitMqModule,
     CqrsModule,
 
@@ -95,10 +112,13 @@ const Handlers = [
     MongooseModule.forFeature([
       { name: TaskPersistence.name, schema: TaskSchema },
       { name: TaskComment.name, schema: TaskCommentSchema },
-      { name: UserReplica.name, schema: UserReplicaSchema }, // 👈 Đăng ký bảng UserReplica vào Mongoose
+      { name: UserReplica.name, schema: UserReplicaSchema },
+      { name: TaskOutboxEvent.name, schema: TaskOutboxEventSchema },
+      { name: IdempotencyKeyRecord.name, schema: IdempotencyKeySchema },
     ]),
   ],
   controllers: [
+    HealthController,
     TaskController,
     TaskCommentController,
     TaskEventController,
@@ -106,9 +126,29 @@ const Handlers = [
   ],
   providers: [
     ...Handlers,
+    TaskHealthService,
     AzureBlobService,
     WorkspaceMockService,
+    WorkspaceHttpClient,
+    TaskOutboxService,
+    TaskOutboxProcessor,
+    IdempotencyService,
     WorkspaceValidationGuard,
+    {
+      provide: WORKSPACE_CLIENT_TOKEN,
+      useFactory: (
+        configService: ConfigService,
+        mockClient: WorkspaceMockService,
+        httpClient: WorkspaceHttpClient,
+      ) => {
+        if (configService.get<string>("WORKSPACE_CLIENT_MODE") === "http") {
+          return httpClient;
+        }
+
+        return mockClient;
+      },
+      inject: [ConfigService, WorkspaceMockService, WorkspaceHttpClient],
+    },
     {
       provide: ITaskRepository,
       useClass: MongoTaskRepository,

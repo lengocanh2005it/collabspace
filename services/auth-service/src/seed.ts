@@ -393,7 +393,7 @@ async function main(): Promise<void> {
       SEED_USERS.map((user) => ({
         email: user.email,
         name: user.fullName,
-        password: user.password,
+        password: '***',
         roles: user.roleNames.join(','),
       })),
     );

@@ -14,6 +14,7 @@ Read these files as needed:
 - `README.md`
 - `docs/mvp-demo-scope.md`
 - `.claude/docs/project-architecture.md`
+- `.claude/docs/service-architecture.md` (per-service folder layout and patterns)
 - `.claude/docs/service-contracts.md`
 - `.claude/docs/mvp-roadmap.md`
 
@@ -28,8 +29,9 @@ Read these files as needed:
    - infrastructure/observability/CI
 2. Map the request to the owning service.
 3. Check whether the target service is implemented or still scaffold-level.
-4. Read the target service's README, `package.json`, `src/app.module.ts`, controllers, services/use cases, entities, repositories, migrations, and tests.
-5. Summarize the current state before proposing cross-service work.
+4. Read `services/<service>/CLAUDE.md` and `.claude/docs/service-architecture.md` for that service's layering rules.
+5. Read the target service's `src/app.module.ts`, controllers, use cases/handlers, entities, repositories, migrations, and tests.
+6. Summarize the current state before proposing cross-service work.
 
 ## Service Ownership
 

@@ -5,8 +5,12 @@ import { AppModule } from "./app.module";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import { MicroserviceOptions, Transport } from "@nestjs/microservices";
 import { ConfigurationService } from "./configuration/configuration.service"; // Import service của bạn
+import { MetricsService } from "./metrics/metrics.service";
+import { registerMetricsMiddleware } from "./metrics/register-metrics.middleware";
+import { bootstrapTracing } from "./observability/tracing";
 
 async function bootstrap() {
+  bootstrapTracing("task-service");
   const app = await NestFactory.create(AppModule);
 
   // --- PHẦN MỚI: CẤU HÌNH MICROSERVICE ---
@@ -49,6 +53,7 @@ async function bootstrap() {
   });
 
   app.setGlobalPrefix("api");
+  registerMetricsMiddleware(app, app.get(MetricsService));
 
   const config = new DocumentBuilder()
     .setTitle("CollabSpace - Task Service API")

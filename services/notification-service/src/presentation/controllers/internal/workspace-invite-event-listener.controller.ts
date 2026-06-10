@@ -21,6 +21,10 @@ export class WorkspaceInviteEventListenerController {
     @Ctx() context: RmqContext,
   ) {
     try {
+      const eventId =
+        data.eventId ??
+        `workspace_invited:${data.workspaceId}:${data.invitedUserId}:${data.inviteEmail ?? "unknown"}`;
+
       await this.commandBus.execute(
         new CreateNotificationCommand(
           data.invitedUserId,
@@ -37,6 +41,7 @@ export class WorkspaceInviteEventListenerController {
             role: data.role,
             inviteEmail: data.inviteEmail,
           },
+          eventId,
         ),
       );
 

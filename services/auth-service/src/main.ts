@@ -6,10 +6,15 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { DatabaseService } from '@/modules/database/database.service';
 import { AppModule } from './app.module';
 import { AuthHealthService } from './health/auth-health.service';
+import { MetricsService } from './metrics/metrics.service';
+import { registerMetricsMiddleware } from './metrics/register-metrics.middleware';
+import { bootstrapTracing } from './observability/tracing';
 
 async function bootstrap() {
+  bootstrapTracing('auth-service');
   const app = await NestFactory.create(AppModule);
   app.setGlobalPrefix('api/v1');
+  registerMetricsMiddleware(app, app.get(MetricsService));
 
   const swaggerConfig = new DocumentBuilder()
     .setTitle('Auth Service API')

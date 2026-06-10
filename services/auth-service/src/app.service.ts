@@ -49,6 +49,7 @@ type EmailVerificationOtpDispatchResult = {
 type ResolvedUserProfileIdentity = {
   fullName?: string;
   username?: string;
+  profileStatus?: 'available' | 'unavailable';
 };
 
 @Injectable()
@@ -68,6 +69,7 @@ export class AuthService {
     AuthUser & {
       fullName?: string;
       username?: string;
+      profileStatus?: 'available' | 'unavailable';
       workspaceId?: string | null;
     }
   > {
@@ -79,6 +81,7 @@ export class AuthService {
       ...user,
       fullName: profileIdentity.fullName,
       username: profileIdentity.username,
+      profileStatus: profileIdentity.profileStatus ?? 'available',
       workspaceId:
         this.readFirstString(
           payload.workspaceId,
@@ -132,11 +135,20 @@ export class AuthService {
   }
 
   async register(input: RegisterInput): Promise<RegisterPendingResult> {
-    const user = await this.registerOrRecoverPendingUser(input);
-    await this.userProfilesGrpcService.createPendingProfile({
-      fullName: input.fullName,
-      userId: user.userId,
-    });
+    const { user, newlyCreated } = await this.registerOrRecoverPendingUser(input);
+
+    try {
+      await this.userProfilesGrpcService.createPendingProfile({
+        fullName: input.fullName,
+        userId: user.userId,
+      });
+    } catch (error) {
+      if (newlyCreated) {
+        await this.identityService.rollbackNewRegistration(user.userId);
+      }
+
+      throw error;
+    }
 
     const result = await this.sendEmailVerificationOtp(user);
 
@@ -150,14 +162,23 @@ export class AuthService {
   async resendEmailVerificationOtp(
     input: ResendEmailVerificationOtpInput,
   ): Promise<ResendEmailVerificationOtpResult> {
-    if (!input.userId || input.userId.trim().length === 0) {
+    const email = input.email?.trim().toLowerCase();
+
+    if (!email) {
       throw new UnauthorizedException({
         code: 'EMAIL_VERIFICATION_INVALID',
-        message: 'User id is required',
+        message: 'Email is required',
       });
     }
 
-    const user = await this.identityService.getAuthUserById(input.userId);
+    const user = await this.identityService.findUserByEmail(email);
+
+    if (!user) {
+      throw new UnauthorizedException({
+        code: 'EMAIL_VERIFICATION_INVALID',
+        message: 'No pending verification found for this email',
+      });
+    }
 
     if (user.emailVerified) {
       throw new UnauthorizedException({
@@ -285,6 +306,7 @@ export class AuthService {
       emailVerified: user.emailVerified,
       fullName: profileIdentity.fullName,
       permissions: user.permissions,
+      profileStatus: profileIdentity.profileStatus ?? 'available',
       roles: user.roles,
       userId,
       role: user.role,
@@ -344,13 +366,14 @@ export class AuthService {
       return {
         fullName: profile.fullName?.trim() || undefined,
         username: profile.username?.trim() || undefined,
+        profileStatus: 'available',
       };
     } catch (error) {
       const reason = error instanceof Error ? error.message : String(error);
       this.logger.warn(
         `Unable to resolve profile identity for user ${userId}: ${reason}`,
       );
-      return {};
+      return { profileStatus: 'unavailable' };
     }
   }
 
@@ -487,9 +510,10 @@ export class AuthService {
 
   private async registerOrRecoverPendingUser(
     input: RegisterInput,
-  ): Promise<AuthUser> {
+  ): Promise<{ newlyCreated: boolean; user: AuthUser }> {
     try {
-      return await this.identityService.register(input);
+      const user = await this.identityService.register(input);
+      return { newlyCreated: true, user };
     } catch (error) {
       if (!this.isUserAlreadyExistsConflict(error)) {
         throw error;
@@ -505,7 +529,7 @@ export class AuthService {
         `Recovered pending registration for ${existingUser.userId} via duplicate register request`,
       );
 
-      return existingUser;
+      return { newlyCreated: false, user: existingUser };
     }
   }
 

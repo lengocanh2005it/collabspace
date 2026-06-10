@@ -34,4 +34,14 @@ pnpm run seed
 - Calls `user-service` gRPC `CreatePendingProfile` on register.
 - Hydrates profile via `GetProfile` for `/me` and verify flows.
 
-Deep docs: `@../../.claude/docs/coding-conventions.md`, `@../../.claude/docs/service-contracts.md`
+## Where to add code
+
+| Task | Path |
+|------|------|
+| HTTP route | `app.controller.ts` |
+| Auth flow | `app.service.ts` + `modules/*` |
+| Feature logic | `modules/<feature>/*.service.ts` |
+| TypeORM entity | `modules/<feature>/entities/` |
+| Config | `configuration/` |
+
+Deep docs: `@../../.claude/docs/service-architecture.md` (auth section), `@../../.claude/docs/coding-conventions.md`, `@../../.claude/docs/service-contracts.md`

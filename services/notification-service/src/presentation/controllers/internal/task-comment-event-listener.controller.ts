@@ -33,6 +33,10 @@ export class CommentEventListenerController {
       // nên ở đây cứ nhận được là LƯU & GỬI thôi.
 
       // Truyền đúng chuẩn 8 tham số vào Command
+      const eventId =
+        data.eventId ??
+        `comment_created:${data.commentId}:${data.recipientId}`;
+
       const command = new CreateNotificationCommand(
         data.recipientId, // 1. recipientId (Người nhận)
         data.actorId, // 2. actorId (Người comment)
@@ -49,6 +53,7 @@ export class CommentEventListenerController {
           commentId: data.commentId,
           timestamp: data.createdAt,
         },
+        eventId,
       );
 
       // Ném cho Handler xử lý lưu vào DB

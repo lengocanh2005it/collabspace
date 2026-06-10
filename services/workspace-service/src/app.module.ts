@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 import { DatabaseModule } from './infrastructure/database/database.module';
+import { IdempotencyService } from './infrastructure/idempotency/idempotency.service';
+import { OutboxModule } from './infrastructure/outbox/outbox.module';
 import { RabbitMqModule } from './infrastructure/messaging/rabbitmq.module';
 import { WorkspaceController } from './presentation/http/workspace.controller';
 import { HealthController } from './presentation/http/health.controller';
@@ -17,9 +19,11 @@ import { DeleteProjectUseCase } from './application/use-cases/project/delete-pro
 import { InviteMemberUseCase } from './application/use-cases/invitation/invite-member.use-case';
 import { AcceptInvitationUseCase } from './application/use-cases/invitation/accept-invitation.use-case';
 import { RejectInvitationUseCase } from './application/use-cases/invitation/reject-invitation.use-case';
+import { WorkspaceHealthService } from './health/workspace-health.service';
+import { MetricsModule } from './metrics/metrics.module';
 
 @Module({
-  imports: [DatabaseModule, RabbitMqModule],
+  imports: [DatabaseModule, MetricsModule, OutboxModule, RabbitMqModule],
   controllers: [
     HealthController,
     WorkspaceController,
@@ -39,6 +43,8 @@ import { RejectInvitationUseCase } from './application/use-cases/invitation/reje
     InviteMemberUseCase,
     AcceptInvitationUseCase,
     RejectInvitationUseCase,
+    WorkspaceHealthService,
+    IdempotencyService,
   ],
 })
 export class AppModule {}

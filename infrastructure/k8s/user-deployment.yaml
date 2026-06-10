@@ -103,7 +103,7 @@ spec:
               cpu: "250m"
           readinessProbe:
             httpGet:
-              path: /api/v1/users/health
+              path: /api/v1/users/health/ready
               port: 3000
             initialDelaySeconds: 10
             periodSeconds: 5
@@ -112,7 +112,7 @@ spec:
             failureThreshold: 3
           livenessProbe:
             httpGet:
-              path: /api/v1/users/health
+              path: /api/v1/users/health/live
               port: 3000
             initialDelaySeconds: 30
             periodSeconds: 10

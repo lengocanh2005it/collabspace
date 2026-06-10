@@ -17,6 +17,7 @@ import type {
 } from '@/common/types/identity.type';
 import type { Request, Response } from 'express';
 import { AuthHealthService } from './health/auth-health.service';
+import { MetricsService } from './metrics/metrics.service';
 import { AuthService } from './app.service';
 
 @Controller('auth')
@@ -24,6 +25,7 @@ export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly authHealthService: AuthHealthService,
+    private readonly metricsService: MetricsService,
   ) {}
 
   @Get('health')
@@ -44,6 +46,12 @@ export class AuthController {
     const report = await this.authHealthService.getReadiness();
     response.status(report.ready ? 200 : 503);
     return report;
+  }
+
+  @Get('metrics')
+  async getMetrics(@Res() response: Response) {
+    response.set('Content-Type', this.metricsService.contentType);
+    response.send(await this.metricsService.getMetrics());
   }
 
   @Post('login')
@@ -149,6 +157,7 @@ export class AuthController {
       emailVerified: identity.emailVerified,
       fullName: identity.fullName ?? null,
       permissions: identity.permissions,
+      profileStatus: identity.profileStatus ?? 'available',
       role: identity.role ?? null,
       roles: identity.roles,
       username: identity.username ?? null,

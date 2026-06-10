@@ -1,6 +1,7 @@
 // src/application/usecases/assign-task.handler.ts
 import { CommandHandler, ICommandHandler } from "@nestjs/cqrs";
 import { Inject } from "@nestjs/common";
+import { randomUUID } from "crypto";
 import { AssignTaskCommand } from "../commands/assign-task.command";
 import { ITaskRepository as ITaskRepositoryToken } from "../ports/ITaskRepository";
 import type { ITaskRepository } from "../ports/ITaskRepository";
@@ -12,7 +13,7 @@ import { TaskId } from "../../domain/value-objects/TaskId";
 import { UserSnapshot } from "../../domain/value-objects/UserSnapshot";
 import { EntityNotFoundException } from "../../domain/exceptions/EntityNotFoundException";
 import { BusinessRuleException } from "../../domain/exceptions/BusinessRuleException";
-import { RabbitMqEventsService } from "../../infrastructure/messaging/rabbitmq/rabbitmq-events.service";
+import { TaskOutboxService } from "../../infrastructure/outbox/task-outbox.service";
 
 @CommandHandler(AssignTaskCommand)
 export class AssignTaskHandler implements ICommandHandler<
@@ -24,7 +25,7 @@ export class AssignTaskHandler implements ICommandHandler<
     private readonly taskRepository: ITaskRepository,
     @Inject(USER_REPLICA_REPOSITORY_TOKEN)
     private readonly userReplicaRepo: IUserReplicaRepository,
-    private readonly rabbitMqEvents: RabbitMqEventsService,
+    private readonly taskOutboxService: TaskOutboxService,
   ) {}
 
   async execute(command: AssignTaskCommand): Promise<void> {
@@ -88,22 +89,20 @@ export class AssignTaskHandler implements ICommandHandler<
 
     // 5. Bắn sự kiện sang RabbitMQ
     if (shouldNotify && assigneeSnapshot) {
-      try {
-        await this.rabbitMqEvents.publishTaskAssigned({
-          taskId: command.taskId,
-          taskTitle: task.getTitle(),
-          recipientId: assigneeSnapshot.getUserId(),
+      await this.taskOutboxService.enqueueTaskAssigned({
+        eventId: randomUUID(),
+        occurredAt: new Date().toISOString(),
+        taskId: command.taskId,
+        taskTitle: task.getTitle(),
+        recipientId: assigneeSnapshot.getUserId(),
 
-          actorId: assignerSnapshot.getUserId(),
-          actorName: assignerSnapshot.getDisplayName(),
-          actorAvatarUrl: assignerSnapshot.getAvatarUrl() || undefined,
+        actorId: assignerSnapshot.getUserId(),
+        actorName: assignerSnapshot.getDisplayName(),
+        actorAvatarUrl: assignerSnapshot.getAvatarUrl() || undefined,
 
-          assignedAt: new Date().toISOString(),
-          workspaceId: task.getWorkspaceId(),
-        });
-      } catch (error) {
-        console.error("RabbitMQ Publish Error:", error);
-      }
+        assignedAt: new Date().toISOString(),
+        workspaceId: task.getWorkspaceId(),
+      });
     }
   }
 }

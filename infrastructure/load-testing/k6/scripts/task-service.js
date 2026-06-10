@@ -6,17 +6,12 @@ export let options = {
   duration: "30s",
 };
 
-const BASE_URL = __ENV.BASE_URL || "http://localhost";
+const BASE_URL = __ENV.BASE_URL || "http://localhost:3003/api";
 
 export default function () {
-  group("Task Service Health", function () {
-    let res = http.get(`${BASE_URL}/tasks/health`);
-    check(res, { "health status 200": (r) => r.status === 200 });
-  });
-
-  group("List Tasks", function () {
-    let res = http.get(`${BASE_URL}/tasks`, {
-      headers: { Authorization: `Bearer ${__ENV.TEST_TOKEN || ''}` },
+  group("Task Service List", function () {
+    let res = http.get(`${BASE_URL}/v1/tasks`, {
+      headers: { Authorization: `Bearer ${__ENV.TEST_TOKEN || ""}` },
     });
     check(res, {
       "list status 200 or 401": (r) => r.status === 200 || r.status === 401,

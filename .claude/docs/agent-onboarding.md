@@ -22,8 +22,11 @@ CLAUDE.md                    # Loaded mỗi session — giữ ngắn (<200 dòng
 ├── skills/                  # Workflows tái sử dụng (/skill-name)
 └── docs/                    # Reference docs (đọc khi cần)
 services/
-├── auth-service/CLAUDE.md     # Context khi làm trong service này
-└── user-service/CLAUDE.md
+├── auth-service/CLAUDE.md
+├── user-service/CLAUDE.md
+├── workspace-service/CLAUDE.md
+├── task-service/CLAUDE.md
+└── notification-service/CLAUDE.md
 ```
 
 ## Service ownership
@@ -32,9 +35,9 @@ services/
 |--------|---------|------|--------|
 | Auth, JWT, OTP, sessions | auth-service | `services/auth-service` | Done |
 | Profiles, usernames, search | user-service | `services/user-service` | Done |
-| Workspaces, invites, roles | workspace-service | `services/workspace-service` | Pending |
-| Projects, tasks, comments | task-service | `services/task-service` | Pending |
-| Notifications, events | notification-service | `services/notification-service` | Pending |
+| Workspaces, invites, roles | workspace-service | `services/workspace-service` | Partial |
+| Projects, tasks, comments | task-service | `services/task-service` | Partial |
+| Notifications, events | notification-service | `services/notification-service` | Partial |
 | Routing | api-gateway | `api-gateway` | Config |
 | Docker, k8s, monitoring | infrastructure | `infrastructure` | Partial |
 
@@ -43,6 +46,7 @@ services/
 | Task | Read first |
 |------|------------|
 | Architecture, topology | `.claude/docs/project-architecture.md` |
+| **Kiến trúc từng service (folder, pattern)** | `.claude/docs/service-architecture.md` |
 | Resilience, failure handling | `.claude/docs/resilience.md` (+ `docs/resilience-overview.md` tiếng Việt) |
 | HTTP/gRPC/events | `.claude/docs/service-contracts.md` |
 | Build, test, Docker, seed | `.claude/docs/development-workflows.md` |
@@ -72,7 +76,7 @@ Invoke explicitly: *"Use the nest-reviewer agent to review my changes."*
 ## Working rules
 
 - **Scope**: Giữ thay đổi trong service sở hữu trừ khi task yêu cầu integration.
-- **Patterns**: Đọc code lân cận trước khi thêm abstraction mới.
+- **Patterns**: Đọc `.claude/docs/service-architecture.md` và code lân cận; **không** copy kiến trúc service khác.
 - **Secrets**: Không commit `.env`; dùng `.env.example`.
 - **Ports**: workspace-service chạy `8080` trong container, không phải `3000`.
 - **Package manager**: `pnpm` từ thư mục service; không có root `package.json`.

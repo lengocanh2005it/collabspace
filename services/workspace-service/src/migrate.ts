@@ -3,6 +3,8 @@ import { WorkspaceOrmEntity } from './infrastructure/database/entities/workspace
 import { WorkspaceMemberOrmEntity } from './infrastructure/database/entities/workspace-member.orm-entity';
 import { ProjectOrmEntity } from './infrastructure/database/entities/project.orm-entity';
 import { InvitationOrmEntity } from './infrastructure/database/entities/invitation.orm-entity';
+import { WorkspaceOutboxEventEntity } from './infrastructure/outbox/entities/workspace-outbox-event.entity';
+import { IdempotencyRecordOrmEntity } from './infrastructure/idempotency/entities/idempotency-record.orm-entity';
 
 const dataSource = new DataSource({
   type: 'postgres',
@@ -15,6 +17,8 @@ const dataSource = new DataSource({
     WorkspaceMemberOrmEntity,
     ProjectOrmEntity,
     InvitationOrmEntity,
+    WorkspaceOutboxEventEntity,
+    IdempotencyRecordOrmEntity,
   ],
   synchronize: process.env.DATABASE_SYNCHRONIZE === 'true',
 });

@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import {
   UpdateUserProfileInput,
   USER_PROFILE_REPOSITORY,
@@ -12,6 +12,8 @@ import { RabbitMqEventsService } from '../../infrastructure/messaging/rabbitmq/r
 
 @Injectable()
 export class UpdateUserProfileUseCase {
+  private readonly logger = new Logger(UpdateUserProfileUseCase.name);
+
   constructor(
     @Inject(USER_PROFILE_REPOSITORY)
     private readonly userProfileRepository: UserProfileRepository,
@@ -22,19 +24,25 @@ export class UpdateUserProfileUseCase {
     userId: string,
     input: UpdateUserProfileInput,
   ): Promise<UserProfileResponseDto> {
-    const updatedProfile = await this.userProfileRepository.updateProfile(userId, input);
-try {
+    const updatedProfile = await this.userProfileRepository.updateProfile(
+      userId,
+      input,
+    );
+
+    try {
       await this.rabbitMqEvents.publishUserProfileUpdated({
-        userId: userId,
+        userId,
         fullName: updatedProfile.fullName,
         displayName: updatedProfile.displayName,
-        avatarUrl: updatedProfile.coverUrl || null,
+        avatarUrl: updatedProfile.avatarUrl,
       });
-      
-        console.log('RabbitMQ Published');
     } catch (error) {
-      console.error('RabbitMQ Publish Error:', error);
+      this.logger.warn(
+        `Failed to publish profile updated event for ${userId}`,
+        error instanceof Error ? error.stack : undefined,
+      );
     }
+
     return toUserProfileResponseDto(updatedProfile);
   }
 }

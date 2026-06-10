@@ -18,12 +18,19 @@ import { AuthModule } from './integrations/auth/auth.module';
 import { InMemoryUserProfileRepository } from './infrastructure/repositories/in-memory-user-profile.repository';
 import { TypeOrmUserProfileRepository } from './infrastructure/repositories/typeorm-user-profile.repository';
 import { UserHealthService } from './health/user-health.service';
+import { MetricsModule } from './metrics/metrics.module';
 import { UsersController } from './presentation/http/users.controller';
 import { UserProfilesGrpcController } from './presentation/grpc/user-profiles.grpc.controller';
 import { AuthEventsController } from './presentation/rabbitmq/auth-events.controller';
 
 @Module({
-  imports: [ConfigurationModule, AuthModule, DatabaseModule, RabbitMqModule],
+  imports: [
+    ConfigurationModule,
+    MetricsModule,
+    AuthModule,
+    DatabaseModule,
+    RabbitMqModule,
+  ],
   controllers: [UsersController, UserProfilesGrpcController, AuthEventsController],
   providers: [
     BulkGetUserProfilesUseCase,

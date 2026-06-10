@@ -1,10 +1,11 @@
-import { Injectable, ForbiddenException, Inject } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import * as amqp from 'amqplib';
+import { Injectable, ForbiddenException } from '@nestjs/common';
+import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
+import { randomUUID } from 'crypto';
+import { DataSource, Repository } from 'typeorm';
 import { InvitationOrmEntity } from '../../../infrastructure/database/entities/invitation.orm-entity';
 import { WorkspaceMemberOrmEntity } from '../../../infrastructure/database/entities/workspace-member.orm-entity';
 import { WorkspaceOrmEntity } from '../../../infrastructure/database/entities/workspace.orm-entity';
+import { WorkspaceOutboxService } from '../../../infrastructure/outbox/workspace-outbox.service';
 import { InviteMemberDto } from '../../dto/invite-member.dto';
 
 @Injectable()
@@ -16,7 +17,9 @@ export class InviteMemberUseCase {
     private readonly memberRepo: Repository<WorkspaceMemberOrmEntity>,
     @InjectRepository(WorkspaceOrmEntity)
     private readonly workspaceRepo: Repository<WorkspaceOrmEntity>,
-    @Inject('RABBITMQ_CHANNEL') private readonly rabbitChannel: amqp.Channel,
+    @InjectDataSource()
+    private readonly dataSource: DataSource,
+    private readonly workspaceOutboxService: WorkspaceOutboxService,
   ) {}
 
   async execute(userId: string, workspaceId: string, dto: InviteMemberDto) {
@@ -32,32 +35,30 @@ export class InviteMemberUseCase {
       where: { id: workspaceId },
     });
 
-    // In a real app we'd look up the user by email via user-service here.
-    // For now we just create the pending invitation.
-    const invitation = this.invitationRepo.create({
-      workspace_id: workspaceId,
-      inviter_id: userId,
-      invitee_email: dto.email,
-      expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
-    });
+    return this.dataSource.transaction(async (manager) => {
+      const invitation = manager.create(InvitationOrmEntity, {
+        workspace_id: workspaceId,
+        inviter_id: userId,
+        invitee_email: dto.email,
+        expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      });
 
-    const saved = await this.invitationRepo.save(invitation);
+      const saved = await manager.save(invitation);
 
-    // Publish event
-    this.rabbitChannel.publish(
-      'collabspace_exchange',
-      'workspace.invited',
-      Buffer.from(
-        JSON.stringify({
+      await this.workspaceOutboxService.enqueueWorkspaceInvited(
+        {
+          eventId: randomUUID(),
+          occurredAt: new Date().toISOString(),
           invitationId: saved.id,
           workspaceId: saved.workspace_id,
           workspaceName: workspace?.name,
-          inviterId: saved.inviter_id,
-          inviteeEmail: saved.invitee_email,
-        }),
-      ),
-    );
+          invitedById: saved.inviter_id,
+          inviteEmail: saved.invitee_email,
+        },
+        manager,
+      );
 
-    return saved;
+      return saved;
+    });
   }
 }

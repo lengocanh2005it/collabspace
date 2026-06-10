@@ -12,6 +12,7 @@ This repository uses **Claude Code**-style agent documentation. `CLAUDE.md` is t
 | Doc | Purpose |
 |-----|---------|
 | `.claude/docs/project-architecture.md` | Services, topology, completion status |
+| `.claude/docs/service-architecture.md` | **Per-service folder layout, patterns, where to add code** |
 | `.claude/docs/resilience.md` | Design for failure, degradation matrix, error policy |
 | `docs/resilience-overview.md` | Human-facing resilience summary (Vietnamese) |
 | `.claude/docs/service-contracts.md` | HTTP, gRPC, events, auth headers |
@@ -30,3 +31,8 @@ This repository uses **Claude Code**-style agent documentation. `CLAUDE.md` is t
 
 - `services/auth-service/CLAUDE.md`
 - `services/user-service/CLAUDE.md`
+- `services/workspace-service/CLAUDE.md`
+- `services/task-service/CLAUDE.md`
+- `services/notification-service/CLAUDE.md`
+
+Path rules (auto-load when editing): `.claude/rules/<service>.md`

@@ -29,12 +29,14 @@ import { UpdateCurrentUserPreferencesDto } from './dto/update-current-user-prefe
 import { UpdateCurrentUserProfileDto } from './dto/update-current-user-profile.dto';
 import { UpdateCurrentUserStatusDto } from './dto/update-current-user-status.dto';
 import { UserHealthService } from '../../health/user-health.service';
+import { MetricsService } from '../../metrics/metrics.service';
 
 @Controller('users')
 export class UsersController {
   constructor(
     private readonly authGrpcService: AuthGrpcService,
     private readonly userHealthService: UserHealthService,
+    private readonly metricsService: MetricsService,
     private readonly getUserProfileUseCase: GetUserProfileUseCase,
     private readonly getUserSummaryUseCase: GetUserSummaryUseCase,
     private readonly listUserSummariesUseCase: ListUserSummariesUseCase,
@@ -63,6 +65,12 @@ export class UsersController {
     const report = await this.userHealthService.getReadiness();
     response.status(report.ready ? 200 : 503);
     return report;
+  }
+
+  @Get('metrics')
+  async getMetrics(@Res() response: Response) {
+    response.set('Content-Type', this.metricsService.contentType);
+    response.send(await this.metricsService.getMetrics());
   }
 
   @Get('me')

@@ -97,7 +97,7 @@ export default () => ({
     ),
   },
   grpc: {
-    enabled: toBoolean(process.env.GRPC_ENABLED, false),
+    enabled: toBoolean(process.env.GRPC_ENABLED, true),
     url: process.env.GRPC_URL ?? '0.0.0.0:50051',
   },
   rabbitmq: {

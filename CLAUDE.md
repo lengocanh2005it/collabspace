@@ -13,6 +13,7 @@ Full onboarding: `.claude/docs/agent-onboarding.md`
 Read before broad changes:
 
 - Architecture: `.claude/docs/project-architecture.md`
+- **Per-service folder layout & patterns**: `.claude/docs/service-architecture.md`
 - Resilience / design for failure: `.claude/docs/resilience.md`
 - Service contracts: `.claude/docs/service-contracts.md`
 - Workflows: `.claude/docs/development-workflows.md`
@@ -28,9 +29,9 @@ Subagents in `.claude/agents/`: `nest-reviewer`, `mvp-implementer`, `contract-gu
 
 - `services/auth-service`: NestJS + TypeORM authentication and identity service.
 - `services/user-service`: NestJS + TypeORM user profile/directory service.
-- `services/workspace-service`: planned Java/Kotlin + Flyway workspace service; currently mostly infrastructure shell.
-- `services/task-service`: planned Node.js + MongoDB task/project/comment service; currently mostly infrastructure shell.
-- `services/notification-service`: planned Node.js + Redis/Mongo notification service; currently mostly infrastructure shell.
+- `services/workspace-service`: NestJS + TypeORM workspace/project/invite service (port 8080).
+- `services/task-service`: NestJS + CQRS + MongoDB tasks/comments service.
+- `services/notification-service`: NestJS + CQRS + MongoDB notification consumer/list API.
 - `infrastructure/docker`: Docker Compose stack.
 - `infrastructure/k8s`: Kubernetes manifests.
 - `api-gateway`: Traefik static/dynamic config.
@@ -54,9 +55,12 @@ Subagents in `.claude/agents/`: `nest-reviewer`, `mvp-implementer`, `contract-gu
 
 - Start by reading nearby code, DTOs, entities, repositories, migrations, and tests before editing.
 - Keep changes service-local unless the task explicitly crosses service boundaries.
-- Preserve existing module style:
-  - `auth-service`: feature modules under `src/modules/*`, configuration wrapper, TypeORM entities, Redis, gRPC, outbox.
-  - `user-service`: domain/application/infrastructure/presentation layering.
+- Preserve existing module style (see `.claude/docs/service-architecture.md`):
+  - `auth-service`: feature modules under `src/modules/*`, `AppService` orchestration.
+  - `user-service`: presentation → application/use-cases → domain ports → infrastructure.
+  - `workspace-service`: presentation → use-cases → direct TypeORM repositories.
+  - `task-service` / `notification-service`: CQRS handlers, domain entities, Mongo repositories.
+- Service-local cheat sheets: `services/<service>/CLAUDE.md`.
 - Add focused tests for new use cases, service methods, repository behavior, gRPC integrations, and controller behavior when the change has user-visible behavior.
 - Avoid broad rewrites, dependency churn, or formatting unrelated files.
 - Do not invent production secrets. Use `.env.example` patterns and document required variables.

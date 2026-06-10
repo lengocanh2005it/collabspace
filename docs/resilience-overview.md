@@ -21,14 +21,15 @@ Microservices CollabSpace phụ thuộc lẫn nhau (gRPC, RabbitMQ, DB). **Desig
 - gRPC timeout auth ↔ user
 - Traefik retry + circuit breaker
 - Readiness auth/user với dependency checks
+- **Phase 1:** saga register (rollback auth user khi gRPC fail), dedupe notification theo `eventId`, health live/ready cho workspace/task/notification, Docker Compose healthchecks
 
 ## Việc tiếp theo (roadmap)
 
 | Phase | Nội dung |
 |-------|----------|
-| 0 | Tài liệu chính sách — **đang dùng** |
-| 1 | Saga register, dedupe notification, health đồng nhất |
-| 2 | Outbox cho event workspace/task, idempotency key HTTP |
+| 0 | Tài liệu chính sách — **xong** |
+| 1 | Saga register, dedupe notification, health đồng nhất — **xong** |
+| 2 | Outbox workspace/task events, `Idempotency-Key`, workspace HTTP client — **xong** |
 | 3 | Metrics, tracing, failure drills, runbooks |
 
 ## Ma trận nhanh (mục tiêu)

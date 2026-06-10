@@ -39,6 +39,7 @@ import { GetTasksQuery } from "../../application/queries/get-tasks.query";
 import type { UploadAttachmentResponse } from "../../application/usecases/upload-attachment.handler";
 import { created, ok } from "../common/response/api-response.wrapper";
 import { WorkspaceValidationGuard } from "../guards/workspace-validation.guard";
+import { IdempotencyService } from "../../infrastructure/idempotency/idempotency.service";
 import { getHeaderValue } from "../http/request-context";
 import type { AppRequest } from "../http/request-context";
 
@@ -61,6 +62,7 @@ export class TaskController {
   constructor(
     private readonly commandBus: CommandBus,
     private readonly queryBus: QueryBus,
+    private readonly idempotencyService: IdempotencyService,
   ) {}
 
   @Post()
@@ -69,6 +71,22 @@ export class TaskController {
     const currentUserId = req.user.id;
     const currentUserName = req.user.name;
     const requestId = getHeaderValue(req.headers, "x-request-id");
+    const idempotencyKey = getHeaderValue(req.headers, "idempotency-key");
+    const route = "POST /v1/tasks";
+
+    if (idempotencyKey) {
+      const cached = await this.idempotencyService.findCached(
+        currentUserId,
+        idempotencyKey,
+      );
+
+      if (cached) {
+        return {
+          ...cached.body,
+          meta: { requestId, idempotentReplay: true },
+        };
+      }
+    }
 
     const command = new CreateTaskCommand(
       request.title,
@@ -82,7 +100,19 @@ export class TaskController {
       command,
     );
 
-    return created(new CreateTaskResponse(taskId), requestId);
+    const response = created(new CreateTaskResponse(taskId), requestId);
+
+    if (idempotencyKey) {
+      await this.idempotencyService.store(
+        currentUserId,
+        idempotencyKey,
+        route,
+        201,
+        response as unknown as Record<string, unknown>,
+      );
+    }
+
+    return response;
   }
 
   /**
@@ -180,6 +210,22 @@ export class TaskController {
   ): Promise<any> {
     const assignerId = req.user.id;
     const requestId = getHeaderValue(req.headers, "x-request-id");
+    const idempotencyKey = getHeaderValue(req.headers, "idempotency-key");
+    const route = `PATCH /v1/tasks/${taskId}/assignee`;
+
+    if (idempotencyKey) {
+      const cached = await this.idempotencyService.findCached(
+        assignerId,
+        idempotencyKey,
+      );
+
+      if (cached) {
+        return {
+          ...cached.body,
+          meta: { requestId, idempotentReplay: true },
+        };
+      }
+    }
 
     const command = new AssignTaskCommand(
       taskId,
@@ -189,7 +235,22 @@ export class TaskController {
 
     await this.commandBus.execute(command);
 
-    return ok({ message: "Gán người phụ trách thành công" }, requestId);
+    const response = ok(
+      { message: "Gán người phụ trách thành công" },
+      requestId,
+    );
+
+    if (idempotencyKey) {
+      await this.idempotencyService.store(
+        assignerId,
+        idempotencyKey,
+        route,
+        200,
+        response as unknown as Record<string, unknown>,
+      );
+    }
+
+    return response;
   }
 
   /**

@@ -55,6 +55,7 @@ describe("WorkspaceValidationGuard", () => {
     expect(taskRepository.findByIdAsync).not.toHaveBeenCalled();
     expect(workspaceService.validateWorkspaceAsync).toHaveBeenCalledWith(
       "workspace-001",
+      "user-123",
     );
     expect(workspaceService.checkUserPermissionAsync).toHaveBeenCalledWith(
       "workspace-001",
@@ -97,6 +98,7 @@ describe("WorkspaceValidationGuard", () => {
     expect(taskRepository.findByIdAsync).toHaveBeenCalledTimes(1);
     expect(workspaceService.validateWorkspaceAsync).toHaveBeenCalledWith(
       "workspace-002",
+      "user-123",
     );
     expect(workspaceService.checkUserPermissionAsync).toHaveBeenCalledWith(
       "workspace-002",

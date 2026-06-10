@@ -26,9 +26,9 @@ Traefik API Gateway
   |
   +--> auth-service          NestJS, PostgreSQL, Redis, Graphile Worker
   +--> user-service          NestJS, PostgreSQL
-  +--> workspace-service     Java/Kotlin planned, PostgreSQL, port 8080
-  +--> task-service          Node.js planned, MongoDB
-  +--> notification-service  Node.js planned, Redis/Mongo
+  +--> workspace-service     NestJS, PostgreSQL, port 8080
+  +--> task-service          NestJS + CQRS, MongoDB
+  +--> notification-service  NestJS + CQRS, MongoDB, RabbitMQ consumer
 
 RabbitMQ sits beside services as the async event bus.
 Observability stack includes Prometheus, Grafana, ELK, and Jaeger.
@@ -121,62 +121,101 @@ Important source paths:
 
 Path: `services/workspace-service`
 
-Intended responsibility:
+Technology:
+
+- NestJS
+- TypeORM
+- PostgreSQL
+- RabbitMQ (direct channel publish from use cases)
+
+Architecture: pragmatic layered — use cases inject TypeORM repositories directly. See `.claude/docs/service-architecture.md`.
+
+Responsibilities:
 
 - Workspace CRUD.
-- Workspace membership.
+- Workspace membership listing.
 - Workspace invitation flow.
-- Workspace-level roles: `owner`, `admin`, `member`.
-- Publish invitation events for notifications.
+- Project CRUD under a workspace.
+- Publish `workspace_invited` events.
+
+Important source paths:
+
+- `src/application/use-cases/workspace|project|invitation/*`
+- `src/presentation/http/*controller.ts`
+- `src/infrastructure/database/entities/*`
+- `src/domain/events/`
 
 Important fact:
 
-- This service is expected to listen on container port `8080`.
-- Local Docker override maps host `3002` to container `8080`.
+- Container port `8080` (host `3002` in Docker override).
 
 Current status:
 
-- Infrastructure files exist.
-- MVP business implementation is pending.
+- Core workspace/project/invite flows implemented.
+- Auth via gateway `X-User-Id` (no direct auth gRPC yet).
 
 ### task-service
 
 Path: `services/task-service`
 
-Intended responsibility:
+Technology:
 
-- Project CRUD.
-- Kanban board view.
-- Task CRUD.
-- Assignment.
-- Task status transitions: `todo`, `in_progress`, `done`.
-- Priority: `low`, `medium`, `high`.
-- Due date and labels.
-- Comments and mentions.
-- Activity log.
-- Publish assignment/comment/mention events for notifications.
+- NestJS
+- CQRS (`@nestjs/cqrs`)
+- Mongoose / MongoDB
+- RabbitMQ event publisher
+
+Architecture: clean + CQRS. See `.claude/docs/service-architecture.md`.
+
+Responsibilities:
+
+- Task CRUD, assignment, status changes.
+- Comments on tasks.
+- User replica sync from user events.
+- Publish `task_assigned` and `comment_created` events.
+
+Important source paths:
+
+- `src/application/usecases/*.handler.ts`
+- `src/application/commands/`, `src/application/queries/`
+- `src/domain/entities/`
+- `src/infrastructure/persistence/`, `src/infrastructure/repositories/`
+- `src/presentation/controllers/`
 
 Current status:
 
-- Infrastructure files exist.
-- MVP business implementation is pending.
+- Task and comment flows implemented.
+- Workspace membership uses mock client (real client planned Phase 2).
 
 ### notification-service
 
 Path: `services/notification-service`
 
-Intended responsibility:
+Technology:
 
-- Consume RabbitMQ events.
-- Persist notifications.
-- List notifications for the current user.
-- Mark notifications read if implemented.
-- Realtime WebSocket is nice-to-have, not required for MVP.
+- NestJS
+- CQRS
+- Mongoose / MongoDB
+- RabbitMQ consumer
+
+Architecture: clean + CQRS, event-first. See `.claude/docs/service-architecture.md`.
+
+Responsibilities:
+
+- Consume task/workspace comment events.
+- Persist notifications with `eventId` dedupe.
+- List notifications for a user (HTTP).
+
+Important source paths:
+
+- `src/application/usecases/create-notification/`, `get-notifications/`
+- `src/presentation/controllers/internal/*-event-listener.controller.ts`
+- `src/infrastructure/database/schemas/`
 
 Current status:
 
-- Infrastructure files exist.
-- MVP business implementation is pending.
+- Event consumers and list API implemented.
+- Mark-as-read and WebSocket are optional / not required for MVP.
 
 ## Infrastructure
 
@@ -260,12 +299,17 @@ Done:
 - User profile/directory flows.
 - Auth-to-user pending profile bootstrap through gRPC.
 - Auth token verification for downstream identity.
+- Workspace/project/invite basics.
+- Task CRUD, assignment, comments, event publishing.
+- Notification consumers, dedupe, list API.
+- Health live/ready across services (Phase 1 resilience).
 - Basic infrastructure manifests.
 
-Pending:
+Pending / partial:
 
-- Workspace CRUD/membership/invites.
-- Project/board/task/comment/activity implementation.
-- Notification persistence/list API.
-- End-to-end demo wiring across all services.
+- End-to-end demo hardening and gateway wiring verification.
+- Task-service real workspace membership client.
+- Transactional outbox for workspace/task events (Phase 2).
+- Mentions, activity feed, mark-notifications-read.
+- Per-service architecture details: `.claude/docs/service-architecture.md`.
 

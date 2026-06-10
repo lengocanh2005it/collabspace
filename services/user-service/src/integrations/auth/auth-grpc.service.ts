@@ -111,7 +111,7 @@ export class AuthGrpcService implements OnModuleInit {
 
     if (!authorization) {
       throw new UnauthorizedException({
-        code: 'AUTHORIZATION_HEADER_MISSING',
+        code: 'TOKEN_MISSING',
         message: 'Authorization header is required',
       });
     }

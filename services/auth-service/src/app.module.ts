@@ -10,11 +10,13 @@ import { RedisModule } from '@/modules/redis/redis.module';
 import { AuthGrpcController } from './auth.grpc.controller';
 import { AuthController } from './app.controller';
 import { AuthHealthService } from './health/auth-health.service';
+import { MetricsModule } from './metrics/metrics.module';
 import { AuthService } from './app.service';
 
 @Module({
   imports: [
     ConfigurationModule,
+    MetricsModule,
     DatabaseModule,
     EmailsModule,
     GraphileWorkerModule,

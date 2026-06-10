@@ -1,6 +1,6 @@
 # CollabSpace Resilience & Design for Failure
 
-**Status:** Phase 0 — policy and target behavior (documentation only).  
+**Status:** Phases 0–4 implemented (policy + health, outbox, metrics, runbooks, chaos drills).  
 **Audience:** developers, agents, reviewers.  
 **Related:** `service-contracts.md`, `project-architecture.md`, `development-workflows.md`.
 
@@ -89,7 +89,7 @@ Do **not** map dependency failures to generic `500` if the cause is known.
 | **Enrichment** (profile fields on `/me`, display names) | MAY degrade (omit optional fields) ONLY if documented in the degradation matrix below. |
 | **Side effects** (events, notifications) | MUST log + metric; MUST NOT fail the primary HTTP response unless the business requires it. |
 
-**GAP (current code):** `auth-service` `resolveUserProfileIdentity()` swallows gRPC errors and returns `{}` for `/me` and verify enrichment. **Target:** keep degrade for optional display fields but expose `profileStatus: "unavailable"` in readiness; document in API or move to fail-closed for strict clients (Phase 1 decision).
+**DONE:** `auth-service` returns `profileStatus: "unavailable"` on `/auth/me` when user-service gRPC fails; optional `fullName`/`username` omitted.
 
 ### 2.5 Health endpoints
 
@@ -105,8 +105,7 @@ Do **not** map dependency failures to generic `500` if the cause is known.
 - `mode: "degraded"` → optional dependencies unhealthy; required deps still up (auth outbox uses this pattern).
 - Required vs optional checks MUST be explicit in each `*-health.service.ts`.
 
-**Implemented:** auth-service, user-service.  
-**GAP:** workspace-service, task-service, notification-service — single shallow health only; add live/ready + dependency checks in Phase 1.
+**Implemented:** auth-service, user-service, workspace-service, task-service, notification-service (`/health/live`, `/health/ready` with dependency checks).
 
 ---
 
@@ -134,11 +133,11 @@ Legend: **Current** = observed or likely today; **Target** = required after resi
 
 | API / flow | Dependency down | Current | Target |
 |------------|-----------------|---------|--------|
-| `POST /auth/register` | user-service gRPC | May leave orphan auth user | `503` + no commit, or saga + compensate **(GAP — Phase 1)** |
+| `POST /auth/register` | user-service gRPC | Compensating saga rolls back new auth user on gRPC failure | `503` + rollback **(DONE — Phase 1)** |
 | `POST /auth/register` | Redis | OTP storage fails | `503` `REDIS_UNAVAILABLE` |
 | `POST /auth/register` | Postgres | — | `503` |
 | `POST /auth/login` | Postgres / Redis | Fail | `503` / `401` as appropriate |
-| `GET /auth/me` | user-service gRPC | Returns identity without `fullName`/`username` | Degrade OK; log warn **(documented)** |
+| `GET /auth/me` | user-service gRPC | Returns identity with `profileStatus: "unavailable"`; omits `fullName`/`username` | Degrade OK **(DONE)** |
 | `GET /auth/health/ready` | user-service gRPC | `503` not ready | Keep required |
 | Email OTP send | outbox / SMTP | Outbox retries; readiness `degraded` if backlog | Keep; alert on failed outbox |
 
@@ -156,15 +155,15 @@ Legend: **Current** = observed or likely today; **Target** = required after resi
 | API / flow | Dependency down | Current | Target |
 |------------|-----------------|---------|--------|
 | Protected routes | auth (header only) | Trusts `X-User-Id` from gateway | Verify via auth gRPC on direct access **(GAP)** |
-| `POST .../invite` | RabbitMQ | Unknown / direct publish | Outbox + `503` only if invite DB write fails **(Phase 2)** |
-| `GET .../health` | Postgres | Simple `ok` | `ready` checks DB **(Phase 1)** |
+| `POST .../invite` | RabbitMQ | Transactional outbox; HTTP succeeds if DB write succeeds | Keep **(DONE — Phase 2)** |
+| `GET .../health/ready` | Postgres | `ready` checks DB ping | Keep **(DONE — Phase 1)** |
 
 ### 4.4 task-service
 
 | API / flow | Dependency down | Current | Target |
 |------------|-----------------|---------|--------|
-| Task mutations | workspace membership | `WorkspaceMockService` | Real workspace client + timeout **(GAP — Phase 1)** |
-| `TASK_ASSIGNED` publish | RabbitMQ | try/catch in handler | Outbox + idempotent consumer **(Phase 2)** |
+| Task mutations | workspace membership | HTTP client when `WORKSPACE_CLIENT_MODE=http`, else mock | Keep **(DONE — Phase 2)** |
+| `TASK_ASSIGNED` publish | RabbitMQ | Mongo outbox + processor retries | Keep **(DONE — Phase 2)** |
 | Reads | MongoDB | Fail | `503` |
 
 ### 4.5 notification-service
@@ -172,9 +171,9 @@ Legend: **Current** = observed or likely today; **Target** = required after resi
 | API / flow | Dependency down | Current | Target |
 |------------|-----------------|---------|--------|
 | Event consumers | MongoDB | nack / error path | Retry → DLQ |
-| Event consumers | duplicate `eventId` | May duplicate notifications | Dedupe **(GAP — Phase 1)** |
+| Event consumers | duplicate `eventId` | `processed_events` collection dedupes by `eventId` | Keep **(DONE — Phase 1)** |
 | `GET /notifications` | MongoDB | — | `503`; empty list only when truly empty |
-| RabbitMQ consumer | broker down | Process may start without consumer | `ready: false` **(Phase 1)** |
+| RabbitMQ consumer | broker down | `ready: false` when broker unreachable | Keep **(DONE — Phase 1)** |
 
 ### 4.6 API gateway (Traefik)
 
@@ -193,7 +192,7 @@ Legend: **Current** = observed or likely today; **Target** = required after resi
 | Event consumption | `eventId` | notification (and all consumers) | permanent dedupe record |
 | `POST /auth/verify-email` | userId + otp window | Redis | already constrained by OTP TTL |
 | `POST /auth/register` | email | DB unique constraint + pending recovery | — |
-| HTTP mutating APIs (future) | `Idempotency-Key` header | Redis or Postgres | 24h **(Phase 2)** |
+| HTTP mutating APIs | `Idempotency-Key` header | Postgres (workspace) / Mongo (task) | 24h **(DONE — Phase 2)** |
 
 ---
 
@@ -221,7 +220,7 @@ When changing resilience behavior, update:
 - `alert-rules.yml` if new failure modes need alerts
 - This file and `service-contracts.md` if error codes or degradation rules change
 
-**Runbook placeholder (Phase 3):** each alert → `docs/runbooks/<alert>.md`.
+**Runbooks:** each alert → `docs/runbooks/<alert>.md` (see `docs/runbooks/README.md`).
 
 ---
 
@@ -230,10 +229,10 @@ When changing resilience behavior, update:
 | Phase | Focus |
 |-------|--------|
 | **0** | This document + cross-links in agent docs ✅ |
-| **1** | Register saga, notification `eventId` dedupe, uniform health/ready, compose healthchecks |
-| **2** | Transactional outbox for workspace/task events, idempotency keys, workspace client in task-service |
-| **3** | Metrics, tracing, failure drill scripts, runbooks |
-| **4** | Chaos tooling, production hardening |
+| **1** | Register saga, notification `eventId` dedupe, uniform health/ready, compose healthchecks ✅ |
+| **2** | Transactional outbox for workspace/task events, idempotency keys, workspace client in task-service ✅ |
+| **3** | Metrics (`prom-client` + `/metrics`), tracing bootstrap, failure drill scripts, runbooks ✅ |
+| **4** | Chaos tooling (`infrastructure/chaos/`), production hardening checklist, K8s probe paths ✅ |
 
 ---
 

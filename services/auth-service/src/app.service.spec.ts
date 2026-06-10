@@ -7,6 +7,7 @@ import { RefreshTokensService } from '@/modules/refresh-tokens/refresh-tokens.se
 import {
   ConflictException,
   HttpException,
+  ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { AuthService } from './app.service';
@@ -53,6 +54,7 @@ describe('AuthService', () => {
     getAuthUserById: jest.fn(),
     markEmailVerified: jest.fn(),
     register: jest.fn(),
+    rollbackNewRegistration: jest.fn(),
     validateCredentials: jest.fn(),
   } as unknown as IdentityService;
   const userProfilesGrpcServiceMock = {
@@ -108,6 +110,7 @@ describe('AuthService', () => {
       emailVerified: true,
       fullName: 'Admin User',
       permissions: ['users.read'],
+      profileStatus: 'available',
       role: 'admin',
       roles: ['admin'],
       userId: 'user-1',
@@ -221,6 +224,75 @@ describe('AuthService', () => {
     );
   });
 
+  it('rolls back a newly created auth user when profile bootstrap fails', async () => {
+    jest.spyOn(identityServiceMock, 'register').mockResolvedValue({
+      email: 'new@collabspace.dev',
+      emailVerified: false,
+      isActive: true,
+      permissions: [],
+      role: 'user',
+      roles: ['user'],
+      userId: 'user-3',
+    });
+    jest
+      .spyOn(userProfilesGrpcServiceMock, 'createPendingProfile')
+      .mockRejectedValue(
+        new ServiceUnavailableException({
+          code: 'USER_SERVICE_GRPC_UNAVAILABLE',
+          message: 'User profiles gRPC client is not initialized',
+        }),
+      );
+    jest.spyOn(identityServiceMock, 'rollbackNewRegistration').mockResolvedValue();
+
+    await expect(
+      authService.register({
+        email: 'new@collabspace.dev',
+        fullName: 'New User',
+        password: 'password123',
+      }),
+    ).rejects.toBeInstanceOf(ServiceUnavailableException);
+
+    expect(identityServiceMock.rollbackNewRegistration).toHaveBeenCalledWith('user-3');
+    expect(authOutboxServiceMock.enqueueEmailVerificationOtp).not.toHaveBeenCalled();
+  });
+
+  it('does not roll back when profile bootstrap fails for recovered pending user', async () => {
+    jest.spyOn(identityServiceMock, 'register').mockRejectedValue(
+      new ConflictException({
+        code: 'USER_ALREADY_EXISTS',
+        message: 'User already exists',
+      }),
+    );
+    jest.spyOn(identityServiceMock, 'findUserByEmail').mockResolvedValue({
+      email: 'new@collabspace.dev',
+      emailVerified: false,
+      isActive: true,
+      permissions: [],
+      role: 'user',
+      roles: ['user'],
+      userId: 'user-3',
+    });
+    jest
+      .spyOn(userProfilesGrpcServiceMock, 'createPendingProfile')
+      .mockRejectedValue(
+        new ServiceUnavailableException({
+          code: 'USER_SERVICE_GRPC_UNAVAILABLE',
+          message: 'User service unavailable',
+        }),
+      );
+    jest.spyOn(identityServiceMock, 'rollbackNewRegistration').mockResolvedValue();
+
+    await expect(
+      authService.register({
+        email: 'new@collabspace.dev',
+        fullName: 'New User',
+        password: 'password123',
+      }),
+    ).rejects.toBeInstanceOf(ServiceUnavailableException);
+
+    expect(identityServiceMock.rollbackNewRegistration).not.toHaveBeenCalled();
+  });
+
   it('recovers pending registration for an existing unverified user', async () => {
     jest.spyOn(identityServiceMock, 'register').mockRejectedValue(
       new ConflictException({
@@ -258,7 +330,7 @@ describe('AuthService', () => {
   });
 
   it('resends verification otp for a pending user', async () => {
-    jest.spyOn(identityServiceMock, 'getAuthUserById').mockResolvedValue({
+    jest.spyOn(identityServiceMock, 'findUserByEmail').mockResolvedValue({
       email: 'pending@collabspace.dev',
       emailVerified: false,
       isActive: true,
@@ -277,7 +349,9 @@ describe('AuthService', () => {
       .mockResolvedValue(undefined);
 
     await expect(
-      authService.resendEmailVerificationOtp({ userId: 'user-5' }),
+      authService.resendEmailVerificationOtp({
+        email: 'pending@collabspace.dev',
+      }),
     ).resolves.toEqual({
       email: 'pending@collabspace.dev',
       emailVerified: false,
@@ -288,7 +362,7 @@ describe('AuthService', () => {
   });
 
   it('rejects resend during cooldown window', async () => {
-    jest.spyOn(identityServiceMock, 'getAuthUserById').mockResolvedValue({
+    jest.spyOn(identityServiceMock, 'findUserByEmail').mockResolvedValue({
       email: 'pending@collabspace.dev',
       emailVerified: false,
       isActive: true,
@@ -301,7 +375,9 @@ describe('AuthService', () => {
     jest.spyOn(redisServiceMock, 'ttl').mockResolvedValue(42);
 
     await expect(
-      authService.resendEmailVerificationOtp({ userId: 'user-6' }),
+      authService.resendEmailVerificationOtp({
+        email: 'pending@collabspace.dev',
+      }),
     ).rejects.toThrow(HttpException);
   });
 
@@ -395,6 +471,7 @@ describe('AuthService', () => {
       fullName: 'Admin User',
       isActive: true,
       permissions: ['users.read', 'users.write'],
+      profileStatus: 'available',
       role: 'admin',
       roles: ['admin'],
       userId: 'user-4',
@@ -429,6 +506,7 @@ describe('AuthService', () => {
       emailVerified: true,
       fullName: undefined,
       permissions: ['users.read'],
+      profileStatus: 'unavailable',
       role: 'member',
       roles: ['member'],
       userId: 'user-8',

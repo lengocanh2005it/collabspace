@@ -10,6 +10,17 @@ For dependency failures, timeouts, idempotency, and degradation behavior, see `r
 - Responses should be DTO-shaped and stable. Do not leak ORM entities directly from controllers.
 - Error responses should include a stable `code` string and a human-readable `message` where the existing service does so.
 
+## Idempotency (`Idempotency-Key` header)
+
+Optional on mutating endpoints. When present, the service stores the first successful response for 24 hours and replays it on duplicate requests with the same key and authenticated user.
+
+| Service | Endpoints | Storage |
+|---------|-----------|---------|
+| workspace-service | `POST /api/v1/workspaces`, `POST /api/v1/workspaces/:workspaceId/invite` | Postgres `idempotency_records` |
+| task-service | `POST /api/v1/tasks`, `PATCH /api/v1/tasks/:id/assignee` | Mongo `idempotency_keys` |
+
+Header: `Idempotency-Key: <opaque-string>` (scoped per `X-User-Id` / gateway identity).
+
 ## Auth Service HTTP Routes
 
 Base prefix: `/api/v1`
