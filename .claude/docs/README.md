@@ -1,19 +1,34 @@
 # Claude Code Docs For CollabSpace
 
-This directory contains detailed project context for Claude Code. Keep `CLAUDE.md` concise and place detailed, occasionally needed guidance here.
+Detailed project context for AI agents. Keep root `CLAUDE.md` concise; put long procedures in skills or here.
 
 ## Files
 
-- `project-architecture.md`: system map, service ownership, infrastructure, data stores, and communication patterns.
-- `service-contracts.md`: public HTTP routes, internal gRPC contracts, event contracts, auth headers, and integration rules.
-- `development-workflows.md`: setup, Docker Compose flows, migrations, seeding, testing, observability, and troubleshooting.
-- `coding-conventions.md`: NestJS, TypeORM, DTO, repository, error, config, migration, and test conventions.
-- `mvp-roadmap.md`: current implementation status, demo story, gap analysis, and recommended implementation order.
+| File | Purpose |
+|------|---------|
+| `agent-onboarding.md` | Agent quickstart, doc map, skills/subagents, verification checklist |
+| `project-architecture.md` | System map, service ownership, infrastructure, data stores |
+| `service-contracts.md` | HTTP routes, gRPC, events, auth headers |
+| `development-workflows.md` | Setup, Docker, migrations, seeding, testing, troubleshooting |
+| `coding-conventions.md` | NestJS, TypeORM, DTO, repository, error, test conventions |
+| `mvp-roadmap.md` | Implementation status, demo story, recommended build order |
+
+## Related config (not in this folder)
+
+| Path | Purpose |
+|------|---------|
+| `CLAUDE.md` | Loaded every session |
+| `AGENTS.md` | Cross-tool agent index |
+| `.claude/skills/` | Invocable workflows (`/skill-name`) |
+| `.claude/agents/` | Subagents (`nest-reviewer`, `mvp-implementer`, `contract-guardian`) |
+| `.claude/rules/` | Path-scoped rules for auth, user, infrastructure |
+| `.claude/settings.json` | Permissions and env defaults |
+| `.claudeignore` | Files excluded from agent context |
+| `services/*/CLAUDE.md` | Service-local context (loads when working in that directory) |
 
 ## Maintenance Rules
 
-- Update these docs when service boundaries, ports, routes, environment variables, migrations, or MVP status change.
-- Keep `CLAUDE.md` under roughly 200 lines. Move long procedures into skills or these docs.
+- Update docs when service boundaries, ports, routes, env vars, migrations, or MVP status change.
+- Keep `CLAUDE.md` under roughly 200 lines.
 - Prefer precise file paths and concrete commands over general advice.
 - If a doc conflicts with code, trust code first and update the doc.
-

@@ -6,13 +6,22 @@ CollabSpace is a workspace collaboration management platform: a mini Notion/Slac
 
 Current MVP goal: complete an end-to-end collaboration demo where users register, verify email, create workspaces, invite members, create projects/tasks, assign tasks, comment with mentions, and view notifications.
 
-Read these project docs before making broad changes:
+## Agent Docs Map
 
-- Architecture handbook: `.claude/docs/project-architecture.md`
+Full onboarding: `.claude/docs/agent-onboarding.md`
+
+Read before broad changes:
+
+- Architecture: `.claude/docs/project-architecture.md`
 - Service contracts: `.claude/docs/service-contracts.md`
-- Development workflows: `.claude/docs/development-workflows.md`
-- Coding conventions: `.claude/docs/coding-conventions.md`
+- Workflows: `.claude/docs/development-workflows.md`
+- Conventions: `.claude/docs/coding-conventions.md`
 - MVP roadmap: `.claude/docs/mvp-roadmap.md`
+- Human MVP scope: `docs/mvp-demo-scope.md`
+
+Path-scoped rules load automatically from `.claude/rules/` when editing matching files.
+
+Subagents in `.claude/agents/`: `nest-reviewer`, `mvp-implementer`, `contract-guardian`.
 
 ## Repository Shape
 
@@ -94,8 +103,19 @@ cd ../user-service && pnpm run seed
 
 Use project skills when the task matches:
 
-- `/collabspace-codebase`: understand architecture, current status, and service ownership.
-- `/nest-service-change`: implement or refactor auth/user NestJS service behavior.
-- `/mvp-feature-planner`: plan and slice workspace/task/notification MVP work.
-- `/local-dev-verify`: decide and run the right local verification steps.
+- `/collabspace-codebase`: architecture, status, service ownership.
+- `/nest-service-change`: auth/user NestJS implementation.
+- `/mvp-feature-planner`: workspace/task/notification MVP slices.
+- `/local-dev-verify`: build, test, Docker, health checks.
+
+## Default MVP Priority
+
+If the user says "continue MVP" without a target, start with `workspace-service`.
+
+## Other Agent Tools
+
+- `AGENTS.md`: cross-tool index (Cursor and others).
+- `.claude/settings.json`: team permissions (deny reading `.env`).
+- `.claudeignore`: reduce noise from `node_modules`, `dist`, lockfiles.
+- Per-service `CLAUDE.md` under `services/auth-service` and `services/user-service`.
 

@@ -37,6 +37,10 @@
 .idea/
 *.iml
 
+# Agent local overrides (Claude Code)
+CLAUDE.local.md
+.claude/settings.local.json
+
 # Logs
 **/*.log
 logs/

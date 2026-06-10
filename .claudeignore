@@ -1,0 +1,14 @@
+**/node_modules/**
+**/dist/**
+**/build/**
+**/target/**
+**/.git/**
+**/coverage/**
+**/*.log
+**/pnpm-lock.yaml
+**/package-lock.json
+**/yarn.lock
+infrastructure/jenkins/jenkins_home/**
+infrastructure/logging/esdata/**
+infrastructure/rabbitmq/data/**
+infrastructure/redis/data/**
