@@ -1,0 +1,337 @@
+# Default values for CollabSpace umbrella chart.
+# Override with: helm upgrade --install collabspace . -f values-local.yaml
+
+global:
+  namespace: collabspace
+  createNamespace: true
+  imagePullPolicy: Always
+  secrets:
+    jwtSecret: change-me-in-production
+    postgresPassword: postgres
+    mongoUsername: admin
+    mongoPassword: password
+    redisPassword: collabspace123
+    rabbitmqUsername: guest
+    rabbitmqPassword: guest
+
+infra:
+  hosts:
+    postgresql: postgres
+    mongodb: mongo
+    redis: redis
+    rabbitmq: rabbitmq
+
+# --- Bitnami PostgreSQL (auth, user, workspace databases) ---
+postgresql:
+  enabled: true
+  fullnameOverride: postgres
+  auth:
+    postgresPassword: postgres
+    username: postgres
+    password: postgres
+    database: postgres
+  primary:
+    persistence:
+      enabled: true
+      size: 5Gi
+    resources:
+      requests:
+        memory: 256Mi
+        cpu: 250m
+      limits:
+        memory: 512Mi
+        cpu: 500m
+    initdb:
+      scripts:
+        init-databases.sh: |
+          #!/bin/bash
+          set -e
+          psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" <<-EOSQL
+            CREATE DATABASE collabspace_auth;
+            CREATE DATABASE collabspace_user;
+            CREATE DATABASE collabspace_workspace;
+          EOSQL
+
+# --- Bitnami MongoDB (task + notification) ---
+mongodb:
+  enabled: true
+  fullnameOverride: mongo
+  architecture: standalone
+  auth:
+    enabled: true
+    rootUser: admin
+    rootPassword: password
+  persistence:
+    enabled: true
+    size: 5Gi
+  resources:
+    requests:
+      memory: 256Mi
+      cpu: 250m
+    limits:
+      memory: 512Mi
+      cpu: 500m
+
+# --- Bitnami Redis (auth sessions, notification cache) ---
+redis:
+  enabled: true
+  fullnameOverride: redis
+  architecture: standalone
+  auth:
+    enabled: true
+    password: collabspace123
+  master:
+    persistence:
+      enabled: true
+      size: 2Gi
+    resources:
+      requests:
+        memory: 128Mi
+        cpu: 100m
+      limits:
+        memory: 512Mi
+        cpu: 250m
+
+# --- Bitnami RabbitMQ (integration events) ---
+rabbitmq:
+  enabled: true
+  fullnameOverride: rabbitmq
+  auth:
+    username: guest
+    password: guest
+    erlangCookie: collabspace-erlang-cookie
+  persistence:
+    enabled: true
+    size: 2Gi
+  extraConfiguration: |-
+    default_vhost = collabspace
+  plugins: "rabbitmq_management rabbitmq_prometheus"
+  resources:
+    requests:
+      memory: 256Mi
+      cpu: 250m
+    limits:
+      memory: 512Mi
+      cpu: 500m
+  metrics:
+    enabled: true
+
+# --- Traefik ingress controller (API gateway) ---
+traefik:
+  enabled: true
+  fullnameOverride: traefik
+  ingressClass:
+    enabled: true
+    isDefaultClass: true
+  deployment:
+    replicas: 2
+  ports:
+    web:
+      port: 80
+      expose:
+        default: true
+    websecure:
+      port: 443
+      expose:
+        default: true
+    traefik:
+      port: 8080
+      expose:
+        default: false
+  providers:
+    kubernetesCRD:
+      enabled: true
+      allowCrossNamespace: false
+    kubernetesIngress:
+      enabled: true
+  ingressRoute:
+    dashboard:
+      enabled: false
+  service:
+    type: LoadBalancer
+  logs:
+    general:
+      level: INFO
+    access:
+      enabled: true
+  metrics:
+    prometheus:
+      entryPoint: traefik
+      addEntryPointsLabels: true
+      addServicesLabels: true
+
+# --- Gateway routes (Traefik IngressRoute CRDs) ---
+gateway:
+  enabled: true
+  rateLimit:
+    average: 100
+    burst: 200
+  cors:
+    allowOrigins:
+      - "*"
+    allowMethods:
+      - GET
+      - POST
+      - PUT
+      - PATCH
+      - DELETE
+      - OPTIONS
+    allowHeaders:
+      - Content-Type
+      - Authorization
+
+networkPolicies:
+  enabled: true
+
+observability:
+  prometheus:
+    enabled: true
+    retention: 15d
+    storageSize: 5Gi
+  exporters:
+    enabled: true
+
+hpa:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilization: 70
+
+pdb:
+  enabled: true
+  minAvailable: 1
+
+# --- Application microservices ---
+apps:
+  auth-service:
+    enabled: true
+    replicas: 2
+    image:
+      repository: collabspace/auth-service
+      tag: latest
+    httpPort: 3000
+    grpcPort: 50051
+    metricsPath: /api/v1/auth/metrics
+    health:
+      readyPath: /api/v1/auth/health/ready
+      livePath: /api/v1/auth/health/live
+    resources:
+      requests:
+        memory: 128Mi
+        cpu: 100m
+      limits:
+        memory: 256Mi
+        cpu: 250m
+    extraEnv:
+      GRPC_ENABLED: "true"
+      GRPC_URL: "0.0.0.0:50051"
+      RABBITMQ_ENABLED: "true"
+      RABBITMQ_QUEUE: auth-service
+      USER_SERVICE_GRPC_URL: user-service:50052
+      REDIS_HOST: redis
+      REDIS_PASSWORD: collabspace123
+      OUTBOX_ENABLED: "true"
+
+  user-service:
+    enabled: true
+    replicas: 2
+    image:
+      repository: collabspace/user-service
+      tag: latest
+    httpPort: 3000
+    grpcPort: 50052
+    metricsPath: /api/v1/users/metrics
+    health:
+      readyPath: /api/v1/users/health/ready
+      livePath: /api/v1/users/health/live
+    resources:
+      requests:
+        memory: 128Mi
+        cpu: 100m
+      limits:
+        memory: 256Mi
+        cpu: 250m
+    extraEnv:
+      GRPC_ENABLED: "true"
+      GRPC_URL: "0.0.0.0:50052"
+      AUTH_SERVICE_GRPC_URL: auth-service:50051
+      RABBITMQ_ENABLED: "true"
+      RABBITMQ_QUEUE: user-service
+
+  workspace-service:
+    enabled: true
+    replicas: 2
+    image:
+      repository: collabspace/workspace-service
+      tag: latest
+    httpPort: 8080
+    metricsPath: /api/v1/workspaces/metrics
+    health:
+      readyPath: /api/v1/workspaces/health/ready
+      livePath: /api/v1/workspaces/health/live
+      readyFailureThreshold: 5
+      liveInitialDelaySeconds: 15
+      preStopSleep: 15
+      terminationGracePeriodSeconds: 45
+    resources:
+      requests:
+        memory: 128Mi
+        cpu: 100m
+      limits:
+        memory: 256Mi
+        cpu: 300m
+    extraEnv:
+      AUTH_SERVICE_GRPC_URL: auth-service:50051
+      WORKSPACE_OUTBOX_ENABLED: "true"
+      DATABASE_SYNCHRONIZE: "true"
+
+  task-service:
+    enabled: true
+    replicas: 2
+    image:
+      repository: collabspace/task-service
+      tag: latest
+    httpPort: 3000
+    metricsPath: /api/v1/tasks/metrics
+    health:
+      readyPath: /api/v1/tasks/health/ready
+      livePath: /api/v1/tasks/health/live
+    resources:
+      requests:
+        memory: 128Mi
+        cpu: 100m
+      limits:
+        memory: 256Mi
+        cpu: 250m
+    extraEnv:
+      RABBITMQ_ENABLED: "true"
+      RABBITMQ_QUEUE: task-service
+      WORKSPACE_CLIENT_MODE: http
+      WORKSPACE_SERVICE_URL: http://workspace-service:8080
+      TASK_OUTBOX_ENABLED: "true"
+
+  notification-service:
+    enabled: true
+    replicas: 2
+    image:
+      repository: collabspace/notification-service
+      tag: latest
+    httpPort: 3000
+    metricsPath: /api/v1/notifications/metrics
+    health:
+      readyPath: /api/v1/notifications/health/ready
+      livePath: /api/v1/notifications/health/live
+    headlessService: true
+    resources:
+      requests:
+        memory: 128Mi
+        cpu: 100m
+      limits:
+        memory: 256Mi
+        cpu: 250m
+    extraEnv:
+      RABBITMQ_ENABLED: "true"
+      RABBITMQ_QUEUE: notification-service
+      REDIS_HOST: redis
+      WS_ENABLED: "true"
+      WS_PATH: /notifications/ws

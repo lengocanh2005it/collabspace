@@ -1,0 +1,18 @@
+dependencies:
+- name: postgresql
+  repository: oci://registry-1.docker.io/bitnamicharts
+  version: 16.4.9
+- name: mongodb
+  repository: oci://registry-1.docker.io/bitnamicharts
+  version: 16.4.0
+- name: redis
+  repository: oci://registry-1.docker.io/bitnamicharts
+  version: 20.7.0
+- name: rabbitmq
+  repository: oci://registry-1.docker.io/bitnamicharts
+  version: 15.3.3
+- name: traefik
+  repository: https://traefik.github.io/charts
+  version: 33.2.1
+digest: sha256:da71a513bd69b7013f504f2b339c21ae499586efce748addcb0469ef45385db3
+generated: "2026-06-10T21:35:34.7716492+07:00"

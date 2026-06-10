@@ -197,32 +197,29 @@ Request/response contracts and event payloads: [`.claude/docs/service-contracts.
 
 > **WARNING**: Change all credentials for production deployments!
 
-## Kubernetes Deployment
+## Kubernetes Deployment (Helm)
 
 ### Prerequisites
 - Kubernetes cluster (1.24+)
-- kubectl configured
-- Persistent volume provisioner (for storage)
+- Helm 3.12+ and `kubectl`
+- Persistent volume provisioner (for Bitnami PVCs)
+- Container images `collabspace/*` available to the cluster
 
-### Deploy to Kubernetes
+### Deploy with Helm
 
 ```bash
-# Create namespace
-kubectl apply -f infrastructure/k8s/auth-deployment.yaml
+# Recommended — umbrella chart (Bitnami data stores + Traefik + apps)
+./infrastructure/helm/scripts/install.sh
 
-# Deploy application services
-kubectl apply -f infrastructure/k8s/
+# Local minikube/kind (lighter)
+./infrastructure/helm/scripts/install.sh --local
 
-# Deploy observability stack
-kubectl apply -f infrastructure/monitoring/grafana-deployment.yaml
-kubectl apply -f infrastructure/logging/elasticsearch-deployment.yaml
-kubectl apply -f infrastructure/logging/kibana-deployment.yaml
-kubectl apply -f infrastructure/tracing/jaeger-deployment.yaml
-
-# Check deployment status
+# Check status
 kubectl get pods -n collabspace
-kubectl get services -n collabspace
+kubectl get svc traefik -n collabspace
 ```
+
+Chart docs: [infrastructure/helm/README.md](infrastructure/helm/README.md). Legacy plain YAML: [infrastructure/k8s/README.md](infrastructure/k8s/README.md).
 
 ### K8s Resource Summary
 
@@ -262,7 +259,8 @@ collabspace/
 │   └── notification-service/# Notifications (Node.js + Redis)
 ├── infrastructure/
 │   ├── docker/              # Docker Compose files
-│   ├── k8s/                 # Kubernetes manifests
+│   ├── helm/                # Helm umbrella chart (preferred for K8s)
+│   ├── k8s/                 # Legacy Kubernetes manifests
 │   ├── monitoring/          # Prometheus + Grafana configs
 │   ├── logging/             # ELK Stack configs
 │   ├── tracing/             # Jaeger configs

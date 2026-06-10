@@ -1,0 +1,50 @@
+{{- $root := . -}}
+{{- $ns := include "collabspace.namespace" . -}}
+{{- range $name, $app := .Values.apps }}
+{{- if $app.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}
+  namespace: {{ $ns }}
+  labels:
+    {{- include "collabspace.appLabels" (dict "appName" $name "root" $root) | nindent 4 }}
+spec:
+  type: ClusterIP
+  selector:
+    app: {{ $name }}
+  ports:
+    - name: http
+      port: {{ $app.httpPort }}
+      targetPort: {{ $app.httpPort }}
+      protocol: TCP
+    {{- if $app.grpcPort }}
+    - name: grpc
+      port: {{ $app.grpcPort }}
+      targetPort: {{ $app.grpcPort }}
+      protocol: TCP
+    {{- end }}
+{{- if $app.headlessService }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}-ws
+  namespace: {{ $ns }}
+  labels:
+    app: {{ $name }}
+    component: websocket
+spec:
+  type: ClusterIP
+  clusterIP: None
+  selector:
+    app: {{ $name }}
+  ports:
+    - name: ws
+      port: {{ $app.httpPort }}
+      targetPort: {{ $app.httpPort }}
+      protocol: TCP
+{{- end }}
+{{- end }}
+{{- end }}

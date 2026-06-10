@@ -1,0 +1,47 @@
+{{- if .Values.gateway.enabled }}
+{{- $ns := include "collabspace.namespace" . }}
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: forward-auth
+  namespace: {{ $ns }}
+spec:
+  forwardAuth:
+    address: http://auth-service.{{ $ns }}.svc.cluster.local:3000/api/v1/auth/verify
+    trustForwardHeader: true
+    authRequestHeaders:
+      - Authorization
+      - Cookie
+      - X-Request-Id
+    authResponseHeaders:
+      - X-User-Id
+      - X-Role
+      - X-Workspace-Id
+      - X-Request-Id
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: rate-limit
+  namespace: {{ $ns }}
+spec:
+  rateLimit:
+    average: {{ .Values.gateway.rateLimit.average }}
+    burst: {{ .Values.gateway.rateLimit.burst }}
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: cors-headers
+  namespace: {{ $ns }}
+spec:
+  headers:
+    accessControlAllowMethods:
+      {{- toYaml .Values.gateway.cors.allowMethods | nindent 6 }}
+    accessControlAllowOriginList:
+      {{- toYaml .Values.gateway.cors.allowOrigins | nindent 6 }}
+    accessControlAllowHeaders:
+      {{- toYaml .Values.gateway.cors.allowHeaders | nindent 6 }}
+    accessControlMaxAge: 86400
+{{- end }}

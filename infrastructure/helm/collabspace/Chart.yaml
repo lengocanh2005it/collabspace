@@ -1,0 +1,34 @@
+apiVersion: v2
+name: collabspace
+description: CollabSpace platform — microservices, data stores, API gateway, and observability
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+kubeVersion: ">=1.24.0-0"
+keywords:
+  - collabspace
+  - microservices
+  - nestjs
+maintainers:
+  - name: CollabSpace Team
+dependencies:
+  - name: postgresql
+    version: "16.4.9"
+    repository: oci://registry-1.docker.io/bitnamicharts
+    condition: postgresql.enabled
+  - name: mongodb
+    version: "16.4.0"
+    repository: oci://registry-1.docker.io/bitnamicharts
+    condition: mongodb.enabled
+  - name: redis
+    version: "20.7.0"
+    repository: oci://registry-1.docker.io/bitnamicharts
+    condition: redis.enabled
+  - name: rabbitmq
+    version: "15.3.3"
+    repository: oci://registry-1.docker.io/bitnamicharts
+    condition: rabbitmq.enabled
+  - name: traefik
+    version: "33.2.1"
+    repository: https://traefik.github.io/charts
+    condition: traefik.enabled

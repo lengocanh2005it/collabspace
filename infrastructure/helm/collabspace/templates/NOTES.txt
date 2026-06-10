@@ -1,0 +1,23 @@
+CollabSpace has been deployed.
+
+Release:   {{ .Release.Name }}
+Namespace: {{ include "collabspace.namespace" . }}
+
+Gateway (Traefik):
+  kubectl get svc traefik -n {{ include "collabspace.namespace" . }}
+
+Application pods:
+  kubectl get pods -n {{ include "collabspace.namespace" . }} -l app.kubernetes.io/part-of=collabspace
+
+API routes (via gateway):
+  /api/v1/auth/*
+  /api/v1/users/*
+  /api/v1/workspaces/*   (workspace-service port 8080)
+  /api/v1/tasks/*
+  /api/v1/notifications/*
+
+Docs:
+  infrastructure/helm/README.md
+  docs/api-routes.md
+
+WARNING: Default secrets in values.yaml are for demo only. Override global.secrets before production.
