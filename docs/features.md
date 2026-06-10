@@ -129,7 +129,7 @@ Tài liệu này là **nguồn chính** mô tả chức năng và mức độ ho
 - Thêm comment trên task
 - Liệt kê comment (ẩn comment đã xóa mềm)
 - Sửa / xóa mềm comment
-- Parse `@username`, resolve qua **user replica** (`username` sync từ RabbitMQ events)
+- Parse `@username`, resolve qua **user replica** (`username` sync từ RabbitMQ events); fallback hydrate từ user-service khi thiếu
 - Publish `comment_created` (assignee) và `comment_mentioned` (người được tag) qua outbox
 
 **Planned**
@@ -142,7 +142,8 @@ Tài liệu này là **nguồn chính** mô tả chức năng và mức độ ho
 
 **Done**
 
-- Consumer RabbitMQ: `workspace_invited`, `task_assigned`, `comment_created`, `comment_mentioned`
+- Consumer RabbitMQ: `workspace_invited`, `task_assigned`, `comment_created`, `comment_mentioned`, **`user_registered`**, **`user_profile_updated`**
+- **User replica** (`user_replicas`) synced from user events; `GET /notifications` enriches actor from replica (fallback to metadata)
 - Lưu notification vào MongoDB
 - Dedupe theo `eventId` (at-least-once safe)
 - `GET /notifications` — danh sách notification của user (`X-User-Id`)

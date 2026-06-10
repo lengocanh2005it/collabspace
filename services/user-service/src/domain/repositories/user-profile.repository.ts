@@ -52,6 +52,7 @@ export type UpdateUserStatusInput = {
 
 export interface UserProfileRepository {
   findByUserId(userId: string): Promise<UserProfile | null>;
+  findByUsername(username: string): Promise<UserProfile | null>;
   findManyByUserIds(userIds: string[]): Promise<UserProfile[]>;
   getPreferences(userId: string): Promise<UserPreferences>;
   getStatus(userId: string): Promise<UserStatus>;

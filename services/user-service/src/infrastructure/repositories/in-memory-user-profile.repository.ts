@@ -100,6 +100,17 @@ export class InMemoryUserProfileRepository implements UserProfileRepository {
     return this.profiles.find((profile) => profile.userId === userId) ?? null;
   }
 
+  async findByUsername(username: string): Promise<UserProfile | null> {
+    const normalized = username.trim().toLowerCase();
+    return (
+      this.profiles.find(
+        (profile) =>
+          profile.deletedAt === null &&
+          profile.username?.toLowerCase() === normalized,
+      ) ?? null
+    );
+  }
+
   async findManyByUserIds(userIds: string[]): Promise<UserProfile[]> {
     const userIdSet = new Set(userIds);
     return this.profiles.filter((profile) => userIdSet.has(profile.userId));

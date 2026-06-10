@@ -6,4 +6,5 @@ export interface UserRegisteredEventPayload {
   fullName: string;
   email?: string;
   username?: string | null;
+  occurredAt?: string;
 }

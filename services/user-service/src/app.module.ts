@@ -5,7 +5,7 @@ import { GetUserPreferencesUseCase } from './application/use-cases/get-user-pref
 import { GetUserProfileUseCase } from './application/use-cases/get-user-profile.use-case';
 import { GetUserStatusesUseCase } from './application/use-cases/get-user-statuses.use-case';
 import { GetUserSummaryUseCase } from './application/use-cases/get-user-summary.use-case';
-import { ListUserSummariesUseCase } from './application/use-cases/list-user-summaries.use-case';
+import { LookupUserReplicasUseCase } from './application/use-cases/lookup-user-replicas.use-case';
 import { UpdateUserPreferencesUseCase } from './application/use-cases/update-user-preferences.use-case';
 import { UpdateUserProfileUseCase } from './application/use-cases/update-user-profile.use-case';
 import { UpdateUserStatusUseCase } from './application/use-cases/update-user-status.use-case';
@@ -20,6 +20,7 @@ import { TypeOrmUserProfileRepository } from './infrastructure/repositories/type
 import { UserHealthService } from './health/user-health.service';
 import { MetricsModule } from './metrics/metrics.module';
 import { UsersController } from './presentation/http/users.controller';
+import { InternalUsersController } from './presentation/http/internal-users.controller';
 import { UserProfilesGrpcController } from './presentation/grpc/user-profiles.grpc.controller';
 import { AuthEventsController } from './presentation/rabbitmq/auth-events.controller';
 
@@ -31,9 +32,10 @@ import { AuthEventsController } from './presentation/rabbitmq/auth-events.contro
     DatabaseModule,
     RabbitMqModule,
   ],
-  controllers: [UsersController, UserProfilesGrpcController, AuthEventsController],
+  controllers: [UsersController, InternalUsersController, UserProfilesGrpcController, AuthEventsController],
   providers: [
     BulkGetUserProfilesUseCase,
+    LookupUserReplicasUseCase,
     CreatePendingUserProfileUseCase,
     GetUserPreferencesUseCase,
     GetUserProfileUseCase,

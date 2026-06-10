@@ -6,9 +6,9 @@ import { AssignTaskCommand } from "../commands/assign-task.command";
 import { ITaskRepository as ITaskRepositoryToken } from "../ports/ITaskRepository";
 import type { ITaskRepository } from "../ports/ITaskRepository";
 import {
-  type IUserReplicaRepository,
-  USER_REPLICA_REPOSITORY_TOKEN,
-} from "../ports/IUserReplicaRepository";
+  USER_REPLICA_LOOKUP_TOKEN,
+  UserReplicaLookupService,
+} from "../services/user-replica-lookup.service";
 import { TaskId } from "../../domain/value-objects/TaskId";
 import { UserSnapshot } from "../../domain/value-objects/UserSnapshot";
 import { EntityNotFoundException } from "../../domain/exceptions/EntityNotFoundException";
@@ -23,8 +23,8 @@ export class AssignTaskHandler implements ICommandHandler<
   constructor(
     @Inject(ITaskRepositoryToken)
     private readonly taskRepository: ITaskRepository,
-    @Inject(USER_REPLICA_REPOSITORY_TOKEN)
-    private readonly userReplicaRepo: IUserReplicaRepository,
+    @Inject(USER_REPLICA_LOOKUP_TOKEN)
+    private readonly userReplicaLookup: UserReplicaLookupService,
     private readonly taskOutboxService: TaskOutboxService,
   ) {}
 
@@ -37,7 +37,7 @@ export class AssignTaskHandler implements ICommandHandler<
     }
 
     // 1. Kiểm tra và lấy thông tin Assigner
-    const assignerRecord = await this.userReplicaRepo.findByIdAsync(
+    const assignerRecord = await this.userReplicaLookup.findActiveByIdAsync(
       command.assignerId,
     );
     if (!assignerRecord || !assignerRecord.isActive) {
@@ -62,7 +62,7 @@ export class AssignTaskHandler implements ICommandHandler<
       task.unassign();
     } else {
       // 3. Kiểm tra và lấy thông tin Assignee
-      const assigneeRecord = await this.userReplicaRepo.findByIdAsync(
+      const assigneeRecord = await this.userReplicaLookup.findActiveByIdAsync(
         command.assigneeId,
       );
 

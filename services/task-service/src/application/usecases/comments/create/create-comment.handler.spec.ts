@@ -3,7 +3,7 @@ import { CreateCommentHandler } from "./create-comment.handler";
 import { CreateCommentCommand } from "./create-comment.command";
 import { ITaskRepository } from "../../../ports/ITaskRepository";
 import { createMockTaskRepository } from "../../../../test-utils/mock-task-repository";
-import { IUserReplicaRepository } from "../../../ports/IUserReplicaRepository";
+import { UserReplicaLookupService } from "../../../services/user-replica-lookup.service";
 import { ICommentRepository } from "../../../../domain/repositories/comment.repository.interface";
 import { TaskOutboxService } from "../../../../infrastructure/outbox/task-outbox.service";
 import { Task } from "../../../../domain/entities/Task";
@@ -16,7 +16,12 @@ describe("CreateCommentHandler", () => {
   let handler: CreateCommentHandler;
   let mockCommentRepo: jest.Mocked<ICommentRepository>;
   let mockTaskRepo: jest.Mocked<ITaskRepository>;
-  let mockUserReplicaRepo: jest.Mocked<IUserReplicaRepository>;
+  let mockUserReplicaLookup: jest.Mocked<
+    Pick<
+      UserReplicaLookupService,
+      "findActiveByIdAsync" | "findActiveByUsernameAsync"
+    >
+  >;
   let mockTaskOutboxService: jest.Mocked<TaskOutboxService>;
 
   beforeEach(() => {
@@ -30,13 +35,9 @@ describe("CreateCommentHandler", () => {
 
     mockTaskRepo = createMockTaskRepository();
 
-    mockUserReplicaRepo = {
-      addAsync: jest.fn(),
-      updateAsync: jest.fn(),
-      findByIdAsync: jest.fn(),
-      findByUsernameAsync: jest.fn(),
-      upsertAsync: jest.fn(),
-      updateFieldsAsync: jest.fn(),
+    mockUserReplicaLookup = {
+      findActiveByIdAsync: jest.fn(),
+      findActiveByUsernameAsync: jest.fn(),
     };
 
     mockTaskOutboxService = {
@@ -48,7 +49,7 @@ describe("CreateCommentHandler", () => {
     handler = new CreateCommentHandler(
       mockCommentRepo,
       mockTaskRepo,
-      mockUserReplicaRepo,
+      mockUserReplicaLookup as UserReplicaLookupService,
       mockTaskOutboxService,
     );
   });
@@ -104,7 +105,7 @@ describe("CreateCommentHandler", () => {
     const authorReplica = createMockReplica("author-1", true);
 
     mockTaskRepo.findByIdAsync.mockResolvedValue(task);
-    mockUserReplicaRepo.findByIdAsync.mockResolvedValue(authorReplica);
+    mockUserReplicaLookup.findActiveByIdAsync.mockResolvedValue(authorReplica);
     mockCommentRepo.createAsync.mockResolvedValue(
       "123e4567-e89b-12d3-a456-426614174001",
     );
@@ -133,7 +134,7 @@ describe("CreateCommentHandler", () => {
     const authorReplica = createMockReplica("author-1", true);
 
     mockTaskRepo.findByIdAsync.mockResolvedValue(task);
-    mockUserReplicaRepo.findByIdAsync.mockResolvedValue(authorReplica);
+    mockUserReplicaLookup.findActiveByIdAsync.mockResolvedValue(authorReplica);
     mockCommentRepo.createAsync.mockResolvedValue(
       "123e4567-e89b-12d3-a456-426614174001",
     );
@@ -154,7 +155,7 @@ describe("CreateCommentHandler", () => {
     const authorReplica = createMockReplica("author-1", true);
 
     mockTaskRepo.findByIdAsync.mockResolvedValue(task);
-    mockUserReplicaRepo.findByIdAsync.mockResolvedValue(authorReplica);
+    mockUserReplicaLookup.findActiveByIdAsync.mockResolvedValue(authorReplica);
     mockCommentRepo.createAsync.mockResolvedValue(
       "123e4567-e89b-12d3-a456-426614174001",
     );
@@ -184,10 +185,9 @@ describe("CreateCommentHandler", () => {
       "Great task!",
     );
     const task = createMockTask("assignee-1");
-    const authorReplica = createMockReplica("author-1", false); // INACTIVE
 
     mockTaskRepo.findByIdAsync.mockResolvedValue(task);
-    mockUserReplicaRepo.findByIdAsync.mockResolvedValue(authorReplica);
+    mockUserReplicaLookup.findActiveByIdAsync.mockResolvedValue(null);
 
     await expect(handler.execute(command)).rejects.toThrow(BadRequestException);
     expect(mockCommentRepo.createAsync).not.toHaveBeenCalled();

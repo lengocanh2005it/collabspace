@@ -37,6 +37,8 @@ export class UpdateUserProfileUseCase {
         avatarUrl: updatedProfile.avatarUrl,
         username: updatedProfile.username,
         email: `${updatedProfile.userId}@users.collabspace.local`,
+        isActive: updatedProfile.deletedAt === null,
+        occurredAt: new Date().toISOString(),
       });
     } catch (error) {
       this.logger.warn(

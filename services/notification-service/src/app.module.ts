@@ -30,12 +30,28 @@ import { GetNotificationsHandler } from "./application/usecases/get-notification
 import { MarkNotificationReadHandler } from "./application/usecases/mark-notification-read/mark-notification-read.handler";
 import { MarkAllNotificationsReadHandler } from "./application/usecases/mark-all-notifications-read/mark-all-notifications-read.handler";
 import { CommentMentionEventListenerController } from "./presentation/controllers/internal/comment-mention-event-listener.controller";
+import { UserEventListenerController } from "./presentation/controllers/internal/user-event-listener.controller";
+import { CreateUserReplicaHandler } from "./application/usecases/sync-user-replica/create-user-replica.handler";
+import { SyncUserReplicaHandler } from "./application/usecases/sync-user-replica/sync-user-replica.handler";
+import {
+  UserReplica,
+  UserReplicaSchema,
+} from "./infrastructure/database/schemas/user-replica.schema";
+import { USER_REPLICA_REPOSITORY_TOKEN } from "./application/ports/IUserReplicaRepository";
+import { UserReplicaRepository } from "./infrastructure/database/repositories/user-replica.repository";
+import { UserProfileHttpClient } from "./infrastructure/clients/user-profile-http.client";
+import {
+  USER_REPLICA_LOOKUP_TOKEN,
+  UserReplicaLookupService,
+} from "./application/services/user-replica-lookup.service";
 
 const Handlers = [
   CreateNotificationHandler,
   GetNotificationsHandler,
   MarkNotificationReadHandler,
   MarkAllNotificationsReadHandler,
+  CreateUserReplicaHandler,
+  SyncUserReplicaHandler,
 ];
 
 @Module({
@@ -53,6 +69,7 @@ const Handlers = [
     MongooseModule.forFeature([
       { name: Notification.name, schema: NotificationSchema },
       { name: ProcessedEvent.name, schema: ProcessedEventSchema },
+      { name: UserReplica.name, schema: UserReplicaSchema },
     ]),
   ],
   controllers: [
@@ -61,10 +78,13 @@ const Handlers = [
     CommentEventListenerController,
     CommentMentionEventListenerController,
     WorkspaceInviteEventListenerController,
+    UserEventListenerController,
   ],
   providers: [
     ...Handlers,
     NotificationHealthService,
+    UserProfileHttpClient,
+    UserReplicaLookupService,
     {
       provide: NOTIFICATION_REPOSITORY_TOKEN,
       useClass: NotificationRepository,
@@ -72,6 +92,14 @@ const Handlers = [
     {
       provide: PROCESSED_EVENT_REPOSITORY_TOKEN,
       useClass: ProcessedEventRepository,
+    },
+    {
+      provide: USER_REPLICA_REPOSITORY_TOKEN,
+      useClass: UserReplicaRepository,
+    },
+    {
+      provide: USER_REPLICA_LOOKUP_TOKEN,
+      useExisting: UserReplicaLookupService,
     },
   ],
 })

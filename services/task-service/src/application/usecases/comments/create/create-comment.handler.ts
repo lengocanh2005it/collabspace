@@ -4,9 +4,9 @@ import { Inject, BadRequestException } from "@nestjs/common";
 import { randomUUID } from "crypto";
 import { CreateCommentCommand } from "./create-comment.command";
 import {
-  type IUserReplicaRepository,
-  USER_REPLICA_REPOSITORY_TOKEN,
-} from "../../../ports/IUserReplicaRepository";
+  USER_REPLICA_LOOKUP_TOKEN,
+  UserReplicaLookupService,
+} from "../../../services/user-replica-lookup.service";
 import {
   type ICommentRepository,
   COMMENT_REPOSITORY_TOKEN,
@@ -37,8 +37,8 @@ export class CreateCommentHandler implements ICommandHandler<
     @Inject(ITaskRepositoryToken)
     private readonly taskRepository: ITaskRepository,
 
-    @Inject(USER_REPLICA_REPOSITORY_TOKEN)
-    private readonly userReplicaRepo: IUserReplicaRepository,
+    @Inject(USER_REPLICA_LOOKUP_TOKEN)
+    private readonly userReplicaLookup: UserReplicaLookupService,
 
     private readonly taskOutboxService: TaskOutboxService,
   ) {}
@@ -55,7 +55,7 @@ export class CreateCommentHandler implements ICommandHandler<
     }
 
     // 2. Tra cứu thông tin người comment từ Danh bạ nội bộ (Không tin Client)
-    const authorRecord = await this.userReplicaRepo.findByIdAsync(
+    const authorRecord = await this.userReplicaLookup.findActiveByIdAsync(
       command.authorId,
     );
 
@@ -79,7 +79,7 @@ export class CreateCommentHandler implements ICommandHandler<
 
     const mentionedUserIds: string[] = [];
     for (const username of parseMentionUsernames(command.content)) {
-      const mentionedUser = await this.userReplicaRepo.findByUsernameAsync(
+      const mentionedUser = await this.userReplicaLookup.findActiveByUsernameAsync(
         username,
       );
       if (

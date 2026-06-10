@@ -33,6 +33,11 @@ import { CreateUserReplicaHandler } from "./application/usecases/create-user-rep
 import { AzureBlobService } from "./infrastructure/services/azure-blob.service";
 import { WORKSPACE_CLIENT_TOKEN } from "./application/ports/IWorkspaceClient";
 import { WorkspaceHttpClient } from "./infrastructure/clients/workspace-http.client";
+import { UserProfileHttpClient } from "./infrastructure/clients/user-profile-http.client";
+import {
+  USER_REPLICA_LOOKUP_TOKEN,
+  UserReplicaLookupService,
+} from "./application/services/user-replica-lookup.service";
 import { WorkspaceMockService } from "./infrastructure/services/workspace.mock.service";
 import { TaskOutboxService } from "./infrastructure/outbox/task-outbox.service";
 import { TaskOutboxProcessor } from "./infrastructure/outbox/task-outbox.processor";
@@ -139,6 +144,8 @@ const Handlers = [
     AzureBlobService,
     WorkspaceMockService,
     WorkspaceHttpClient,
+    UserProfileHttpClient,
+    UserReplicaLookupService,
     TaskOutboxService,
     TaskOutboxProcessor,
     IdempotencyService,
@@ -174,6 +181,10 @@ const Handlers = [
     {
       provide: USER_REPLICA_REPOSITORY_TOKEN,
       useClass: UserReplicaRepository,
+    },
+    {
+      provide: USER_REPLICA_LOOKUP_TOKEN,
+      useExisting: UserReplicaLookupService,
     },
   ],
 })

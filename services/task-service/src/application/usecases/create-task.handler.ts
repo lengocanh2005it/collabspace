@@ -8,9 +8,9 @@ import { UserSnapshot } from "../../domain/value-objects/UserSnapshot";
 import { ITaskRepository as ITaskRepositoryToken } from "../ports/ITaskRepository";
 import type { ITaskRepository } from "../ports/ITaskRepository";
 import {
-  type IUserReplicaRepository,
-  USER_REPLICA_REPOSITORY_TOKEN,
-} from "../ports/IUserReplicaRepository";
+  USER_REPLICA_LOOKUP_TOKEN,
+  UserReplicaLookupService,
+} from "../services/user-replica-lookup.service";
 
 @CommandHandler(CreateTaskCommand)
 export class CreateTaskHandler implements ICommandHandler<
@@ -22,15 +22,15 @@ export class CreateTaskHandler implements ICommandHandler<
     private readonly taskRepository: ITaskRepository,
 
     // 👇 Inject thêm Replica Repo vào đây
-    @Inject(USER_REPLICA_REPOSITORY_TOKEN)
-    private readonly userReplicaRepo: IUserReplicaRepository,
+    @Inject(USER_REPLICA_LOOKUP_TOKEN)
+    private readonly userReplicaLookup: UserReplicaLookupService,
   ) {}
 
   async execute(command: CreateTaskCommand): Promise<string> {
     const taskId = TaskId.create();
 
     // 1. Tự tra cứu người tạo từ danh bạ nội bộ
-    const creatorRecord = await this.userReplicaRepo.findByIdAsync(
+    const creatorRecord = await this.userReplicaLookup.findActiveByIdAsync(
       command.creatorId,
     );
     if (!creatorRecord || !creatorRecord.isActive) {

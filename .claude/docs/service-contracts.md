@@ -181,6 +181,31 @@ Rules:
 
 ## Event Contracts
 
+### User directory replicas (`user_registered`, `user_profile_updated`)
+
+Producer: `user-service` (broadcast to `task-service` and `notification-service` queues).
+
+Consumers: `task-service`, `notification-service` → Mongo collection `user_replicas`.
+
+Payload fields (both events):
+
+```json
+{
+  "userId": "uuid",
+  "fullName": "Jane Doe",
+  "username": "jane.doe",
+  "displayName": "Jane",
+  "avatarUrl": null,
+  "email": "uuid@users.collabspace.local",
+  "isActive": true,
+  "occurredAt": "2026-06-10T00:00:00.000Z"
+}
+```
+
+Internal hydration (fallback when replica missing): `POST /api/v1/users/internal/replicas` with header `X-Internal-Service-Token`. See `.claude/docs/read-models.md`.
+
+---
+
 Canonical events from README and MVP scope:
 
 ### WORKSPACE_INVITED

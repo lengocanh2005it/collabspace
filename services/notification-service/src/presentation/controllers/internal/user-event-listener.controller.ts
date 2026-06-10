@@ -1,20 +1,18 @@
-// src/presentation/controllers/internal/user-event.controller.ts
 import { Controller, Logger } from "@nestjs/common";
 import { Ctx, EventPattern, Payload, RmqContext } from "@nestjs/microservices";
 import { CommandBus } from "@nestjs/cqrs";
 import type { Channel, ConsumeMessage } from "amqplib";
-
-import { SyncUserReplicaCommand } from "../../../application/commands/sync-user-replica.command";
 import { CreateUserReplicaCommand } from "../../../application/commands/create-user-replica.command";
-import { USER_PROFILE_UPDATED_EVENT } from "../../../domain/events/user-profile-update.event";
+import { SyncUserReplicaCommand } from "../../../application/commands/sync-user-replica.command";
 import { USER_REGISTERED_EVENT } from "../../../domain/events/user-create.event";
-import { type UserProfileUpdatedEventPayload } from "../../../domain/events/user-profile-update.event";
-import { type UserRegisteredEventPayload } from "../../../domain/events/user-create.event";
+import { USER_PROFILE_UPDATED_EVENT } from "../../../domain/events/user-profile-update.event";
+import type { UserRegisteredEventPayload } from "../../../domain/events/user-create.event";
+import type { UserProfileUpdatedEventPayload } from "../../../domain/events/user-profile-update.event";
 import { MetricsService } from "../../../metrics/metrics.service";
 
 @Controller()
-export class UserEventController {
-  private readonly logger = new Logger(UserEventController.name);
+export class UserEventListenerController {
+  private readonly logger = new Logger(UserEventListenerController.name);
 
   constructor(
     private readonly commandBus: CommandBus,

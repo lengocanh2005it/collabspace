@@ -31,6 +31,7 @@ export class CreatePendingUserProfileUseCase {
         fullName: profile.fullName,
         email: `${profile.userId}@users.collabspace.local`,
         username: profile.username,
+        occurredAt: new Date().toISOString(),
       });
     } catch (error) {
       this.logger.warn(

@@ -43,6 +43,20 @@ export class TypeOrmUserProfileRepository implements UserProfileRepository {
     return this.toDomainProfile(profile);
   }
 
+  async findByUsername(username: string): Promise<UserProfile | null> {
+    const profile = await this.repository
+      .createQueryBuilder('profile')
+      .where('LOWER(profile.username) = LOWER(:username)', { username })
+      .andWhere('profile.deletedAt IS NULL')
+      .getOne();
+
+    if (!profile) {
+      return null;
+    }
+
+    return this.toDomainProfile(profile);
+  }
+
   async findManyByUserIds(userIds: string[]): Promise<UserProfile[]> {
     if (userIds.length === 0) {
       return [];

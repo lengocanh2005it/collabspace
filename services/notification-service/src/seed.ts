@@ -58,7 +58,26 @@ async function main(): Promise<void> {
     }
 
     const notifications = db.collection('notifications');
+    const userReplicas = db.collection('user_replicas');
     const now = new Date('2026-01-15T09:05:00.000Z');
+
+    for (const user of demoData.users) {
+      await userReplicas.updateOne(
+        { userId: user.id },
+        {
+          $set: {
+            userId: user.id,
+            email: user.email,
+            username: user.username.toLowerCase(),
+            fullName: user.fullName,
+            displayName: user.fullName,
+            avatarUrl: null,
+            isActive: true,
+          },
+        },
+        { upsert: true },
+      );
+    }
 
     for (const sample of demoData.demo.sampleNotifications) {
       await notifications.updateOne(

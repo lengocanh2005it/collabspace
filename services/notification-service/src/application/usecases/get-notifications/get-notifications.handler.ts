@@ -10,6 +10,10 @@ import {
   getMetadataString,
   type NotificationMetadata,
 } from "../../../domain/types/notification-metadata";
+import {
+  USER_REPLICA_LOOKUP_TOKEN,
+  UserReplicaLookupService,
+} from "../../services/user-replica-lookup.service";
 
 export interface NotificationResponseDto {
   id: string;
@@ -47,12 +51,13 @@ export class GetNotificationsHandler implements IQueryHandler<
   constructor(
     @Inject(NOTIFICATION_REPOSITORY_TOKEN)
     private readonly notificationRepository: INotificationRepository,
+    @Inject(USER_REPLICA_LOOKUP_TOKEN)
+    private readonly userReplicaLookup: UserReplicaLookupService,
   ) {}
 
   async execute(
     query: GetNotificationsQuery,
   ): Promise<GetNotificationsResponse> {
-    // Step 1: Get notifications with pagination
     const notifications =
       await this.notificationRepository.findByRecipientIdAsync(
         query.recipientId,
@@ -62,23 +67,34 @@ export class GetNotificationsHandler implements IQueryHandler<
         },
       );
 
-    // Step 2: Get unread count
     const unreadCount =
       await this.notificationRepository.countUnreadByRecipientIdAsync(
         query.recipientId,
       );
 
-    // Step 3: Map to response DTOs
+    const actorIds = notifications.map((notification) =>
+      notification.getActorId(),
+    );
+    const actorReplicas =
+      await this.userReplicaLookup.findActiveMapByIdsAsync(actorIds);
+
     const mappedNotifications = notifications.map((notification) => {
       const metadata = notification.getMetadata();
+      const actorId = notification.getActorId();
+      const replica = actorReplicas.get(actorId);
+      const fallbackName = getMetadataString(metadata, "actorName") || "Unknown";
+      const fallbackAvatar = getMetadataString(metadata, "actorAvatarUrl");
 
       return {
         id: notification.getId(),
         recipientId: notification.getRecipientId(),
         actor: {
-          id: notification.getActorId(),
-          name: getMetadataString(metadata, "actorName") || "Unknown",
-          avatarUrl: getMetadataString(metadata, "actorAvatarUrl"),
+          id: actorId,
+          name:
+            replica?.displayName ||
+            replica?.fullName ||
+            fallbackName,
+          avatarUrl: replica?.avatarUrl || fallbackAvatar,
         },
         type: notification.getType(),
         title: notification.getTitle(),
@@ -92,7 +108,6 @@ export class GetNotificationsHandler implements IQueryHandler<
       };
     });
 
-    // Step 4: Return response
     return {
       notifications: mappedNotifications,
       total: mappedNotifications.length,
