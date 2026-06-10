@@ -30,6 +30,8 @@ Microservices CollabSpace phụ thuộc lẫn nhau (gRPC, RabbitMQ, DB). **Desig
 - **Workspace auth** → `AuthGuard` verify JWT qua auth gRPC; `X-User-Id` chỉ dev.
 - **Metrics lockdown** → env `METRICS_AUTH_TOKEN` (Bearer hoặc `X-Metrics-Token`); Helm `global.secrets.metricsAuthToken`.
 - **Backup policy** → `docs/backup-policy.md`, scripts `infrastructure/backup/scripts/`.
+- **NFRs** → `docs/nfrs.md` (thuộc tính chất lượng hệ thống).
+- **Trade-offs** → `docs/trade-offs.md` (quyết định kiến trúc và cái giá).
 
 ## Drills
 

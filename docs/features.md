@@ -219,6 +219,9 @@ Hướng dẫn chạy demo: [mvp-demo-scope.md](./mvp-demo-scope.md#demo-story).
 
 | Tài liệu | Dùng khi |
 |----------|----------|
+| [cross-service-data.md](./cross-service-data.md) | Cách thay JOIN DB giữa microservices (replica, sync, event) |
+| [nfrs.md](./nfrs.md) | Non-functional requirements — thuộc tính chất lượng hệ thống |
+| [trade-offs.md](./trade-offs.md) | Quyết định kiến trúc và cái giá phải trả |
 | [api-routes.md](./api-routes.md) | Danh sách HTTP routes theo service |
 | [mvp-demo-scope.md](./mvp-demo-scope.md) | Tiêu chí chấp nhận MVP + checklist demo |
 | [mvp-roadmap.md](../.claude/docs/mvp-roadmap.md) | Thứ tự implement, phase cho dev/agent |

@@ -41,4 +41,4 @@ INTERNAL_SERVICE_TOKEN=           # required in production
 INTERNAL_SERVICE_TOKEN=           # validates internal replica lookup
 ```
 
-See also: `.claude/docs/service-contracts.md` → User replica events.
+See also: `.claude/docs/service-contracts.md` → User replica events. **Overview (VI):** [docs/cross-service-data.md](../../docs/cross-service-data.md). **Trade-offs:** [docs/trade-offs.md](../../docs/trade-offs.md).

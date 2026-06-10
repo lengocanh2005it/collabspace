@@ -58,3 +58,5 @@ Helm: `infrastructure/helm/collabspace/values.yaml` → `global.secrets` is for 
 - Resilience policy: `.claude/docs/resilience.md`
 - Backup policy: `docs/backup-policy.md`
 - Overview (VI): `docs/resilience-overview.md`
+- NFRs (VI): `docs/nfrs.md`
+- Trade-offs (VI): `docs/trade-offs.md`
