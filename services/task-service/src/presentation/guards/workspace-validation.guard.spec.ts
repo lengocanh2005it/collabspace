@@ -43,7 +43,8 @@ describe("WorkspaceValidationGuard", () => {
     );
 
     const request = {
-      headers: { "x-user-id": "user-123", "x-user-name": "Dev User" },
+      headers: { "x-user-name": "Dev User" },
+      user: { id: "user-123", name: "Dev User" },
       body: { workspaceId: "workspace-001" },
       query: {},
       params: {},
@@ -86,7 +87,8 @@ describe("WorkspaceValidationGuard", () => {
     );
 
     const request = {
-      headers: { "x-user-id": "user-123", "x-user-name": "Dev User" },
+      headers: { "x-user-name": "Dev User" },
+      user: { id: "user-123", name: "Dev User" },
       body: {},
       query: {},
       params: { id: taskId },

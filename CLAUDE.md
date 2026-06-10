@@ -19,6 +19,9 @@ Read before broad changes:
 - Workflows: `.claude/docs/development-workflows.md`
 - Conventions: `.claude/docs/coding-conventions.md`
 - Product features: `docs/features.md`
+- API routes & gateway: `docs/api-routes.md`
+- Trust boundaries (Phase B): `docs/production-hardening.md`, `.claude/docs/service-contracts.md` → Auth Header Propagation
+- Cross-service data: `docs/cross-service-data.md`, `.claude/docs/read-models.md`
 - MVP roadmap: `.claude/docs/mvp-roadmap.md`
 - MVP demo acceptance: `docs/mvp-demo-scope.md`
 
@@ -66,6 +69,7 @@ Subagents in `.claude/agents/`: `nest-reviewer`, `mvp-implementer`, `contract-gu
 - Add focused tests for new use cases, service methods, repository behavior, gRPC integrations, and controller behavior when the change has user-visible behavior.
 - Avoid broad rewrites, dependency churn, or formatting unrelated files.
 - Do not invent production secrets. Use `.env.example` patterns and document required variables.
+- Shared local dev secrets (see `infrastructure/docker/.env.example`): `JWT_SECRET`, `INTERNAL_SERVICE_TOKEN` (same value in user/workspace/task/notification); `ALLOW_DEV_IDENTITY_HEADERS=true` only in local `.env`, never production.
 
 ## Common Commands
 

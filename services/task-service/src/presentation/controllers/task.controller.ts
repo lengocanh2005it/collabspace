@@ -42,6 +42,7 @@ import { GetTaskBoardResponse } from "../dtos/get-task-board.response";
 import type { UploadAttachmentResponse } from "../../application/usecases/upload-attachment.handler";
 import { created, ok } from "../common/response/api-response.wrapper";
 import { WorkspaceValidationGuard } from "../guards/workspace-validation.guard";
+import { AuthGuard } from "../guards/auth.guard";
 import { IdempotencyService } from "../../infrastructure/idempotency/idempotency.service";
 import { getHeaderValue } from "../http/request-context";
 import type { AppRequest } from "../http/request-context";
@@ -60,7 +61,7 @@ function assertUploadedFile(file: unknown): asserts file is TaskUploadedFile {
 }
 
 @Controller("v1/tasks")
-@UseGuards(WorkspaceValidationGuard)
+@UseGuards(AuthGuard, WorkspaceValidationGuard)
 export class TaskController {
   constructor(
     private readonly commandBus: CommandBus,

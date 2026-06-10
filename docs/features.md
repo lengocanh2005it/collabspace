@@ -80,7 +80,7 @@ Tài liệu này là **nguồn chính** mô tả chức năng và mức độ ho
 - Chấp nhận / từ chối lời mời
 - Role membership: `owner`, `admin`, `member`
 - Idempotency-Key trên tạo workspace và invite
-- **JWT verification** qua auth gRPC (`AuthGuard`); dev fallback `X-User-Id` khi `NODE_ENV=development`
+- **JWT verification** qua auth gRPC (`AuthGuard`); dev fallback `X-User-Id` khi `ALLOW_DEV_IDENTITY_HEADERS=true`
 
 ---
 
@@ -112,7 +112,8 @@ Tài liệu này là **nguồn chính** mô tả chức năng và mức độ ho
 - Gán assignee — publish event `task_assigned` qua outbox
 - **Xóa task** `DELETE /tasks/:id`
 - Idempotency-Key trên tạo task và gán assignee
-- Kiểm tra membership workspace (HTTP client tới workspace-service)
+- Kiểm tra membership workspace (internal API + `X-Internal-Service-Token`, không dùng `X-User-Id` S2S)
+- **JWT verification** qua auth gRPC (`AuthGuard`); dev fallback `X-User-Id` khi `ALLOW_DEV_IDENTITY_HEADERS=true`
 - **Event sourcing** cho aggregate `Task` (create, details, status, assign, delete, **attachments**)
 - Upload / xóa attachment — mock Azure khi chưa cấu hình storage; event `TaskAttachmentAdded` / `TaskAttachmentRemoved`
 
@@ -146,7 +147,8 @@ Tài liệu này là **nguồn chính** mô tả chức năng và mức độ ho
 - **User replica** (`user_replicas`) synced from user events; `GET /notifications` enriches actor from replica (fallback to metadata)
 - Lưu notification vào MongoDB
 - Dedupe theo `eventId` (at-least-once safe)
-- `GET /notifications` — danh sách notification của user (`X-User-Id`)
+- **JWT verification** qua auth gRPC (`AuthGuard`); dev fallback `X-User-Id` khi `ALLOW_DEV_IDENTITY_HEADERS=true`
+- `GET /notifications` — danh sách notification của user (JWT qua `AuthGuard`)
 - `PATCH /notifications/:id/read` — đánh dấu đã đọc
 - `PATCH /notifications/read-all` — đánh dấu tất cả đã đọc
 - Health live/ready

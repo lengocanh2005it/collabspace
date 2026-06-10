@@ -142,7 +142,8 @@ Important fact:
 Current status:
 
 - Core workspace/project/invite flows implemented.
-- Auth via gateway `X-User-Id` (no direct auth gRPC yet).
+- Public routes: `AuthGuard` + auth gRPC; dev-only `ALLOW_DEV_IDENTITY_HEADERS`.
+- Internal membership API: `GET /workspaces/internal/:id/membership` + `X-Internal-Service-Token` (task-service client).
 
 ### task-service
 
@@ -175,7 +176,8 @@ Important source paths:
 Current status:
 
 - Task and comment flows implemented.
-- Workspace membership uses mock client (real client planned Phase 2).
+- `AuthGuard` + `WorkspaceValidationGuard`; workspace membership via internal HTTP + `INTERNAL_SERVICE_TOKEN`.
+- `WORKSPACE_CLIENT_MODE=http` (mock only for local tests without workspace).
 
 ### notification-service
 
@@ -205,6 +207,7 @@ Important source paths:
 Current status:
 
 - Event consumers and list API implemented.
+- Protected HTTP: `AuthGuard` + auth gRPC (not raw `X-User-Id`).
 - Mark-as-read and WebSocket are optional / not required for MVP.
 
 ## Infrastructure
@@ -213,7 +216,13 @@ Current status:
 
 Path: `api-gateway`
 
-Traefik is used as the API Gateway. Static config lives in `traefik.yml`; dynamic routing lives under `api-gateway/dynamic`.
+Traefik is the API Gateway. Static config: `traefik.yml`; dynamic: `api-gateway/dynamic`.
+
+Trust boundaries (Phase B):
+
+- `strip-identity-headers` → `forward-auth` → `auth-service` `/verify` on protected public routes.
+- Internal paths `/users/internal/*`, `/workspaces/internal/*` blocked at gateway (503); S2S uses cluster DNS + `X-Internal-Service-Token`.
+- K8s: `infrastructure/k8s/network-policies.yaml` (or Helm `networkPolicies`) — default deny + per-service allow lists.
 
 When changing route prefixes, update:
 

@@ -221,7 +221,8 @@ Register controllers and use cases in `app.module.ts`. Call `DatabaseService.ini
 
 - Global prefix `api/v1`; routes under `/workspaces`, `/workspaces/:id/projects`, etc.
 - Port **8080** (container), not 3000
-- Identity from gateway: `X-User-Id` via `UserIdGuard` + `@UserId()` decorator
+- Public routes: `AuthGuard` + auth gRPC → `@UserId()` from `request.user.id`
+- Internal S2S: `presentation/http/internal-workspace.controller.ts` + `assertInternalServiceAccess`
 - ORM columns: snake_case (`workspace_id`, `owner_id`)
 - Use `manager.transaction()` for multi-table writes
 - Tests: `*.use-case.spec.ts` next to use case
@@ -298,8 +299,10 @@ Add new handlers to the `Handlers` array in `app.module.ts`.
 - Double-quote style in this service (match existing files)
 - Handlers: `@CommandHandler` / `@QueryHandler`, `execute()`
 - Domain throws `BusinessRuleException`, `EntityNotFoundException`
-- User context from `presentation/http/request-context.ts` (gateway headers)
-- `WorkspaceValidationGuard` for workspace-scoped mutations (mock client today)
+- User context from `AuthGuard` → `request.user` (`presentation/http/request-context.ts`)
+- `@UseGuards(AuthGuard, WorkspaceValidationGuard)` on task/comment controllers
+- Workspace membership: `WorkspaceHttpClient` → internal API + `INTERNAL_SERVICE_TOKEN`
+- Auth integration: `src/integrations/auth/` (gRPC proto + `AuthGrpcService`)
 - Event payloads include `eventId` + `occurredAt`
 - Tests: `*.handler.spec.ts`
 
@@ -367,6 +370,8 @@ Bind repositories with tokens in `app.module.ts` (`NOTIFICATION_REPOSITORY_TOKEN
 ### Conventions
 
 - Global prefix `api`; `@Controller('v1/notifications')`
+- Protected list/read routes: `@UseGuards(AuthGuard)` — JWT via auth gRPC, not `X-User-Id` header
+- Auth integration: `src/integrations/auth/`; env `AUTH_SERVICE_GRPC_URL`, `ALLOW_DEV_IDENTITY_HEADERS`
 - One folder per use case under `application/usecases/<name>/`
 - Listeners: `@EventPattern`, build `CreateNotificationCommand` with `eventId`
 - Handler claims `eventId` before insert (duplicate → no-op success)

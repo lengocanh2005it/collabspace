@@ -53,6 +53,7 @@ import {
 
 // Guards
 import { WorkspaceValidationGuard } from "./presentation/guards/workspace-validation.guard";
+import { AuthGuard } from "./presentation/guards/auth.guard";
 
 // Repository & Schema
 import { ITaskRepository } from "./application/ports/ITaskRepository";
@@ -83,6 +84,7 @@ import { UserReplicaRepository } from "./infrastructure/repositories/mongo-user-
 import { RabbitMqModule } from "./infrastructure/messaging/rabbitmq/rabbitmq.module";
 import { ConfigurationModule } from "./configuration/configuration.module";
 import { MetricsModule } from "./metrics/metrics.module";
+import { AuthModule } from "./integrations/auth/auth.module";
 
 const Handlers = [
   CreateTaskHandler,
@@ -112,6 +114,7 @@ const Handlers = [
     ConfigurationModule,
     MetricsModule,
     RabbitMqModule,
+    AuthModule,
     CqrsModule,
 
     MongooseModule.forRootAsync({
@@ -149,6 +152,7 @@ const Handlers = [
     TaskOutboxService,
     TaskOutboxProcessor,
     IdempotencyService,
+    AuthGuard,
     WorkspaceValidationGuard,
     {
       provide: WORKSPACE_CLIENT_TOKEN,

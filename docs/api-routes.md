@@ -9,10 +9,14 @@ Human-readable route index for local development and demos. All HTTP services us
 
 | Mode | Base URL | Notes |
 |------|----------|--------|
-| Traefik | `http://localhost/api/v1/...` | `forward-auth` → `auth-service` `/api/v1/auth/verify` |
-| Direct (Docker mapped ports) | See [README — Services](../README.md#services) | Send `Authorization: Bearer …` or dev headers |
+| Traefik | `http://localhost/api/v1/...` | `strip-identity-headers` → `forward-auth` → `auth-service` `/api/v1/auth/verify` |
+| Direct (Docker mapped ports) | See [README — Services](../README.md#services) | Send `Authorization: Bearer …`; dev-only `X-User-Id` when `ALLOW_DEV_IDENTITY_HEADERS=true` |
 
 Common gateway headers after auth: `X-User-Id`, `X-User-Name`, `X-Username`, `X-Role`, `X-Roles`, `X-Permissions`, `X-Email-Verified`, `X-Workspace-Id`, `X-Request-Id`.
+
+Clients must **not** send identity headers — Traefik removes them before forward-auth.
+
+Internal service-to-service paths (`/users/internal/*`, `/workspaces/internal/*`) are **blocked at the gateway**; use Docker/K8s service DNS with `X-Internal-Service-Token`.
 
 ---
 
@@ -72,7 +76,7 @@ Base: `/api/v1/users` · Port **3000** (host **3001**)
 
 Base: `/api/v1/workspaces` · Port **8080** (host **3002**)
 
-Protected routes require `Authorization: Bearer …` (auth gRPC) or dev `X-User-Id`.
+Protected routes require `Authorization: Bearer …` (auth gRPC). Dev-only `X-User-Id` when `ALLOW_DEV_IDENTITY_HEADERS=true`.
 
 | Area | Examples |
 |------|----------|
@@ -87,6 +91,8 @@ Protected routes require `Authorization: Bearer …` (auth gRPC) or dev `X-User-
 ## Task Service
 
 Base: `/api/v1/tasks` · Port **3000** (host **3003**)
+
+Protected routes require `Authorization: Bearer …` (auth gRPC). Dev-only `X-User-Id` when `ALLOW_DEV_IDENTITY_HEADERS=true`.
 
 | Method | Path | Description |
 |--------|------|-------------|
@@ -112,10 +118,12 @@ Base: `/api/v1/tasks` · Port **3000** (host **3003**)
 
 Base: `/api/v1/notifications` · Port **3000** (host **3004**)
 
+Protected routes require `Authorization: Bearer …` (auth gRPC). Dev-only `X-User-Id` when `ALLOW_DEV_IDENTITY_HEADERS=true`.
+
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/health/live`, `/health/ready` | Health |
-| GET | `/` | List notifications (`X-User-Id`, `skip`, `limit`) |
+| GET | `/` | List notifications (`skip`, `limit`) |
 | PATCH | `/{id}/read` | Mark one notification read |
 | PATCH | `/read-all` | Mark all read for current user |
 

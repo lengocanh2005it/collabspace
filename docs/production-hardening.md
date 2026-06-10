@@ -21,7 +21,12 @@ Use before exposing CollabSpace beyond local/demo environments.
 - [x] Register returns `503` `REDIS_UNAVAILABLE` when Redis is down (with rollback for new users).
 - [x] `profileStatus: unavailable` on `/auth/me` when user-service gRPC fails.
 - [x] `WORKSPACE_CLIENT_MODE=http` in task-service with timeouts.
-- [x] workspace-service `AuthGuard`: JWT via auth gRPC; dev-only `X-User-Id` fallback.
+- [x] workspace-service `AuthGuard`: JWT via auth gRPC; dev-only `X-User-Id` when `ALLOW_DEV_IDENTITY_HEADERS=true`.
+- [x] task-service + notification-service `AuthGuard`: JWT via auth gRPC; removed mock `user-123` / raw `X-User-Id` trust.
+- [x] Traefik `strip-identity-headers`: drop client `X-User-*` / role headers before `forward-auth` sets verified values.
+- [x] task-service → workspace-service membership via `GET /workspaces/internal/.../membership` + `X-Internal-Service-Token` (no `X-User-Id` on S2S calls).
+- [x] K8s NetworkPolicies: default deny + per-service ingress (task→workspace/user internal, gRPC auth verify, Traefik public HTTP only).
+- [x] Gateway blocks `/api/v1/workspaces/internal` and `/api/v1/users/internal` from Traefik (503 — use cluster DNS + internal token).
 - [x] `/metrics` gated by `METRICS_AUTH_TOKEN` when set (all five services).
 
 ## Observability

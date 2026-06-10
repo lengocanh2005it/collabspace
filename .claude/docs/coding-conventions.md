@@ -100,7 +100,7 @@ domain/events/    -> event constants and payload types only
 
 Layer rules:
 
-- `presentation/http`: controllers, `UserIdGuard`, `@UserId()` decorator, filters.
+- `presentation/http`: controllers, `AuthGuard`, `@UserId()` decorator, `internal-workspace.controller.ts`, filters.
 - `application/use-cases/<area>/`: one class per action (`*.use-case.ts`, `execute()`).
 - `application/dto/`: input DTOs with `class-validator`.
 - `infrastructure/database/entities/`: `*.orm-entity.ts` with snake_case columns.
@@ -137,6 +137,7 @@ Rules:
 - Global prefix `api`; put `v1/tasks` (or similar) on `@Controller()`.
 - Use double-quote style to match existing task-service files.
 - Wrap HTTP responses with `presentation/common/response/` helpers where applicable.
+- Protected routes: `@UseGuards(AuthGuard, WorkspaceValidationGuard)`; workspace S2S via `INTERNAL_SERVICE_TOKEN`.
 - Full folder guide: `.claude/docs/service-architecture.md`.
 
 ## notification-service Conventions
@@ -160,6 +161,7 @@ Rules:
 - Pass `eventId` into `CreateNotificationCommand`; handler must dedupe via `ProcessedEventRepository`.
 - Ack RabbitMQ messages only after successful handler execution.
 - Global prefix `api`; controller `v1/notifications`.
+- Protected list/read routes: `@UseGuards(AuthGuard)`; recipient from `request.user.id`.
 - Full folder guide: `.claude/docs/service-architecture.md`.
 
 ## DTO and API Conventions

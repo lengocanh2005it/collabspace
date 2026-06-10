@@ -27,7 +27,11 @@ Microservices CollabSpace phụ thuộc lẫn nhau (gRPC, RabbitMQ, DB). **Desig
 ### Bổ sung gần đây
 
 - **Register + Redis down** → `503` `REDIS_UNAVAILABLE`, rollback user mới tạo (`auth-service`).
-- **Workspace auth** → `AuthGuard` verify JWT qua auth gRPC; `X-User-Id` chỉ dev.
+- **Workspace / task / notification auth** → `AuthGuard` verify JWT qua auth gRPC; dev-only `ALLOW_DEV_IDENTITY_HEADERS`.
+- **Gateway strip** → Traefik `strip-identity-headers` trước `forward-auth` (client không gửi được `X-User-Id` giả).
+- **Task → workspace S2S** → internal membership API + `X-Internal-Service-Token` (không dùng `X-User-Id` header).
+- **NetworkPolicy (K8s)** → default deny; task/notification → user internal HTTP; task → workspace internal; peers → auth gRPC.
+- **Gateway internal block** → Traefik từ chối `/workspaces/internal` và `/users/internal` (503).
 - **Metrics lockdown** → env `METRICS_AUTH_TOKEN` (Bearer hoặc `X-Metrics-Token`); Helm `global.secrets.metricsAuthToken`.
 - **Backup policy** → `docs/backup-policy.md`, scripts `infrastructure/backup/scripts/`.
 - **NFRs** → `docs/nfrs.md` (thuộc tính chất lượng hệ thống).

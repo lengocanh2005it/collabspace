@@ -1,13 +1,12 @@
 # ================================================
-# NetworkPolicies for CollabSpace
-# Infrastructure Engineer: Phan Phu Tho
+# NetworkPolicies for CollabSpace — trust boundaries (Phase B4)
 # ================================================
-# Principle: each service can only reach what it needs.
-# Traefik can reach all application services.
-# Services can reach their specific databases.
-# Event publishers can reach RabbitMQ.
+# Default deny, then explicit allow lists per destination.
+# Internal HTTP routes (/users/internal, /workspaces/internal) are reachable
+# only from authorized app pods — not from Traefik (see gateway block routes).
+#
+# Apply: kubectl apply -f infrastructure/k8s/network-policies.yaml
 
-# Default deny all ingress in the namespace
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -19,7 +18,7 @@ spec:
     - Ingress
 
 ---
-# Traefik → all application services (ports 3000, 8080)
+# Traefik → public HTTP only (not gRPC)
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -30,7 +29,8 @@ spec:
     matchExpressions:
       - key: app
         operator: In
-        values: [auth-service, user-service, workspace-service, task-service, notification-service]
+        values:
+          [auth-service, user-service, workspace-service, task-service, notification-service]
   policyTypes:
     - Ingress
   ingress:
@@ -43,11 +43,152 @@ spec:
           protocol: TCP
         - port: 8080
           protocol: TCP
-        - port: 50052
+
+---
+# auth-service: HTTP from Traefik; gRPC verify from peer services
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-auth-service-ingress
+  namespace: collabspace
+spec:
+  podSelector:
+    matchLabels:
+      app: auth-service
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: traefik
+      ports:
+        - port: 3000
+          protocol: TCP
+    - from:
+        - podSelector:
+            matchExpressions:
+              - key: app
+                operator: In
+                values:
+                  [user-service, workspace-service, task-service, notification-service]
+      ports:
+        - port: 50051
           protocol: TCP
 
 ---
-# PostgreSQL ← auth, user, workspace services
+# user-service: public HTTP + gRPC profile + internal replica API from task/notification
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-user-service-ingress
+  namespace: collabspace
+spec:
+  podSelector:
+    matchLabels:
+      app: user-service
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: traefik
+      ports:
+        - port: 3000
+          protocol: TCP
+    - from:
+        - podSelector:
+            matchLabels:
+              app: auth-service
+      ports:
+        - port: 50052
+          protocol: TCP
+    - from:
+        - podSelector:
+            matchExpressions:
+              - key: app
+                operator: In
+                values: [task-service, notification-service]
+      ports:
+        - port: 3000
+          protocol: TCP
+
+---
+# workspace-service: public HTTP from Traefik; internal membership from task-service
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-workspace-service-ingress
+  namespace: collabspace
+spec:
+  podSelector:
+    matchLabels:
+      app: workspace-service
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: traefik
+      ports:
+        - port: 8080
+          protocol: TCP
+    - from:
+        - podSelector:
+            matchLabels:
+              app: task-service
+      ports:
+        - port: 8080
+          protocol: TCP
+
+---
+# task-service: public HTTP from Traefik only
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-task-service-ingress
+  namespace: collabspace
+spec:
+  podSelector:
+    matchLabels:
+      app: task-service
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: traefik
+      ports:
+        - port: 3000
+          protocol: TCP
+
+---
+# notification-service: public HTTP from Traefik only
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-notification-service-ingress
+  namespace: collabspace
+spec:
+  podSelector:
+    matchLabels:
+      app: notification-service
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: traefik
+      ports:
+        - port: 3000
+          protocol: TCP
+
+---
+# PostgreSQL ← auth, user, workspace
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -71,7 +212,7 @@ spec:
           protocol: TCP
 
 ---
-# MongoDB ← task-service
+# MongoDB ← task, notification
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -95,7 +236,7 @@ spec:
           protocol: TCP
 
 ---
-# Redis ← notification-service
+# Redis ← auth, notification
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -110,14 +251,16 @@ spec:
   ingress:
     - from:
         - podSelector:
-            matchLabels:
-              app: notification-service
+            matchExpressions:
+              - key: app
+                operator: In
+                values: [auth-service, notification-service]
       ports:
         - port: 6379
           protocol: TCP
 
 ---
-# RabbitMQ ← auth, workspace, task, notification (event producers + consumers)
+# RabbitMQ ← event publishers/consumers
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -135,11 +278,11 @@ spec:
             matchExpressions:
               - key: app
                 operator: In
-                values: [auth-service, workspace-service, task-service, notification-service]
+                values:
+                  [auth-service, user-service, workspace-service, task-service, notification-service]
       ports:
         - port: 5672
           protocol: TCP
-    # Management UI — only from Traefik (optional dashboard access)
     - from:
         - podSelector:
             matchLabels:
@@ -149,7 +292,7 @@ spec:
           protocol: TCP
 
 ---
-# Prometheus → all pods for /metrics scraping
+# Prometheus → metrics scrape
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:

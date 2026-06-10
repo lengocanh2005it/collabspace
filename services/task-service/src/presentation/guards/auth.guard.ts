@@ -1,0 +1,45 @@
+import {
+  CanActivate,
+  ExecutionContext,
+  Injectable,
+  UnauthorizedException,
+} from "@nestjs/common";
+import { AuthGrpcService } from "../../integrations/auth/auth-grpc.service";
+import type { AppRequest } from "../http/request-context";
+import { getHeaderValue } from "../http/request-context";
+
+@Injectable()
+export class AuthGuard implements CanActivate {
+  constructor(private readonly authGrpcService: AuthGrpcService) {}
+
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    const request = context.switchToHttp().getRequest<AppRequest>();
+    const authorization = request.headers.authorization;
+
+    if (authorization?.trim()) {
+      const identity =
+        await this.authGrpcService.verifyAccessToken(authorization);
+      request.user = {
+        id: identity.userId,
+        name: getHeaderValue(request.headers, "x-user-name") ?? "User",
+      };
+      return true;
+    }
+
+    if (process.env.ALLOW_DEV_IDENTITY_HEADERS === "true") {
+      const userId = request.headers["x-user-id"];
+      if (typeof userId === "string" && userId.trim()) {
+        request.user = {
+          id: userId.trim(),
+          name: getHeaderValue(request.headers, "x-user-name") ?? "User",
+        };
+        return true;
+      }
+    }
+
+    throw new UnauthorizedException({
+      code: "TOKEN_MISSING",
+      message: "Authorization header is required",
+    });
+  }
+}

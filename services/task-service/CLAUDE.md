@@ -47,7 +47,9 @@ pnpm run test
 - Handlers registered in `Handlers` array in `app.module.ts`
 - Domain entities use factories and business methods; throw domain exceptions
 - Events: include `eventId` + `occurredAt` in `domain/events/` payloads
-- User/workspace context from gateway headers (`request-context.ts`)
+- `@UseGuards(AuthGuard, WorkspaceValidationGuard)` — JWT via auth gRPC, then workspace membership
+- `request.user` from `AuthGuard`; workspace check via internal API + `INTERNAL_SERVICE_TOKEN`
+- Env: `AUTH_SERVICE_GRPC_URL`, `ALLOW_DEV_IDENTITY_HEADERS`, `INTERNAL_SERVICE_TOKEN`, `WORKSPACE_CLIENT_MODE=http`
 - Responses via `presentation/common/response/` helpers
 
 ## Where to add code

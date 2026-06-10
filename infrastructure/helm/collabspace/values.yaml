@@ -182,6 +182,7 @@ gateway:
       - Authorization
 
 networkPolicies:
+  # Per-service ingress allow lists (Phase B4 trust boundaries). Disable for kind/minikube if CNI lacks support.
   enabled: true
 
 observability:

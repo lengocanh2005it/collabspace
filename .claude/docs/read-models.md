@@ -15,7 +15,7 @@ CollabSpace avoids cross-service SQL joins. When service **A** needs user direct
 
 | Case | Use instead |
 |------|-------------|
-| Workspace membership / authorization | Sync HTTP to `workspace-service` (must be fresh) |
+| Workspace membership / authorization | Sync HTTP to `workspace-service` internal API + `X-Internal-Service-Token` (must be fresh; not `X-User-Id` S2S) |
 | Auth `/me` profile enrichment | gRPC to user-service |
 | One-shot notification payload | Denormalize in event at publish time (metadata); list API still enriches from replica |
 
@@ -40,5 +40,13 @@ INTERNAL_SERVICE_TOKEN=           # required in production
 ```env
 INTERNAL_SERVICE_TOKEN=           # validates internal replica lookup
 ```
+
+## Env (workspace-service — membership, not replica)
+
+```env
+INTERNAL_SERVICE_TOKEN=           # validates GET /workspaces/internal/:id/membership
+```
+
+Task-service sends the same token on `WorkspaceHttpClient` calls. Gateway blocks public access to `/workspaces/internal/*`.
 
 See also: `.claude/docs/service-contracts.md` → User replica events. **Overview (VI):** [docs/cross-service-data.md](../../docs/cross-service-data.md). **Trade-offs:** [docs/trade-offs.md](../../docs/trade-offs.md).

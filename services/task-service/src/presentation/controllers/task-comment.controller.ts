@@ -21,6 +21,7 @@ import { EditCommentCommand } from "../../application/usecases/comments/edit/edi
 import { DeleteCommentCommand } from "../../application/usecases/comments/delete/delete-comment.command";
 import { GetTaskCommentsQuery } from "../../application/usecases/comments/get/get-task-comments.query";
 import { WorkspaceValidationGuard } from "../guards/workspace-validation.guard";
+import { AuthGuard } from "../guards/auth.guard";
 import { CreateCommentResponse } from "../../application/usecases/comments/create/create-comment.handler";
 import { EditCommentResponse } from "../../application/usecases/comments/edit/edit-comment.handler";
 import { DeleteCommentResponse } from "../../application/usecases/comments/delete/delete-comment.handler";
@@ -28,7 +29,7 @@ import { GetTaskCommentsResponse } from "../../application/usecases/comments/get
 import type { AppRequest } from "../http/request-context";
 
 @Controller("v1/tasks/:taskId/comments")
-@UseGuards(WorkspaceValidationGuard)
+@UseGuards(AuthGuard, WorkspaceValidationGuard)
 export class TaskCommentController {
   constructor(
     private readonly commandBus: CommandBus,

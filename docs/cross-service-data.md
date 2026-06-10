@@ -110,6 +110,18 @@ USER_REPLICA_FALLBACK_ENABLED=true
 INTERNAL_SERVICE_TOKEN=
 ```
 
+### 3.5b Workspace membership (không dùng replica)
+
+Task-service kiểm tra quyền workspace **đồng bộ** qua internal API (phải fresh):
+
+```
+GET /api/v1/workspaces/internal/{workspaceId}/membership?userId=
+Header: X-Internal-Service-Token
+```
+
+- Gateway **chặn** path này (503) — chỉ gọi qua Docker/K8s service DNS.
+- `INTERNAL_SERVICE_TOKEN` phải **trùng** trên `workspace-service` và `task-service`.
+
 ### 3.6 Denormalize thêm trong aggregate Task
 
 Sau khi đọc replica, task-service embed **`UserSnapshot`** vào document/event Task lúc **ghi** — tránh phải tra user mỗi lần đọc lịch sử task (CQRS / event sourcing).

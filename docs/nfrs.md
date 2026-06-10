@@ -68,9 +68,9 @@ Chi tiết kỹ thuật:
 | NFR | Mục tiêu | CollabSpace |
 |-----|----------|-------------|
 | Authentication | JWT access + refresh | ✅ auth-service |
-| Authorization gateway | Protected routes qua forward-auth | ✅ Traefik → `/auth/verify` |
-| Service auth (workspace) | Không tin header client giả | ✅ `AuthGuard` + auth gRPC; dev-only `X-User-Id` |
-| Service-to-service nội bộ | Token/mTLS giữa app | ⚠️ `INTERNAL_SERVICE_TOKEN` cho replica lookup; chưa mTLS toàn mesh |
+| Authorization gateway | Protected routes qua forward-auth | ✅ Traefik `strip-identity-headers` → `/auth/verify` |
+| Service auth (workspace, task, notification) | Không tin header client giả | ✅ `AuthGuard` + auth gRPC; dev-only `X-User-Id` khi `ALLOW_DEV_IDENTITY_HEADERS=true` |
+| Service-to-service nội bộ | Token/mTLS giữa app | ✅ `INTERNAL_SERVICE_TOKEN` + NetworkPolicy ingress allow lists (B3–B4) |
 | Secrets không trong Git | Prod secrets từ vault | ⚠️ `.env.example` + Helm placeholders; External Secrets 📋 checklist |
 | Metrics lockdown | `/metrics` không public | ✅ `METRICS_AUTH_TOKEN` khi set |
 | Input validation | DTO + validation pipe | ✅ NestJS `ValidationPipe` |

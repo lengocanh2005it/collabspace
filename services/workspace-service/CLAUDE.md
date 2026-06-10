@@ -36,7 +36,8 @@ pnpm run seed
 ## Conventions
 
 - Global prefix `/api/v1`; routes `/workspaces/*`, `/workspaces/:id/projects/*`
-- Auth: `AuthGuard` verifies JWT via auth gRPC; dev fallback `X-User-Id` when `NODE_ENV=development`
+- Public routes: `AuthGuard` + auth gRPC → `@UserId()`; dev fallback `X-User-Id` when `ALLOW_DEV_IDENTITY_HEADERS=true`
+- Internal S2S: `GET /workspaces/internal/:id/membership` — `X-Internal-Service-Token` (not on Traefik)
 - ORM columns snake_case; multi-step writes use transactions
 - Events: `collabspace_exchange` + routing key from `domain/events/`
 - Tests: `*.use-case.spec.ts` next to use case

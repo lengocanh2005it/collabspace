@@ -19,15 +19,18 @@ import { DeleteProjectUseCase } from './application/use-cases/project/delete-pro
 import { InviteMemberUseCase } from './application/use-cases/invitation/invite-member.use-case';
 import { AcceptInvitationUseCase } from './application/use-cases/invitation/accept-invitation.use-case';
 import { RejectInvitationUseCase } from './application/use-cases/invitation/reject-invitation.use-case';
+import { CheckWorkspaceMembershipUseCase } from './application/use-cases/workspace/check-workspace-membership.use-case';
 import { WorkspaceHealthService } from './health/workspace-health.service';
 import { MetricsModule } from './metrics/metrics.module';
 import { AuthModule } from './integrations/auth/auth.module';
 import { AuthGuard } from './presentation/http/guards/auth.guard';
+import { InternalWorkspaceController } from './presentation/http/internal-workspace.controller';
 
 @Module({
   imports: [DatabaseModule, MetricsModule, OutboxModule, RabbitMqModule, AuthModule],
   controllers: [
     HealthController,
+    InternalWorkspaceController,
     WorkspaceController,
     ProjectController,
     InvitationController,
@@ -38,6 +41,7 @@ import { AuthGuard } from './presentation/http/guards/auth.guard';
     ListWorkspacesUseCase,
     UpdateWorkspaceUseCase,
     ListMembersUseCase,
+    CheckWorkspaceMembershipUseCase,
     CreateProjectUseCase,
     ListProjectsUseCase,
     UpdateProjectUseCase,

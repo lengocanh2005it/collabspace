@@ -176,6 +176,7 @@ Purpose:
 Rules:
 
 - Treat these headers as trusted only if they come from the API gateway or an internal trusted hop.
+- The API gateway **strips** client-supplied identity headers (`strip-identity-headers` middleware) before `forward-auth` copies verified values from `auth-service` `/verify`.
 - Direct service-to-service calls should prefer gRPC verification unless a gateway authentication middleware is explicitly implemented.
 - Never let clients spoof identity headers to bypass auth checks.
 
@@ -319,6 +320,12 @@ Authorization baseline:
 - Only owner/admin can invite members.
 - Only members can list workspace members.
 - Owner cannot be accidentally removed without explicit transfer/ownership handling.
+
+Internal service-to-service (not for browser clients):
+
+- `GET /workspaces/internal/{workspaceId}/membership?userId=` — header `X-Internal-Service-Token`; returns `{ workspaceId, userId, isMember, role }`; `404` when workspace missing.
+- Used by `task-service` for membership guards instead of spoofable `X-User-Id` on public routes.
+- **Not exposed via Traefik** — call on cluster/service DNS only; gateway returns 503 for `/workspaces/internal/*` and `/users/internal/*`.
 
 ## Task MVP Contract
 

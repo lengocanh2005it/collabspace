@@ -10,7 +10,8 @@ Detailed project context for AI agents. Keep root `CLAUDE.md` concise; put long 
 | `resilience.md` | Design for failure: timeouts, errors, events, degradation matrix, GAPs |
 | `project-architecture.md` | System map, service ownership, infrastructure, data stores |
 | `service-architecture.md` | Per-service folder layout, layering patterns, where to add code |
-| `service-contracts.md` | HTTP routes, gRPC, events, auth headers |
+| `service-contracts.md` | HTTP routes, gRPC, events, auth headers, internal S2S |
+| `read-models.md` | User replica pattern and env |
 | `development-workflows.md` | Setup, Docker, migrations, seeding, testing, troubleshooting |
 | `coding-conventions.md` | NestJS, TypeORM, DTO, repository, error, test conventions |
 | `mvp-roadmap.md` | Recommended build order for agents (status → `docs/features.md`) |
@@ -20,6 +21,11 @@ Detailed project context for AI agents. Keep root `CLAUDE.md` concise; put long 
 | File | Purpose |
 |------|---------|
 | `features.md` | **Canonical** product features and implementation status |
+| `api-routes.md` | HTTP route index, gateway headers, internal API rules |
+| `cross-service-data.md` | Read models, replicas, S2S patterns (Vietnamese) |
+| `nfrs.md` | Non-functional requirements |
+| `trade-offs.md` | Architecture trade-offs (incl. Phase B) |
+| `production-hardening.md` | Production checklist |
 | `mvp-demo-scope.md` | MVP demo story and acceptance checklist |
 | `resilience-overview.md` | Resilience summary (Vietnamese) |
 

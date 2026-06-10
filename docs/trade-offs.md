@@ -131,7 +131,20 @@ Chi tiết: [cross-service-data.md](./cross-service-data.md)
 
 ---
 
-## 10. JWT + forward-auth vs session server-side only
+## 10. Trust boundaries — layered defense (Phase B)
+
+| Layer | Cơ chế | Trade-off |
+|-------|--------|-----------|
+| **B1** Service `AuthGuard` + auth gRPC | Không tin `X-User-Id` từ client | Thêm hop gRPC mỗi request; timeout 3s |
+| **B2** Gateway `strip-identity-headers` | Xóa header giả trước forward-auth | Defense in depth; service vẫn verify JWT |
+| **B3** `INTERNAL_SERVICE_TOKEN` S2S | task→workspace membership, replica fallback | Shared secret; chưa mTLS mesh |
+| **B4** NetworkPolicy + gateway block internal paths | Pod chỉ nhận traffic cần thiết | CNI phải hỗ trợ; local Helm có thể `networkPolicies.enabled: false` |
+
+**Chọn:** cả bốn lớp cho demo an toàn hơn mà không đổi contract public API.
+
+---
+
+## 11. JWT + forward-auth vs session server-side only
 
 | | JWT access + refresh (CollabSpace) | Server session cookie |
 |---|-----------------------------------|----------------------|
@@ -141,7 +154,7 @@ Chi tiết: [cross-service-data.md](./cross-service-data.md)
 
 ---
 
-## 11. CQRS + event sourcing (task) vs CRUD (các service khác)
+## 12. CQRS + event sourcing (task) vs CRUD (các service khác)
 
 | | Task: ES + projection | Workspace/user: CRUD + outbox |
 |---|----------------------|-------------------------------|
@@ -153,7 +166,7 @@ Chi tiết: [cross-service-data.md](./cross-service-data.md)
 
 ---
 
-## 12. Denormalize trong event vs luôn tra replica
+## 13. Denormalize trong event vs luôn tra replica
 
 | | Cả hai (CollabSpace notification) | Chỉ replica |
 |---|-----------------------------------|-------------|
@@ -164,7 +177,7 @@ Chi tiết: [cross-service-data.md](./cross-service-data.md)
 
 ---
 
-## 13. Observability stack đầy đủ vs minimal
+## 14. Observability stack đầy đủ vs minimal
 
 | | Prometheus + Grafana + alerts + optional Jaeger/ELK | Chỉ logs stdout |
 |---|------------------------------------------------------|-----------------|
@@ -175,7 +188,7 @@ Chi tiết: [cross-service-data.md](./cross-service-data.md)
 
 ---
 
-## 14. Helm/K8s vs chỉ Docker Compose
+## 15. Helm/K8s vs chỉ Docker Compose
 
 | | Cả hai | Chỉ Compose |
 |---|--------|-------------|
@@ -185,7 +198,7 @@ Chi tiết: [cross-service-data.md](./cross-service-data.md)
 
 ---
 
-## 15. Demo scope vs production completeness
+## 16. Demo scope vs production completeness
 
 | Ưu tiên demo | Cố ý chưa làm / làm một phần |
 |--------------|------------------------------|

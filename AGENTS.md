@@ -19,6 +19,11 @@ This repository uses **Claude Code**-style agent documentation. `CLAUDE.md` is t
 | `.claude/docs/development-workflows.md` | Docker, migrate, seed, test, troubleshoot |
 | `.claude/docs/coding-conventions.md` | NestJS, DTO, TypeORM, test style |
 | `docs/features.md` | Product features and status (canonical) |
+| `docs/api-routes.md` | HTTP route index, gateway headers, internal API rules |
+| `docs/cross-service-data.md` | Read models, replicas, S2S patterns (human, VI) |
+| `docs/nfrs.md` | Non-functional requirements |
+| `docs/trade-offs.md` | Architecture trade-offs |
+| `docs/production-hardening.md` | Prod checklist (incl. Phase B trust boundaries) |
 | `.claude/docs/mvp-roadmap.md` | MVP build order for agents |
 | `docs/mvp-demo-scope.md` | MVP demo acceptance checklist |
 

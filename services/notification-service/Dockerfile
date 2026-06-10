@@ -37,6 +37,7 @@ RUN apk add --no-cache wget
 # Copy only necessary files
 COPY --from=prod-deps /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/proto ./proto
 COPY --from=builder /app/package.json ./
 
 # Security: Non-root user

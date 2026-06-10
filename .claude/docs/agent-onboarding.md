@@ -49,6 +49,8 @@ services/
 | **Kiến trúc từng service (folder, pattern)** | `.claude/docs/service-architecture.md` |
 | Resilience, failure handling | `.claude/docs/resilience.md` (+ `docs/resilience-overview.md` tiếng Việt) |
 | HTTP/gRPC/events | `.claude/docs/service-contracts.md` |
+| Trust boundaries (auth, gateway, S2S) | `docs/production-hardening.md`, `docs/api-routes.md` |
+| Cross-service reads / replicas | `docs/cross-service-data.md`, `.claude/docs/read-models.md` |
 | Build, test, Docker, seed | `.claude/docs/development-workflows.md` |
 | NestJS style, DTOs, tests | `.claude/docs/coding-conventions.md` |
 | Product features & status | `docs/features.md` |

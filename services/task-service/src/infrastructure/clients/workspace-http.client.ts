@@ -5,15 +5,18 @@ import type {
   WorkspaceMember,
 } from "../../application/ports/IWorkspaceClient";
 
-type WorkspaceMemberResponse = {
-  role: string;
-  user_id: string;
+type WorkspaceMembershipResponse = {
+  workspaceId: string;
+  userId: string;
+  isMember: boolean;
+  role: string | null;
 };
 
 @Injectable()
 export class WorkspaceHttpClient implements IWorkspaceClient {
   private readonly baseUrl: string;
   private readonly timeoutMs: number;
+  private readonly internalToken: string | undefined;
 
   constructor(private readonly configService: ConfigService) {
     this.baseUrl =
@@ -22,17 +25,17 @@ export class WorkspaceHttpClient implements IWorkspaceClient {
     this.timeoutMs = Number(
       this.configService.get<string>("WORKSPACE_SERVICE_TIMEOUT_MS") ?? 3000,
     );
+    this.internalToken = this.configService
+      .get<string>("INTERNAL_SERVICE_TOKEN")
+      ?.trim();
   }
 
   async validateWorkspaceAsync(
     workspaceId: string,
     userId: string,
   ): Promise<boolean> {
-    const response = await this.request(
-      `/api/v1/workspaces/${workspaceId}`,
-      userId,
-    );
-    return response.status === 200;
+    const membership = await this.fetchMembership(workspaceId, userId);
+    return membership?.isMember === true;
   }
 
   async checkUserPermissionAsync(
@@ -59,50 +62,78 @@ export class WorkspaceHttpClient implements IWorkspaceClient {
     workspaceId: string,
     userId: string,
   ): Promise<WorkspaceMember | null> {
-    const response = await this.request(
-      `/api/v1/workspaces/${workspaceId}/members`,
-      userId,
-    );
+    const membership = await this.fetchMembership(workspaceId, userId);
 
-    if (response.status === 403 || response.status === 404) {
-      return null;
-    }
-
-    if (!response.ok) {
-      throw new ServiceUnavailableException({
-        code: "WORKSPACE_SERVICE_UNAVAILABLE",
-        message: `Workspace service returned ${response.status}`,
-      });
-    }
-
-    const members = (await response.json()) as WorkspaceMemberResponse[];
-    const member = members.find((item) => item.user_id === userId);
-
-    if (!member) {
+    if (!membership?.isMember || !membership.role) {
       return null;
     }
 
     return {
-      role: member.role as WorkspaceMember["role"],
-      userId: member.user_id,
+      role: membership.role as WorkspaceMember["role"],
+      userId: membership.userId,
     };
   }
 
-  private async request(
-    path: string,
+  private isInternalAccessEnabled(): boolean {
+    return (
+      Boolean(this.internalToken) || process.env.NODE_ENV === "development"
+    );
+  }
+
+  private async fetchMembership(
+    workspaceId: string,
     userId: string,
-  ): Promise<Response> {
+  ): Promise<WorkspaceMembershipResponse | null> {
+    if (!this.isInternalAccessEnabled()) {
+      throw new ServiceUnavailableException({
+        code: "WORKSPACE_SERVICE_UNAVAILABLE",
+        message:
+          "INTERNAL_SERVICE_TOKEN is required for workspace membership checks",
+      });
+    }
+
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
+    const headers: Record<string, string> = {};
+
+    if (this.internalToken) {
+      headers["X-Internal-Service-Token"] = this.internalToken;
+    }
+
+    const path =
+      `/api/v1/workspaces/internal/${encodeURIComponent(workspaceId)}` +
+      `/membership?userId=${encodeURIComponent(userId)}`;
 
     try {
-      return await fetch(`${this.baseUrl}${path}`, {
-        headers: {
-          "X-User-Id": userId,
-        },
+      const response = await fetch(`${this.baseUrl}${path}`, {
+        headers,
         signal: controller.signal,
       });
+
+      if (response.status === 404) {
+        return null;
+      }
+
+      if (response.status === 401 || response.status === 403) {
+        throw new ServiceUnavailableException({
+          code: "WORKSPACE_SERVICE_UNAVAILABLE",
+          message: `Workspace internal access denied (${response.status})`,
+        });
+      }
+
+      if (!response.ok) {
+        throw new ServiceUnavailableException({
+          code: "WORKSPACE_SERVICE_UNAVAILABLE",
+          message: `Workspace service returned ${response.status}`,
+        });
+      }
+
+      return (await response.json()) as WorkspaceMembershipResponse;
     } catch (error) {
+      if (error instanceof ServiceUnavailableException) {
+        throw error;
+      }
+
       throw new ServiceUnavailableException({
         code: "WORKSPACE_SERVICE_UNAVAILABLE",
         message:

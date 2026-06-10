@@ -30,11 +30,14 @@ Environment examples exist for most services and infrastructure components:
 - `infrastructure/rabbitmq/.env.example`
 - `infrastructure/redis/.env.example`
 - `infrastructure/load-testing/k6/.env.example`
+- `infrastructure/docker/.env.example` — shared dev secret notes
 
 Rules:
 
 - Do not commit real secrets.
 - When adding required env vars, update the matching `.env.example`, config service, Docker Compose file, and README/doc references.
+- **Shared secrets (local Docker):** use the same `INTERNAL_SERVICE_TOKEN` in `user-service`, `workspace-service`, `task-service`, and `notification-service` `.env` files; align `JWT_SECRET` between `auth-service` and `notification-service`. See `infrastructure/docker/.env.example`.
+- **Trust boundaries:** `ALLOW_DEV_IDENTITY_HEADERS=true` only in local `.env` for workspace/task/notification direct-port testing; production and gateway traffic require `Authorization: Bearer …`.
 - In NestJS services, prefer a configuration wrapper over scattered `process.env` reads when the service already has one. `auth-service` uses `ConfigurationService`; `user-service` currently reads more directly in `main.ts` and module factories.
 
 ## Docker Compose

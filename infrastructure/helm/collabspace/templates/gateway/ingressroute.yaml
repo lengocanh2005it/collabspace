@@ -13,6 +13,12 @@ spec:
     - web
     - websecure
   routes:
+    - match: PathPrefix(`/api/v1/workspaces/internal`) || PathPrefix(`/api/v1/users/internal`)
+      kind: Rule
+      priority: 200
+      services:
+        - name: internal-api-reject
+          port: 80
     - match: Path(`/api/v1/auth/me`)
       kind: Rule
       priority: 100
@@ -20,6 +26,7 @@ spec:
         - name: auth-service
           port: 3000
       middlewares:
+        - name: strip-identity-headers
         - name: forward-auth
         - name: rate-limit
         - name: cors-headers
@@ -37,6 +44,7 @@ spec:
         - name: user-service
           port: 3000
       middlewares:
+        - name: strip-identity-headers
         - name: forward-auth
         - name: rate-limit
         - name: cors-headers
@@ -46,6 +54,7 @@ spec:
         - name: workspace-service
           port: 8080
       middlewares:
+        - name: strip-identity-headers
         - name: forward-auth
         - name: rate-limit
         - name: cors-headers
@@ -55,6 +64,7 @@ spec:
         - name: task-service
           port: 3000
       middlewares:
+        - name: strip-identity-headers
         - name: forward-auth
         - name: rate-limit
         - name: cors-headers
@@ -64,6 +74,7 @@ spec:
         - name: notification-service
           port: 3000
       middlewares:
+        - name: strip-identity-headers
         - name: forward-auth
         - name: rate-limit
         - name: cors-headers

@@ -36,6 +36,8 @@ pnpm run test
 ## Conventions
 
 - Global prefix `api`; `@Controller('v1/notifications')` → `/api/v1/notifications`
+- Protected HTTP (`GET /`, `PATCH .../read`): `@UseGuards(AuthGuard)` — JWT via auth gRPC, not `X-User-Id`
+- Env: `AUTH_SERVICE_GRPC_URL`, `ALLOW_DEV_IDENTITY_HEADERS`, `INTERNAL_SERVICE_TOKEN` (user replica fallback)
 - Idempotency: `ProcessedEvent` + `tryClaim(eventId)` before create
 - Listeners pass `eventId` into `CreateNotificationCommand`
 - Repository tokens: `NOTIFICATION_REPOSITORY_TOKEN`, `PROCESSED_EVENT_REPOSITORY_TOKEN`

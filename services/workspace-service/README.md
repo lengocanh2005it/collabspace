@@ -26,7 +26,9 @@ pnpm test
 
 ## API Endpoints
 
-All endpoints are prefixed with `/api/v1` and require an `X-User-Id` header (usually injected by the API Gateway after Auth validation).
+All **public** endpoints are prefixed with `/api/v1` and require `Authorization: Bearer …` (auth gRPC) or dev `ALLOW_DEV_IDENTITY_HEADERS`.
+
+Internal service-to-service routes under `/api/v1/workspaces/internal/*` require `X-Internal-Service-Token` (used by task-service for membership checks).
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|

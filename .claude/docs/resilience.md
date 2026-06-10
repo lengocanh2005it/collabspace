@@ -115,7 +115,7 @@ Do **not** map dependency failures to generic `500` if the cause is known.
 |-----------|----------|----------|
 | Traefik retry | `api-gateway/dynamic/middlewares.yml` → `retry-policy` | 3 attempts, 100ms initial interval |
 | Traefik circuit breaker | `circuit-breaker` | `NetworkErrorRatio() > 0.3` |
-| Forward auth | `forward-auth` → `/api/v1/auth/verify` | Gateway validates JWT before protected routes |
+| Forward auth | `strip-identity-headers` → `forward-auth` → `/api/v1/auth/verify` | Gateway strips spoofed identity headers, then validates JWT |
 | RabbitMQ DLQ | `infrastructure/rabbitmq/definitions.json` | `collabspace_dlx`, per-queue `*.dlq` |
 | Auth email outbox | `services/auth-service/src/modules/outbox/*` | DB-backed queue, retries, degraded thresholds |
 | K8s PDB | `infrastructure/k8s/pdb.yaml` | minAvailable per service |
@@ -155,7 +155,8 @@ Legend: **Current** = observed or likely today; **Target** = required after resi
 
 | API / flow | Dependency down | Current | Target |
 |------------|-----------------|---------|--------|
-| Protected routes | auth | JWT via `AuthGuard` + auth gRPC; dev-only `X-User-Id` when `NODE_ENV=development` | Keep **(DONE — Phase 4)** |
+| Protected routes | auth | JWT via `AuthGuard` + auth gRPC; dev-only `ALLOW_DEV_IDENTITY_HEADERS` | Keep **(DONE — Phase B1)** |
+| Internal membership API | task-service | `X-Internal-Service-Token`; not on Traefik | Keep **(DONE — Phase B3–B4)** |
 | `POST .../invite` | RabbitMQ | Transactional outbox; HTTP succeeds if DB write succeeds | Keep **(DONE — Phase 2)** |
 | `GET .../health/ready` | Postgres | `ready` checks DB ping | Keep **(DONE — Phase 1)** |
 
@@ -163,7 +164,8 @@ Legend: **Current** = observed or likely today; **Target** = required after resi
 
 | API / flow | Dependency down | Current | Target |
 |------------|-----------------|---------|--------|
-| Task mutations | workspace membership | HTTP client when `WORKSPACE_CLIENT_MODE=http`, else mock | Keep **(DONE — Phase 2)** |
+| Protected routes | auth gRPC | `AuthGuard` on task/comment controllers | Keep **(DONE — Phase B1)** |
+| Task mutations | workspace membership | Internal HTTP + `INTERNAL_SERVICE_TOKEN` when `WORKSPACE_CLIENT_MODE=http` | Keep **(DONE — Phase B3)** |
 | `TASK_ASSIGNED` publish | RabbitMQ | Mongo outbox + processor retries | Keep **(DONE — Phase 2)** |
 | Reads | MongoDB | Fail | `503` |
 
@@ -173,6 +175,7 @@ Legend: **Current** = observed or likely today; **Target** = required after resi
 |------------|-----------------|---------|--------|
 | Event consumers | MongoDB | nack / error path | Retry → DLQ |
 | Event consumers | duplicate `eventId` | `processed_events` collection dedupes by `eventId` | Keep **(DONE — Phase 1)** |
+| Protected `GET/PATCH /notifications` | auth gRPC | `AuthGuard`; not raw `X-User-Id` | Keep **(DONE — Phase B1)** |
 | `GET /notifications` | MongoDB | — | `503`; empty list only when truly empty |
 | RabbitMQ consumer | broker down | `ready: false` when broker unreachable | Keep **(DONE — Phase 1)** |
 
@@ -180,6 +183,8 @@ Legend: **Current** = observed or likely today; **Target** = required after resi
 
 | Scenario | Target |
 |----------|--------|
+| Client sends spoofed `X-User-Id` | Stripped at gateway; services verify JWT via gRPC **(DONE — B2/B1)** |
+| Client hits `/users/internal` or `/workspaces/internal` via gateway | 503 reject service **(DONE — B4)** |
 | auth-service down | Protected routes fail auth; public auth routes fail with `502/503` |
 | Single app instance not ready | Health check removes from pool |
 | Downstream slow | Retry then circuit open; fail fast |

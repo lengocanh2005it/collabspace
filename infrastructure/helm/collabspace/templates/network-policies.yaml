@@ -1,5 +1,6 @@
 {{- if .Values.networkPolicies.enabled }}
 {{- $ns := include "collabspace.namespace" . }}
+{{- $appServices := list "auth-service" "user-service" "workspace-service" "task-service" "notification-service" }}
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -21,7 +22,7 @@ spec:
     matchExpressions:
       - key: app
         operator: In
-        values: [auth-service, user-service, workspace-service, task-service, notification-service]
+        values: {{ toJson $appServices }}
   policyTypes:
     - Ingress
   ingress:
@@ -34,9 +35,137 @@ spec:
           protocol: TCP
         - port: 8080
           protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-auth-service-ingress
+  namespace: {{ $ns }}
+spec:
+  podSelector:
+    matchLabels:
+      app: auth-service
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: traefik
+      ports:
+        - port: 3000
+          protocol: TCP
+    - from:
+        - podSelector:
+            matchExpressions:
+              - key: app
+                operator: In
+                values: [user-service, workspace-service, task-service, notification-service]
+      ports:
         - port: 50051
           protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-user-service-ingress
+  namespace: {{ $ns }}
+spec:
+  podSelector:
+    matchLabels:
+      app: user-service
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: traefik
+      ports:
+        - port: 3000
+          protocol: TCP
+    - from:
+        - podSelector:
+            matchLabels:
+              app: auth-service
+      ports:
         - port: 50052
+          protocol: TCP
+    - from:
+        - podSelector:
+            matchExpressions:
+              - key: app
+                operator: In
+                values: [task-service, notification-service]
+      ports:
+        - port: 3000
+          protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-workspace-service-ingress
+  namespace: {{ $ns }}
+spec:
+  podSelector:
+    matchLabels:
+      app: workspace-service
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: traefik
+      ports:
+        - port: 8080
+          protocol: TCP
+    - from:
+        - podSelector:
+            matchLabels:
+              app: task-service
+      ports:
+        - port: 8080
+          protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-task-service-ingress
+  namespace: {{ $ns }}
+spec:
+  podSelector:
+    matchLabels:
+      app: task-service
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: traefik
+      ports:
+        - port: 3000
+          protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-notification-service-ingress
+  namespace: {{ $ns }}
+spec:
+  podSelector:
+    matchLabels:
+      app: notification-service
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: traefik
+      ports:
+        - port: 3000
           protocol: TCP
 ---
 apiVersion: networking.k8s.io/v1
@@ -122,7 +251,7 @@ spec:
             matchExpressions:
               - key: app
                 operator: In
-                values: [auth-service, user-service, workspace-service, task-service, notification-service]
+                values: {{ toJson $appServices }}
       ports:
         - port: 5672
           protocol: TCP
@@ -132,36 +261,6 @@ spec:
               app.kubernetes.io/name: traefik
       ports:
         - port: 15672
-          protocol: TCP
----
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: allow-inter-service
-  namespace: {{ $ns }}
-spec:
-  podSelector:
-    matchExpressions:
-      - key: app
-        operator: In
-        values: [auth-service, user-service, workspace-service, task-service, notification-service]
-  policyTypes:
-    - Ingress
-  ingress:
-    - from:
-        - podSelector:
-            matchExpressions:
-              - key: app
-                operator: In
-                values: [auth-service, user-service, workspace-service, task-service, notification-service]
-      ports:
-        - port: 3000
-          protocol: TCP
-        - port: 8080
-          protocol: TCP
-        - port: 50051
-          protocol: TCP
-        - port: 50052
           protocol: TCP
 ---
 apiVersion: networking.k8s.io/v1

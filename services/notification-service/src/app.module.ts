@@ -11,6 +11,8 @@ import { WorkspaceInviteEventListenerController } from "./presentation/controlle
 import { NotificationsController } from "./presentation/controllers/notifications.controller";
 import { NotificationHealthService } from "./health/notification-health.service";
 import { MetricsModule } from "./metrics/metrics.module";
+import { AuthModule } from "./integrations/auth/auth.module";
+import { AuthGuard } from "./presentation/guards/auth.guard";
 
 // Handlers & Persistence (Giữ nguyên các import của bạn)
 import {
@@ -58,6 +60,7 @@ const Handlers = [
   imports: [
     ConfigurationModule,
     MetricsModule,
+    AuthModule,
     ConfigModule.forRoot({ isGlobal: true }),
     CqrsModule,
     MongooseModule.forRootAsync({
@@ -83,6 +86,7 @@ const Handlers = [
   providers: [
     ...Handlers,
     NotificationHealthService,
+    AuthGuard,
     UserProfileHttpClient,
     UserReplicaLookupService,
     {

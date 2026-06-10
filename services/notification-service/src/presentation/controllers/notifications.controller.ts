@@ -3,12 +3,11 @@ import {
   Get,
   Patch,
   Param,
-  Headers,
   HttpCode,
   Query,
   Req,
   Res,
-  UnauthorizedException,
+  UseGuards,
 } from "@nestjs/common";
 import type { Request, Response } from "express";
 import { CommandBus, QueryBus } from "@nestjs/cqrs";
@@ -20,13 +19,11 @@ import { MarkAllNotificationsReadCommand } from "../../application/usecases/mark
 import { NotificationHealthService } from "../../health/notification-health.service";
 import { assertMetricsAccess } from "../../metrics/metrics-access";
 import { MetricsService } from "../../metrics/metrics.service";
-
-
+import { AuthGuard } from "../guards/auth.guard";
+import type { AuthenticatedRequest } from "../http/authenticated-request";
 
 @Controller("v1/notifications")
-
 export class NotificationsController {
-
   constructor(
     private readonly queryBus: QueryBus,
     private readonly commandBus: CommandBus,
@@ -34,95 +31,48 @@ export class NotificationsController {
     private readonly metricsService: MetricsService,
   ) {}
 
-
-
   @Get("health")
-
   async getHealth(@Res({ passthrough: true }) response: Response) {
-
     const report = await this.notificationHealthService.getReadiness();
 
     response.status(report.ready ? 200 : 503);
 
     return report;
-
   }
-
-
 
   @Get("health/live")
-
   @HttpCode(200)
-
   getLiveness() {
-
     return this.notificationHealthService.getLiveness();
-
   }
 
-
-
   @Get("health/ready")
-
   async getReadiness(@Res({ passthrough: true }) response: Response) {
-
     const report = await this.notificationHealthService.getReadiness();
 
     response.status(report.ready ? 200 : 503);
 
     return report;
-
   }
 
-
-
   @Get("metrics")
-
   async getMetrics(@Req() request: Request, @Res() response: Response) {
-
     assertMetricsAccess(request);
 
     response.set("Content-Type", this.metricsService.contentType);
-
     response.send(await this.metricsService.getMetrics());
-
   }
 
-
-
   @Get()
-
+  @UseGuards(AuthGuard)
   async listNotifications(
-
-    @Headers("x-user-id") userIdHeader: string | undefined,
-
+    @Req() req: AuthenticatedRequest,
     @Query("skip") skip?: string,
-
     @Query("limit") limit?: string,
-
   ) {
-
-    const recipientId = userIdHeader?.trim();
-
-
-
-    if (!recipientId) {
-
-      throw new UnauthorizedException({
-
-        code: "TOKEN_MISSING",
-
-        message: "X-User-Id header is required",
-
-      });
-
-    }
-
-
-
     return this.queryBus.execute(
       new GetNotificationsQuery(
-        recipientId,
+        req.user.id,
         Number(skip ?? 0),
         Number(limit ?? 20),
       ),
@@ -131,40 +81,24 @@ export class NotificationsController {
 
   @Patch("read-all")
   @HttpCode(200)
-  async markAllAsRead(@Headers("x-user-id") userIdHeader: string | undefined) {
-    const recipientId = userIdHeader?.trim();
-    if (!recipientId) {
-      throw new UnauthorizedException({
-        code: "TOKEN_MISSING",
-        message: "X-User-Id header is required",
-      });
-    }
-
+  @UseGuards(AuthGuard)
+  async markAllAsRead(@Req() req: AuthenticatedRequest) {
     return this.commandBus.execute(
-      new MarkAllNotificationsReadCommand(recipientId),
+      new MarkAllNotificationsReadCommand(req.user.id),
     );
   }
 
   @Patch(":id/read")
   @HttpCode(200)
+  @UseGuards(AuthGuard)
   async markAsRead(
     @Param("id") notificationId: string,
-    @Headers("x-user-id") userIdHeader: string | undefined,
+    @Req() req: AuthenticatedRequest,
   ) {
-    const recipientId = userIdHeader?.trim();
-    if (!recipientId) {
-      throw new UnauthorizedException({
-        code: "TOKEN_MISSING",
-        message: "X-User-Id header is required",
-      });
-    }
-
     await this.commandBus.execute(
-      new MarkNotificationReadCommand(notificationId, recipientId),
+      new MarkNotificationReadCommand(notificationId, req.user.id),
     );
 
     return { message: "Notification marked as read" };
   }
 }
-
-

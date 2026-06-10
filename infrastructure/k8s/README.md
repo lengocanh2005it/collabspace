@@ -21,4 +21,6 @@ These plain YAML files were the original CollabSpace K8s deployment (Agent BRAVO
 kubectl apply -f infrastructure/k8s/
 ```
 
+Network policies (`network-policies.yaml`) enforce Phase B4 trust boundaries when your CNI supports `NetworkPolicy`. Internal HTTP APIs are reachable only from authorized pods (e.g. task-service → workspace-service), not from Traefik.
+
 Note: legacy manifests use custom StatefulSets instead of Bitnami charts and may drift from `services/*/.env.example`.
