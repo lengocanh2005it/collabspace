@@ -250,7 +250,7 @@ Existing or intended event names:
 - `WORKSPACE_INVITED`
 - `COMMENT_CREATED`
 
-When implementing new events, keep event name, routing key, queue name, payload schema, producer, consumer, retry/dead-letter behavior, and docs aligned.
+When implementing new events, keep event name, routing key, queue name, payload schema, producer, consumer, retry/dead-letter behavior, and docs aligned. See `.claude/docs/resilience.md` for idempotency, timeouts, and degradation policies.
 
 ## Current Completion Snapshot
 

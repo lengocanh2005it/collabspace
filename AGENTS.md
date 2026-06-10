@@ -12,6 +12,8 @@ This repository uses **Claude Code**-style agent documentation. `CLAUDE.md` is t
 | Doc | Purpose |
 |-----|---------|
 | `.claude/docs/project-architecture.md` | Services, topology, completion status |
+| `.claude/docs/resilience.md` | Design for failure, degradation matrix, error policy |
+| `docs/resilience-overview.md` | Human-facing resilience summary (Vietnamese) |
 | `.claude/docs/service-contracts.md` | HTTP, gRPC, events, auth headers |
 | `.claude/docs/development-workflows.md` | Docker, migrate, seed, test, troubleshoot |
 | `.claude/docs/coding-conventions.md` | NestJS, DTO, TypeORM, test style |

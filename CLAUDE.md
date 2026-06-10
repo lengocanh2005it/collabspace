@@ -13,6 +13,7 @@ Full onboarding: `.claude/docs/agent-onboarding.md`
 Read before broad changes:
 
 - Architecture: `.claude/docs/project-architecture.md`
+- Resilience / design for failure: `.claude/docs/resilience.md`
 - Service contracts: `.claude/docs/service-contracts.md`
 - Workflows: `.claude/docs/development-workflows.md`
 - Conventions: `.claude/docs/coding-conventions.md`
@@ -107,6 +108,11 @@ Use project skills when the task matches:
 - `/nest-service-change`: auth/user NestJS implementation.
 - `/mvp-feature-planner`: workspace/task/notification MVP slices.
 - `/local-dev-verify`: build, test, Docker, health checks.
+
+## Resilience
+
+Before cross-service, event, or health-check changes, read `.claude/docs/resilience.md`.
+Human summary: `docs/resilience-overview.md`.
 
 ## Default MVP Priority
 

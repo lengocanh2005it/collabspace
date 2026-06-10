@@ -1,5 +1,7 @@
 # CollabSpace Service Contracts
 
+For dependency failures, timeouts, idempotency, and degradation behavior, see `resilience.md`.
+
 ## HTTP API Rules
 
 - Implemented NestJS services use global prefix `/api/v1`.
@@ -18,7 +20,7 @@ Routes:
 - `GET /api/v1/auth/health/live`
 - `GET /api/v1/auth/health/ready`
 - `POST /api/v1/auth/register`
-- `POST /api/v1/auth/resend-verification-otp`
+- `POST /api/v1/auth/resend-verification-otp` (body: `{ "email": "..." }`)
 - `POST /api/v1/auth/verify-email`
 - `POST /api/v1/auth/login`
 - `POST /api/v1/auth/refresh`

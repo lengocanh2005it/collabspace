@@ -43,6 +43,7 @@ services/
 | Task | Read first |
 |------|------------|
 | Architecture, topology | `.claude/docs/project-architecture.md` |
+| Resilience, failure handling | `.claude/docs/resilience.md` (+ `docs/resilience-overview.md` tiếng Việt) |
 | HTTP/gRPC/events | `.claude/docs/service-contracts.md` |
 | Build, test, Docker, seed | `.claude/docs/development-workflows.md` |
 | NestJS style, DTOs, tests | `.claude/docs/coding-conventions.md` |
@@ -77,6 +78,7 @@ Invoke explicitly: *"Use the nest-reviewer agent to review my changes."*
 - **Package manager**: `pnpm` từ thư mục service; không có root `package.json`.
 - **Tests**: Thêm/cập nhật test khi behavior user-visible thay đổi.
 - **Docs**: Cập nhật `.claude/docs/service-contracts.md` khi đổi route/proto/event.
+- **Resilience**: Đọc `.claude/docs/resilience.md` trước khi sửa gRPC, health, outbox, RabbitMQ, hoặc hành vi khi dependency down.
 
 ## Verification checklist
 
