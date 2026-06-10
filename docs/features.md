@@ -218,6 +218,7 @@ Hướng dẫn chạy demo: [mvp-demo-scope.md](./mvp-demo-scope.md#demo-story).
 
 | Tài liệu | Dùng khi |
 |----------|----------|
+| [api-routes.md](./api-routes.md) | Danh sách HTTP routes theo service |
 | [mvp-demo-scope.md](./mvp-demo-scope.md) | Tiêu chí chấp nhận MVP + checklist demo |
 | [mvp-roadmap.md](../.claude/docs/mvp-roadmap.md) | Thứ tự implement, phase cho dev/agent |
 | [service-contracts.md](../.claude/docs/service-contracts.md) | Route, event, header, error codes |

@@ -2,7 +2,7 @@
 
 **A workspace collaboration management platform** — a mini Notion/Slack/Jira hybrid built with microservices architecture.
 
-**Product features & status:** [docs/features.md](docs/features.md) · **MVP demo scope:** [docs/mvp-demo-scope.md](docs/mvp-demo-scope.md)
+**Product features & status:** [docs/features.md](docs/features.md) · **MVP demo scope:** [docs/mvp-demo-scope.md](docs/mvp-demo-scope.md) · **API routes:** [docs/api-routes.md](docs/api-routes.md)
 
 ## Architecture
 
@@ -170,47 +170,9 @@ sh ./scripts/seed.sh
 
 ## API Routes
 
-### Auth Service (`/auth`)
-Base prefix: `/api/v1`
-- `GET /api/v1/auth/health` - Health check
-- `GET /api/v1/auth/health/live` - Liveness check
-- `GET /api/v1/auth/health/ready` - Readiness check
-- `POST /api/v1/auth/register` - Register user, create pending profile in `user-service`, send email verification OTP
-- `POST /api/v1/auth/resend-verification-otp` - Resend email verification OTP with cooldown and max-attempt limits
-- `POST /api/v1/auth/verify-email` - Verify email OTP and mark email as verified
-- `POST /api/v1/auth/login` - Login and return access token + refresh token
-- `POST /api/v1/auth/refresh` - Rotate refresh token and issue a new session
-- `POST /api/v1/auth/logout` - Revoke one refresh token
-- `POST /api/v1/auth/change-password` - Change password for authenticated user and revoke existing sessions
-- `GET /api/v1/auth/me` - Get current authenticated user from access token
-- `GET /api/v1/auth/verify` - Verify bearer token and return identity; also sets `X-User-Id`, `X-User-Name`, `X-Username`, `X-Role`, `X-Roles`, `X-Permissions`, `X-Email-Verified`, `X-Workspace-Id`, `X-Request-Id`
+Route index by service (auth, user, workspace, task, notification), gateway headers, and gRPC entry points: **[docs/api-routes.md](docs/api-routes.md)**.
 
-### User Service (`/users`)
-Base prefix: `/api/v1`
-- `GET /api/v1/users/health` - Health check
-- `GET /api/v1/users/health/live` - Liveness check
-- `GET /api/v1/users/health/ready` - Readiness check
-- `GET /api/v1/users/me` - Get current user profile
-- `PATCH /api/v1/users/me` - Update current user profile
-- `POST /api/v1/users/bulk` - Fetch multiple user profiles by `userIds`
-- `GET /api/v1/users?limit=&offset=&q=` - List user summaries with pagination and optional search query
-- `GET /api/v1/users/search?q=&limit=&offset=` - Search user summaries
-- `GET /api/v1/users/{id}/summary` - Get lightweight user summary
-- `GET /api/v1/users/{id}` - Get full user profile
-
-Internal service contracts:
-- `auth-service` exposes gRPC `AuthService.VerifyAccessToken` for downstream auth checks
-- `user-service` exposes gRPC `UserProfilesService.CreatePendingProfile` so `auth-service` can bootstrap pending profiles at registration time
-- `user-service` exposes gRPC `UserProfilesService.GetProfile` for full-name and username hydration
-- `user-service` exposes gRPC `UserProfilesService.GetProfiles` for bulk profile hydration
-
-### Workspace, Task, Notification
-
-Route prefixes and payloads: [`.claude/docs/service-contracts.md`](.claude/docs/service-contracts.md). Feature list: [`docs/features.md`](docs/features.md).
-
-- **workspace-service** — prefix `/api/v1/workspaces` (port **8080**)
-- **task-service** — prefix `/api/v1/tasks` (port 3000)
-- **notification-service** — prefix `/api/v1/notifications`; consumes `workspace_invited`, `task_assigned`, `comment_created`
+Request/response contracts and event payloads: [`.claude/docs/service-contracts.md`](.claude/docs/service-contracts.md).
 
 ## Monitoring & Observability
 
