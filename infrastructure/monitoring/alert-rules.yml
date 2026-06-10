@@ -88,13 +88,13 @@ groups:
           description: "Redis exporter reports Redis is unreachable."
 
       - alert: MongoDown
-        expr: mongodb_up == 0
+        expr: up{job="mongodb"} == 0
         for: 1m
         labels:
           severity: critical
         annotations:
           summary: "MongoDB is down"
-          description: "MongoDB exporter reports MongoDB is unreachable."
+          description: "MongoDB exporter scrape target is unreachable."
 
       # RabbitMQ
       - alert: RabbitMQHighQueueDepth
@@ -127,7 +127,7 @@ groups:
 
       # Redis memory
       - alert: RedisHighMemoryUsage
-        expr: redis_memory_used_bytes / redis_memory_max_bytes > 0.85
+        expr: redis_memory_max_bytes > 0 and redis_memory_used_bytes / redis_memory_max_bytes > 0.85
         for: 5m
         labels:
           severity: warning

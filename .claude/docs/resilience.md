@@ -119,7 +119,8 @@ Do **not** map dependency failures to generic `500` if the cause is known.
 | RabbitMQ DLQ | `infrastructure/rabbitmq/definitions.json` | `collabspace_dlx`, per-queue `*.dlq` |
 | Auth email outbox | `services/auth-service/src/modules/outbox/*` | DB-backed queue, retries, degraded thresholds |
 | K8s PDB | `infrastructure/k8s/pdb.yaml` | minAvailable per service |
-| Prometheus alerts | `infrastructure/monitoring/alert-rules.yml` | ServiceDown, 5xx rate, … |
+| Prometheus alerts | `infrastructure/monitoring/alert-rules.yml` + Alertmanager | ServiceDown, 5xx rate, … |
+| Infra exporters | `docker-compose.exporters.yml`, `k8s/exporters-deployment.yaml` | Postgres/Redis/Mongo/RabbitMQ metrics |
 
 **GAP:** Application `/metrics` not consistently exposed; alert rules may not fire until Phase 3.
 

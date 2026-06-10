@@ -1,3 +1,4 @@
+import "./observability/instrumentation";
 import "reflect-metadata";
 import { NestFactory } from "@nestjs/core";
 import { ValidationPipe } from "@nestjs/common";
@@ -7,10 +8,7 @@ import { MicroserviceOptions, Transport } from "@nestjs/microservices";
 import { ConfigurationService } from "./configuration/configuration.service"; // Import service của bạn
 import { MetricsService } from "./metrics/metrics.service";
 import { registerMetricsMiddleware } from "./metrics/register-metrics.middleware";
-import { bootstrapTracing } from "./observability/tracing";
-
 async function bootstrap() {
-  bootstrapTracing("task-service");
   const app = await NestFactory.create(AppModule);
 
   // --- PHẦN MỚI: CẤU HÌNH MICROSERVICE ---

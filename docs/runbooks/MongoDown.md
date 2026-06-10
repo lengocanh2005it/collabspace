@@ -1,6 +1,6 @@
 # MongoDown
 
-**Alert:** `mongodb_up == 0`  
+**Alert:** `up{job="mongodb"} == 0`  
 **Severity:** critical  
 **Affected:** task-service, notification-service
 

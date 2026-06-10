@@ -22,9 +22,13 @@ Use before exposing CollabSpace beyond local/demo environments.
 
 ## Observability
 
-- [ ] Prometheus + alert rules (`infrastructure/monitoring/`).
+- [ ] Prometheus + Alertmanager + alert rules (`infrastructure/monitoring/`).
+- [ ] Infra exporters running (Docker: `docker-compose.exporters.yml`; K8s: `exporters-deployment.yaml`).
+- [ ] K8s: apply `prometheus-deployment.yaml` and sync rules via `k8s/scripts/sync-prometheus-alert-rules.ps1`.
+- [ ] Grafana datasource UID `prometheus` matches dashboard JSON.
 - [ ] Runbooks linked from alerts (`docs/runbooks/`).
 - [ ] Periodic readiness drill (`infrastructure/resilience/drills/`).
+- [ ] `TRACING_ENABLED=true` only when Jaeger/OTLP collector is reachable.
 
 ## Chaos / DR
 
@@ -34,4 +38,4 @@ Use before exposing CollabSpace beyond local/demo environments.
 ## Known gaps
 
 - workspace-service trusts gateway `X-User-Id` — verify JWT via auth gRPC in production.
-- Full OTEL auto-instrumentation not yet bundled; tracing is env-gated bootstrap only.
+- `/metrics` endpoints are unauthenticated — restrict with network policy in production.

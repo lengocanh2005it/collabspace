@@ -51,27 +51,31 @@ Add Traefik:
 docker-compose -f docker-compose.yml -f docker-compose.db.yml -f docker-compose.override.yml -f docker-compose.traefik.yml up -d
 ```
 
-Add monitoring:
+Add monitoring (Prometheus + Alertmanager + Grafana):
 
 ```sh
-docker-compose -f docker-compose.yml -f docker-compose.db.yml -f docker-compose.override.yml -f docker-compose.monitoring.yml up -d
+docker-compose -f docker-compose.yml -f docker-compose.db.yml -f docker-compose.override.yml -f docker-compose.exporters.yml -f docker-compose.monitoring.yml up -d
 ```
 
 Full local stack:
 
 ```sh
-docker-compose -f docker-compose.yml -f docker-compose.db.yml -f docker-compose.override.yml -f docker-compose.monitoring.yml -f docker-compose.logging.yml -f docker-compose.tracing.yml -f docker-compose.traefik.yml up -d
+docker-compose -f docker-compose.yml -f docker-compose.db.yml -f docker-compose.override.yml -f docker-compose.exporters.yml -f docker-compose.monitoring.yml -f docker-compose.logging.yml -f docker-compose.tracing.yml -f docker-compose.traefik.yml up -d
 ```
+
+Set `TRACING_ENABLED=true` in service `.env` files when using the tracing overlay.
 
 Important local URLs:
 
-- Auth service direct: `http://localhost:3000/api/v1/auth/health`
-- User service direct: `http://localhost:3001/api/v1/users/health`
-- Workspace direct: `http://localhost:3002/workspaces/health` once implemented
-- Task direct: `http://localhost:3003/tasks/health` once implemented
-- Notification direct: `http://localhost:3004/notifications/health` once implemented
+- Auth readiness: `http://localhost:3000/api/v1/auth/health/ready`
+- User readiness: `http://localhost:3001/api/v1/users/health/ready`
+- Workspace readiness: `http://localhost:3002/api/v1/workspaces/health/ready`
+- Task readiness: `http://localhost:3003/api/v1/tasks/health/ready`
+- Notification readiness: `http://localhost:3004/api/v1/notifications/health/ready`
+- App metrics example: `http://localhost:3000/api/v1/auth/metrics`
 - Grafana: `http://localhost:3005`
 - Prometheus: `http://localhost:9090`
+- Alertmanager: `http://localhost:9093`
 - Kibana: `http://localhost:5601`
 - Jaeger: `http://localhost:16686`
 - Traefik dashboard: `http://localhost:8080`
@@ -235,8 +239,15 @@ When endpoints change, update the matching k6 script and `config.json`.
 Monitoring:
 
 - Prometheus config: `infrastructure/monitoring/prometheus.yml`
+- Alert rules: `infrastructure/monitoring/alert-rules.yml`
+- Alertmanager: `infrastructure/monitoring/alertmanager.yml`
+- Docker overlay: `infrastructure/docker/docker-compose.monitoring.yml`
+- Infra exporters overlay: `infrastructure/docker/docker-compose.exporters.yml`
 - Grafana deployment: `infrastructure/monitoring/grafana-deployment.yaml`
 - Grafana dashboard: `infrastructure/monitoring/grafana-dashboards/service-health.json`
+- K8s Prometheus: `infrastructure/k8s/prometheus-deployment.yaml`
+- K8s exporters: `infrastructure/k8s/exporters-deployment.yaml`
+- Sync K8s alert rules: `infrastructure/k8s/scripts/sync-prometheus-alert-rules.ps1`
 
 Logging:
 
@@ -246,13 +257,16 @@ Logging:
 
 Tracing:
 
-- Jaeger config/deployment under `infrastructure/tracing`
+- Jaeger Docker overlay: `infrastructure/docker/docker-compose.tracing.yml` (OTLP `4318`)
+- Jaeger K8s: `infrastructure/tracing/jaeger-deployment.yaml`
+- Services: `src/observability/instrumentation.ts` + `TRACING_ENABLED=true`
 
 Rules:
 
 - Health endpoints should expose enough readiness detail to debug database/message dependencies.
 - Startup logs in implemented services currently include readiness mode and check statuses.
 - Keep health endpoints stable because Docker, k8s, load tests, and dashboards may depend on them.
+- Prometheus scrape paths must match service routes (`/api/v1/*/metrics`).
 
 ## CI/CD Workflow
 

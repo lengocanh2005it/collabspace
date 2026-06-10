@@ -1,3 +1,4 @@
+import './observability/instrumentation';
 import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
@@ -10,7 +11,6 @@ import { configureHttpApp } from './app.setup';
 import { UserHealthService } from './health/user-health.service';
 import { MetricsService } from './metrics/metrics.service';
 import { registerMetricsMiddleware } from './metrics/register-metrics.middleware';
-import { bootstrapTracing } from './observability/tracing';
 
 const toBoolean = (
   value: string | undefined,
@@ -26,7 +26,6 @@ const toBoolean = (
 };
 
 async function bootstrap() {
-  bootstrapTracing('user-service');
   const app = await NestFactory.create(AppModule);
 
   configureHttpApp(app);

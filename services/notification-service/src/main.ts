@@ -1,3 +1,4 @@
+import "./observability/instrumentation";
 import { NestFactory } from "@nestjs/core";
 import { AppModule } from "./app.module";
 import { MicroserviceOptions, Transport } from "@nestjs/microservices";
@@ -5,10 +6,7 @@ import { ConfigurationService } from "./configuration/configuration.service";
 import { ValidationPipe } from "@nestjs/common";
 import { MetricsService } from "./metrics/metrics.service";
 import { registerMetricsMiddleware } from "./metrics/register-metrics.middleware";
-import { bootstrapTracing } from "./observability/tracing";
-
 async function bootstrap() {
-  bootstrapTracing("notification-service");
   const app = await NestFactory.create(AppModule);
 
   const configService = app.get(ConfigurationService);

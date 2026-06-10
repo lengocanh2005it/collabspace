@@ -1,3 +1,4 @@
+import './observability/instrumentation';
 import { ConfigurationService } from '@/configuration/configuration.service';
 import { Logger } from '@nestjs/common';
 import { MicroserviceOptions } from '@nestjs/microservices';
@@ -8,10 +9,8 @@ import { AppModule } from './app.module';
 import { AuthHealthService } from './health/auth-health.service';
 import { MetricsService } from './metrics/metrics.service';
 import { registerMetricsMiddleware } from './metrics/register-metrics.middleware';
-import { bootstrapTracing } from './observability/tracing';
 
 async function bootstrap() {
-  bootstrapTracing('auth-service');
   const app = await NestFactory.create(AppModule);
   app.setGlobalPrefix('api/v1');
   registerMetricsMiddleware(app, app.get(MetricsService));

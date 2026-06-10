@@ -244,7 +244,8 @@ Base app stack:
 
 Optional stacks:
 
-- `docker-compose.monitoring.yml`: Prometheus/Grafana.
+- `docker-compose.monitoring.yml`: Prometheus, Alertmanager, Grafana.
+- `docker-compose.exporters.yml`: Postgres/Redis/Mongo Prometheus exporters.
 - `docker-compose.logging.yml`: ELK.
 - `docker-compose.tracing.yml`: Jaeger.
 - `docker-compose.traefik.yml`: Traefik gateway.

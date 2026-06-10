@@ -83,7 +83,7 @@ spec:
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/port: "3000"
-        prometheus.io/path: "/api/tasks/metrics"
+        prometheus.io/path: "/api/v1/tasks/metrics"
     spec:
       serviceAccountName: default
       securityContext:
