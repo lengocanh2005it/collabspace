@@ -8,9 +8,10 @@ import {
   Patch,
   Post,
   Query,
+  Req,
   Res,
 } from '@nestjs/common';
-import type { Response } from 'express';
+import type { Request, Response } from 'express';
 import { GetUserProfileUseCase } from '../../application/use-cases/get-user-profile.use-case';
 import { GetUserSummaryUseCase } from '../../application/use-cases/get-user-summary.use-case';
 import { ListUserSummariesUseCase } from '../../application/use-cases/list-user-summaries.use-case';
@@ -29,6 +30,7 @@ import { UpdateCurrentUserPreferencesDto } from './dto/update-current-user-prefe
 import { UpdateCurrentUserProfileDto } from './dto/update-current-user-profile.dto';
 import { UpdateCurrentUserStatusDto } from './dto/update-current-user-status.dto';
 import { UserHealthService } from '../../health/user-health.service';
+import { assertMetricsAccess } from '../../metrics/metrics-access';
 import { MetricsService } from '../../metrics/metrics.service';
 
 @Controller('users')
@@ -68,7 +70,8 @@ export class UsersController {
   }
 
   @Get('metrics')
-  async getMetrics(@Res() response: Response) {
+  async getMetrics(@Req() request: Request, @Res() response: Response) {
+    assertMetricsAccess(request);
     response.set('Content-Type', this.metricsService.contentType);
     response.send(await this.metricsService.getMetrics());
   }

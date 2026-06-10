@@ -142,6 +142,13 @@ export class AuthService {
         fullName: input.fullName,
         userId: user.userId,
       });
+      const result = await this.sendEmailVerificationOtp(user);
+
+      return {
+        ...result,
+        emailVerified: false,
+        verificationRequired: true,
+      };
     } catch (error) {
       if (newlyCreated) {
         await this.identityService.rollbackNewRegistration(user.userId);
@@ -149,14 +156,6 @@ export class AuthService {
 
       throw error;
     }
-
-    const result = await this.sendEmailVerificationOtp(user);
-
-    return {
-      ...result,
-      emailVerified: false,
-      verificationRequired: true,
-    };
   }
 
   async resendEmailVerificationOtp(
@@ -586,6 +585,7 @@ export class AuthService {
     const otpTtlSeconds =
       this.configurationService.getEmailVerificationConfig().otpTtlSeconds;
 
+    await this.redisService.assertAvailable();
     await this.redisService.setJson(
       this.buildEmailVerificationOtpKey(user.userId),
       {

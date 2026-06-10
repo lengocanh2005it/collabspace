@@ -17,6 +17,7 @@ import type {
 } from '@/common/types/identity.type';
 import type { Request, Response } from 'express';
 import { AuthHealthService } from './health/auth-health.service';
+import { assertMetricsAccess } from './metrics/metrics-access';
 import { MetricsService } from './metrics/metrics.service';
 import { AuthService } from './app.service';
 
@@ -49,7 +50,8 @@ export class AuthController {
   }
 
   @Get('metrics')
-  async getMetrics(@Res() response: Response) {
+  async getMetrics(@Req() request: Request, @Res() response: Response) {
+    assertMetricsAccess(request);
     response.set('Content-Type', this.metricsService.contentType);
     response.send(await this.metricsService.getMetrics());
   }

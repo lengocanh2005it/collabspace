@@ -13,6 +13,7 @@ global:
     redisPassword: collabspace123
     rabbitmqUsername: guest
     rabbitmqPassword: guest
+    metricsAuthToken: ""
 
 infra:
   hosts:

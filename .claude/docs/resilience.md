@@ -122,7 +122,7 @@ Do **not** map dependency failures to generic `500` if the cause is known.
 | Prometheus alerts | `infrastructure/monitoring/alert-rules.yml` + Alertmanager | ServiceDown, 5xx rate, … |
 | Infra exporters | `docker-compose.exporters.yml`, `k8s/exporters-deployment.yaml` | Postgres/Redis/Mongo/RabbitMQ metrics |
 
-**GAP:** Application `/metrics` not consistently exposed; alert rules may not fire until Phase 3.
+**DONE:** All five services expose Prometheus `/metrics` (see each service health or root controller). Optional lockdown via `METRICS_AUTH_TOKEN` (Bearer or `X-Metrics-Token`). Alert rules in `infrastructure/monitoring/alert-rules.yml` fire when scrape targets are up.
 
 ---
 
@@ -135,7 +135,7 @@ Legend: **Current** = observed or likely today; **Target** = required after resi
 | API / flow | Dependency down | Current | Target |
 |------------|-----------------|---------|--------|
 | `POST /auth/register` | user-service gRPC | Compensating saga rolls back new auth user on gRPC failure | `503` + rollback **(DONE — Phase 1)** |
-| `POST /auth/register` | Redis | OTP storage fails | `503` `REDIS_UNAVAILABLE` |
+| `POST /auth/register` | Redis | OTP storage fails | `503` `REDIS_UNAVAILABLE` + rollback if newly created **(DONE)** |
 | `POST /auth/register` | Postgres | — | `503` |
 | `POST /auth/login` | Postgres / Redis | Fail | `503` / `401` as appropriate |
 | `GET /auth/me` | user-service gRPC | Returns identity with `profileStatus: "unavailable"`; omits `fullName`/`username` | Degrade OK **(DONE)** |
@@ -155,7 +155,7 @@ Legend: **Current** = observed or likely today; **Target** = required after resi
 
 | API / flow | Dependency down | Current | Target |
 |------------|-----------------|---------|--------|
-| Protected routes | auth (header only) | Trusts `X-User-Id` from gateway | Verify via auth gRPC on direct access **(GAP)** |
+| Protected routes | auth | JWT via `AuthGuard` + auth gRPC; dev-only `X-User-Id` when `NODE_ENV=development` | Keep **(DONE — Phase 4)** |
 | `POST .../invite` | RabbitMQ | Transactional outbox; HTTP succeeds if DB write succeeds | Keep **(DONE — Phase 2)** |
 | `GET .../health/ready` | Postgres | `ready` checks DB ping | Keep **(DONE — Phase 1)** |
 
@@ -209,6 +209,7 @@ Legend: **Current** = observed or likely today; **Target** = required after resi
 | `AUTH_SERVICE_GRPC_TIMEOUT_MS` | user | `3000` | Token verify |
 | `RABBITMQ_ENABLED` | auth, user, … | varies | Consumer/publisher |
 | `OUTBOX_*` | auth | see `env.config.ts` | Email outbox tuning |
+| `METRICS_AUTH_TOKEN` | all app services | empty (open) | When set, `/metrics` requires Bearer or `X-Metrics-Token` |
 
 ---
 

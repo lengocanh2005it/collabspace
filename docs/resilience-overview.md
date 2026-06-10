@@ -14,31 +14,47 @@ Microservices CollabSpace phụ thuộc lẫn nhau (gRPC, RabbitMQ, DB). **Desig
 4. **Health**: `live` vs `ready`; không nhận traffic khi `ready: false`.
 5. **Không fail im lặng** trên luồng quan trọng (đăng ký, xác thực, ghi dữ liệu).
 
-## Đã có sẵn trong repo
+## Đã triển khai (Phases 0–4)
 
-- Outbox email (auth-service)
-- DLQ RabbitMQ (`infrastructure/rabbitmq/definitions.json`)
-- gRPC timeout auth ↔ user
-- Traefik retry + circuit breaker
-- Readiness auth/user với dependency checks
-- **Phase 1:** saga register (rollback auth user khi gRPC fail), dedupe notification theo `eventId`, health live/ready cho workspace/task/notification, Docker Compose healthchecks
+| Phase | Nội dung | Trạng thái |
+|-------|----------|------------|
+| 0 | Tài liệu chính sách | **xong** |
+| 1 | Saga register (rollback auth user khi gRPC fail), dedupe notification theo `eventId`, health live/ready cho mọi service | **xong** |
+| 2 | Outbox workspace/task events, `Idempotency-Key`, workspace HTTP client | **xong** |
+| 3 | Metrics `/metrics` (5 services), tracing bootstrap, runbooks, drill script `verify-readiness.sh` | **xong** |
+| 4 | Chaos `chaos-stop-service.sh`, production hardening checklist, K8s/Helm probes | **xong** |
 
-## Việc tiếp theo (roadmap)
+### Bổ sung gần đây
 
-| Phase | Nội dung |
-|-------|----------|
-| 0 | Tài liệu chính sách — **xong** |
-| 1 | Saga register, dedupe notification, health đồng nhất — **xong** |
-| 2 | Outbox workspace/task events, `Idempotency-Key`, workspace HTTP client — **xong** |
-| 3 | Metrics, tracing, failure drills, runbooks |
+- **Register + Redis down** → `503` `REDIS_UNAVAILABLE`, rollback user mới tạo (`auth-service`).
+- **Workspace auth** → `AuthGuard` verify JWT qua auth gRPC; `X-User-Id` chỉ dev.
+- **Metrics lockdown** → env `METRICS_AUTH_TOKEN` (Bearer hoặc `X-Metrics-Token`); Helm `global.secrets.metricsAuthToken`.
+- **Backup policy** → `docs/backup-policy.md`, scripts `infrastructure/backup/scripts/`.
+
+## Drills
+
+```sh
+# Docker stack up trước
+./infrastructure/resilience/drills/verify-readiness.sh
+./infrastructure/chaos/chaos-stop-service.sh auth-service
+```
+
+Chi tiết: `infrastructure/resilience/drills/README.md`.
 
 ## Ma trận nhanh (mục tiêu)
 
 | Khi hỏng… | Register | Login / API user | Task ghi |
 |-----------|----------|------------------|----------|
 | user-service | Không orphan user → `503` | User API `503` | — |
+| Redis (OTP) | `503` `REDIS_UNAVAILABLE` | Resend OTP `503` | — |
 | auth-service | — | `503` | `503` nếu cần verify |
-| RabbitMQ | Register vẫn OK (OTP qua outbox) | OK | Event retry/DLQ |
+| RabbitMQ | Register OK (OTP qua outbox) | OK | Event retry/DLQ |
 | Postgres/Mongo | `503` | `503` | `503` |
 
 Chi tiết từng endpoint: xem bảng đầy đủ trong `.claude/docs/resilience.md` mục 4.
+
+## Production còn lại (ngoài code app)
+
+- Secrets từ External Secrets / vault — không plaintext trong Helm values prod.
+- Network policy / ingress hạn chế `/metrics` ngay cả khi có token.
+- Backup tự động + restore drill theo `docs/backup-policy.md`.

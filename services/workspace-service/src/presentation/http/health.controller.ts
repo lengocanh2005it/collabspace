@@ -1,6 +1,7 @@
-import { Controller, Get, HttpCode, Res } from '@nestjs/common';
-import type { Response } from 'express';
+import { Controller, Get, HttpCode, Req, Res } from '@nestjs/common';
+import type { Request, Response } from 'express';
 import { WorkspaceHealthService } from '../../health/workspace-health.service';
+import { assertMetricsAccess } from '../../metrics/metrics-access';
 import { MetricsService } from '../../metrics/metrics.service';
 
 @Controller('workspaces')
@@ -31,7 +32,8 @@ export class HealthController {
   }
 
   @Get('metrics')
-  async getMetrics(@Res() response: Response) {
+  async getMetrics(@Req() request: Request, @Res() response: Response) {
+    assertMetricsAccess(request);
     response.set('Content-Type', this.metricsService.contentType);
     response.send(await this.metricsService.getMetrics());
   }

@@ -39,6 +39,7 @@ describe('AuthService', () => {
     rotate: jest.fn(),
   } as unknown as RefreshTokensService;
   const redisServiceMock = {
+    assertAvailable: jest.fn(),
     delete: jest.fn(),
     exists: jest.fn(),
     expire: jest.fn(),
@@ -71,6 +72,7 @@ describe('AuthService', () => {
     jwtConfigValues.audience = undefined;
     jwtConfigValues.issuer = undefined;
     jest.spyOn(redisServiceMock, 'delete').mockResolvedValue(1);
+    jest.spyOn(redisServiceMock, 'assertAvailable').mockResolvedValue(undefined);
     authService = new AuthService(
       configurationServiceMock,
       authOutboxServiceMock,
@@ -193,6 +195,7 @@ describe('AuthService', () => {
       .spyOn(userProfilesGrpcServiceMock, 'createPendingProfile')
       .mockResolvedValue(undefined);
     jest.spyOn(redisServiceMock, 'setJson').mockResolvedValue('OK');
+    jest.spyOn(redisServiceMock, 'assertAvailable').mockResolvedValue(undefined);
     jest
       .spyOn(authOutboxServiceMock, 'enqueueEmailVerificationOtp')
       .mockResolvedValue(undefined);
@@ -293,6 +296,43 @@ describe('AuthService', () => {
     expect(identityServiceMock.rollbackNewRegistration).not.toHaveBeenCalled();
   });
 
+  it('rolls back a newly created auth user when Redis OTP storage fails', async () => {
+    jest.spyOn(identityServiceMock, 'register').mockResolvedValue({
+      email: 'new@collabspace.dev',
+      emailVerified: false,
+      isActive: true,
+      permissions: [],
+      role: 'user',
+      roles: ['user'],
+      userId: 'user-3',
+    });
+    jest
+      .spyOn(userProfilesGrpcServiceMock, 'createPendingProfile')
+      .mockResolvedValue(undefined);
+    jest
+      .spyOn(redisServiceMock, 'assertAvailable')
+      .mockRejectedValue(
+        new ServiceUnavailableException({
+          code: 'REDIS_UNAVAILABLE',
+          message: 'Redis is unavailable',
+        }),
+      );
+    jest.spyOn(identityServiceMock, 'rollbackNewRegistration').mockResolvedValue();
+
+    await expect(
+      authService.register({
+        email: 'new@collabspace.dev',
+        fullName: 'New User',
+        password: 'password123',
+      }),
+    ).rejects.toMatchObject({
+      response: { code: 'REDIS_UNAVAILABLE' },
+    });
+
+    expect(identityServiceMock.rollbackNewRegistration).toHaveBeenCalledWith('user-3');
+    expect(authOutboxServiceMock.enqueueEmailVerificationOtp).not.toHaveBeenCalled();
+  });
+
   it('recovers pending registration for an existing unverified user', async () => {
     jest.spyOn(identityServiceMock, 'register').mockRejectedValue(
       new ConflictException({
@@ -313,6 +353,7 @@ describe('AuthService', () => {
       .spyOn(userProfilesGrpcServiceMock, 'createPendingProfile')
       .mockResolvedValue(undefined);
     jest.spyOn(redisServiceMock, 'setJson').mockResolvedValue('OK');
+    jest.spyOn(redisServiceMock, 'assertAvailable').mockResolvedValue(undefined);
     jest
       .spyOn(authOutboxServiceMock, 'enqueueEmailVerificationOtp')
       .mockResolvedValue(undefined);
@@ -344,6 +385,7 @@ describe('AuthService', () => {
     jest.spyOn(redisServiceMock, 'expire').mockResolvedValue(true);
     jest.spyOn(redisServiceMock, 'set').mockResolvedValue('OK');
     jest.spyOn(redisServiceMock, 'setJson').mockResolvedValue('OK');
+    jest.spyOn(redisServiceMock, 'assertAvailable').mockResolvedValue(undefined);
     jest
       .spyOn(authOutboxServiceMock, 'enqueueEmailVerificationOtp')
       .mockResolvedValue(undefined);

@@ -6,10 +6,11 @@ import {
   Headers,
   HttpCode,
   Query,
+  Req,
   Res,
   UnauthorizedException,
 } from "@nestjs/common";
-import type { Response } from "express";
+import type { Request, Response } from "express";
 import { CommandBus, QueryBus } from "@nestjs/cqrs";
 
 import { GetNotificationsQuery } from "../../application/usecases/get-notifications/get-notifications.query";
@@ -17,6 +18,7 @@ import { MarkNotificationReadCommand } from "../../application/usecases/mark-not
 import { MarkAllNotificationsReadCommand } from "../../application/usecases/mark-all-notifications-read/mark-all-notifications-read.command";
 
 import { NotificationHealthService } from "../../health/notification-health.service";
+import { assertMetricsAccess } from "../../metrics/metrics-access";
 import { MetricsService } from "../../metrics/metrics.service";
 
 
@@ -76,7 +78,9 @@ export class NotificationsController {
 
   @Get("metrics")
 
-  async getMetrics(@Res() response: Response) {
+  async getMetrics(@Req() request: Request, @Res() response: Response) {
+
+    assertMetricsAccess(request);
 
     response.set("Content-Type", this.metricsService.contentType);
 

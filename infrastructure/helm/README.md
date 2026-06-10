@@ -80,6 +80,7 @@ global:
     mongoPassword: "<strong-password>"
     redisPassword: "<strong-password>"
     rabbitmqPassword: "<strong-password>"
+    metricsAuthToken: "<prometheus-scrape-token>"
 
 apps:
   auth-service:
@@ -141,3 +142,4 @@ kubectl delete pvc -n collabspace --all
 | IngressRoute not routing | `kubectl get ingressroute -n collabspace`; Traefik CRDs installed |
 | workspace 502 | Service port must be **8080**, not 3000 |
 | Mongo auth errors | Align `global.secrets.mongoPassword` with `mongodb.auth.rootPassword` |
+| Prometheus 401 on `/metrics` | Set scrape `bearer_token` or header `X-Metrics-Token` to match `metricsAuthToken` |
