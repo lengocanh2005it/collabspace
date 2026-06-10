@@ -34,5 +34,19 @@ create_postgres_db collabspace_user
 create_postgres_db collabspace_workspace
 
 echo "PostgreSQL databases initialized."
-echo "MongoDB and Redis initialization are not required for the current auth/user bootstrap scripts."
-echo "Root directory: $ROOT_DIR"
+
+echo "Initializing MongoDB for task service..."
+if command -v mongosh >/dev/null 2>&1; then
+    mongosh --eval "db.getSiblingDB('collabspace_task')" >/dev/null 2>&1 || true
+else
+    echo "mongosh not found, skipping mongo init."
+fi
+
+echo "Initializing Redis for notification service..."
+if command -v redis-cli >/dev/null 2>&1; then
+    redis-cli FLUSHALL >/dev/null 2>&1 || true
+else
+    echo "redis-cli not found, skipping redis init."
+fi
+
+echo "All database initialization tasks completed."

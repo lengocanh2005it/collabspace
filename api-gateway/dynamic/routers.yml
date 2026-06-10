@@ -1,5 +1,8 @@
 http:
   routers:
+    # ============================================================
+    # Auth Service — prefix: /api/v1/auth (NestJS globalPrefix: api/v1)
+    # ============================================================
     auth-me-router:
       rule: "Path(`/api/v1/auth/me`)"
       service: auth-service
@@ -11,6 +14,9 @@ http:
         - auth-header
         - rate-limit
         - cors-headers
+        - security-headers
+        - retry-policy
+        - circuit-breaker
 
     auth-router:
       rule: "PathPrefix(`/api/v1/auth`)"
@@ -18,10 +24,15 @@ http:
       entryPoints:
         - web
       middlewares:
-        - auth-header
         - rate-limit
         - cors-headers
+        - security-headers
+        - retry-policy
+        - circuit-breaker
 
+    # ============================================================
+    # User Service — prefix: /api/v1/users (NestJS globalPrefix: api/v1)
+    # ============================================================
     user-router:
       rule: "PathPrefix(`/api/v1/users`)"
       service: user-service
@@ -31,7 +42,13 @@ http:
         - forward-auth
         - rate-limit
         - cors-headers
+        - security-headers
+        - retry-policy
+        - circuit-breaker
 
+    # ============================================================
+    # Workspace Service — prefix: /api/v1/workspaces
+    # ============================================================
     workspace-router:
       rule: "PathPrefix(`/api/v1/workspaces`)"
       service: workspace-service
@@ -41,7 +58,13 @@ http:
         - forward-auth
         - rate-limit
         - cors-headers
+        - security-headers
+        - retry-policy
+        - circuit-breaker
 
+    # ============================================================
+    # Task Service — prefix: /api/v1/tasks
+    # ============================================================
     task-router:
       rule: "PathPrefix(`/api/v1/tasks`)"
       service: task-service
@@ -51,7 +74,19 @@ http:
         - forward-auth
         - rate-limit
         - cors-headers
+        - security-headers
+        - retry-policy
+        - circuit-breaker
 
+    task-docs-router:
+      rule: "PathPrefix(`/docs`) && Headers(`X-Service`, `task`)"
+      service: task-service
+      entryPoints:
+        - web
+
+    # ============================================================
+    # Notification Service — prefix: /api/v1/notifications
+    # ============================================================
     notification-router:
       rule: "PathPrefix(`/api/v1/notifications`)"
       service: notification-service
@@ -61,25 +96,48 @@ http:
         - forward-auth
         - rate-limit
         - cors-headers
+        - security-headers
+        - retry-policy
+        - circuit-breaker
 
   services:
     auth-service:
       loadBalancer:
         servers:
           - url: "http://auth-service:3000"
+        healthCheck:
+          path: /api/v1/auth/health
+          interval: 10s
+          timeout: 3s
     user-service:
       loadBalancer:
         servers:
           - url: "http://user-service:3000"
+        healthCheck:
+          path: /api/v1/users/health
+          interval: 10s
+          timeout: 3s
     workspace-service:
       loadBalancer:
         servers:
           - url: "http://workspace-service:8080"
+        healthCheck:
+          path: /api/v1/workspaces/health
+          interval: 10s
+          timeout: 5s
     task-service:
       loadBalancer:
         servers:
           - url: "http://task-service:3000"
+        healthCheck:
+          path: /api/v1/tasks/health
+          interval: 10s
+          timeout: 3s
     notification-service:
       loadBalancer:
         servers:
           - url: "http://notification-service:3000"
+        healthCheck:
+          path: /api/v1/notifications/health
+          interval: 10s
+          timeout: 3s

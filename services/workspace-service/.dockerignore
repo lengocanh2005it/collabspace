@@ -1,8 +1,5 @@
-build
-.gradle
-gradle
-gradlew
-gradlew.bat
+node_modules
+npm-debug.log
 .env
 .env.*
 !.env.example
@@ -13,5 +10,7 @@ Jenkinsfile
 *.md
 .vscode
 .idea
-bin
-out
+coverage
+.nyc_output
+tests
+__tests__

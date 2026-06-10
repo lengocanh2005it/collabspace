@@ -23,6 +23,9 @@ data:
   MONGO_HOST: "mongodb"
   MONGO_PORT: "27017"
   MONGO_DB: "collabspace_task"
+  RABBITMQ_URL: "amqp://guest:guest@rabbitmq:5672/collabspace"
+  RABBITMQ_ENABLED: "true"
+  RABBITMQ_QUEUE: "task-service"
   RABBITMQ_HOST: "rabbitmq"
   RABBITMQ_PORT: "5672"
   RABBITMQ_VHOST: "collabspace"
@@ -80,7 +83,7 @@ spec:
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/port: "3000"
-        prometheus.io/path: "/tasks/metrics"
+        prometheus.io/path: "/api/tasks/metrics"
     spec:
       serviceAccountName: default
       securityContext:
@@ -113,7 +116,7 @@ spec:
               cpu: "250m"
           readinessProbe:
             httpGet:
-              path: /tasks/health
+              path: /api/tasks/health
               port: 3000
             initialDelaySeconds: 10
             periodSeconds: 5
@@ -122,7 +125,7 @@ spec:
             failureThreshold: 3
           livenessProbe:
             httpGet:
-              path: /tasks/health
+              path: /api/tasks/health
               port: 3000
             initialDelaySeconds: 30
             periodSeconds: 10

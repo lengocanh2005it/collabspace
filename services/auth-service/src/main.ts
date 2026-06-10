@@ -2,6 +2,7 @@ import { ConfigurationService } from '@/configuration/configuration.service';
 import { Logger } from '@nestjs/common';
 import { MicroserviceOptions } from '@nestjs/microservices';
 import { NestFactory } from '@nestjs/core';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { DatabaseService } from '@/modules/database/database.service';
 import { AppModule } from './app.module';
 import { AuthHealthService } from './health/auth-health.service';
@@ -9,6 +10,17 @@ import { AuthHealthService } from './health/auth-health.service';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.setGlobalPrefix('api/v1');
+
+  const swaggerConfig = new DocumentBuilder()
+    .setTitle('Auth Service API')
+    .setDescription('CollabSpace Auth Service')
+    .setVersion('1.0')
+    .addBearerAuth()
+    .build();
+
+  const swaggerDocument = SwaggerModule.createDocument(app, swaggerConfig);
+  SwaggerModule.setup('swagger', app, swaggerDocument);
+
   await app.get(DatabaseService).initialize();
   const configurationService = app.get(ConfigurationService);
   let hasConnectedMicroservice = false;
@@ -21,6 +33,19 @@ async function bootstrap() {
     );
     hasConnectedMicroservice = true;
     Logger.log(`gRPC server configured on ${grpcConfig.url}`, 'Bootstrap');
+  }
+
+  const rabbitMqConfig = configurationService.getRabbitMqConfig();
+
+  if (rabbitMqConfig.enabled && rabbitMqConfig.url) {
+    app.connectMicroservice<MicroserviceOptions>(
+      configurationService.getRabbitMqMicroserviceOptions(),
+    );
+    hasConnectedMicroservice = true;
+    Logger.log(
+      `RabbitMQ consumer configured for queue ${rabbitMqConfig.queue}`,
+      'Bootstrap',
+    );
   }
 
   if (hasConnectedMicroservice) {
@@ -37,6 +62,9 @@ async function bootstrap() {
     'Bootstrap',
   );
 
-  await app.listen(configurationService.getAppConfig().port);
+  const port = configurationService.getAppConfig().port;
+  await app.listen(port);
+  Logger.log(`HTTP Server: http://localhost:${port}`, 'Bootstrap');
+  Logger.log(`Swagger Docs: http://localhost:${port}/swagger`, 'Bootstrap');
 }
 bootstrap();

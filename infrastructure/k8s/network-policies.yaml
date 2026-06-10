@@ -43,6 +43,8 @@ spec:
           protocol: TCP
         - port: 8080
           protocol: TCP
+        - port: 50052
+          protocol: TCP
 
 ---
 # PostgreSQL ← auth, user, workspace services
@@ -84,8 +86,10 @@ spec:
   ingress:
     - from:
         - podSelector:
-            matchLabels:
-              app: task-service
+            matchExpressions:
+              - key: app
+                operator: In
+                values: [task-service, notification-service]
       ports:
         - port: 27017
           protocol: TCP
