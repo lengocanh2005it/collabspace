@@ -36,7 +36,7 @@ pnpm run seed
 ## Conventions
 
 - Global prefix `/api/v1`; routes `/workspaces/*`, `/workspaces/:id/projects/*`
-- Auth: `X-User-Id` from gateway via `UserIdGuard` + `@UserId()`
+- Auth: `AuthGuard` verifies JWT via auth gRPC; dev fallback `X-User-Id` when `NODE_ENV=development`
 - ORM columns snake_case; multi-step writes use transactions
 - Events: `collabspace_exchange` + routing key from `domain/events/`
 - Tests: `*.use-case.spec.ts` next to use case

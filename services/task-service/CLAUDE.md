@@ -37,7 +37,8 @@ pnpm run test
 - Domain events live in `domain/events/task-domain.events.ts`; aggregate in `domain/entities/Task.ts`.
 - Queries use `findByIdAsync` / `findByWorkspaceIdAsync` (projection). Commands use `loadAggregateByIdAsync` + `saveAsync`.
 - Legacy tasks without events still load from projection (`version = 0`) until the next command append.
-- Attachments remain projection-only updates in phase 1 (not event-sourced).
+- Attachments use `TaskAttachmentAdded` / `TaskAttachmentRemoved` domain events.
+- Board query: `GET /v1/tasks/board?workspaceId=`.
 
 ## Conventions
 

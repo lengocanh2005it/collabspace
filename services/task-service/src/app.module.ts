@@ -19,6 +19,7 @@ import { AssignTaskHandler } from "./application/usecases/assign-task.handler";
 import { DeleteTaskHandler } from "./application/usecases/delete-task.handler";
 import { GetTaskByIdHandler } from "./application/usecases/get-task-by-id.handler";
 import { GetTasksHandler } from "./application/usecases/get-tasks.handler";
+import { GetTaskBoardHandler } from "./application/usecases/get-task-board.handler";
 import { UploadAttachmentHandler } from "./application/usecases/upload-attachment.handler";
 import { DeleteAttachmentHandler } from "./application/usecases/delete-attachment.handler";
 import { CreateCommentHandler } from "./application/usecases/comments/create/create-comment.handler";
@@ -86,6 +87,7 @@ const Handlers = [
   DeleteTaskHandler,
   GetTaskByIdHandler,
   GetTasksHandler,
+  GetTaskBoardHandler,
   UploadAttachmentHandler,
   DeleteAttachmentHandler,
   CreateCommentHandler,

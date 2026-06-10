@@ -43,6 +43,10 @@ export class TaskMapper {
       description: domainTask.getDescription(),
       status: domainTask.getStatus().getValue(),
       workspaceId: domainTask.getWorkspaceId(),
+      projectId: domainTask.getProjectId(),
+      priority: domainTask.getPriority().getValue(),
+      dueDate: domainTask.getDueDate(),
+      labels: domainTask.getLabels(),
       assigneeId: domainTask.getAssigneeId(),
 
       // 👇 Dùng payload typed rõ ràng để tránh trôi schema giữa các layer
@@ -92,6 +96,10 @@ export class TaskMapper {
       new Date(rawDoc.updatedAt),
       rawDoc.attachments || [],
       streamVersion,
+      rawDoc.projectId ?? null,
+      rawDoc.priority ?? "MEDIUM",
+      rawDoc.dueDate ? new Date(rawDoc.dueDate) : null,
+      rawDoc.labels ?? [],
     );
   }
 
@@ -103,6 +111,10 @@ export class TaskMapper {
       description: domainTask.getDescription(),
       status: domainTask.getStatus().getValue(),
       workspaceId: domainTask.getWorkspaceId(),
+      projectId: domainTask.getProjectId(),
+      priority: domainTask.getPriority().getValue(),
+      dueDate: domainTask.getDueDate(),
+      labels: domainTask.getLabels(),
       assigneeId: domainTask.getAssigneeId(),
 
       // 👇 Trả về response typed rõ ràng thay vì object any

@@ -2,8 +2,12 @@ import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 import { TaskAssignedEventPayload } from "../../domain/events/task.events";
-import { TaskCommentedEventPayload } from "../../domain/events/comment.events";
 import {
+  CommentMentionedEventPayload,
+  TaskCommentedEventPayload,
+} from "../../domain/events/comment.events";
+import {
+  TASK_OUTBOX_EVENT_COMMENT_MENTIONED,
   TASK_OUTBOX_EVENT_TASK_ASSIGNED,
   TASK_OUTBOX_EVENT_TASK_COMMENTED,
   TaskOutboxEvent,
@@ -25,6 +29,21 @@ export class TaskOutboxService {
       availableAt: new Date(),
       claimedAt: null,
       eventType: TASK_OUTBOX_EVENT_TASK_ASSIGNED,
+      failedAt: null,
+      lastError: null,
+      payload: payload as unknown as Record<string, unknown>,
+      processedAt: null,
+    });
+  }
+
+  async enqueueCommentMentioned(
+    payload: CommentMentionedEventPayload,
+  ): Promise<void> {
+    await this.outboxModel.create({
+      attemptCount: 0,
+      availableAt: new Date(),
+      claimedAt: null,
+      eventType: TASK_OUTBOX_EVENT_COMMENT_MENTIONED,
       failedAt: null,
       lastError: null,
       payload: payload as unknown as Record<string, unknown>,

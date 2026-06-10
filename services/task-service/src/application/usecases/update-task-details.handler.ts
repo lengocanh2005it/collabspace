@@ -25,7 +25,11 @@ export class UpdateTaskDetailsHandler implements ICommandHandler<
       throw new EntityNotFoundException("Task", command.taskId);
     }
 
-    task.updateDetails(command.title, command.description);
+    task.updateDetails(command.title, command.description, {
+      priority: command.priority,
+      dueDate: command.dueDate,
+      labels: command.labels,
+    });
     await this.taskRepository.saveAsync(task);
   }
 }

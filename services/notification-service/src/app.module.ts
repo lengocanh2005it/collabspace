@@ -27,8 +27,16 @@ import { NotificationRepository } from "./infrastructure/database/repositories/n
 import { ProcessedEventRepository } from "./infrastructure/database/repositories/processed-event.repository";
 import { CreateNotificationHandler } from "./application/usecases/create-notification/create-notification.handler";
 import { GetNotificationsHandler } from "./application/usecases/get-notifications/get-notifications.handler";
+import { MarkNotificationReadHandler } from "./application/usecases/mark-notification-read/mark-notification-read.handler";
+import { MarkAllNotificationsReadHandler } from "./application/usecases/mark-all-notifications-read/mark-all-notifications-read.handler";
+import { CommentMentionEventListenerController } from "./presentation/controllers/internal/comment-mention-event-listener.controller";
 
-const Handlers = [CreateNotificationHandler, GetNotificationsHandler];
+const Handlers = [
+  CreateNotificationHandler,
+  GetNotificationsHandler,
+  MarkNotificationReadHandler,
+  MarkAllNotificationsReadHandler,
+];
 
 @Module({
   imports: [
@@ -51,6 +59,7 @@ const Handlers = [CreateNotificationHandler, GetNotificationsHandler];
     NotificationsController,
     TaskEventController,
     CommentEventListenerController,
+    CommentMentionEventListenerController,
     WorkspaceInviteEventListenerController,
   ],
   providers: [

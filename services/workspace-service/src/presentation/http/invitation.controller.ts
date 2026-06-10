@@ -15,10 +15,10 @@ import { InviteMemberUseCase } from '../../application/use-cases/invitation/invi
 import { AcceptInvitationUseCase } from '../../application/use-cases/invitation/accept-invitation.use-case';
 import { RejectInvitationUseCase } from '../../application/use-cases/invitation/reject-invitation.use-case';
 import { IdempotencyService } from '../../infrastructure/idempotency/idempotency.service';
-import { UserIdGuard } from './guards/user-id.guard';
+import { AuthGuard } from './guards/auth.guard';
 
 @Controller()
-@UseGuards(UserIdGuard)
+@UseGuards(AuthGuard)
 export class InvitationController {
   constructor(
     private readonly inviteMemberUseCase: InviteMemberUseCase,

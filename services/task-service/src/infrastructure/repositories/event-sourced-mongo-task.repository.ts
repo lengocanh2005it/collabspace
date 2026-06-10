@@ -55,12 +55,7 @@ export class EventSourcedMongoTaskRepository implements ITaskRepository {
         return null;
       }
 
-      const aggregate = TaskDomain.fromHistory(events);
-      const projection = await this.taskModel.findById(streamId).lean().exec();
-      if (projection?.attachments?.length) {
-        aggregate.mergeAttachmentsFromProjection(projection.attachments);
-      }
-      return aggregate;
+      return TaskDomain.fromHistory(events);
     }
 
     const rawDoc = await this.taskModel.findById(streamId).exec();
@@ -126,11 +121,6 @@ export class EventSourcedMongoTaskRepository implements ITaskRepository {
     }
 
     const aggregate = TaskDomain.fromHistory(events);
-    const existing = await this.taskModel.findById(streamId).lean().exec();
-    if (existing?.attachments?.length) {
-      aggregate.mergeAttachmentsFromProjection(existing.attachments);
-    }
-
     const persistenceData = TaskMapper.toPersistence(aggregate);
     await this.taskModel
       .findByIdAndUpdate(streamId, persistenceData, {

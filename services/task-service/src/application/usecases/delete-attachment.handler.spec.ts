@@ -54,7 +54,7 @@ describe("DeleteAttachmentHandler", () => {
     );
     const task = createMockTask();
 
-    mockTaskRepo.findByIdAsync.mockResolvedValue(task);
+    mockTaskRepo.loadAggregateByIdAsync.mockResolvedValue(task);
     mockAzureBlobService.deleteFile.mockResolvedValue();
 
     await handler.execute(command);
@@ -62,10 +62,7 @@ describe("DeleteAttachmentHandler", () => {
     expect(mockAzureBlobService.deleteFile).toHaveBeenCalledWith(
       "https://azure.blob/test.jpg",
     );
-    expect(mockTaskRepo.removeAttachmentAsync).toHaveBeenCalledWith(
-      expect.any(TaskId),
-      "https://azure.blob/test.jpg",
-    );
+    expect(mockTaskRepo.saveAsync).toHaveBeenCalledWith(task);
   });
 
   it("should throw EntityNotFoundException if task does not exist", async () => {
@@ -74,12 +71,12 @@ describe("DeleteAttachmentHandler", () => {
       "https://azure.blob/test.jpg",
     );
 
-    mockTaskRepo.findByIdAsync.mockResolvedValue(null);
+    mockTaskRepo.loadAggregateByIdAsync.mockResolvedValue(null);
 
     await expect(handler.execute(command)).rejects.toThrow(
       EntityNotFoundException,
     );
     expect(mockAzureBlobService.deleteFile).not.toHaveBeenCalled();
-    expect(mockTaskRepo.removeAttachmentAsync).not.toHaveBeenCalled();
+    expect(mockTaskRepo.saveAsync).not.toHaveBeenCalled();
   });
 });

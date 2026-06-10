@@ -1,9 +1,13 @@
 import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from "@nestjs/common";
 import { TaskAssignedEventPayload } from "../../domain/events/task.events";
-import { TaskCommentedEventPayload } from "../../domain/events/comment.events";
+import {
+  CommentMentionedEventPayload,
+  TaskCommentedEventPayload,
+} from "../../domain/events/comment.events";
 import { RabbitMqEventsService } from "../messaging/rabbitmq/rabbitmq-events.service";
 import { TaskOutboxService } from "./task-outbox.service";
 import {
+  TASK_OUTBOX_EVENT_COMMENT_MENTIONED,
   TASK_OUTBOX_EVENT_TASK_ASSIGNED,
   TASK_OUTBOX_EVENT_TASK_COMMENTED,
 } from "./task-outbox.schema";
@@ -97,6 +101,13 @@ export class TaskOutboxProcessor implements OnModuleInit, OnModuleDestroy {
     if (eventType === TASK_OUTBOX_EVENT_TASK_COMMENTED) {
       await this.rabbitMqEvents.publishTaskCommented(
         payload as unknown as TaskCommentedEventPayload,
+      );
+      return;
+    }
+
+    if (eventType === TASK_OUTBOX_EVENT_COMMENT_MENTIONED) {
+      await this.rabbitMqEvents.publishCommentMentioned(
+        payload as unknown as CommentMentionedEventPayload,
       );
       return;
     }

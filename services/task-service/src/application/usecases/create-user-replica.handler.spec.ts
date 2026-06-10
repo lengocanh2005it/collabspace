@@ -8,9 +8,8 @@ describe("CreateUserReplicaHandler", () => {
 
   beforeEach(() => {
     mockUserReplicaRepo = {
-      addAsync: jest.fn(),
-      updateAsync: jest.fn(),
       findByIdAsync: jest.fn(),
+      findByUsernameAsync: jest.fn(),
       upsertAsync: jest.fn(),
       updateFieldsAsync: jest.fn(),
     } as any;
@@ -26,6 +25,10 @@ describe("CreateUserReplicaHandler", () => {
     expect(mockUserReplicaRepo.upsertAsync).toHaveBeenCalledWith({
       userId: "user-123",
       fullName: "Full Name",
+      email: "user-123@users.collabspace.local",
+      username: null,
+      displayName: "Full Name",
+      avatarUrl: null,
       isActive: true,
     });
   });

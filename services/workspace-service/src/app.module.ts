@@ -21,9 +21,11 @@ import { AcceptInvitationUseCase } from './application/use-cases/invitation/acce
 import { RejectInvitationUseCase } from './application/use-cases/invitation/reject-invitation.use-case';
 import { WorkspaceHealthService } from './health/workspace-health.service';
 import { MetricsModule } from './metrics/metrics.module';
+import { AuthModule } from './integrations/auth/auth.module';
+import { AuthGuard } from './presentation/http/guards/auth.guard';
 
 @Module({
-  imports: [DatabaseModule, MetricsModule, OutboxModule, RabbitMqModule],
+  imports: [DatabaseModule, MetricsModule, OutboxModule, RabbitMqModule, AuthModule],
   controllers: [
     HealthController,
     WorkspaceController,
@@ -45,6 +47,7 @@ import { MetricsModule } from './metrics/metrics.module';
     RejectInvitationUseCase,
     WorkspaceHealthService,
     IdempotencyService,
+    AuthGuard,
   ],
 })
 export class AppModule {}

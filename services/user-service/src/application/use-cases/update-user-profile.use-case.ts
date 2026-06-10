@@ -35,6 +35,8 @@ export class UpdateUserProfileUseCase {
         fullName: updatedProfile.fullName,
         displayName: updatedProfile.displayName,
         avatarUrl: updatedProfile.avatarUrl,
+        username: updatedProfile.username,
+        email: `${updatedProfile.userId}@users.collabspace.local`,
       });
     } catch (error) {
       this.logger.warn(

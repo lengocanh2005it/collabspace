@@ -16,6 +16,7 @@ import type { ITaskRepository } from "../../../ports/ITaskRepository";
 import { Comment } from "../../../../domain/entities/comment.entity";
 import { TaskId } from "../../../../domain/value-objects/TaskId";
 import { TaskOutboxService } from "../../../../infrastructure/outbox/task-outbox.service";
+import { parseMentionUsernames } from "../../../../domain/utils/mention-parser";
 import { v4 as uuid } from "uuid";
 
 export interface CreateCommentResponse {
@@ -70,11 +71,30 @@ export class CreateCommentHandler implements ICommandHandler<
       commentId,
       command.taskId,
       command.authorId,
-      authorRecord.fullName, // ✅ Tên thật từ hệ thống
-      authorRecord.avatarUrl || undefined, // ✅ Avatar thật từ hệ thống
+      authorRecord.fullName,
+      authorRecord.avatarUrl || undefined,
       command.content,
       command.parentId || null,
     );
+
+    const mentionedUserIds: string[] = [];
+    for (const username of parseMentionUsernames(command.content)) {
+      const mentionedUser = await this.userReplicaRepo.findByUsernameAsync(
+        username,
+      );
+      if (
+        mentionedUser &&
+        mentionedUser.isActive &&
+        mentionedUser.userId !== command.authorId
+      ) {
+        try {
+          comment.addMention(mentionedUser.userId);
+          mentionedUserIds.push(mentionedUser.userId);
+        } catch {
+          // Ignore duplicate mentions in the same comment.
+        }
+      }
+    }
 
     // 4. Lưu Comment vào Database (TaskService DB)
     const savedCommentId = await this.commentRepository.createAsync(comment);
@@ -84,6 +104,11 @@ export class CreateCommentHandler implements ICommandHandler<
     const assigneeId = task.getAssigneeId();
 
     // Luật: Chỉ báo Noti nếu Task CÓ người phụ trách, VÀ người phụ trách KHÁC với người vừa comment
+    const commentPreview =
+      command.content.length > 50
+        ? command.content.substring(0, 50) + "..."
+        : command.content;
+
     if (assigneeId && assigneeId !== command.authorId) {
       await this.taskOutboxService.enqueueTaskCommented({
         eventId: randomUUID(),
@@ -95,10 +120,27 @@ export class CreateCommentHandler implements ICommandHandler<
         actorName: authorRecord.fullName,
         actorAvatarUrl: authorRecord.avatarUrl || "",
         commentId: savedCommentId,
-        commentPreview:
-          command.content.length > 50
-            ? command.content.substring(0, 50) + "..."
-            : command.content,
+        commentPreview,
+        createdAt: new Date().toISOString(),
+      });
+    }
+
+    for (const recipientId of mentionedUserIds) {
+      if (recipientId === assigneeId) {
+        continue;
+      }
+
+      await this.taskOutboxService.enqueueCommentMentioned({
+        eventId: randomUUID(),
+        occurredAt: new Date().toISOString(),
+        taskId: command.taskId,
+        taskTitle: task.getTitle(),
+        recipientId,
+        actorId: authorRecord.userId,
+        actorName: authorRecord.fullName,
+        actorAvatarUrl: authorRecord.avatarUrl || "",
+        commentId: savedCommentId,
+        commentPreview,
         createdAt: new Date().toISOString(),
       });
     }

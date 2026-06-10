@@ -34,11 +34,15 @@ describe("CreateCommentHandler", () => {
       addAsync: jest.fn(),
       updateAsync: jest.fn(),
       findByIdAsync: jest.fn(),
+      findByUsernameAsync: jest.fn(),
+      upsertAsync: jest.fn(),
+      updateFieldsAsync: jest.fn(),
     };
 
     mockTaskOutboxService = {
       enqueueTaskAssigned: jest.fn(),
       enqueueTaskCommented: jest.fn(),
+      enqueueCommentMentioned: jest.fn(),
     } as any;
 
     handler = new CreateCommentHandler(

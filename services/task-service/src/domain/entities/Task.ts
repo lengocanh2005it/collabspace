@@ -2,10 +2,13 @@
 import { randomUUID } from "crypto";
 import { TaskId } from "../value-objects/TaskId";
 import { TaskStatus } from "../value-objects/TaskStatus";
+import { TaskPriority } from "../value-objects/TaskPriority";
 import { UserSnapshot } from "../value-objects/UserSnapshot";
 import { BusinessRuleException } from "../exceptions/BusinessRuleException";
 import {
   TaskAssigneeChangedPayload,
+  TaskAttachmentAddedPayload,
+  TaskAttachmentRemovedPayload,
   TaskCreatedPayload,
   TaskDeletedPayload,
   TaskDetailsUpdatedPayload,
@@ -15,6 +18,19 @@ import {
   type StoredTaskDomainEvent,
   type UncommittedTaskDomainEvent,
 } from "../events/task-domain.events";
+
+export type TaskCreateOptions = {
+  projectId?: string | null;
+  priority?: string;
+  dueDate?: Date | null;
+  labels?: string[];
+};
+
+export type TaskDetailsUpdateOptions = {
+  priority?: string;
+  dueDate?: Date | null;
+  labels?: string[];
+};
 
 export class Task {
   private version = 0;
@@ -26,6 +42,10 @@ export class Task {
     private description: string,
     private status: TaskStatus,
     private workspaceId: string,
+    private projectId: string | null,
+    private priority: TaskPriority,
+    private dueDate: Date | null,
+    private labels: string[],
     private assigneeId: string | null,
     private assignedTo: UserSnapshot | null,
     private createdBy: UserSnapshot,
@@ -41,6 +61,7 @@ export class Task {
     description: string,
     workspaceId: string,
     createdBy: UserSnapshot,
+    options: TaskCreateOptions = {},
   ): Task {
     if (!title) throw new BusinessRuleException("Title required");
     if (!workspaceId) throw new BusinessRuleException("Workspace ID required");
@@ -51,6 +72,10 @@ export class Task {
       "",
       new TaskStatus("TODO"),
       workspaceId,
+      options.projectId ?? null,
+      new TaskPriority(options.priority ?? "MEDIUM"),
+      options.dueDate ?? null,
+      options.labels ? [...options.labels] : [],
       null,
       null,
       createdBy,
@@ -64,6 +89,10 @@ export class Task {
       description,
       status: "TODO",
       workspaceId,
+      projectId: options.projectId ?? null,
+      priority: task.priority.getValue(),
+      dueDate: task.dueDate ? task.dueDate.toISOString() : null,
+      labels: [...task.labels],
       createdBy: task.toSnapshotPayload(createdBy),
       createdAt,
     } satisfies TaskCreatedPayload);
@@ -73,7 +102,9 @@ export class Task {
 
   public static fromHistory(events: StoredTaskDomainEvent[]): Task {
     if (events.length === 0) {
-      throw new BusinessRuleException("Cannot rehydrate task from empty event stream");
+      throw new BusinessRuleException(
+        "Cannot rehydrate task from empty event stream",
+      );
     }
 
     const task = Task.emptyShell();
@@ -96,6 +127,10 @@ export class Task {
     updatedAt: Date,
     attachments: string[] = [],
     version = 0,
+    projectId: string | null = null,
+    priorityRaw = "MEDIUM",
+    dueDate: Date | null = null,
+    labels: string[] = [],
   ): Task {
     const status = new TaskStatus(statusRaw);
     const task = new Task(
@@ -104,6 +139,10 @@ export class Task {
       description,
       status,
       workspaceId,
+      projectId,
+      new TaskPriority(priorityRaw),
+      dueDate,
+      [...labels],
       assigneeId,
       assignedTo,
       createdBy,
@@ -122,6 +161,10 @@ export class Task {
       "",
       new TaskStatus("TODO"),
       "",
+      null,
+      new TaskPriority("MEDIUM"),
+      null,
+      [],
       null,
       null,
       UserSnapshot.create(
@@ -155,15 +198,38 @@ export class Task {
     } satisfies TaskStatusChangedPayload);
   }
 
-  public updateDetails(title: string, description: string): void {
+  public updateDetails(
+    title: string,
+    description: string,
+    options: TaskDetailsUpdateOptions = {},
+  ): void {
     if (!title) throw new BusinessRuleException("Title cannot be empty");
-    if (this.title === title && this.description === description) {
+
+    const nextPriority = options.priority
+      ? new TaskPriority(options.priority).getValue()
+      : this.priority.getValue();
+    const nextDueDate =
+      options.dueDate !== undefined ? options.dueDate : this.dueDate;
+    const nextLabels =
+      options.labels !== undefined ? [...options.labels] : [...this.labels];
+
+    if (
+      this.title === title &&
+      this.description === description &&
+      this.priority.getValue() === nextPriority &&
+      (this.dueDate?.toISOString() ?? null) ===
+        (nextDueDate?.toISOString() ?? null) &&
+      JSON.stringify(this.labels) === JSON.stringify(nextLabels)
+    ) {
       return;
     }
 
     this.raise(TaskDomainEventType.TaskDetailsUpdated, {
       title,
       description,
+      priority: nextPriority,
+      dueDate: nextDueDate ? nextDueDate.toISOString() : null,
+      labels: nextLabels,
     } satisfies TaskDetailsUpdatedPayload);
   }
 
@@ -203,15 +269,20 @@ export class Task {
     if (this.attachments.includes(fileUrl)) {
       throw new BusinessRuleException("This attachment already exists");
     }
-    this.attachments.push(fileUrl);
-    this.updatedAt = new Date();
+
+    this.raise(TaskDomainEventType.TaskAttachmentAdded, {
+      fileUrl,
+    } satisfies TaskAttachmentAddedPayload);
   }
 
   public removeAttachment(fileUrl: string): void {
-    const index = this.attachments.indexOf(fileUrl);
-    if (index === -1) throw new BusinessRuleException("Attachment not found");
-    this.attachments.splice(index, 1);
-    this.updatedAt = new Date();
+    if (!this.attachments.includes(fileUrl)) {
+      throw new BusinessRuleException("Attachment not found");
+    }
+
+    this.raise(TaskDomainEventType.TaskAttachmentRemoved, {
+      fileUrl,
+    } satisfies TaskAttachmentRemovedPayload);
   }
 
   public getUncommittedEvents(): ReadonlyArray<UncommittedTaskDomainEvent> {
@@ -232,10 +303,6 @@ export class Task {
 
   public isDeleted(): boolean {
     return this.deleted;
-  }
-
-  public mergeAttachmentsFromProjection(attachments: string[]): void {
-    this.attachments = [...attachments];
   }
 
   private raise(
@@ -267,6 +334,10 @@ export class Task {
         this.description = payload.description;
         this.status = new TaskStatus(payload.status);
         this.workspaceId = payload.workspaceId;
+        this.projectId = payload.projectId ?? null;
+        this.priority = new TaskPriority(payload.priority ?? "MEDIUM");
+        this.dueDate = payload.dueDate ? new Date(payload.dueDate) : null;
+        this.labels = [...(payload.labels ?? [])];
         this.assigneeId = null;
         this.assignedTo = null;
         this.createdBy = this.fromSnapshotPayload(payload.createdBy);
@@ -279,6 +350,15 @@ export class Task {
         const payload = event.payload as TaskDetailsUpdatedPayload;
         this.title = payload.title;
         this.description = payload.description;
+        if (payload.priority) {
+          this.priority = new TaskPriority(payload.priority);
+        }
+        if (payload.dueDate !== undefined) {
+          this.dueDate = payload.dueDate ? new Date(payload.dueDate) : null;
+        }
+        if (payload.labels !== undefined) {
+          this.labels = [...payload.labels];
+        }
         this.updatedAt = new Date(event.occurredAt);
         break;
       }
@@ -297,13 +377,31 @@ export class Task {
         this.updatedAt = new Date(event.occurredAt);
         break;
       }
+      case TaskDomainEventType.TaskAttachmentAdded: {
+        const payload = event.payload as TaskAttachmentAddedPayload;
+        if (!this.attachments.includes(payload.fileUrl)) {
+          this.attachments.push(payload.fileUrl);
+        }
+        this.updatedAt = new Date(event.occurredAt);
+        break;
+      }
+      case TaskDomainEventType.TaskAttachmentRemoved: {
+        const payload = event.payload as TaskAttachmentRemovedPayload;
+        this.attachments = this.attachments.filter(
+          (url) => url !== payload.fileUrl,
+        );
+        this.updatedAt = new Date(event.occurredAt);
+        break;
+      }
       case TaskDomainEventType.TaskDeleted: {
         this.deleted = true;
         this.updatedAt = new Date(event.occurredAt);
         break;
       }
       default:
-        throw new BusinessRuleException(`Unknown task event type: ${event.eventType}`);
+        throw new BusinessRuleException(
+          `Unknown task event type: ${event.eventType}`,
+        );
     }
   }
 
@@ -343,6 +441,22 @@ export class Task {
 
   public getWorkspaceId(): string {
     return this.workspaceId;
+  }
+
+  public getProjectId(): string | null {
+    return this.projectId;
+  }
+
+  public getPriority(): TaskPriority {
+    return this.priority;
+  }
+
+  public getDueDate(): Date | null {
+    return this.dueDate;
+  }
+
+  public getLabels(): string[] {
+    return [...this.labels];
   }
 
   public getAssigneeId(): string | null {

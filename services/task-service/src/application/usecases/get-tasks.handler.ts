@@ -36,6 +36,17 @@ export class GetTasksHandler implements IQueryHandler<GetTasksQuery> {
       tasks = tasks.filter((task) => task.getAssigneeId() === query.assigneeId);
     }
 
+    if (query.priority) {
+      const priority = query.priority.toUpperCase();
+      tasks = tasks.filter(
+        (task) => task.getPriority().getValue() === priority,
+      );
+    }
+
+    if (query.projectId) {
+      tasks = tasks.filter((task) => task.getProjectId() === query.projectId);
+    }
+
     const responses = tasks.map((task) => TaskMapper.toResponse(task));
 
     return {

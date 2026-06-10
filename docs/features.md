@@ -21,12 +21,12 @@ Tài liệu này là **nguồn chính** mô tả chức năng và mức độ ho
 |------|------------|---------|
 | Auth & Identity | **Done** | Register, OTP, login, session, `me`, đổi mật khẩu |
 | User Directory | **Done** | Profile, tìm kiếm, bulk hydrate, `username` cho mention |
-| Workspace | **Done** | CRUD, membership, mời / accept / reject |
+| Workspace | **Done** | CRUD, membership, mời / accept / reject, JWT qua auth gRPC |
 | Project | **Done** | CRUD trong workspace (NestJS `workspace-service`) |
-| Task & Board | **Partial** | Task CRUD, assign, status; chưa có board API riêng, priority, xóa task HTTP |
-| Comment & Mention | **Partial** | Comment CRUD; parse mention + event; chưa có activity feed |
-| Notifications | **Partial** | Lưu + list qua API; event invite/assign/comment; chưa mark-read, realtime |
-| Nền tảng (resilience, observability) | **Partial** | Health, outbox, idempotency, metrics, tracing — xem [resilience-overview.md](./resilience-overview.md) |
+| Task & Board | **Done** | Task CRUD, assign, status, board API, priority/due date/labels, xóa task, ES |
+| Comment & Mention | **Done** | Comment CRUD, `@username` + replica sync, notification mention |
+| Notifications | **Done** | Lưu + list + mark-read; polling API (không WebSocket) |
+| Nền tảng (resilience, observability) | **Done** | Health, outbox, idempotency, metrics, tracing profile Docker |
 
 ---
 
@@ -61,10 +61,11 @@ Tài liệu này là **nguồn chính** mô tả chức năng và mức độ ho
 - Bulk lấy profile theo danh sách `userIds`
 - gRPC: tạo pending profile, get profile cho auth enrichment
 - Preferences và status cơ bản (`/users/me/preferences`, `/users/me/status`)
+- Publish event `user_registered` / `user_profile_updated` kèm `username` cho replica downstream
 
-**Partial / Planned**
+**Out of scope**
 
-- Presence realtime — **Out of scope** MVP
+- Presence realtime
 
 ---
 
@@ -79,10 +80,7 @@ Tài liệu này là **nguồn chính** mô tả chức năng và mức độ ho
 - Chấp nhận / từ chối lời mời
 - Role membership: `owner`, `admin`, `member`
 - Idempotency-Key trên tạo workspace và invite
-
-**Partial**
-
-- Xác thực user qua gateway header `X-User-Id` (chưa verify JWT trực tiếp với auth gRPC)
+- **JWT verification** qua auth gRPC (`AuthGuard`); dev fallback `X-User-Id` khi `NODE_ENV=development`
 
 ---
 
@@ -97,7 +95,7 @@ Tài liệu này là **nguồn chính** mô tả chức năng và mức độ ho
 
 **Planned**
 
-- Board Kanban API riêng (group task theo cột) — hiện client có thể group từ `GET /tasks?status=`
+- Board Kanban gắn trực tiếp vào project resource (hiện dùng `GET /tasks/board`)
 
 ---
 
@@ -105,25 +103,21 @@ Tài liệu này là **nguồn chính** mô tả chức năng và mức độ ho
 
 **Done**
 
-- Tạo task trong workspace (gắn `workspaceId`, project)
-- Danh sách task (lọc `workspaceId`, `status`, `assigneeId`)
+- Tạo task trong workspace (gắn `workspaceId`, `projectId` tùy chọn)
+- Danh sách task (lọc `workspaceId`, `status`, `assigneeId`, `priority`, `projectId`)
+- **Board API** `GET /tasks/board?workspaceId=` — group theo cột `TODO` / `DOING` / `DONE`
 - Chi tiết task
-- Cập nhật title / description
-- Đổi status (`todo`, `in_progress`, `done`, …)
+- Cập nhật title / description / **priority** (`LOW`|`MEDIUM`|`HIGH`) / **dueDate** / **labels**
+- Đổi status
 - Gán assignee — publish event `task_assigned` qua outbox
+- **Xóa task** `DELETE /tasks/:id`
 - Idempotency-Key trên tạo task và gán assignee
 - Kiểm tra membership workspace (HTTP client tới workspace-service)
-- **Event sourcing (phase 1)** cho aggregate `Task`: ghi event vào Mongo `task_events`, projection `tasks` cho query; domain events `TaskCreated`, `TaskDetailsUpdated`, `TaskStatusChanged`, `TaskAssigneeChanged`, `TaskDeleted`
-
-**Partial**
-
-- Upload / xóa attachment (Azure Blob) — có API nhưng phụ thuộc cấu hình storage; **chưa** event-sourced (cập nhật projection trực tiếp)
-- Handler xóa task có trong codebase nhưng **chưa expose** HTTP endpoint
-- Chưa có trường priority / due date / label trong API hiện tại
+- **Event sourcing** cho aggregate `Task` (create, details, status, assign, delete, **attachments**)
+- Upload / xóa attachment — mock Azure khi chưa cấu hình storage; event `TaskAttachmentAdded` / `TaskAttachmentRemoved`
 
 **Planned**
 
-- Endpoint board (tasks grouped by status)
 - Activity feed (ai tạo task, đổi status, comment)
 
 ---
@@ -135,11 +129,8 @@ Tài liệu này là **nguồn chính** mô tả chức năng và mức độ ho
 - Thêm comment trên task
 - Liệt kê comment (ẩn comment đã xóa mềm)
 - Sửa / xóa mềm comment
-- Parse `@username` và publish event `comment_created` (kèm `eventId`) qua outbox
-
-**Partial**
-
-- Mention resolution dựa trên user replica nội bộ — cần đồng bộ user từ events
+- Parse `@username`, resolve qua **user replica** (`username` sync từ RabbitMQ events)
+- Publish `comment_created` (assignee) và `comment_mentioned` (người được tag) qua outbox
 
 **Planned**
 
@@ -151,16 +142,17 @@ Tài liệu này là **nguồn chính** mô tả chức năng và mức độ ho
 
 **Done**
 
-- Consumer RabbitMQ: `workspace_invited`, `task_assigned`, `comment_created`
+- Consumer RabbitMQ: `workspace_invited`, `task_assigned`, `comment_created`, `comment_mentioned`
 - Lưu notification vào MongoDB
 - Dedupe theo `eventId` (at-least-once safe)
 - `GET /notifications` — danh sách notification của user (`X-User-Id`)
+- `PATCH /notifications/:id/read` — đánh dấu đã đọc
+- `PATCH /notifications/read-all` — đánh dấu tất cả đã đọc
 - Health live/ready
 
-**Partial**
+**Out of scope (MVP)**
 
-- Chưa có API mark-as-read (logic domain có sẵn một phần)
-- Chưa có WebSocket / push realtime — đọc qua polling API
+- WebSocket / push realtime — client polling `GET /notifications`
 
 ---
 
@@ -175,10 +167,10 @@ Không phải tính năng end-user nhưng hỗ trợ demo và vận hành:
 | Transactional outbox (auth email, workspace invite, task events) | Done |
 | Health `/live` + `/ready` | Done |
 | Prometheus metrics + Grafana dashboard | Done |
-| OpenTelemetry → Jaeger (opt-in `TRACING_ENABLED`) | Partial |
+| OpenTelemetry → Jaeger | Done — bật qua `docker-compose.tracing.yml` (`TRACING_ENABLED=true`) |
 | Runbooks & failure drills | Done |
 
-Chi tiết: [resilience-overview.md](./resilience-overview.md), [production-hardening.md](./production-hardening.md).
+Chi tiết: [resilience-overview.md](./resilience-overview.md), [production-hardening.md](./production-hardening.md), [tracing-setup.md](./tracing-setup.md).
 
 ---
 
@@ -190,9 +182,9 @@ Kịch bản mục tiêu khi demo đủ tính năng:
 2. User A tạo workspace → mời User B
 3. User B accept lời mời
 4. User A tạo project → tạo vài task → assign một task cho User B
-5. User B đổi task sang `in_progress`
+5. User B đổi task sang `DOING`
 6. User A comment và mention `@user-b`
-7. User B mở danh sách notification
+7. User B mở danh sách notification → mark as read
 
 Hướng dẫn chạy demo: [mvp-demo-scope.md](./mvp-demo-scope.md#demo-story).
 
@@ -217,8 +209,8 @@ Hướng dẫn chạy demo: [mvp-demo-scope.md](./mvp-demo-scope.md#demo-story).
 | `auth-service` | Đăng ký, OTP, login, token, `me`, verify |
 | `user-service` | Profile, directory, search, gRPC profile |
 | `workspace-service` | Workspace, membership, invite, project |
-| `task-service` | Task, comment, assign, attachment |
-| `notification-service` | Notification từ events, list API |
+| `task-service` | Task, comment, assign, attachment, board |
+| `notification-service` | Notification từ events, list, mark-read |
 
 ---
 

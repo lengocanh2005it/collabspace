@@ -34,8 +34,11 @@ import { ChangeTaskStatusCommand } from "../../application/commands/change-task-
 import { AssignTaskCommand } from "../../application/commands/assign-task.command";
 import { UploadAttachmentCommand } from "../../application/commands/upload-attachment.command";
 import { DeleteAttachmentCommand } from "../../application/commands/delete-attachment.command";
+import { DeleteTaskCommand } from "../../application/commands/delete-task.command";
 import { GetTaskByIdQuery } from "../../application/queries/get-task-by-id.query";
 import { GetTasksQuery } from "../../application/queries/get-tasks.query";
+import { GetTaskBoardQuery } from "../../application/queries/get-task-board.query";
+import { GetTaskBoardResponse } from "../dtos/get-task-board.response";
 import type { UploadAttachmentResponse } from "../../application/usecases/upload-attachment.handler";
 import { created, ok } from "../common/response/api-response.wrapper";
 import { WorkspaceValidationGuard } from "../guards/workspace-validation.guard";
@@ -94,6 +97,10 @@ export class TaskController {
       currentUserId,
       currentUserName,
       request.workspaceId,
+      request.projectId,
+      request.priority,
+      request.dueDate ? new Date(request.dueDate) : null,
+      request.labels,
     );
 
     const taskId = await this.commandBus.execute<CreateTaskCommand, string>(
@@ -125,14 +132,42 @@ export class TaskController {
     @Req() req: AppRequest,
     @Query("status") status?: string,
     @Query("assigneeId") assigneeId?: string,
+    @Query("priority") priority?: string,
+    @Query("projectId") projectId?: string,
   ): Promise<any> {
-    const query = new GetTasksQuery(workspaceId, status, assigneeId);
+    const query = new GetTasksQuery(
+      workspaceId,
+      status,
+      assigneeId,
+      priority,
+      projectId,
+    );
     const requestId = getHeaderValue(req.headers, "x-request-id");
     const result = await this.queryBus.execute<GetTasksQuery, GetTasksResponse>(
       query,
     );
 
     return ok(new GetTasksResponse(result.tasks, result.total), requestId);
+  }
+
+  /**
+   * GET /tasks/board - Kanban board grouped by status
+   */
+  @Get("board")
+  @HttpCode(HttpStatus.OK)
+  async getTaskBoard(
+    @Query("workspaceId") workspaceId: string,
+    @Req() req: AppRequest,
+    @Query("projectId") projectId?: string,
+  ): Promise<any> {
+    const query = new GetTaskBoardQuery(workspaceId, projectId);
+    const requestId = getHeaderValue(req.headers, "x-request-id");
+    const result = await this.queryBus.execute<
+      GetTaskBoardQuery,
+      GetTaskBoardResponse
+    >(query);
+
+    return ok(result, requestId);
   }
 
   /**
@@ -169,6 +204,9 @@ export class TaskController {
       taskId,
       request.title,
       request.description || "",
+      request.priority,
+      request.dueDate ? new Date(request.dueDate) : null,
+      request.labels,
     );
 
     await this.commandBus.execute(command);
@@ -251,6 +289,21 @@ export class TaskController {
     }
 
     return response;
+  }
+
+  /**
+   * DELETE /tasks/:id - Xóa task
+   */
+  @Delete(":id")
+  @HttpCode(HttpStatus.OK)
+  async deleteTask(
+    @Param("id") taskId: string,
+    @Req() req: AppRequest,
+  ): Promise<any> {
+    const requestId = getHeaderValue(req.headers, "x-request-id");
+    await this.commandBus.execute(new DeleteTaskCommand(taskId));
+
+    return ok({ message: "Xóa công việc thành công" }, requestId);
   }
 
   /**

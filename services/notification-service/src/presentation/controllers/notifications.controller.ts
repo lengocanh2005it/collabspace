@@ -1,26 +1,20 @@
 import {
-
   Controller,
-
   Get,
-
+  Patch,
+  Param,
   Headers,
-
   HttpCode,
-
   Query,
-
   Res,
-
   UnauthorizedException,
-
 } from "@nestjs/common";
-
 import type { Response } from "express";
-
-import { QueryBus } from "@nestjs/cqrs";
+import { CommandBus, QueryBus } from "@nestjs/cqrs";
 
 import { GetNotificationsQuery } from "../../application/usecases/get-notifications/get-notifications.query";
+import { MarkNotificationReadCommand } from "../../application/usecases/mark-notification-read/mark-notification-read.command";
+import { MarkAllNotificationsReadCommand } from "../../application/usecases/mark-all-notifications-read/mark-all-notifications-read.command";
 
 import { NotificationHealthService } from "../../health/notification-health.service";
 import { MetricsService } from "../../metrics/metrics.service";
@@ -32,13 +26,10 @@ import { MetricsService } from "../../metrics/metrics.service";
 export class NotificationsController {
 
   constructor(
-
     private readonly queryBus: QueryBus,
-
+    private readonly commandBus: CommandBus,
     private readonly notificationHealthService: NotificationHealthService,
-
     private readonly metricsService: MetricsService,
-
   ) {}
 
 
@@ -126,21 +117,50 @@ export class NotificationsController {
 
 
     return this.queryBus.execute(
-
       new GetNotificationsQuery(
-
         recipientId,
-
         Number(skip ?? 0),
-
         Number(limit ?? 20),
-
       ),
-
     );
-
   }
 
+  @Patch("read-all")
+  @HttpCode(200)
+  async markAllAsRead(@Headers("x-user-id") userIdHeader: string | undefined) {
+    const recipientId = userIdHeader?.trim();
+    if (!recipientId) {
+      throw new UnauthorizedException({
+        code: "TOKEN_MISSING",
+        message: "X-User-Id header is required",
+      });
+    }
+
+    return this.commandBus.execute(
+      new MarkAllNotificationsReadCommand(recipientId),
+    );
+  }
+
+  @Patch(":id/read")
+  @HttpCode(200)
+  async markAsRead(
+    @Param("id") notificationId: string,
+    @Headers("x-user-id") userIdHeader: string | undefined,
+  ) {
+    const recipientId = userIdHeader?.trim();
+    if (!recipientId) {
+      throw new UnauthorizedException({
+        code: "TOKEN_MISSING",
+        message: "X-User-Id header is required",
+      });
+    }
+
+    await this.commandBus.execute(
+      new MarkNotificationReadCommand(notificationId, recipientId),
+    );
+
+    return { message: "Notification marked as read" };
+  }
 }
 
 

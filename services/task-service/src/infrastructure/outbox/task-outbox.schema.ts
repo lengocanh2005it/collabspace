@@ -3,6 +3,7 @@ import { HydratedDocument } from "mongoose";
 
 export const TASK_OUTBOX_EVENT_TASK_ASSIGNED = "task.task_assigned";
 export const TASK_OUTBOX_EVENT_TASK_COMMENTED = "task.comment_created";
+export const TASK_OUTBOX_EVENT_COMMENT_MENTIONED = "task.comment_mentioned";
 
 export type TaskOutboxEventDocument = HydratedDocument<TaskOutboxEvent>;
 

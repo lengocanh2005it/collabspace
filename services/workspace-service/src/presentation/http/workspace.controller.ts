@@ -20,10 +20,10 @@ import { ListWorkspacesUseCase } from '../../application/use-cases/workspace/lis
 import { UpdateWorkspaceUseCase } from '../../application/use-cases/workspace/update-workspace.use-case';
 import { ListMembersUseCase } from '../../application/use-cases/workspace/list-members.use-case';
 import { IdempotencyService } from '../../infrastructure/idempotency/idempotency.service';
-import { UserIdGuard } from './guards/user-id.guard';
+import { AuthGuard } from './guards/auth.guard';
 
 @Controller('workspaces')
-@UseGuards(UserIdGuard)
+@UseGuards(AuthGuard)
 export class WorkspaceController {
   constructor(
     private readonly createWorkspaceUseCase: CreateWorkspaceUseCase,

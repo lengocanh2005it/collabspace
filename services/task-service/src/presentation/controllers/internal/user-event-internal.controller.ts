@@ -29,7 +29,14 @@ export class UserEventController {
 
     try {
       await this.commandBus.execute(
-        new CreateUserReplicaCommand(data.userId, data.fullName),
+        new CreateUserReplicaCommand(
+          data.userId,
+          data.fullName,
+          data.email,
+          data.username,
+          data.displayName,
+          data.avatarUrl,
+        ),
       );
       channel.ack(originalMessage);
     } catch (error) {
@@ -53,9 +60,11 @@ export class UserEventController {
       await this.commandBus.execute(
         new SyncUserReplicaCommand(
           data.userId,
-          data.fullName || "", // Đảm bảo luôn là string
+          data.fullName || "",
           data.displayName || undefined,
           data.avatarUrl || undefined,
+          data.username || undefined,
+          data.email,
         ),
       );
       channel.ack(originalMessage);

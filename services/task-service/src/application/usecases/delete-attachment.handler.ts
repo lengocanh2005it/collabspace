@@ -19,7 +19,7 @@ export class DeleteAttachmentHandler implements ICommandHandler<DeleteAttachment
   async execute(command: DeleteAttachmentCommand): Promise<void> {
     // Step 1: Validate task exists
     const taskId = new TaskId(command.taskId);
-    const task = await this.taskRepository.findByIdAsync(taskId);
+    const task = await this.taskRepository.loadAggregateByIdAsync(taskId);
     if (!task) {
       throw new EntityNotFoundException("Task", command.taskId);
     }
@@ -27,7 +27,8 @@ export class DeleteAttachmentHandler implements ICommandHandler<DeleteAttachment
     // Step 2: Delete file from Azure Blob Storage using full file URL
     await this.azureBlobService.deleteFile(command.fileUrl);
 
-    // Step 3: Remove attachment from task in database
-    await this.taskRepository.removeAttachmentAsync(taskId, command.fileUrl);
+    // Step 3: Remove attachment via event-sourced aggregate
+    task.removeAttachment(command.fileUrl);
+    await this.taskRepository.saveAsync(task);
   }
 }

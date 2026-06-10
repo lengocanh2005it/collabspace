@@ -55,6 +55,12 @@ export class CreateTaskHandler implements ICommandHandler<
       command.description,
       command.workspaceId,
       creator,
+      {
+        projectId: command.projectId ?? null,
+        priority: command.priority,
+        dueDate: command.dueDate ?? null,
+        labels: command.labels,
+      },
     );
 
     await this.taskRepository.saveAsync(newTask);

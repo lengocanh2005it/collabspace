@@ -19,6 +19,12 @@ export class CreateUserReplicaHandler implements ICommandHandler<CreateUserRepli
     await this.repo.upsertAsync({
       userId: command.userId,
       fullName: command.fullName,
+      email:
+        command.email?.trim() ||
+        `${command.userId}@users.collabspace.local`,
+      username: command.username?.toLowerCase() ?? null,
+      displayName: command.displayName ?? command.fullName,
+      avatarUrl: command.avatarUrl ?? null,
       isActive: true,
     });
   }
