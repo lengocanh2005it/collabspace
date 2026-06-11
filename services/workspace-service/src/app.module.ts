@@ -25,9 +25,23 @@ import { MetricsModule } from './metrics/metrics.module';
 import { AuthModule } from './integrations/auth/auth.module';
 import { AuthGuard } from './presentation/http/guards/auth.guard';
 import { InternalWorkspaceController } from './presentation/http/internal-workspace.controller';
+import { TypeOrmWorkspaceRepository } from './infrastructure/repositories/typeorm-workspace.repository';
+import { TypeOrmWorkspaceMemberRepository } from './infrastructure/repositories/typeorm-workspace-member.repository';
+import { TypeOrmProjectRepository } from './infrastructure/repositories/typeorm-project.repository';
+import { TypeOrmInvitationRepository } from './infrastructure/repositories/typeorm-invitation.repository';
+import { WORKSPACE_REPOSITORY } from './domain/repositories/workspace.repository';
+import { WORKSPACE_MEMBER_REPOSITORY } from './domain/repositories/workspace-member.repository';
+import { PROJECT_REPOSITORY } from './domain/repositories/project.repository';
+import { INVITATION_REPOSITORY } from './domain/repositories/invitation.repository';
 
 @Module({
-  imports: [DatabaseModule, MetricsModule, OutboxModule, RabbitMqModule, AuthModule],
+  imports: [
+    DatabaseModule,
+    MetricsModule,
+    OutboxModule,
+    RabbitMqModule,
+    AuthModule,
+  ],
   controllers: [
     HealthController,
     InternalWorkspaceController,
@@ -36,6 +50,7 @@ import { InternalWorkspaceController } from './presentation/http/internal-worksp
     InvitationController,
   ],
   providers: [
+    // Use cases
     CreateWorkspaceUseCase,
     GetWorkspaceUseCase,
     ListWorkspacesUseCase,
@@ -49,6 +64,20 @@ import { InternalWorkspaceController } from './presentation/http/internal-worksp
     InviteMemberUseCase,
     AcceptInvitationUseCase,
     RejectInvitationUseCase,
+    // Infrastructure adapters
+    TypeOrmWorkspaceRepository,
+    TypeOrmWorkspaceMemberRepository,
+    TypeOrmProjectRepository,
+    TypeOrmInvitationRepository,
+    // Port bindings
+    { provide: WORKSPACE_REPOSITORY, useClass: TypeOrmWorkspaceRepository },
+    {
+      provide: WORKSPACE_MEMBER_REPOSITORY,
+      useClass: TypeOrmWorkspaceMemberRepository,
+    },
+    { provide: PROJECT_REPOSITORY, useClass: TypeOrmProjectRepository },
+    { provide: INVITATION_REPOSITORY, useClass: TypeOrmInvitationRepository },
+    // Other services
     WorkspaceHealthService,
     IdempotencyService,
     AuthGuard,

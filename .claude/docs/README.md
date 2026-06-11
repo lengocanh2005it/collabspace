@@ -12,7 +12,7 @@ Detailed project context for AI agents. Keep root `CLAUDE.md` concise; put long 
 | `service-architecture.md` | Per-service folder layout, layering patterns, where to add code |
 | `service-contracts.md` | HTTP routes, gRPC, events, auth headers, internal S2S |
 | `read-models.md` | User replica pattern and env |
-| `development-workflows.md` | Setup, Docker, migrations, seeding, testing, troubleshooting |
+| `development-workflows.md` | Setup, Docker, Vault (optional), migrations, seeding, testing, troubleshooting |
 | `coding-conventions.md` | NestJS, TypeORM, DTO, repository, error, test conventions |
 | `mvp-roadmap.md` | Recommended build order for agents (status → `docs/features.md`) |
 
@@ -32,6 +32,14 @@ Detailed project context for AI agents. Keep root `CLAUDE.md` concise; put long 
 | `team/phan-phu-tho-infrastructure-backlog.md` | Infra backlog (Phan Phú Thọ) |
 | `team/application-backlog.md` | App backlog per developer (Anh, Tiến, Tín) |
 
+## Infrastructure docs (not in this folder)
+
+| Path | Purpose |
+|------|---------|
+| `infrastructure/vault/README.md` | HashiCorp Vault — KV paths, local dev, ESO on K8s, Helm `externalSecrets` |
+| `infrastructure/helm/README.md` | Umbrella chart; prod values; Vault + ESO mode |
+| `infrastructure/docker/.env.example` | Shared dev secret notes (align with Vault seed defaults) |
+
 ## Related config (not in this folder)
 
 | Path | Purpose |
@@ -40,7 +48,7 @@ Detailed project context for AI agents. Keep root `CLAUDE.md` concise; put long 
 | `AGENTS.md` | Cross-tool agent index |
 | `.claude/skills/` | Invocable workflows (`/skill-name`) |
 | `.claude/agents/` | Subagents (`nest-reviewer`, `mvp-implementer`, `contract-guardian`) |
-| `.claude/rules/` | Path-scoped rules per service (auth, user, workspace, task, notification, infra, resilience) |
+| `.claude/rules/` | Path-scoped rules per service + `docs-and-skills-sync.md` (sync docs/skills when code changes) |
 | `.claude/settings.json` | Permissions and env defaults |
 | `.claudeignore` | Files excluded from agent context |
 | `services/*/CLAUDE.md` | Service-local context (loads when working in that directory) |
@@ -48,6 +56,7 @@ Detailed project context for AI agents. Keep root `CLAUDE.md` concise; put long 
 ## Maintenance Rules
 
 - Update docs when service boundaries, ports, routes, env vars, migrations, MVP status, or resilience/degradation behavior change.
+- **When changing code:** if the change affects contracts or operations, also update related **agent docs** and **skills** in the same PR (not only human `docs/`). Full map: `agent-onboarding.md` → Docs & skills sync; path rule `../rules/docs-and-skills-sync.md`.
 - Keep `CLAUDE.md` under roughly 200 lines.
 - Prefer precise file paths and concrete commands over general advice.
 - If a doc conflicts with code, trust code first and update the doc.

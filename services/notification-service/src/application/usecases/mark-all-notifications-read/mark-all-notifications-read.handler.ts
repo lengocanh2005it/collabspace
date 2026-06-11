@@ -19,10 +19,9 @@ export class MarkAllNotificationsReadHandler implements ICommandHandler<
   async execute(
     command: MarkAllNotificationsReadCommand,
   ): Promise<{ updatedCount: number }> {
-    const updatedCount =
-      await this.notificationRepository.markAllAsReadAsync(
-        command.recipientId,
-      );
+    const updatedCount = await this.notificationRepository.markAllAsReadAsync(
+      command.recipientId,
+    );
 
     return { updatedCount };
   }

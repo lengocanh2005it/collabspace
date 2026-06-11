@@ -5,11 +5,14 @@ Tài liệu này liệt kê **công việc hạ tầng / DevOps / observability 
 **Phạm vi:** chỉ infra, platform, pipeline, cluster, datastore, gateway, observability stack.  
 **Ngoài phạm vi file này:** feature API, business logic, middleware trong NestJS app services (thuộc application team).
 
-**Trạng thái repo (snapshot 2026-06):**
+**Trạng thái repo (snapshot 2026-06-11):**
 
 | Đã có sẵn | Chưa operational hóa / prod-ready |
 |-----------|-----------------------------------|
-| Docker Compose stack (`infrastructure/docker/`) | Secrets thật, multi-env chuẩn hóa |
+| Docker Compose stack (`infrastructure/docker/`) | Multi-env staging/prod chuẩn hóa end-to-end |
+| **pnpm workspace** — root `package.json`, `pnpm-workspace.yaml`, `packages/shared` | CI `pnpm -r run build\|test` từ root trong pipeline |
+| **Demo E2E script** — `scripts/demo-e2e.sh` + `scripts/demo-e2e.ps1` (7 bước qua Traefik) | Gắn script vào CI smoke / nightly |
+| **HashiCorp Vault scaffold** (`infrastructure/vault/`) — dev Compose, KV seed/sync, ESO YAML, Helm `externalSecrets` | Vault HA deploy, K8s auth, rotation, smoke sau ESO sync |
 | Helm umbrella chart (`infrastructure/helm/collabspace/`) | CI/CD end-to-end, image registry |
 | K8s manifests legacy (`infrastructure/k8s/`) — tham chiếu | Load test baseline → tune resources |
 | Traefik gateway + forward-auth (`api-gateway/`) | Backup tự động + restore drill |
@@ -17,8 +20,8 @@ Tài liệu này liệt kê **công việc hạ tầng / DevOps / observability 
 | Jaeger / OTLP (`docker-compose.tracing.yml`, `infrastructure/tracing/`) | Tracing bật trên staging/prod |
 | Jenkins container + shell scripts (`infrastructure/jenkins/`) | Pipeline Jenkinsfile / GitHub Actions |
 | k6 load tests (`infrastructure/load-testing/`) | Chaos drill định kỳ trên staging |
-| Backup scripts (`infrastructure/backup/scripts/`) | External Secrets / Sealed Secrets |
-| Drills (`verify-readiness`, `chaos-stop-service`) | Smoke job sau mỗi deploy |
+| Backup scripts (`infrastructure/backup/scripts/`) | ESO installed + Vault reachable on cluster |
+| Drills (`verify-readiness`, `chaos-stop-service`) | Smoke job sau mỗi deploy (readiness + `demo-e2e`) |
 
 **Tài liệu liên quan:**
 
@@ -30,7 +33,8 @@ Tài liệu này liệt kê **công việc hạ tầng / DevOps / observability 
 - [runbooks/README.md](../runbooks/README.md)
 - [infrastructure/helm/README.md](../../infrastructure/helm/README.md)
 - [infrastructure/k8s/README.md](../../infrastructure/k8s/README.md)
-- [infrastructure/docker/.env.example](../../infrastructure/docker/.env.example) — shared dev secrets (Compose)
+- [infrastructure/vault/README.md](../../infrastructure/vault/README.md) — **HashiCorp Vault** (local dev + ESO)
+- [infrastructure/docker/.env.example](../../infrastructure/docker/.env.example) — shared dev secrets (Compose / align Vault seed)
 - Per-service contract: `services/*/.env.example` (gitignored `.env` thật)
 
 ---
@@ -38,11 +42,12 @@ Tài liệu này liệt kê **công việc hạ tầng / DevOps / observability 
 ## Thứ tự ưu tiên đề xuất
 
 ```text
-P0  Secret Manager + .env chuẩn hóa   →  không commit secret; đồng bộ cross-service
+P0  HashiCorp Vault + .env chuẩn hóa →  scaffold có; operationalize HA + ESO trên staging
 P0  Secrets + môi trường staging     →  deploy an toàn, không lộ credential
-P1  CI/CD + image registry          →  build/test/deploy lặp lại được
+P1  CI/CD + image registry          →  build/test/deploy lặp lại được (`pnpm -r` + per-service Docker)
 P1  Monitoring stack trên K8s       →  scrape metrics, alert, Grafana
-P2  Smoke / readiness sau deploy    →  verify-readiness trong pipeline
+P1  MVP smoke trong CI              →  `scripts/demo-e2e` sau Compose + Traefik (phối hợp Tín)
+P2  Smoke / readiness sau deploy    →  verify-readiness + demo-e2e trong pipeline
 P2  Backup tự động + restore drill  →  đáp ứng backup-policy
 P2  Logging tập trung (ELK)         →  tra cứu log theo X-Request-Id
 P3  Tracing staging                 →  Jaeger/OTLP + retention
@@ -68,15 +73,15 @@ P3  Chaos quarterly (staging)       →  chứng minh recovery
 | Quy tắc | Chi tiết |
 |---------|----------|
 | **Contract trong Git** | Chỉ `*.env.example` — tên biến, giá trị mẫu, comment; **không** giá trị prod/staging thật |
-| **Giá trị thật** | Secret Manager / vault / Sealed Secret / CI secret store |
-| **Local dev** | File `.env` trên máy dev (gitignored); copy từ `.env.example` hoặc lấy từ vault dev |
-| **Một nguồn sự thật** | Staging/prod: secret store → K8s `Secret` (hoặc ESO sync); không copy tay nhiều file |
+| **Giá trị thật** | **HashiCorp Vault** KV (`secret/collabspace/<env>`) — xem [vault/README.md](../../infrastructure/vault/README.md) |
+| **Local dev** | `.env` gitignored **hoặc** Vault dev (`docker-compose.vault.yml` + `seed-dev-secrets` + `sync-env-from-vault`) |
+| **Một nguồn sự thật** | Staging/prod: Vault → **External Secrets Operator** → K8s `Secret` → pod `envFrom`; Helm `global.externalSecrets.enabled: true` |
 
 **Phân loại biến (áp dụng cho mọi service)**
 
 | Loại | Ví dụ | Lưu ở đâu (staging/prod) | Trong Git? |
 |------|-------|---------------------------|------------|
-| **Secret** | `JWT_SECRET`, `POSTGRES_PASSWORD`, `MAIL_PASSWORD`, `INTERNAL_SERVICE_TOKEN`, `METRICS_AUTH_TOKEN`, `AZURE_STORAGE_CONNECTION_STRING` | Secret Manager → K8s `Secret` | ❌ |
+| **Secret** | `JWT_SECRET`, `POSTGRES_PASSWORD`, `MAIL_PASSWORD`, `INTERNAL_SERVICE_TOKEN`, `METRICS_AUTH_TOKEN`, `AZURE_STORAGE_CONNECTION_STRING` | Vault KV → ESO → K8s `Secret` | ❌ |
 | **Config** | `PORT`, `GRPC_URL`, `RABBITMQ_QUEUE`, timeout ms, feature flags | Helm `ConfigMap` / `values.yaml` | ✅ |
 | **Connection string lẫn secret** | `DATABASE_URL`, `MONGO_URI`, `RABBITMQ_URL`, `REDIS_URL` | Build từ template + password từ Secret (Helm helper hiện có) | URL template ✅; password ❌ |
 
@@ -99,38 +104,36 @@ LOCAL (developer)
   services/*/.env.example  ──copy──►  services/*/.env  (gitignored)
   infrastructure/docker/.env.example  ──►  shared JWT + INTERNAL_SERVICE_TOKEN đồng bộ tay
 
+LOCAL (Vault optional)
+  docker-compose.vault.yml  →  seed-dev-secrets  →  sync-env-from-vault  →  services/*/.env
+
 STAGING / PROD (Phan Phú Thọ)
-  Secret Manager (1 secret JSON hoặc key/value per env)
+  HashiCorp Vault KV secret/collabspace/<env>
        │
-       ▼  External Secrets Operator (sync mỗi 1–5 phút hoặc on-deploy)
-  K8s Secret: collabspace-shared-secrets + per-app secrets
+       ▼  External Secrets Operator (infrastructure/vault/k8s/)
+  K8s Secret: auth-service-secrets, user-service-secrets, …
        │
-       ▼  envFrom / secretKeyRef
+       ▼  envFrom (Helm deployment)
   Pod: auth-service, user-service, …
 
 CONFIG (không nhạy cảm)
   Helm values-staging.yaml  ──►  ConfigMap *-config  (templates/apps/configmap.yaml)
 ```
 
-**Chọn công cụ Secret Manager (chọn 1 stack chính)**
+**Stack đã chọn: HashiCorp Vault + External Secrets Operator**
 
-| Công cụ | Phù hợp khi | Ghi chú |
-|---------|-------------|---------|
-| **AWS Secrets Manager** + ESO | Deploy EKS | IAM role cho pod; rotation native |
-| **GCP Secret Manager** + ESO | Deploy GKE | Tương tự workload identity |
-| **Azure Key Vault** + ESO | Deploy AKS | Service principal / managed identity |
-| **HashiCorp Vault** | On-prem / multi-cloud | Linh hoạt; vận hành nặng hơn |
-| **Doppler** / **1Password Secrets Automation** | Team nhỏ, cần UI + CLI dev | Sync CLI `doppler run -- docker compose up`; có K8s operator |
-| **Sealed Secrets** | Không có cloud SM; GitOps | Secret mã hóa commit được; rotate thủ công |
-| **SOPS + age** | Helm values mã hóa trong repo | Bitnami/Flux pattern |
-| **GitHub Environments secrets** | Chỉ inject lúc CD | Không thay SM runtime; dùng kèm `helm --set` |
-
-**Đề xuất cho CollabSpace demo → staging:**  
-Cloud SM + **External Secrets Operator** (nếu có cloud) **hoặc** **Doppler** (nhanh cho team học) **hoặc** **Sealed Secrets** (on-prem/minikube).
+| Thành phần | Trạng thái repo | Việc còn lại (Phan Phú Thọ) |
+|------------|-----------------|------------------------------|
+| Vault dev Docker | ✅ `docker-compose.vault.yml` | — |
+| KV seed / sync scripts | ✅ `infrastructure/vault/scripts/` | Thêm path `collabspace/staging`, `collabspace/prod` |
+| ESO manifests | ✅ `infrastructure/vault/k8s/` | Cài ESO trên cluster; đổi `remoteRef.key` theo env |
+| Helm `externalSecrets.enabled` | ✅ | Bật trong `values-staging.yaml` / `values-prod.yaml` |
+| Vault HA + K8s auth | 📋 | Không dùng root token prod; policy per service |
+| Rotation / drill | 📋 | `INTERNAL_SERVICE_TOKEN`, `JWT_SECRET` dual-key |
 
 #### 2.1 Inventory biến theo service (từ `.env.example`)
 
-Dùng bảng này khi tạo secret JSON trong Secret Manager (`collabspace/staging/...`).
+Dùng bảng này khi seed Vault KV (`secret/collabspace/staging`, …).
 
 | Service | Secret (đưa vào SM) | Config (Helm ConfigMap / values) |
 |---------|---------------------|----------------------------------|
@@ -142,28 +145,25 @@ Dùng bảng này khi tạo secret JSON trong Secret Manager (`collabspace/stagi
 | **rabbitmq** (infra) | `RABBITMQ_DEFAULT_USER`, `RABBITMQ_DEFAULT_PASS` | vhost `collabspace` |
 | **Compose / Helm datastores** | Bitnami `postgresPassword`, `mongoPassword`, `redisPassword`, `rabbitmqPassword` | hostnames: `postgres`, `mongo`, `redis`, `rabbitmq` |
 
-#### 2.2 Công việc triển khai Secret Manager
+#### 2.2 Công việc triển khai HashiCorp Vault + ESO
 
-- [ ] **Chốt provider** (AWS SM / GCP / Azure / Vault / Doppler / Sealed Secrets) theo nơi host cluster.
-- [ ] **Đặt naming convention** secret path, ví dụ:
-  - `collabspace/staging/shared` → `JWT_SECRET`, `INTERNAL_SERVICE_TOKEN`, `METRICS_AUTH_TOKEN`
-  - `collabspace/staging/datastores` → postgres/mongo/redis/rabbit passwords
-  - `collabspace/staging/auth-service` → `MAIL_PASSWORD`, …
-- [ ] Cài **External Secrets Operator** (hoặc operator tương đương) trên cluster staging.
-- [ ] Tạo `ExternalSecret` CRD map path SM → K8s `Secret` `collabspace-shared-secrets`.
-- [ ] Cập nhật Helm `deployment.yaml`: `envFrom` secretRef + giữ ConfigMap cho non-secret.
-- [ ] **Bổ sung gap Helm:** `INTERNAL_SERVICE_TOKEN` chưa có trong `templates/apps/secret.yaml` — thêm vào `global.secrets.internalServiceToken` và inject user/workspace/task/notification.
-- [ ] **Bổ sung gap Helm:** `MAIL_*` cho auth email outbox (staging có thể Mailtrap/SendGrid key trong SM).
-- [ ] Thay placeholder `stringData` trong [secret.yaml](../../infrastructure/helm/collabspace/templates/apps/secret.yaml) — prod **không** render từ `values.yaml` plaintext.
-- [ ] Tạo `values-staging.yaml.example` (commit được): liệt kê key **tên** secret, không giá trị.
+- [x] **Chốt provider:** HashiCorp Vault + External Secrets Operator — [vault/README.md](../../infrastructure/vault/README.md).
+- [x] **Naming convention KV v2:** `secret/collabspace/<env>` — keys: `jwt_secret`, `internal_service_token`, `postgres_password`, `mongo_*`, `redis_password`, `rabbitmq_*`, `metrics_auth_token`.
+- [x] Scaffold local: `docker-compose.vault.yml`, `seed-dev-secrets`, `sync-env-from-vault`.
+- [x] Manifest ESO: `infrastructure/vault/k8s/external-secrets.yaml` → per-app `{app}-secrets`.
+- [x] Helm: `global.externalSecrets.enabled`, `global.secrets.internalServiceToken` trong [secret.yaml](../../infrastructure/helm/collabspace/templates/apps/secret.yaml).
+- [ ] Cài **External Secrets Operator** trên cluster staging thật.
+- [ ] Deploy **Vault HA** + Kubernetes auth (không root token prod).
+- [ ] **Bổ sung gap:** `MAIL_*` cho auth email outbox trong Vault + ExternalSecret.
+- [ ] Tạo `values-staging.yaml.example` (commit được): `externalSecrets.enabled: true`, không giá trị secret.
+- [ ] Staging/prod: tắt render Helm `stringData` — chỉ ESO (`externalSecrets.enabled: true`).
 
 #### 2.3 Quy trình `.env` cho developer (local)
 
-- [ ] Document 1 trang **“Local env setup”** (có thể append vào `infrastructure/docker/README` hoặc wiki):
-  1. `cp services/*/\.env.example` → `.env` từng service.
-  2. Set **cùng** `JWT_SECRET` + `INTERNAL_SERVICE_TOKEN` theo [docker/.env.example](../../infrastructure/docker/.env.example).
+- [x] Document local env + Vault: [vault/README.md](../../infrastructure/vault/README.md), [development-workflows.md](../../.claude/docs/development-workflows.md), [README.md](../../README.md) Quick Start.
+  1. **Option A:** `cp services/*/.env.example` → `.env`; đồng bộ `JWT_SECRET` + `INTERNAL_SERVICE_TOKEN` theo [docker/.env.example](../../infrastructure/docker/.env.example).
+  2. **Option B (Vault):** `docker-compose.vault.yml` → `seed-dev-secrets` → `sync-env-from-vault`.
   3. `ALLOW_DEV_IDENTITY_HEADERS=true` chỉ local; **không** bật staging/prod.
-- [ ] (Tùy chọn) **Doppler / dotenv-vault** project `collabspace-dev`: dev chạy `doppler run -- docker compose up` thay copy `.env` thủ công.
 - [ ] Pre-commit hoặc CI grep: **fail** nếu commit file `.env` (không `.env.example`).
 - [ ] `.gitignore` đã ignore `.env` — xác nhận không có exception.
 
@@ -180,20 +180,20 @@ Dùng bảng này khi tạo secret JSON trong Secret Manager (`collabspace/stagi
 
 #### 2.5 Đồng bộ Compose ↔ Helm ↔ Secret Manager
 
-| Giá trị | Local Compose | Helm `global.secrets` | Secret Manager key |
-|---------|---------------|----------------------|-------------------|
-| JWT | `auth-service/.env` | `jwtSecret` | `JWT_SECRET` |
-| Internal S2S | 4 service `.env` | *(cần thêm)* `internalServiceToken` | `INTERNAL_SERVICE_TOKEN` |
-| Postgres | URL trong `.env` | `postgresPassword` | `POSTGRES_PASSWORD` |
-| Mongo | `MONGO_URI` | `mongoPassword` | `MONGO_PASSWORD` |
-| Redis | `REDIS_PASSWORD` | `redisPassword` | `REDIS_PASSWORD` |
-| RabbitMQ | URL trong `.env` | `rabbitmqPassword` | `RABBITMQ_PASSWORD` |
-| Metrics | `METRICS_AUTH_TOKEN` | `metricsAuthToken` | `METRICS_AUTH_TOKEN` |
-| SMTP | `MAIL_*` auth | *(cần thêm vào secret template)* | `MAIL_USER`, `MAIL_PASSWORD` |
+| Giá trị | Local Compose | Helm `global.secrets` | Vault KV key (`secret/collabspace/<env>`) |
+|---------|---------------|----------------------|-------------------------------------------|
+| JWT | `auth-service/.env` | `jwtSecret` | `jwt_secret` |
+| Internal S2S | 4 service `.env` | `internalServiceToken` | `internal_service_token` |
+| Postgres | URL trong `.env` | `postgresPassword` | `postgres_password` |
+| Mongo | `MONGO_URI` | `mongoPassword` | `mongo_username`, `mongo_password` |
+| Redis | `REDIS_PASSWORD` | `redisPassword` | `redis_password` |
+| RabbitMQ | URL trong `.env` | `rabbitmqPassword` | `rabbitmq_username`, `rabbitmq_password` |
+| Metrics | `METRICS_AUTH_TOKEN` | `metricsAuthToken` | `metrics_auth_token` |
+| SMTP | `MAIL_*` auth | *(gap)* | *(gap — chưa trong Vault seed)* |
 
 - [ ] Script kiểm tra (infra): `scripts/verify-env-parity.sh` — so sánh tên biến trong tất cả `.env.example` vs Helm ConfigMap/Secret keys (không in giá trị).
 
-**Definition of Done (Secret Manager):**
+**Definition of Done (Vault + ESO):**
 
 - Staging: không file `.env` trên server; `kubectl describe pod` không lộ secret trong annotation.
 - Một lệnh rotate trên SM → ESO sync → rolling restart → `verify-readiness` pass.
@@ -224,10 +224,11 @@ Dùng bảng này khi tạo secret JSON trong Secret Manager (`collabspace/stagi
 **Hiện trạng:** `infrastructure/docker/docker-compose.jenkins.yml` + scripts `build.sh`, `test.sh`, `deploy.sh` — **chưa có Jenkinsfile / GitHub Actions**.
 
 - [ ] **Option A — Jenkins:** Jenkinsfile multibranch:
-  1. Lint + unit test per service (`pnpm test` — dùng script hiện có, đổi `npm` → `pnpm` nếu cần).
-  2. Build Docker image khi merge `main` / tag release.
-  3. Push registry.
-  4. Trigger deploy staging (Helm upgrade).
+  1. `pnpm install` tại repo root → `pnpm run build` + `pnpm run test` (`package.json` workspace).
+  2. Lint per service nếu cần (`pnpm -r run lint`).
+  3. Build Docker image khi merge `main` / tag release.
+  4. Push registry.
+  5. Trigger deploy staging (Helm upgrade).
 - [ ] **Option B — GitHub Actions:** workflow tương đương (repo đang dùng GitHub, chưa có `.github/workflows/`).
 - [ ] Cache `pnpm` / Docker layer để pipeline < 15 phút (mục tiêu ban đầu).
 - [ ] Branch protection: PR bắt buộc pass test trước merge.
@@ -277,10 +278,13 @@ Dùng bảng này khi tạo secret JSON trong Secret Manager (`collabspace/stagi
 
 ## P2 — Smoke test, resilience drills & gateway
 
-### 11. Post-deploy smoke (không cần code app mới)
+### 11. Post-deploy smoke
+
+**Script sẵn có (application team):** `scripts/demo-e2e.sh` / `scripts/demo-e2e.ps1` — 7 bước MVP qua `BASE_URL=http://localhost/api/v1` (Traefik). Cần stack + seed trước khi chạy.
 
 - [ ] Tích hợp `verify-readiness.sh` / `.ps1` vào CD job.
-- [ ] (Tùy chọn) curl health qua Traefik ingress URL (không chỉ localhost).
+- [ ] **P1 — MVP smoke:** sau Compose + Traefik + `scripts/seed.sh`, chạy `scripts/demo-e2e.sh` (fail pipeline nếu exit ≠ 0).
+- [ ] (Tùy chọn) curl health qua Traefik ingress URL staging (không chỉ localhost).
 - [ ] Kiểm tra gateway: protected route trả 401 không token; public `/auth/login` reachable.
 
 ### 12. Network & gateway hardening (đã có manifest — cần verify trên cluster)
@@ -400,15 +404,17 @@ Dùng bảng này khi tạo secret JSON trong Secret Manager (`collabspace/stagi
 
 Xem chi tiết: [application-backlog.md](./application-backlog.md) (Lê Ngọc Anh, Ngô Quang Tiến, Võ Trung Tín).
 
-| Hạng mục | Owner |
-|----------|-------|
-| Demo E2E script 7 bước MVP | Võ Trung Tín (lead) |
-| Activity feed API | Võ Trung Tín |
-| Swagger/OpenAPI thiếu service | Anh / Tiến / Tín theo service |
-| Inject `requestId` vào Nest Logger | Application devs |
-| User/auth use-case tests | Lê Ngọc Anh |
+| Hạng mục | Owner | Ghi chú infra |
+|----------|-------|----------------|
+| Demo E2E script 7 bước MVP | Võ Trung Tín (lead) | ✅ `scripts/demo-e2e.*` — infra gắn CI |
+| Activity feed task-level | Võ Trung Tín | ✅ `GET /tasks/:id/activity` |
+| Activity feed workspace-level | Võ Trung Tín | Planned — không block smoke |
+| E2E `*.e2e-spec.ts` per service | Tiến / Tín | Infra cung cấp DB ephemeral trong CI |
+| Swagger/OpenAPI | Anh / Tiến / Tín | ✅ 5/5 tại `/swagger` |
+| Inject `requestId` vào Nest Logger | Application devs | Infra: ELK parse field |
+| User/auth use-case tests | Lê Ngọc Anh | ✅ đóng backlog Anh |
 
-Infra **hỗ trợ** bằng: ELK field extraction, trace collector, smoke job CI — không viết business API.
+Infra **hỗ trợ** bằng: Compose profile Traefik, seed trong job, `demo-e2e` trong pipeline, ELK/trace collector — không viết business API.
 
 ---
 
@@ -416,8 +422,8 @@ Infra **hỗ trợ** bằng: ELK field extraction, trace collector, smoke job CI
 
 | # | Công việc | Ưu tiên | Trạng thái |
 |---|-----------|---------|------------|
-| 1 | Chốt Secret Manager provider + naming convention | P0 | ⬜ |
-| 2 | External Secrets Operator + `ExternalSecret` staging | P0 | ⬜ |
+| 1 | Chốt Vault + KV naming (`collabspace/<env>`) | P0 | ✅ scaffold |
+| 2 | ESO cài trên cluster + `ExternalSecret` staging live | P0 | ⬜ (YAML có sẵn) |
 | 3 | Helm: thêm `INTERNAL_SERVICE_TOKEN` + `MAIL_*` vào Secret template | P0 | ⬜ |
 | 4 | `values-staging.yaml.example` + map SM → K8s Secret | P0 | ⬜ |
 | 5 | Doc local `.env` setup + shared JWT/INTERNAL token | P0 | ⬜ |
@@ -427,7 +433,8 @@ Infra **hỗ trợ** bằng: ELK field extraction, trace collector, smoke job CI
 | 9 | Secret rotation runbook (JWT, INTERNAL, DB) | P0 | ⬜ |
 | 10 | `values-staging.yaml` + deploy Helm document | P0 | ⬜ |
 | 11 | Container registry + build pipeline | P1 | ⬜ |
-| 12 | Jenkinsfile hoặc GitHub Actions CI/CD | P1 | ⬜ |
+| 12 | Jenkinsfile hoặc GitHub Actions CI/CD (`pnpm -r` từ root) | P1 | ⬜ |
+| 12b | CI smoke: `scripts/demo-e2e` sau Traefik + seed | P1 | ⬜ |
 | 13 | CD staging + post-deploy verify-readiness | P1 | ⬜ |
 | 14 | Prometheus/Grafana/Alertmanager trên K8s | P1 | ⬜ |
 | 15 | Alertmanager → Slack/email test | P1 | ⬜ |
@@ -449,9 +456,10 @@ Infra **hỗ trợ** bằng: ELK field extraction, trace collector, smoke job CI
 |------------------|-----------|
 | Dockerfile / build context ổn định | CI build image |
 | Health endpoint contract | Smoke test, probes |
+| `scripts/demo-e2e` ổn định trên CI env | MVP smoke gate (✅ script có; cần verify trong pipeline) |
 | Danh sách env bắt buộc per service | Helm ConfigMap/Secret mapping |
 | Quyết định cloud provider (AWS/GCP/Azure/on-prem) | EKS/GKE/AKS, managed DB, secret manager |
 
 ---
 
-*Tạo: 2026-06-10 — đồng bộ với Phase B (trust boundaries), Phase C (`X-Request-Id`). Cập nhật 2026-06-11: bổ sung Secret Manager & quản lý `.env`. Cập nhật file này khi đóng từng mục trong production-hardening.*
+*Tạo: 2026-06-10 — đồng bộ với Phase B (trust boundaries), Phase C (`X-Request-Id`). Cập nhật 2026-06-11: Vault scaffold; sync `demo-e2e` Done, pnpm workspace, CI smoke P1, activity feed task Done.*

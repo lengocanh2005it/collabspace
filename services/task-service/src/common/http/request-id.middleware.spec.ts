@@ -19,7 +19,9 @@ describe("requestIdMiddleware", () => {
   it("preserves an incoming X-Request-Id header", () => {
     const { req, res, next } = runMiddleware({ "x-request-id": "trace-123" });
 
-    expect((req as Request & { requestId: string }).requestId).toBe("trace-123");
+    expect((req as Request & { requestId: string }).requestId).toBe(
+      "trace-123",
+    );
     expect(req.headers["x-request-id"]).toBe("trace-123");
     expect(res.setHeader).toHaveBeenCalledWith("X-Request-Id", "trace-123");
     expect(next).toHaveBeenCalled();

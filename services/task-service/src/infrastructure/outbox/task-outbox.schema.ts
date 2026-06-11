@@ -34,6 +34,7 @@ export class TaskOutboxEvent {
   processedAt!: Date | null;
 }
 
-export const TaskOutboxEventSchema = SchemaFactory.createForClass(TaskOutboxEvent);
+export const TaskOutboxEventSchema =
+  SchemaFactory.createForClass(TaskOutboxEvent);
 
 TaskOutboxEventSchema.index({ processedAt: 1, failedAt: 1, availableAt: 1 });

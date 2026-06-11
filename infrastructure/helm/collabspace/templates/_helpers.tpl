@@ -71,6 +71,11 @@ app.kubernetes.io/version: {{ .root.Chart.AppVersion | quote }}
 {{- $r.Values.global.secrets.jwtSecret | required "global.secrets.jwtSecret is required" }}
 {{- end }}
 
+{{- define "collabspace.internalServiceToken" -}}
+{{- $r := .root | default . -}}
+{{- $r.Values.global.secrets.internalServiceToken | required "global.secrets.internalServiceToken is required" }}
+{{- end }}
+
 {{- define "collabspace.postgresPassword" -}}
 {{- $r := .root | default . -}}
 {{- $r.Values.global.secrets.postgresPassword | default $r.Values.postgresql.auth.password }}

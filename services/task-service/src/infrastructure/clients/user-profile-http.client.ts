@@ -36,7 +36,10 @@ export class UserProfileHttpClient {
   }
 
   isFallbackEnabled(): boolean {
-    if (this.configService.get<string>("USER_REPLICA_FALLBACK_ENABLED") === "false") {
+    if (
+      this.configService.get<string>("USER_REPLICA_FALLBACK_ENABLED") ===
+      "false"
+    ) {
       return false;
     }
 
@@ -53,7 +56,10 @@ export class UserProfileHttpClient {
       return [];
     }
 
-    const response = await this.post("/api/v1/users/internal/replicas", request);
+    const response = await this.post(
+      "/api/v1/users/internal/replicas",
+      request,
+    );
 
     if (!response.ok) {
       throw new ServiceUnavailableException({

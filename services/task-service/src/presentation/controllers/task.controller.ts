@@ -17,7 +17,16 @@ import {
   ParseFilePipe,
   MaxFileSizeValidator,
 } from "@nestjs/common";
-import { ApiConsumes, ApiBody } from "@nestjs/swagger";
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiConsumes,
+  ApiHeader,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiTags,
+} from "@nestjs/swagger";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { CommandBus, QueryBus } from "@nestjs/cqrs";
 import type { UploadedFile as TaskUploadedFile } from "../../common/types/uploaded-file";
@@ -39,6 +48,8 @@ import { GetTaskByIdQuery } from "../../application/queries/get-task-by-id.query
 import { GetTasksQuery } from "../../application/queries/get-tasks.query";
 import { GetTaskBoardQuery } from "../../application/queries/get-task-board.query";
 import { GetTaskBoardResponse } from "../dtos/get-task-board.response";
+import { GetTaskActivityQuery } from "../../application/queries/get-task-activity.query";
+import { TaskActivityResponse } from "../dtos/task-activity.response";
 import type { UploadAttachmentResponse } from "../../application/usecases/upload-attachment.handler";
 import { created, ok } from "../common/response/api-response.wrapper";
 import { WorkspaceValidationGuard } from "../guards/workspace-validation.guard";
@@ -60,6 +71,8 @@ function assertUploadedFile(file: unknown): asserts file is TaskUploadedFile {
   }
 }
 
+@ApiTags("tasks")
+@ApiBearerAuth()
 @Controller("v1/tasks")
 @UseGuards(AuthGuard, WorkspaceValidationGuard)
 export class TaskController {
@@ -71,6 +84,12 @@ export class TaskController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: "Create task" })
+  @ApiHeader({
+    name: "Idempotency-Key",
+    required: false,
+    description: "Optional idempotency key (24h replay)",
+  })
   async createTask(@Body() request: CreateTaskRequest, @Req() req: AppRequest) {
     const currentUserId = req.user.id;
     const currentUserName = req.user.name;
@@ -116,7 +135,7 @@ export class TaskController {
         idempotencyKey,
         route,
         201,
-        response as unknown as Record<string, unknown>,
+        response,
       );
     }
 
@@ -128,6 +147,12 @@ export class TaskController {
    */
   @Get()
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: "List tasks in workspace" })
+  @ApiQuery({ name: "workspaceId", required: true })
+  @ApiQuery({ name: "status", required: false })
+  @ApiQuery({ name: "assigneeId", required: false })
+  @ApiQuery({ name: "priority", required: false })
+  @ApiQuery({ name: "projectId", required: false })
   async getTasks(
     @Query("workspaceId") workspaceId: string,
     @Req() req: AppRequest,
@@ -156,6 +181,9 @@ export class TaskController {
    */
   @Get("board")
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: "Kanban board grouped by status" })
+  @ApiQuery({ name: "workspaceId", required: true })
+  @ApiQuery({ name: "projectId", required: false })
   async getTaskBoard(
     @Query("workspaceId") workspaceId: string,
     @Req() req: AppRequest,
@@ -176,6 +204,8 @@ export class TaskController {
    */
   @Get(":id")
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: "Get task by id" })
+  @ApiParam({ name: "id" })
   async getTaskById(
     @Param("id") taskId: string,
     @Req() req: AppRequest,
@@ -191,10 +221,40 @@ export class TaskController {
   }
 
   /**
+   * GET /tasks/:id/activity - Timeline of events for a task
+   */
+  @Get(":id/activity")
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: "Task activity timeline (events + comments)" })
+  @ApiParam({ name: "id" })
+  @ApiQuery({ name: "limit", required: false, type: Number, example: 50 })
+  @ApiQuery({ name: "offset", required: false, type: Number, example: 0 })
+  async getTaskActivity(
+    @Param("id") taskId: string,
+    @Query("limit") limit?: string,
+    @Query("offset") offset?: string,
+    @Req() req?: AppRequest,
+  ): Promise<any> {
+    const requestId = getHeaderValue(req!.headers, "x-request-id");
+    const query = new GetTaskActivityQuery(
+      taskId,
+      limit ? Math.min(parseInt(limit, 10), 200) : 50,
+      offset ? parseInt(offset, 10) : 0,
+    );
+    const result = await this.queryBus.execute<
+      GetTaskActivityQuery,
+      TaskActivityResponse
+    >(query);
+    return ok(result, requestId);
+  }
+
+  /**
    * PATCH /tasks/:id/details - Cập nhật thông tin chung (title, description)
    */
   @Patch(":id/details")
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: "Update task details" })
+  @ApiParam({ name: "id" })
   async updateTaskDetails(
     @Param("id") taskId: string,
     @Body() request: UpdateTaskDetailsRequest,
@@ -223,6 +283,8 @@ export class TaskController {
    */
   @Patch(":id/status")
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: "Change task status" })
+  @ApiParam({ name: "id" })
   async changeTaskStatus(
     @Param("id") taskId: string,
     @Body() request: ChangeTaskStatusRequest,
@@ -242,6 +304,13 @@ export class TaskController {
   // src/presentation/controllers/task.controller.ts
   @Patch(":id/assignee")
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: "Assign or unassign task" })
+  @ApiParam({ name: "id" })
+  @ApiHeader({
+    name: "Idempotency-Key",
+    required: false,
+    description: "Optional idempotency key (24h replay)",
+  })
   async assignTask(
     @Param("id") taskId: string,
     @Body() request: AssignTaskRequest,
@@ -285,7 +354,7 @@ export class TaskController {
         idempotencyKey,
         route,
         200,
-        response as unknown as Record<string, unknown>,
+        response,
       );
     }
 
@@ -297,6 +366,8 @@ export class TaskController {
    */
   @Delete(":id")
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: "Delete task" })
+  @ApiParam({ name: "id" })
   async deleteTask(
     @Param("id") taskId: string,
     @Req() req: AppRequest,
@@ -315,6 +386,8 @@ export class TaskController {
   @Post(":id/attachments")
   @HttpCode(HttpStatus.CREATED)
   @UseInterceptors(FileInterceptor("file"))
+  @ApiOperation({ summary: "Upload task attachment" })
+  @ApiParam({ name: "id" })
   @ApiConsumes("multipart/form-data")
   @ApiBody({
     schema: {
@@ -361,6 +434,9 @@ export class TaskController {
    */
   @Delete(":id/attachments")
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: "Remove task attachment" })
+  @ApiParam({ name: "id" })
+  @ApiQuery({ name: "fileUrl", required: true })
   async deleteAttachment(
     @Param("id") taskId: string,
     @Query("fileUrl") fileUrl: string,

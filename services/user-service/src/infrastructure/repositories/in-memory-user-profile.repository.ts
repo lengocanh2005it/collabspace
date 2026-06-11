@@ -317,7 +317,15 @@ export class InMemoryUserProfileRepository implements UserProfileRepository {
   }
 
   private buildDefaultStatus(userId: string): UserStatus {
-    return new UserStatus(userId, 'offline', null, null, null, null, new Date());
+    return new UserStatus(
+      userId,
+      'offline',
+      null,
+      null,
+      null,
+      null,
+      new Date(),
+    );
   }
 
   private createUsername(fullName: string): string {

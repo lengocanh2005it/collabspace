@@ -30,7 +30,7 @@ Related docs:
 |---------|---------|-----|---------------|----------|------|
 | auth-service | NestJS feature modules | Postgres / TypeORM | `api/v1` | `/api/v1/auth` | 3000 |
 | user-service | Clean / hexagonal | Postgres / TypeORM | `api/v1` | `/api/v1/users` | 3000 |
-| workspace-service | Layered (use case + TypeORM) | Postgres / TypeORM | `api/v1` | `/api/v1/workspaces` | **8080** |
+| workspace-service | Clean Architecture | Postgres / TypeORM | `api/v1` | `/api/v1/workspaces` | **8080** |
 | task-service | Clean + CQRS | Mongo / Mongoose | `api` + `v1/...` in controller | `/api/v1/tasks` | 3000 |
 | notification-service | Clean + CQRS (event-driven) | Mongo / Mongoose | `api` + `v1/...` in controller | `/api/v1/notifications` | 3000 |
 
@@ -167,40 +167,47 @@ Register use cases in `app.module.ts`. Repository binding uses factory: TypeORM 
 ## workspace-service
 
 **Path:** `services/workspace-service`  
-**Stack:** NestJS, TypeORM, PostgreSQL, RabbitMQ (direct channel publish)  
+**Stack:** NestJS, TypeORM, PostgreSQL, RabbitMQ (outbox via `WorkspaceOutboxService`)  
 **Local context:** `services/workspace-service/CLAUDE.md`
 
-### Pattern: pragmatic layered NestJS
+### Pattern: Clean Architecture
 
-Folder names resemble clean architecture, but:
+Strict dependency direction matching user-service:
 
-- **No** domain entities or repository interfaces today
-- Use cases inject `Repository<OrmEntity>` from `@nestjs/typeorm` directly
-- `domain/events/` holds event name constants and payload types only
-- Events published inside use cases via injected RabbitMQ channel
+```text
+presentation → application (use-cases) → domain (ports) ← infrastructure (TypeORM adapters)
+```
+
+Use cases inject repository **port interfaces** (Symbol tokens). TypeORM adapters implement those ports and are the only layer that touches ORM entities.
 
 ### Folder map
 
 ```text
 src/
 ├── application/
-│   ├── dto/                       # Input DTOs (create, update, invite)
+│   ├── dto/                              # Input DTOs (class-validator)
 │   └── use-cases/
 │       ├── workspace/
 │       ├── project/
 │       └── invitation/
-├── domain/events/                 # WORKSPACE_INVITED_EVENT, payload types
+├── domain/
+│   ├── entities/                         # Workspace, Project, WorkspaceMember, Invitation (plain TS, no ORM decorators)
+│   ├── repositories/                     # Port interfaces + Symbol tokens (IWorkspaceRepository, etc.)
+│   └── events/                           # RabbitMQ routing keys + payload types
 ├── health/
 ├── infrastructure/
-│   ├── database/entities/*.orm-entity.ts
+│   ├── database/entities/*.orm-entity.ts # TypeORM entities (snake_case columns)
+│   ├── repositories/typeorm-*.repository.ts  # Port implementations; @InjectRepository only here
+│   ├── outbox/                           # WorkspaceOutboxService (transactional event enqueue)
 │   └── messaging/rabbitmq.module.ts
 └── presentation/http/
     ├── workspace.controller.ts
     ├── project.controller.ts
     ├── invitation.controller.ts
+    ├── internal-workspace.controller.ts  # S2S membership check
     ├── health.controller.ts
-    ├── guards/user-id.guard.ts
-    └── decorators/user-id.decorator.ts
+    ├── guards/
+    └── decorators/
 ```
 
 ### Where to add code
@@ -211,26 +218,31 @@ src/
 | Auth guard / decorator | `presentation/http/guards/`, `decorators/` |
 | Input validation DTO | `application/dto/` |
 | Business action | `application/use-cases/<area>/<action>.use-case.ts` |
-| DB table | `infrastructure/database/entities/*.orm-entity.ts` + migration |
+| Domain entity | `domain/entities/` |
+| Repository port | `domain/repositories/<name>.repository.ts` (interface + Symbol) |
+| TypeORM adapter | `infrastructure/repositories/typeorm-<name>.repository.ts` |
+| DB entity (ORM) | `infrastructure/database/entities/*.orm-entity.ts` + migration |
 | Event contract | `domain/events/` |
 | Health | `health/` + `health.controller.ts` |
 
-Register controllers and use cases in `app.module.ts`. Call `DatabaseService.initialize()` in `main.ts` before listen.
+Register adapters + Symbol bindings in `app.module.ts`.
 
 ### Conventions
 
 - Global prefix `api/v1`; routes under `/workspaces`, `/workspaces/:id/projects`, etc.
 - Port **8080** (container), not 3000
-- Public routes: `AuthGuard` + auth gRPC → `@UserId()` from `request.user.id`
-- Internal S2S: `presentation/http/internal-workspace.controller.ts` + `assertInternalServiceAccess`
-- ORM columns: snake_case (`workspace_id`, `owner_id`)
-- Use `manager.transaction()` for multi-table writes
-- Tests: `*.use-case.spec.ts` next to use case
-- RabbitMQ: exchange `collabspace_exchange`, routing keys from `domain/events`
+- Public routes: `AuthGuard` + auth gRPC → `@UserId()` from `request.user`; dev: `X-User-Id` header when `ALLOW_DEV_IDENTITY_HEADERS=true`
+- Internal S2S: `internal-workspace.controller.ts` + `assertInternalServiceAccess` + `INTERNAL_SERVICE_TOKEN`
+- Use cases inject ports: `@Inject(WORKSPACE_REPOSITORY)` + `import { type IWorkspaceRepository, WORKSPACE_REPOSITORY }`
+- Transactions live **inside adapters** (`DataSource.transaction()`), not in use cases
+- ORM entities: snake_case columns; domain entities: plain TS classes, camelCase fields
+- Events: exchange `collabspace_exchange`, routing keys from `domain/events/`; include `eventId` + `occurredAt`
+- Tests: `*.use-case.spec.ts` next to use case; provide mocks as `{ provide: SYMBOL, useValue: mockObj }`
 
 ### Do not
 
-- Introduce repository ports unless refactoring the whole service (not default for small changes)
+- Inject `@InjectRepository(OrmEntity)` in use cases — all DB access goes through port adapters
+- Put transaction logic in use cases — adapters own transactions
 - Assume port 3000
 - Trust `userId` from request body on protected routes
 
@@ -395,7 +407,7 @@ flowchart TD
   A --> E{task / notification}
   B --> B1[Feature module + AppService]
   C --> C1[Use case + domain port + infra repo]
-  D --> D1[Use case + direct TypeORM Repository]
+  D --> D1[Use case + domain port + TypeORM adapter]
   E --> E1[Command/Query + Handler + domain entity]
 ```
 

@@ -1,45 +1,43 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ListMembersUseCase } from './list-members.use-case';
-import { getRepositoryToken } from '@nestjs/typeorm';
-import { WorkspaceMemberOrmEntity } from '../../../infrastructure/database/entities/workspace-member.orm-entity';
 import { ForbiddenException } from '@nestjs/common';
+import { ListMembersUseCase } from './list-members.use-case';
+import { WORKSPACE_MEMBER_REPOSITORY } from '../../../domain/repositories/workspace-member.repository';
+import { WorkspaceMember } from '../../../domain/entities/workspace-member.entity';
 
 describe('ListMembersUseCase', () => {
   let useCase: ListMembersUseCase;
 
   const mockMemberRepo = {
-    findOne: jest.fn(),
-    find: jest.fn(),
+    findByWorkspaceAndUser: jest.fn(),
+    findByWorkspace: jest.fn(),
   };
 
   beforeEach(async () => {
+    jest.clearAllMocks();
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ListMembersUseCase,
-        {
-          provide: getRepositoryToken(WorkspaceMemberOrmEntity),
-          useValue: mockMemberRepo,
-        },
+        { provide: WORKSPACE_MEMBER_REPOSITORY, useValue: mockMemberRepo },
       ],
     }).compile();
-
     useCase = module.get<ListMembersUseCase>(ListMembersUseCase);
   });
 
   it('should throw ForbiddenException if user is not a member', async () => {
-    mockMemberRepo.findOne.mockResolvedValue(null);
-    await expect(useCase.execute('user-1', 'workspace-1')).rejects.toThrow(
+    mockMemberRepo.findByWorkspaceAndUser.mockResolvedValue(null);
+    await expect(useCase.execute('user-1', 'ws-1')).rejects.toThrow(
       ForbiddenException,
     );
   });
 
   it('should return list of members if user is a member', async () => {
-    mockMemberRepo.findOne.mockResolvedValue({ role: 'member' });
-    mockMemberRepo.find.mockResolvedValue([
-      { user_id: 'user-1' },
-      { user_id: 'user-2' },
-    ]);
-    const result = await useCase.execute('user-1', 'workspace-1');
-    expect(result).toEqual([{ user_id: 'user-1' }, { user_id: 'user-2' }]);
+    const members = [
+      new WorkspaceMember('m-1', 'ws-1', 'user-1', 'member', new Date()),
+      new WorkspaceMember('m-2', 'ws-1', 'user-2', 'member', new Date()),
+    ];
+    mockMemberRepo.findByWorkspaceAndUser.mockResolvedValue(members[0]);
+    mockMemberRepo.findByWorkspace.mockResolvedValue(members);
+    const result = await useCase.execute('user-1', 'ws-1');
+    expect(result).toBe(members);
   });
 });

@@ -11,6 +11,7 @@ import {
   Req,
   Res,
 } from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { Request, Response } from 'express';
 import { GetUserProfileUseCase } from '../../application/use-cases/get-user-profile.use-case';
 import { GetUserSummaryUseCase } from '../../application/use-cases/get-user-summary.use-case';
@@ -33,6 +34,7 @@ import { UserHealthService } from '../../health/user-health.service';
 import { assertMetricsAccess } from '../../metrics/metrics-access';
 import { MetricsService } from '../../metrics/metrics.service';
 
+@ApiTags('users')
 @Controller('users')
 export class UsersController {
   constructor(
@@ -77,25 +79,28 @@ export class UsersController {
   }
 
   @Get('me')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Current user profile' })
   async getMe(@Headers('authorization') authorizationHeader?: string) {
     const identity = await this.requireIdentity(authorizationHeader);
     return this.getUserProfileUseCase.execute(identity.userId);
   }
 
   @Patch('me')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update current user profile' })
   async updateMe(
     @Body() body: UpdateCurrentUserProfileDto,
     @Headers('authorization') authorizationHeader?: string,
   ) {
     const identity = await this.requireIdentity(authorizationHeader);
-    return this.updateUserProfileUseCase.execute(
-      identity.userId,
-      body,
-    );
+    return this.updateUserProfileUseCase.execute(identity.userId, body);
   }
 
   @Get('me/preferences')
-  async getMyPreferences(@Headers('authorization') authorizationHeader?: string) {
+  async getMyPreferences(
+    @Headers('authorization') authorizationHeader?: string,
+  ) {
     const identity = await this.requireIdentity(authorizationHeader);
     return this.getUserPreferencesUseCase.execute(identity.userId);
   }
@@ -106,10 +111,7 @@ export class UsersController {
     @Headers('authorization') authorizationHeader?: string,
   ) {
     const identity = await this.requireIdentity(authorizationHeader);
-    return this.updateUserPreferencesUseCase.execute(
-      identity.userId,
-      body,
-    );
+    return this.updateUserPreferencesUseCase.execute(identity.userId, body);
   }
 
   @Patch('me/status')
@@ -118,16 +120,13 @@ export class UsersController {
     @Headers('authorization') authorizationHeader?: string,
   ) {
     const identity = await this.requireIdentity(authorizationHeader);
-    return this.updateUserStatusUseCase.execute(
-      identity.userId,
-      {
-        clearAt: this.parseOptionalDate(body.clearAt),
-        emoji: body.emoji,
-        lastSeenAt: this.parseOptionalDate(body.lastSeenAt),
-        status: body.status,
-        statusText: body.statusText,
-      },
-    );
+    return this.updateUserStatusUseCase.execute(identity.userId, {
+      clearAt: this.parseOptionalDate(body.clearAt),
+      emoji: body.emoji,
+      lastSeenAt: this.parseOptionalDate(body.lastSeenAt),
+      status: body.status,
+      statusText: body.statusText,
+    });
   }
 
   @Get('presence')
@@ -140,6 +139,8 @@ export class UsersController {
   }
 
   @Post('bulk')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Bulk fetch profiles by user id (max 100)' })
   async bulkGetUsers(
     @Body() body: BulkUsersRequestDto,
     @Headers('authorization') authorizationHeader?: string,
@@ -149,6 +150,8 @@ export class UsersController {
   }
 
   @Get()
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'List/search user directory (mentions, assignees)' })
   async listUsers(
     @Query() query: ListUsersQueryDto,
     @Headers('authorization') authorizationHeader?: string,
@@ -184,6 +187,8 @@ export class UsersController {
   }
 
   @Get(':id')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get profile by user id' })
   async getById(
     @Param('id') id: string,
     @Headers('authorization') authorizationHeader?: string,

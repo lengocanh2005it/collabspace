@@ -1,56 +1,43 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { getRepositoryToken } from '@nestjs/typeorm';
 import { NotFoundException } from '@nestjs/common';
 import { CheckWorkspaceMembershipUseCase } from './check-workspace-membership.use-case';
-import { WorkspaceOrmEntity } from '../../../infrastructure/database/entities/workspace.orm-entity';
-import { WorkspaceMemberOrmEntity } from '../../../infrastructure/database/entities/workspace-member.orm-entity';
+import { WORKSPACE_REPOSITORY } from '../../../domain/repositories/workspace.repository';
+import { WORKSPACE_MEMBER_REPOSITORY } from '../../../domain/repositories/workspace-member.repository';
+import { Workspace } from '../../../domain/entities/workspace.entity';
+import { WorkspaceMember } from '../../../domain/entities/workspace-member.entity';
 
 describe('CheckWorkspaceMembershipUseCase', () => {
   let useCase: CheckWorkspaceMembershipUseCase;
 
-  const mockWorkspaceRepo = {
-    findOne: jest.fn(),
-  };
-
-  const mockMemberRepo = {
-    findOne: jest.fn(),
-  };
+  const mockWorkspaceRepo = { findById: jest.fn() };
+  const mockMemberRepo = { findByWorkspaceAndUser: jest.fn() };
 
   beforeEach(async () => {
+    jest.clearAllMocks();
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CheckWorkspaceMembershipUseCase,
-        {
-          provide: getRepositoryToken(WorkspaceOrmEntity),
-          useValue: mockWorkspaceRepo,
-        },
-        {
-          provide: getRepositoryToken(WorkspaceMemberOrmEntity),
-          useValue: mockMemberRepo,
-        },
+        { provide: WORKSPACE_REPOSITORY, useValue: mockWorkspaceRepo },
+        { provide: WORKSPACE_MEMBER_REPOSITORY, useValue: mockMemberRepo },
       ],
     }).compile();
-
     useCase = module.get(CheckWorkspaceMembershipUseCase);
-    jest.clearAllMocks();
   });
 
   it('should throw NotFoundException when workspace does not exist', async () => {
-    mockWorkspaceRepo.findOne.mockResolvedValue(null);
-
-    await expect(
-      useCase.execute('550e8400-e29b-41d4-a716-446655440000', 'user-1'),
-    ).rejects.toThrow(NotFoundException);
+    mockWorkspaceRepo.findById.mockResolvedValue(null);
+    await expect(useCase.execute('ws-1', 'user-1')).rejects.toThrow(
+      NotFoundException,
+    );
   });
 
   it('should return isMember false when user is not a member', async () => {
-    mockWorkspaceRepo.findOne.mockResolvedValue({ id: 'workspace-1' });
-    mockMemberRepo.findOne.mockResolvedValue(null);
-
-    await expect(
-      useCase.execute('550e8400-e29b-41d4-a716-446655440000', 'user-1'),
-    ).resolves.toEqual({
-      workspaceId: '550e8400-e29b-41d4-a716-446655440000',
+    mockWorkspaceRepo.findById.mockResolvedValue(
+      new Workspace('ws-1', 'Test', null, 'user-1', new Date(), new Date()),
+    );
+    mockMemberRepo.findByWorkspaceAndUser.mockResolvedValue(null);
+    await expect(useCase.execute('ws-1', 'user-1')).resolves.toEqual({
+      workspaceId: 'ws-1',
       userId: 'user-1',
       isMember: false,
       role: null,
@@ -58,13 +45,14 @@ describe('CheckWorkspaceMembershipUseCase', () => {
   });
 
   it('should return membership role when user is a member', async () => {
-    mockWorkspaceRepo.findOne.mockResolvedValue({ id: 'workspace-1' });
-    mockMemberRepo.findOne.mockResolvedValue({ role: 'admin' });
-
-    await expect(
-      useCase.execute('550e8400-e29b-41d4-a716-446655440000', 'user-1'),
-    ).resolves.toEqual({
-      workspaceId: '550e8400-e29b-41d4-a716-446655440000',
+    mockWorkspaceRepo.findById.mockResolvedValue(
+      new Workspace('ws-1', 'Test', null, 'user-1', new Date(), new Date()),
+    );
+    mockMemberRepo.findByWorkspaceAndUser.mockResolvedValue(
+      new WorkspaceMember('m-1', 'ws-1', 'user-1', 'admin', new Date()),
+    );
+    await expect(useCase.execute('ws-1', 'user-1')).resolves.toEqual({
+      workspaceId: 'ws-1',
       userId: 'user-1',
       isMember: true,
       role: 'admin',

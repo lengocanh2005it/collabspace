@@ -6,10 +6,7 @@ export type WorkspaceMember = {
 };
 
 export interface IWorkspaceClient {
-  validateWorkspaceAsync(
-    workspaceId: string,
-    userId: string,
-  ): Promise<boolean>;
+  validateWorkspaceAsync(workspaceId: string, userId: string): Promise<boolean>;
 
   checkUserPermissionAsync(
     workspaceId: string,

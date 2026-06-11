@@ -20,8 +20,7 @@ export class CreateUserReplicaHandler implements ICommandHandler<CreateUserRepli
       userId: command.userId,
       fullName: command.fullName,
       email:
-        command.email?.trim() ||
-        `${command.userId}@users.collabspace.local`,
+        command.email?.trim() || `${command.userId}@users.collabspace.local`,
       username: command.username?.toLowerCase() ?? null,
       displayName: command.displayName ?? command.fullName,
       avatarUrl: command.avatarUrl ?? null,

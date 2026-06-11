@@ -19,7 +19,9 @@ async function bootstrap() {
 
   const swaggerConfig = new DocumentBuilder()
     .setTitle('Auth Service API')
-    .setDescription('CollabSpace Auth Service')
+    .setDescription(
+      'CollabSpace authentication: register, email OTP verification (cooldown + attempt limits), login, refresh tokens, gateway /verify.',
+    )
     .setVersion('1.0')
     .addBearerAuth()
     .build();

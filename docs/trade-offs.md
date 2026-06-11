@@ -215,12 +215,12 @@ Chi tiết: `.claude/docs/service-contracts.md` → Correlation ID.
 
 | Ưu tiên demo | Cố ý chưa làm / làm một phần |
 |--------------|------------------------------|
-| Luồng 7 bước MVP (API) | Frontend UI; script E2E tự động |
+| Luồng 7 bước MVP (API) | Frontend UI; E2E script trong CI |
 | Resilience 0–4, Phase B/C | SLO p99, multi-region |
 | Read model user | mTLS mesh, workspace replica |
-| Activity feed | WebSocket realtime |
+| Activity feed task-level | Workspace aggregate activity; WebSocket realtime |
 | Seed thống nhất | — |
-| Infra vận hành | Backup cron, restore drill, Secret Manager, CI/CD — [phan-phu-tho-infrastructure-backlog.md](./team/phan-phu-tho-infrastructure-backlog.md) |
+| Infra vận hành | Backup cron, restore drill, Vault HA + ESO deploy, CI/CD — [phan-phu-tho-infrastructure-backlog.md](./team/phan-phu-tho-infrastructure-backlog.md); Vault scaffold: [infrastructure/vault/README.md](../infrastructure/vault/README.md) |
 
 Xem checklist: [production-hardening.md](./production-hardening.md), [nfrs.md](./nfrs.md), [mvp-demo-scope.md](./mvp-demo-scope.md).
 

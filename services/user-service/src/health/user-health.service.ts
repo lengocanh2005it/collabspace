@@ -59,7 +59,8 @@ export class UserHealthService {
             }
           })
         : {
-            detail: 'DATABASE_URL not configured; using in-memory repository mode',
+            detail:
+              'DATABASE_URL not configured; using in-memory repository mode',
             required: false,
             status: 'disabled',
           },
@@ -84,7 +85,8 @@ export class UserHealthService {
       };
     } catch (error) {
       return {
-        detail: error instanceof Error ? error.message : 'Unknown dependency error',
+        detail:
+          error instanceof Error ? error.message : 'Unknown dependency error',
         required,
         responseTimeMs: Date.now() - startedAt,
         status: 'down',

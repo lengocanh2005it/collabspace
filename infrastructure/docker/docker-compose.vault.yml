@@ -1,0 +1,43 @@
+# HashiCorp Vault — local dev only (in-memory, auto-unseal).
+#
+# Usage (from infrastructure/docker):
+#   docker compose -f docker-compose.vault.yml up -d
+#   ../vault/scripts/seed-dev-secrets.ps1    # Windows
+#   ../vault/scripts/seed-dev-secrets.sh     # Linux/macOS
+#   ../vault/scripts/sync-env-from-vault.ps1 # optional: write service .env files
+#
+# UI / API: http://localhost:8200
+# Root token: see infrastructure/vault/.env.example (default collabspace-dev-root)
+#
+# Do NOT use -dev mode in production.
+
+services:
+  vault:
+    image: hashicorp/vault:1.17
+    container_name: collabspace-vault
+    restart: unless-stopped
+    ports:
+      - "8200:8200"
+    environment:
+      VAULT_DEV_ROOT_TOKEN_ID: ${VAULT_DEV_ROOT_TOKEN:-collabspace-dev-root}
+      VAULT_DEV_LISTEN_ADDRESS: 0.0.0.0:8200
+      VAULT_ADDR: http://127.0.0.1:8200
+    cap_add:
+      - IPC_LOCK
+    command:
+      - server
+      - -dev
+      - -dev-root-token-id=${VAULT_DEV_ROOT_TOKEN:-collabspace-dev-root}
+    healthcheck:
+      test: ["CMD", "vault", "status", "-format=json"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+    networks:
+      - collabspace-network
+
+networks:
+  collabspace-network:
+    name: collabspace-network
+    driver: bridge

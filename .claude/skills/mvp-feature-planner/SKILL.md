@@ -21,9 +21,10 @@ Read:
 
 If the user says "continue MVP" without a target, read `docs/features.md` for **Planned** / **Partial** items first. Typical gaps (2026-06 sync):
 
-1. **Demo E2E script** — 7-step story via gateway (`docs/mvp-demo-scope.md`).
-2. **Activity feed** — task/workspace timeline.
-3. **Frontend UI** — out of scope repo; backend APIs largely Done.
+1. **E2E + CI** — `scripts/demo-e2e` Done; gắn CI + `*.e2e-spec.ts` workspace/task/notification.
+2. **Workspace activity feed** — task-level `GET /tasks/:id/activity` Done.
+3. **OpenAPI / contract test** — workspace + notification Swagger; Pact/schema (backlog).
+4. **Frontend UI** — out of scope repo; backend APIs largely Done.
 
 Do **not** re-implement: board API, task delete, mark-read, Phase B/C platform work — see `docs/features.md`.
 
@@ -114,5 +115,10 @@ When planning:
 When implementing:
 
 - Implement the first coherent slice end to end.
-- Update docs and tests in the same change.
+- Update **tests, agent docs, human docs, and skills** in the same change when the slice changes contracts or MVP status:
+  - `docs/features.md`, `docs/mvp-demo-scope.md`, `.claude/docs/mvp-roadmap.md`
+  - `.claude/docs/service-contracts.md`, `docs/api-routes.md`
+  - `docs/team/application-backlog.md` if closing a backlog item
+  - This skill or `nest-service-change` / `local-dev-verify` if workflow steps changed
+- See `.claude/rules/docs-and-skills-sync.md`.
 

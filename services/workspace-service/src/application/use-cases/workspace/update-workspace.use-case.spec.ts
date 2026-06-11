@@ -1,64 +1,72 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { UpdateWorkspaceUseCase } from './update-workspace.use-case';
-import { getRepositoryToken } from '@nestjs/typeorm';
-import { WorkspaceOrmEntity } from '../../../infrastructure/database/entities/workspace.orm-entity';
-import { WorkspaceMemberOrmEntity } from '../../../infrastructure/database/entities/workspace-member.orm-entity';
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
+import { UpdateWorkspaceUseCase } from './update-workspace.use-case';
+import { WORKSPACE_REPOSITORY } from '../../../domain/repositories/workspace.repository';
+import { WORKSPACE_MEMBER_REPOSITORY } from '../../../domain/repositories/workspace-member.repository';
+import { Workspace } from '../../../domain/entities/workspace.entity';
+import { WorkspaceMember } from '../../../domain/entities/workspace-member.entity';
 
 describe('UpdateWorkspaceUseCase', () => {
   let useCase: UpdateWorkspaceUseCase;
 
-  const mockWorkspaceRepo = {
-    findOne: jest.fn(),
-    save: jest
-      .fn()
-      .mockImplementation((entity: unknown) => Promise.resolve(entity)),
-  };
-
-  const mockMemberRepo = {
-    findOne: jest.fn(),
-  };
+  const mockWorkspaceRepo = { findById: jest.fn(), update: jest.fn() };
+  const mockMemberRepo = { findByWorkspaceAndUser: jest.fn() };
 
   beforeEach(async () => {
+    jest.clearAllMocks();
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UpdateWorkspaceUseCase,
-        {
-          provide: getRepositoryToken(WorkspaceOrmEntity),
-          useValue: mockWorkspaceRepo,
-        },
-        {
-          provide: getRepositoryToken(WorkspaceMemberOrmEntity),
-          useValue: mockMemberRepo,
-        },
+        { provide: WORKSPACE_REPOSITORY, useValue: mockWorkspaceRepo },
+        { provide: WORKSPACE_MEMBER_REPOSITORY, useValue: mockMemberRepo },
       ],
     }).compile();
-
     useCase = module.get<UpdateWorkspaceUseCase>(UpdateWorkspaceUseCase);
   });
 
   it('should throw ForbiddenException if user is not owner or admin', async () => {
-    mockMemberRepo.findOne.mockResolvedValue({ role: 'member' });
+    mockMemberRepo.findByWorkspaceAndUser.mockResolvedValue(
+      new WorkspaceMember('m-1', 'ws-1', 'user-1', 'member', new Date()),
+    );
     await expect(
-      useCase.execute('user-1', 'workspace-1', { name: 'New Name' }),
+      useCase.execute('user-1', 'ws-1', { name: 'New' }),
     ).rejects.toThrow(ForbiddenException);
   });
 
   it('should throw NotFoundException if workspace does not exist', async () => {
-    mockMemberRepo.findOne.mockResolvedValue({ role: 'admin' });
-    mockWorkspaceRepo.findOne.mockResolvedValue(null);
+    mockMemberRepo.findByWorkspaceAndUser.mockResolvedValue(
+      new WorkspaceMember('m-1', 'ws-1', 'user-1', 'admin', new Date()),
+    );
+    mockWorkspaceRepo.findById.mockResolvedValue(null);
     await expect(
-      useCase.execute('user-1', 'workspace-1', { name: 'New Name' }),
+      useCase.execute('user-1', 'ws-1', { name: 'New' }),
     ).rejects.toThrow(NotFoundException);
   });
 
-  it('should update and save workspace if allowed', async () => {
-    mockMemberRepo.findOne.mockResolvedValue({ role: 'owner' });
-    mockWorkspaceRepo.findOne.mockResolvedValue({ id: 'ws-1', name: 'Old' });
+  it('should call update and return result if allowed', async () => {
+    const updated = new Workspace(
+      'ws-1',
+      'New Name',
+      null,
+      'user-1',
+      new Date(),
+      new Date(),
+    );
+    mockMemberRepo.findByWorkspaceAndUser.mockResolvedValue(
+      new WorkspaceMember('m-1', 'ws-1', 'user-1', 'owner', new Date()),
+    );
+    mockWorkspaceRepo.findById.mockResolvedValue(
+      new Workspace('ws-1', 'Old', null, 'user-1', new Date(), new Date()),
+    );
+    mockWorkspaceRepo.update.mockResolvedValue(updated);
+
     const result = await useCase.execute('user-1', 'ws-1', {
       name: 'New Name',
     });
-    expect(result).toEqual({ id: 'ws-1', name: 'New Name' });
-    expect(mockWorkspaceRepo.save).toHaveBeenCalled();
+    expect(mockWorkspaceRepo.update).toHaveBeenCalledWith('ws-1', {
+      name: 'New Name',
+      description: undefined,
+    });
+    expect(result).toBe(updated);
   });
 });

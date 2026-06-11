@@ -70,12 +70,17 @@ kubectl get svc traefik -n collabspace
 
 ## Production overrides
 
-Create `values-prod.yaml` (do **not** commit secrets):
+Create `values-prod.yaml` (do **not** commit secrets).
+
+**With HashiCorp Vault + External Secrets Operator** (recommended): see `infrastructure/vault/README.md`. Set `global.externalSecrets.enabled: true` so Helm does not render `{app}-secrets` (ESO syncs from Vault).
+
+**Without ESO** (CI injects Helm values only):
 
 ```yaml
 global:
   secrets:
     jwtSecret: "<from-secret-manager>"
+    internalServiceToken: "<shared-s2s-token>"
     postgresPassword: "<strong-password>"
     mongoPassword: "<strong-password>"
     redisPassword: "<strong-password>"

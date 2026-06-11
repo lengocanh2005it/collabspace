@@ -1,4 +1,9 @@
-import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from "@nestjs/common";
+import {
+  Injectable,
+  Logger,
+  OnModuleDestroy,
+  OnModuleInit,
+} from "@nestjs/common";
 import { TaskAssignedEventPayload } from "../../domain/events/task.events";
 import {
   CommentMentionedEventPayload,
@@ -71,7 +76,9 @@ export class TaskOutboxProcessor implements OnModuleInit, OnModuleDestroy {
           await this.taskOutboxService.markProcessed(String(event._id));
         } catch (error) {
           const message =
-            error instanceof Error ? error.message : "Unknown task outbox error";
+            error instanceof Error
+              ? error.message
+              : "Unknown task outbox error";
           this.logger.warn(
             `Task outbox publish failed for ${String(event._id)}: ${message}`,
           );

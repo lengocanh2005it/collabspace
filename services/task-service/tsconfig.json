@@ -32,6 +32,7 @@
     "dist",
     "node_modules",
     "**/*.spec.ts",
-    "src/test-utils/**"
+    "src/test-utils/**",
+    "src/seed.ts"
   ]
 }

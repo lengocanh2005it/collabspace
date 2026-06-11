@@ -4,7 +4,8 @@ For dependency failures, timeouts, idempotency, and degradation behavior, see `r
 
 ## HTTP API Rules
 
-- Implemented NestJS services use global prefix `/api/v1`.
+- **OpenAPI (Swagger UI):** each app service exposes **`GET /swagger`** on its HTTP port (see [README.md](../../README.md#openapi-swagger-ui)). Protected routes use Bearer JWT; internal S2S routes document `X-Internal-Service-Token`.
+- Implemented NestJS services use global prefix `/api/v1` (task and notification: global `api` + `v1/...` on `@Controller()`).
 - Controllers should use resource-oriented paths.
 - Auth-required endpoints should verify bearer tokens through auth-service, preferably via existing gRPC integration patterns.
 - Responses should be DTO-shaped and stable. Do not leak ORM entities directly from controllers.
@@ -336,40 +337,32 @@ Internal service-to-service (not for browser clients):
 
 ## Task MVP Contract
 
-Minimum HTTP routes to close MVP:
+Base prefix: `/api/v1/tasks` (NestJS global prefix `api`; controller `v1/tasks`).
 
-- `POST /projects`
-- `GET /projects?workspaceId=`
-- `GET /projects/{id}`
-- `PATCH /projects/{id}`
-- `DELETE /projects/{id}`
-- `GET /projects/{id}/board`
-- `POST /tasks`
-- `GET /tasks?workspaceId=&projectId=&assigneeId=&status=&priority=&q=`
-- `GET /tasks/{id}`
-- `PATCH /tasks/{id}`
-- `DELETE /tasks/{id}`
-- `POST /tasks/{id}/comments`
-- `GET /tasks/{id}/comments`
+**Canonical route list:** [docs/api-routes.md](../../docs/api-routes.md) § Task Service.
 
-Minimum statuses:
+Key routes (implemented):
 
-- `todo`
-- `in_progress`
-- `done`
+- `POST /api/v1/tasks` — create (`Idempotency-Key` optional)
+- `GET /api/v1/tasks` — list (`workspaceId`, `status`, `assigneeId`, `priority`, `projectId`)
+- `GET /api/v1/tasks/board` — Kanban columns `TODO` / `DOING` / `DONE`
+- `GET /api/v1/tasks/{id}` — detail
+- `GET /api/v1/tasks/{id}/activity` — timeline from `task_events` + comments (`limit`, `offset`)
+- `PATCH /api/v1/tasks/{id}/details` — title, description, priority, dueDate, labels
+- `PATCH /api/v1/tasks/{id}/status` — change status
+- `PATCH /api/v1/tasks/{id}/assignee` — assign (`Idempotency-Key` optional)
+- `DELETE /api/v1/tasks/{id}` — soft delete
+- `POST|GET|PATCH|DELETE /api/v1/tasks/{taskId}/comments` — comment CRUD + mentions
+- `POST|DELETE /api/v1/tasks/{id}/attachments` — upload / remove attachment
 
-Minimum priorities:
-
-- `low`
-- `medium`
-- `high`
+Statuses: `TODO`, `DOING`, `DONE`. Priorities: `LOW`, `MEDIUM`, `HIGH`.
 
 Rules:
 
-- Every task belongs to a workspace and project.
-- Assignment should validate user existence through user-service.
-- Workspace membership should be checked before task mutation.
-- Comment mentions should parse `@username`, resolve through user-service, persist mentioned users, and publish a notification event.
+- Every task belongs to a `workspaceId`; `projectId` optional.
+- Workspace membership via internal HTTP + `X-Internal-Service-Token` (not client `X-User-Id`).
+- Assignment validates assignee via user replica (+ HTTP fallback).
+- Comment mentions parse `@username`, resolve via replica, publish `comment_created` / `comment_mentioned`.
 
 ## Notification MVP Contract
 

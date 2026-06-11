@@ -1,9 +1,11 @@
 import { Controller, Get, HttpCode, Req, Res } from "@nestjs/common";
+import { ApiOperation, ApiTags } from "@nestjs/swagger";
 import type { Request, Response } from "express";
 import { TaskHealthService } from "../../health/task-health.service";
 import { assertMetricsAccess } from "../../metrics/metrics-access";
 import { MetricsService } from "../../metrics/metrics.service";
 
+@ApiTags("health")
 @Controller("v1/tasks")
 export class HealthController {
   constructor(
@@ -12,6 +14,7 @@ export class HealthController {
   ) {}
 
   @Get("health")
+  @ApiOperation({ summary: "Health summary (readiness)" })
   async getHealth(@Res({ passthrough: true }) response: Response) {
     const report = await this.taskHealthService.getReadiness();
     response.status(report.ready ? 200 : 503);
@@ -20,11 +23,13 @@ export class HealthController {
 
   @Get("health/live")
   @HttpCode(200)
+  @ApiOperation({ summary: "Liveness probe" })
   getLiveness() {
     return this.taskHealthService.getLiveness();
   }
 
   @Get("health/ready")
+  @ApiOperation({ summary: "Readiness probe" })
   async getReadiness(@Res({ passthrough: true }) response: Response) {
     const report = await this.taskHealthService.getReadiness();
     response.status(report.ready ? 200 : 503);

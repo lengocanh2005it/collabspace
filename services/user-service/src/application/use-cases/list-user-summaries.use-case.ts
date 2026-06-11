@@ -21,7 +21,9 @@ export class ListUserSummariesUseCase {
     const statuses = await this.userProfileRepository.getStatusesByUserIds(
       result.items.map((profile) => profile.userId),
     );
-    const statusMap = new Map(statuses.map((status) => [status.userId, status]));
+    const statusMap = new Map(
+      statuses.map((status) => [status.userId, status]),
+    );
 
     return {
       items: result.items.map((profile) =>

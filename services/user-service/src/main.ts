@@ -12,17 +12,12 @@ import { UserHealthService } from './health/user-health.service';
 import { MetricsService } from './metrics/metrics.service';
 import { registerMetricsMiddleware } from './metrics/register-metrics.middleware';
 
-const toBoolean = (
-  value: string | undefined,
-  fallback: boolean,
-): boolean => {
+const toBoolean = (value: string | undefined, fallback: boolean): boolean => {
   if (!value) {
     return fallback;
   }
 
-  return ['1', 'true', 'yes', 'on'].includes(
-    value.toLowerCase(),
-  );
+  return ['1', 'true', 'yes', 'on'].includes(value.toLowerCase());
 };
 
 async function bootstrap() {
@@ -33,21 +28,24 @@ async function bootstrap() {
 
   const swaggerConfig = new DocumentBuilder()
     .setTitle('User Service API')
-    .setDescription('CollabSpace User Service')
+    .setDescription(
+      'CollabSpace user directory: profiles, preferences, status, bulk hydrate, internal replica lookup.',
+    )
     .setVersion('1.0')
     .addBearerAuth()
+    .addApiKey(
+      {
+        type: 'apiKey',
+        in: 'header',
+        name: 'X-Internal-Service-Token',
+      },
+      'internal-service-token',
+    )
     .build();
 
-  const swaggerDocument = SwaggerModule.createDocument(
-    app,
-    swaggerConfig,
-  );
+  const swaggerDocument = SwaggerModule.createDocument(app, swaggerConfig);
 
-  SwaggerModule.setup(
-    'swagger',
-    app,
-    swaggerDocument,
-  );
+  SwaggerModule.setup('swagger', app, swaggerDocument);
 
   const dataSource = app.get(DataSource);
 
@@ -55,17 +53,11 @@ async function bootstrap() {
 
   const protoDir = join(process.cwd(), 'proto');
 
-  if (
-    process.env.DATABASE_URL &&
-    !dataSource.isInitialized
-  ) {
+  if (process.env.DATABASE_URL && !dataSource.isInitialized) {
     await dataSource.initialize();
   }
 
-  const grpcEnabled = toBoolean(
-    process.env.GRPC_ENABLED,
-    true,
-  );
+  const grpcEnabled = toBoolean(process.env.GRPC_ENABLED, true);
 
   if (grpcEnabled) {
     app.connectMicroservice<MicroserviceOptions>({
@@ -73,9 +65,7 @@ async function bootstrap() {
       options: {
         package: 'user',
         protoPath: [join(protoDir, 'user.proto')],
-        url:
-          process.env.GRPC_URL ??
-          '0.0.0.0:50052',
+        url: process.env.GRPC_URL ?? '0.0.0.0:50052',
         loader: {
           arrays: true,
           enums: String,
@@ -90,37 +80,21 @@ async function bootstrap() {
     hasConnectedMicroservice = true;
   }
 
-  const rabbitMqEnabled = toBoolean(
-    process.env.RABBITMQ_ENABLED,
-    false,
-  );
+  const rabbitMqEnabled = toBoolean(process.env.RABBITMQ_ENABLED, false);
 
-  const rabbitMqUrl =
-    process.env.RABBITMQ_URL;
+  const rabbitMqUrl = process.env.RABBITMQ_URL;
 
   if (rabbitMqEnabled && rabbitMqUrl) {
     app.connectMicroservice<MicroserviceOptions>({
       transport: Transport.RMQ,
       options: {
         urls: [rabbitMqUrl],
-        queue:
-          process.env.RABBITMQ_QUEUE ??
-          'user-service',
+        queue: process.env.RABBITMQ_QUEUE ?? 'user-service',
         queueOptions: {
-          durable: toBoolean(
-            process.env
-              .RABBITMQ_QUEUE_DURABLE,
-            true,
-          ),
+          durable: toBoolean(process.env.RABBITMQ_QUEUE_DURABLE, true),
         },
-        prefetchCount: Number(
-          process.env
-            .RABBITMQ_PREFETCH_COUNT ?? 10,
-        ),
-        noAck: toBoolean(
-          process.env.RABBITMQ_NO_ACK,
-          false,
-        ),
+        prefetchCount: Number(process.env.RABBITMQ_PREFETCH_COUNT ?? 10),
+        noAck: toBoolean(process.env.RABBITMQ_NO_ACK, false),
       },
     });
 
@@ -141,9 +115,7 @@ async function bootstrap() {
     'Bootstrap',
   );
 
-  const port = Number(
-    process.env.PORT ?? 3000,
-  );
+  const port = Number(process.env.PORT ?? 3000);
 
   await app.listen(port);
 

@@ -34,8 +34,7 @@ export class CommentEventListenerController {
 
       // Truyền đúng chuẩn 8 tham số vào Command
       const eventId =
-        data.eventId ??
-        `comment_created:${data.commentId}:${data.recipientId}`;
+        data.eventId ?? `comment_created:${data.commentId}:${data.recipientId}`;
 
       const command = new CreateNotificationCommand(
         data.recipientId, // 1. recipientId (Người nhận)

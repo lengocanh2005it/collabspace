@@ -71,7 +71,7 @@ Chi tiết kỹ thuật:
 | Authorization gateway | Protected routes qua forward-auth | ✅ Traefik `strip-identity-headers` → `/auth/verify` |
 | Service auth (workspace, task, notification) | Không tin header client giả | ✅ `AuthGuard` + auth gRPC; dev-only `X-User-Id` khi `ALLOW_DEV_IDENTITY_HEADERS=true` |
 | Service-to-service nội bộ | Token/mTLS giữa app | ✅ `INTERNAL_SERVICE_TOKEN` + NetworkPolicy ingress allow lists (B3–B4) |
-| Secrets không trong Git | Prod secrets từ vault | ⚠️ `.env.example` + Helm placeholders; External Secrets 📋 checklist |
+| Secrets không trong Git | Prod secrets từ Vault | ⚠️ `.env.example` + Helm placeholders; **HashiCorp Vault** scaffold (`infrastructure/vault/`) + ESO manifests — chưa operational HA/rotation |
 | Metrics lockdown | `/metrics` không public | ✅ `METRICS_AUTH_TOKEN` khi set |
 | Input validation | DTO + validation pipe | ✅ NestJS `ValidationPipe` |
 | Audit log / compliance | Trace mọi thao tác admin | ❌ Out of scope MVP |
@@ -134,8 +134,9 @@ Chi tiết kỹ thuật:
 |-----|----------|-------------|
 | Service boundaries rõ | Một team/feature → một service | ✅ auth, user, workspace, task, notification |
 | Contract docs | API + event | ✅ `service-contracts.md`, `api-routes.md` |
+| Contract test tự động | Pact / schema test event | ❌ Chỉ doc + `@collabspace/shared`; chưa consumer-driven contract test |
 | Unit tests | Logic nghiệp vụ | ✅ auth, user, task, notification (mức độ khác nhau) |
-| E2E cross-service | Demo story tự động | ⚠️ API đủ 7 bước; chưa script `demo-e2e` |
+| E2E cross-service | Demo story tự động | ⚠️ `scripts/demo-e2e.sh` + `.ps1` (7 bước qua Traefik) **Done**; chưa gắn CI smoke; workspace/task/notification chưa có `*.e2e-spec.ts` |
 | Coding conventions | Layering nhất quán | ✅ `.claude/docs/coding-conventions.md`, per-service CLAUDE.md |
 
 ---
@@ -145,7 +146,7 @@ Chi tiết kỹ thuật:
 | NFR | Mục tiêu | CollabSpace |
 |-----|----------|-------------|
 | API versioning | `/api/v1` ổn định | ✅ |
-| OpenAPI | Swagger một số service | ⚠️ user, task; chưa 5/5 |
+| OpenAPI | Swagger 5/5 services tại `/swagger` | ✅ auth, user, workspace, task, notification |
 | Frontend client | UI end-user | ❌ Backend + infra focus |
 | i18n / accessibility | — | ❌ Out of scope |
 

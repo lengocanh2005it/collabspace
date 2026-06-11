@@ -1,16 +1,13 @@
+import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import {
-  IsOptional,
-  IsString,
-  Matches,
-  MaxLength,
-} from 'class-validator';
+import { IsOptional, IsString, Matches, MaxLength } from 'class-validator';
 import {
   toNullableTrimmedString,
   toOptionalTrimmedString,
 } from './transformers';
 
 export class UpdateCurrentUserProfileDto {
+  @ApiPropertyOptional({ maxLength: 500, nullable: true })
   @Transform(toNullableTrimmedString)
   @IsString()
   @MaxLength(500)
@@ -23,12 +20,19 @@ export class UpdateCurrentUserProfileDto {
   @IsOptional()
   displayName?: string | null;
 
+  @ApiPropertyOptional({ maxLength: 120 })
   @Transform(toOptionalTrimmedString)
   @IsString()
   @MaxLength(120)
   @IsOptional()
   fullName?: string;
 
+  @ApiPropertyOptional({
+    maxLength: 50,
+    pattern: '^[a-z0-9._-]+$',
+    nullable: true,
+    example: 'jane.doe',
+  })
   @Transform(toNullableTrimmedString)
   @IsString()
   @MaxLength(50)

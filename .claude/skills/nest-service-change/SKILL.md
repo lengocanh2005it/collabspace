@@ -101,6 +101,20 @@ pnpm run test
 
 Run `test:e2e` when changing routing, validation, bootstrap, or auth guards/integration.
 
+## Docs & skills sync
+
+After code changes, update when **needed** (same PR):
+
+| Change | Update |
+|--------|--------|
+| HTTP/gRPC route or DTO contract | `.claude/docs/service-contracts.md`, `docs/api-routes.md` |
+| New/changed env / secret key | `services/*/.env.example`, `development-workflows.md`; if shared secret → `infrastructure/vault/` seed scripts + `external-secrets.yaml` |
+| Auth/verify behavior | `service-contracts.md`, `services/<service>/CLAUDE.md`, `.claude/rules/<service>.md` |
+| Feature status | `docs/features.md`, `docs/mvp-demo-scope.md` |
+| Verify commands changed | This skill or `local-dev-verify/SKILL.md` |
+
+Skip for internal refactors with no contract impact. Rule: `.claude/rules/docs-and-skills-sync.md`.
+
 ## Completion Response
 
 Include:
@@ -109,5 +123,5 @@ Include:
 - Files touched.
 - Tests/commands run.
 - Any command that could not run and why.
-- Any contract/doc updates.
+- **Agent docs + skills updated** (list paths) or explicit "no doc/skill sync required".
 

@@ -7,6 +7,7 @@ import {
   Req,
   Res,
 } from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { LogoutInput, RefreshSessionInput } from '@/common/types/auth-session.type';
 import type {
   ChangePasswordInput,
@@ -22,6 +23,7 @@ import { assertMetricsAccess } from './metrics/metrics-access';
 import { MetricsService } from './metrics/metrics.service';
 import { AuthService } from './app.service';
 
+@ApiTags('auth')
 @Controller('auth')
 export class AuthController {
   constructor(
@@ -59,30 +61,47 @@ export class AuthController {
 
   @Post('login')
   @HttpCode(200)
+  @ApiOperation({ summary: 'Login with email and password (verified email required)' })
   async login(@Body() body: LoginInput) {
     return this.authService.login(body);
   }
 
   @Get('me')
   @HttpCode(200)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Current authenticated user (profile hydrated when user-service is up)' })
   async me(@Req() request: Request) {
     return this.authService.getCurrentUser(request.header('authorization'));
   }
 
   @Post('register')
   @HttpCode(201)
+  @ApiOperation({
+    summary: 'Register a new account',
+    description:
+      'Creates auth user and pending user profile. Email verification OTP is sent asynchronously (outbox). Unverified accounts can recover via register with the same email.',
+  })
   async register(@Body() body: RegisterInput) {
     return this.authService.register(body);
   }
 
   @Post('resend-verification-otp')
   @HttpCode(200)
+  @ApiOperation({
+    summary: 'Resend email verification OTP',
+    description:
+      'Subject to resend cooldown and max attempts per window (see EMAIL_VERIFICATION_RESEND_* env vars). Returns 429 when rate limited.',
+  })
   async resendVerificationOtp(@Body() body: ResendEmailVerificationOtpInput) {
     return this.authService.resendEmailVerificationOtp(body);
   }
 
   @Post('verify-email')
   @HttpCode(200)
+  @ApiOperation({
+    summary: 'Verify email with OTP',
+    description: 'OTP is hashed at rest in Redis. Invalid or expired OTP returns 401.',
+  })
   async verifyEmail(@Body() body: VerifyEmailOtpInput) {
     return this.authService.verifyEmailOtp(body);
   }
@@ -149,10 +168,10 @@ export class AuthController {
       response.setHeader('X-Workspace-Id', identity.workspaceId);
     }
 
-    response.setHeader(
-      'X-Request-Id',
-      (request as RequestWithId).requestId,
-    );
+    const requestId = (request as RequestWithId).requestId;
+    if (requestId) {
+      response.setHeader('X-Request-Id', requestId);
+    }
 
     return {
       authenticated: true,

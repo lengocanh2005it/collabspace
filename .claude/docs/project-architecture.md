@@ -118,7 +118,7 @@ Technology:
 - PostgreSQL
 - RabbitMQ (direct channel publish from use cases)
 
-Architecture: pragmatic layered — use cases inject TypeORM repositories directly. See `.claude/docs/service-architecture.md`.
+Architecture: Clean Architecture — use cases inject domain repository ports; TypeORM adapters in `infrastructure/repositories/`. See `.claude/docs/service-architecture.md`.
 
 Responsibilities:
 
@@ -231,6 +231,17 @@ Correlation ID (Phase C):
 
 Infra operations backlog: `docs/team/phan-phu-tho-infrastructure-backlog.md`.
 
+### Secrets (HashiCorp Vault)
+
+Path: `infrastructure/vault`
+
+- **Local dev:** `infrastructure/docker/docker-compose.vault.yml` (Vault `-dev` on port `8200`); seed/sync scripts under `infrastructure/vault/scripts/`.
+- **KV v2:** mount `secret/` — paths `collabspace/dev`, `collabspace/staging`, `collabspace/prod` (shared keys: `jwt_secret`, `internal_service_token`, datastore passwords).
+- **Kubernetes:** External Secrets Operator manifests in `infrastructure/vault/k8s/` sync Vault → `{app}-secrets`; Helm `global.externalSecrets.enabled: true` skips chart-rendered Secrets.
+- **Apps unchanged:** NestJS services read `JWT_SECRET`, `INTERNAL_SERVICE_TOKEN`, etc. from environment variables.
+
+Guide: `infrastructure/vault/README.md`.
+
 When changing route prefixes, update:
 
 - Service controllers/global prefixes.
@@ -257,6 +268,7 @@ Optional stacks:
 - `docker-compose.traefik.yml`: Traefik gateway.
 - `docker-compose.jenkins.yml`: Jenkins.
 - `docker-compose.loadtest.yml`: k6/load testing.
+- `docker-compose.vault.yml`: HashiCorp Vault dev mode (optional; port `8200`).
 
 ### Databases
 

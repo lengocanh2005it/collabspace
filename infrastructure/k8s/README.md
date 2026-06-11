@@ -14,6 +14,7 @@ These plain YAML files were the original CollabSpace K8s deployment (Agent BRAVO
 - Official Traefik chart for the API gateway
 - Single `values.yaml` for environments (local vs production)
 - Templated microservices with shared secrets and connection strings
+- **HashiCorp Vault + ESO:** `infrastructure/vault/k8s/` — set `global.externalSecrets.enabled: true` in Helm values
 
 ## Using legacy YAML (reference only)
 

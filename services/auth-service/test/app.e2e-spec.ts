@@ -27,9 +27,11 @@ describe('AuthController (e2e)', () => {
     getAuthUserById: jest.fn(),
     markEmailVerified: jest.fn(),
     register: jest.fn(),
+    rollbackNewRegistration: jest.fn(),
     validateCredentials: jest.fn(),
   };
   const redisServiceMock = {
+    assertAvailable: jest.fn(),
     delete: jest.fn(),
     exists: jest.fn(),
     expire: jest.fn(),
@@ -260,6 +262,7 @@ describe('AuthController (e2e)', () => {
       emailVerified: true,
       fullName: 'Member Example',
       permissions: ['users.read'],
+      profileStatus: 'available',
       role: 'member',
       roles: ['member'],
       username: 'member.example',
@@ -287,6 +290,7 @@ describe('AuthController (e2e)', () => {
       fullName: 'Member Example',
       isActive: true,
       permissions: ['users.read'],
+      profileStatus: 'available',
       role: 'member',
       roles: ['member'],
       userId: 'user-123',
@@ -387,6 +391,40 @@ describe('AuthController (e2e)', () => {
       .expect({
         revoked: true,
       });
+  });
+
+  it('register → login → me flow (e2e)', async () => {
+    await request(app.getHttpServer())
+      .post('/api/v1/auth/register')
+      .send({
+        email: 'flow@example.com',
+        fullName: 'Flow User',
+        password: 'password123',
+      })
+      .expect(201)
+      .expect((response) => {
+        expect(response.body.verificationRequired).toBe(true);
+      });
+
+    const loginResponse = await request(app.getHttpServer())
+      .post('/api/v1/auth/login')
+      .send({
+        email: 'flow@example.com',
+        password: 'password123',
+        workspaceId: 'workspace-456',
+      })
+      .expect(200);
+
+    const meResponse = await request(app.getHttpServer())
+      .get('/api/v1/auth/me')
+      .set('Authorization', `Bearer ${loginResponse.body.accessToken}`)
+      .expect(200);
+
+    expect(meResponse.body).toMatchObject({
+      email: 'member@example.com',
+      userId: 'user-123',
+      fullName: 'Member Example',
+    });
   });
 
   afterEach(async () => {

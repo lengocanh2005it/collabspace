@@ -30,7 +30,4 @@ export class IdempotencyKeyRecord {
 export const IdempotencyKeySchema =
   SchemaFactory.createForClass(IdempotencyKeyRecord);
 
-IdempotencyKeySchema.index(
-  { userId: 1, idempotencyKey: 1 },
-  { unique: true },
-);
+IdempotencyKeySchema.index({ userId: 1, idempotencyKey: 1 }, { unique: true });

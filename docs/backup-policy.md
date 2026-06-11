@@ -35,7 +35,7 @@ Artifacts land in `infrastructure/backup/artifacts/` (gitignored). Rotate locall
 
 1. Use managed databases (RDS, Cloud SQL, Atlas) with provider-native automated backups and point-in-time recovery when available.
 2. Do **not** rely on pod ephemeral storage for data.
-3. Store backup credentials in External Secrets / sealed secrets — never in `values.yaml` plaintext.
+3. Store backup credentials in **HashiCorp Vault** (sync via External Secrets Operator) — never in `values.yaml` plaintext. See `infrastructure/vault/README.md`.
 4. Schedule CronJobs or use the cloud provider backup window; document owner and on-call escalation in `docs/runbooks/`.
 
 ## Restore drill (quarterly)

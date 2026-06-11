@@ -24,9 +24,7 @@ export class GetTaskBoardHandler implements IQueryHandler<GetTaskBoardQuery> {
     );
 
     if (query.projectId) {
-      tasks = tasks.filter(
-        (task) => task.getProjectId() === query.projectId,
-      );
+      tasks = tasks.filter((task) => task.getProjectId() === query.projectId);
     }
 
     const columns: TaskBoardColumn[] = BOARD_STATUSES.map((status) => ({

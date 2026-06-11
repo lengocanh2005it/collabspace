@@ -25,6 +25,7 @@ export class TaskEventPersistence {
   payload!: Record<string, unknown>;
 }
 
-export const TaskEventSchema = SchemaFactory.createForClass(TaskEventPersistence);
+export const TaskEventSchema =
+  SchemaFactory.createForClass(TaskEventPersistence);
 
 TaskEventSchema.index({ streamId: 1, version: 1 }, { unique: true });

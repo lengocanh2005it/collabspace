@@ -12,6 +12,13 @@ import {
   HttpStatus,
   Req,
 } from "@nestjs/common";
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiTags,
+} from "@nestjs/swagger";
 import { CommandBus, QueryBus } from "@nestjs/cqrs";
 import { CreateCommentRequest } from "../dtos/create-comment.request";
 import { EditCommentRequest } from "../dtos/edit-comment.request";
@@ -28,6 +35,8 @@ import { DeleteCommentResponse } from "../../application/usecases/comments/delet
 import { GetTaskCommentsResponse } from "../../application/usecases/comments/get/get-task-comments.handler";
 import type { AppRequest } from "../http/request-context";
 
+@ApiTags("task-comments")
+@ApiBearerAuth()
 @Controller("v1/tasks/:taskId/comments")
 @UseGuards(AuthGuard, WorkspaceValidationGuard)
 export class TaskCommentController {
@@ -41,6 +50,8 @@ export class TaskCommentController {
    * POST /api/v1/tasks/:taskId/comments
    */
   @Post()
+  @ApiOperation({ summary: "Create comment (supports @username mentions)" })
+  @ApiParam({ name: "taskId" })
   async createComment(
     @Param("taskId") taskId: string,
     @Body() request: CreateCommentRequest,
@@ -71,6 +82,10 @@ export class TaskCommentController {
    * GET /api/v1/tasks/:taskId/comments?skip=0&limit=20
    */
   @Get()
+  @ApiOperation({ summary: "List task comments" })
+  @ApiParam({ name: "taskId" })
+  @ApiQuery({ name: "skip", required: false, type: Number })
+  @ApiQuery({ name: "limit", required: false, type: Number })
   async getTaskComments(
     @Param("taskId") taskId: string,
     @Query("skip") skip: string = "0",
@@ -122,6 +137,9 @@ export class TaskCommentController {
    * PATCH /api/v1/tasks/:taskId/comments/:commentId
    */
   @Patch(":commentId")
+  @ApiOperation({ summary: "Edit comment (author only)" })
+  @ApiParam({ name: "taskId" })
+  @ApiParam({ name: "commentId" })
   async editComment(
     @Param("taskId") taskId: string,
     @Param("commentId") commentId: string,
@@ -153,6 +171,9 @@ export class TaskCommentController {
    * DELETE /api/v1/tasks/:taskId/comments/:commentId
    */
   @Delete(":commentId")
+  @ApiOperation({ summary: "Soft-delete comment (author only)" })
+  @ApiParam({ name: "taskId" })
+  @ApiParam({ name: "commentId" })
   async deleteComment(
     @Param("taskId") taskId: string,
     @Param("commentId") commentId: string,

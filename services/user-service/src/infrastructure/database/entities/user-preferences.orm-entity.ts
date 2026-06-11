@@ -39,7 +39,11 @@ export class UserPreferencesOrmEntity {
   @Column({ type: 'varchar', default: 'en' })
   language!: string;
 
-  @Column({ name: 'push_notifications_enabled', type: 'boolean', default: true })
+  @Column({
+    name: 'push_notifications_enabled',
+    type: 'boolean',
+    default: true,
+  })
   pushNotificationsEnabled!: boolean;
 
   @Column({ type: 'varchar', default: 'system' })

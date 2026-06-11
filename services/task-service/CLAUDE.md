@@ -31,6 +31,8 @@ pnpm run build
 pnpm run test
 ```
 
+**Swagger:** `http://localhost:3000/swagger` (Docker host port **3003**).
+
 ## Event sourcing (Task aggregate)
 
 - Command writes append to Mongo `task_events` (`ITaskEventStore`) then refresh the `tasks` read projection.

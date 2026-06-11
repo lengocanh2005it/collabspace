@@ -60,9 +60,8 @@ export class AuthGrpcService implements OnModuleInit {
 
   onModuleInit(): void {
     this.authService = this.client.getService<AuthGrpcClient>("AuthService");
-    this.authClient = this.client.getClientByServiceName<ReadyGrpcClient>(
-      "AuthService",
-    );
+    this.authClient =
+      this.client.getClientByServiceName<ReadyGrpcClient>("AuthService");
   }
 
   async verifyAccessToken(authorizationHeader?: string): Promise<AuthIdentity> {
