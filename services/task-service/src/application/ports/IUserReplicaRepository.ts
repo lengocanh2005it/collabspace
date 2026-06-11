@@ -4,6 +4,8 @@ export const USER_REPLICA_REPOSITORY_TOKEN = Symbol("IUserReplicaRepository");
 
 export interface IUserReplicaRepository {
   findByIdAsync(userId: string): Promise<UserReplica | null>;
+  findByUsernameAsync(username: string): Promise<UserReplica | null>;
+  findManyByIdsAsync(userIds: string[]): Promise<UserReplica[]>;
 
   // Dùng Partial để linh hoạt truyền data
   upsertAsync(data: Partial<UserReplica>): Promise<void>;

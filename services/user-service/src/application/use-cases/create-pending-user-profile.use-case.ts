@@ -1,8 +1,13 @@
-// src/application/usecases/create-pending-user-profile.usecase.ts
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { CreatePendingUserProfileInput, USER_PROFILE_REPOSITORY } from '../../domain/repositories/user-profile.repository';
+import {
+  CreatePendingUserProfileInput,
+  USER_PROFILE_REPOSITORY,
+} from '../../domain/repositories/user-profile.repository';
 import type { UserProfileRepository } from '../../domain/repositories/user-profile.repository';
-import { UserProfileResponseDto, toUserProfileResponseDto } from '../dto/user-profile-response.dto';
+import {
+  UserProfileResponseDto,
+  toUserProfileResponseDto,
+} from '../dto/user-profile-response.dto';
 import { RabbitMqEventsService } from '../../infrastructure/messaging/rabbitmq/rabbitmq-events.service';
 
 @Injectable()
@@ -15,18 +20,25 @@ export class CreatePendingUserProfileUseCase {
     private readonly rabbitMqEvents: RabbitMqEventsService,
   ) {}
 
-  async execute(input: CreatePendingUserProfileInput): Promise<UserProfileResponseDto> {
+  async execute(
+    input: CreatePendingUserProfileInput,
+  ): Promise<UserProfileResponseDto> {
     const profile = await this.userProfileRepository.upsertPending(input);
 
-    // Bắn Event Đăng ký (Chỉ có ID và Tên)
     try {
       await this.rabbitMqEvents.publishUserRegistered({
         userId: profile.userId,
         fullName: profile.fullName,
+        email: `${profile.userId}@users.collabspace.local`,
+        username: profile.username,
+        occurredAt: new Date().toISOString(),
       });
     } catch (error) {
-  console.error(error);
-}
+      this.logger.warn(
+        `Failed to publish user registered event for ${profile.userId}`,
+        error instanceof Error ? error.stack : undefined,
+      );
+    }
 
     return toUserProfileResponseDto(profile);
   }

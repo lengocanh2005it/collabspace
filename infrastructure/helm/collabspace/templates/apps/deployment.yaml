@@ -1,0 +1,94 @@
+{{- $root := . -}}
+{{- $ns := include "collabspace.namespace" . -}}
+{{- range $name, $app := .Values.apps }}
+{{- if $app.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $name }}
+  namespace: {{ $ns }}
+  labels:
+    {{- include "collabspace.appLabels" (dict "appName" $name "root" $root) | nindent 4 }}
+spec:
+  replicas: {{ $app.replicas }}
+  selector:
+    matchLabels:
+      app: {{ $name }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: {{ $name }}
+        app.kubernetes.io/name: {{ $name }}
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: {{ $app.httpPort | quote }}
+        prometheus.io/path: {{ $app.metricsPath | quote }}
+    spec:
+      serviceAccountName: default
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      terminationGracePeriodSeconds: {{ default 30 $app.health.terminationGracePeriodSeconds }}
+      containers:
+        - name: {{ $name }}
+          image: "{{ $app.image.repository }}:{{ $app.image.tag }}"
+          imagePullPolicy: {{ default $root.Values.global.imagePullPolicy $app.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ $app.httpPort }}
+              protocol: TCP
+            {{- if $app.grpcPort }}
+            - name: grpc
+              containerPort: {{ $app.grpcPort }}
+              protocol: TCP
+            {{- end }}
+          envFrom:
+            - configMapRef:
+                name: {{ $name }}-config
+            - secretRef:
+                name: {{ $name }}-secrets
+          resources:
+            {{- toYaml $app.resources | nindent 12 }}
+          readinessProbe:
+            httpGet:
+              path: {{ $app.health.readyPath }}
+              port: {{ $app.httpPort }}
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            successThreshold: 1
+            failureThreshold: {{ default 3 $app.health.readyFailureThreshold }}
+          livenessProbe:
+            httpGet:
+              path: {{ $app.health.livePath }}
+              port: {{ $app.httpPort }}
+            initialDelaySeconds: {{ default 30 $app.health.liveInitialDelaySeconds }}
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 3
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh", "-c", "sleep {{ default 10 $app.health.preStopSleep }}"]
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - {{ $name }}
+                topologyKey: kubernetes.io/hostname
+{{- end }}
+{{- end }}

@@ -21,6 +21,7 @@ type GetProfileRequest = {
 type GetProfileResponse = {
   fullName: string;
   userId: string;
+  username?: string;
 };
 
 type GetProfilesRequest = {
@@ -62,6 +63,7 @@ export class UserProfilesGrpcController {
     return {
       fullName: profile.fullName,
       userId: profile.userId,
+      username: profile.username ?? undefined,
     };
   }
 

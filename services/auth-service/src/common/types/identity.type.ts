@@ -37,13 +37,6 @@ export class RegisterInput {
   password: string;
 
   @ApiProperty({
-    example: ['USER'],
-    required: false,
-  })
-  @IsOptional()
-  roleNames?: string[];
-
-  @ApiProperty({
     example: 'workspace-id',
     required: false,
   })
@@ -70,28 +63,13 @@ export type VerifyEmailOtpInput = {
   userId: string;
 };
 
-export type ResendEmailVerificationOtpInput = {
-  userId: string;
-};
-
-export type ForgotPasswordInput = {
+export class ResendEmailVerificationOtpInput {
+  @ApiProperty({
+    example: 'tin@example.com',
+  })
+  @IsEmail()
   email: string;
-};
-
-export type ForgotPasswordResult = {
-  accepted: true;
-};
-
-export type ResetPasswordInput = {
-  newPassword: string;
-  token: string;
-};
-
-export type ResetPasswordResult = {
-  reset: true;
-  revokedSessionCount: number;
-  userId: string;
-};
+}
 
 export type ChangePasswordInput = {
   currentPassword: string;
@@ -116,22 +94,4 @@ export type ResendEmailVerificationOtpResult = {
   otpExpiresInSeconds: number;
   resent: true;
   userId: string;
-};
-
-export type CreateRoleInput = {
-  description: string;
-  name: string;
-};
-
-export type CreatePermissionInput = {
-  description: string;
-  name: string;
-};
-
-export type AssignUserRoleInput = {
-  roleName: string;
-};
-
-export type AssignRolePermissionInput = {
-  permissionName: string;
 };

@@ -91,11 +91,20 @@ spec:
         - name: jaeger
           image: jaegertracing/all-in-one:1.41
           imagePullPolicy: IfNotPresent
+          env:
+            - name: COLLECTOR_OTLP_ENABLED
+              value: "true"
           args:
             - "--memory.max-traces=100000"
             - "--query.base-path=/jaeger"
             - "--sampling.strategies-file=/etc/jaeger/sampling-strategies.json"
           ports:
+            - name: otlp-grpc
+              containerPort: 4317
+              protocol: TCP
+            - name: otlp-http
+              containerPort: 4318
+              protocol: TCP
             # Agent ports
             - name: agent-compact
               containerPort: 6831

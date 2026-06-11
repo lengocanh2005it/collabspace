@@ -15,8 +15,10 @@ export type AuthIdentity = {
   emailVerified: boolean;
   fullName?: string;
   permissions: string[];
+  profileStatus?: 'available' | 'unavailable';
   roles: string[];
   role?: string;
+  username?: string;
   workspaceId?: string;
   userId: string;
 };

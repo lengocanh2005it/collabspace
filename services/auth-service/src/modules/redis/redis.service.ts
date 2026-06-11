@@ -1,6 +1,7 @@
 import { REDIS_CLIENT } from '@/common/constants/redis.constant';
 import { Inject, Injectable, OnModuleDestroy } from '@nestjs/common';
 import type Redis from 'ioredis';
+import { throwRedisUnavailable } from './redis-unavailable.error';
 
 @Injectable()
 export class RedisService implements OnModuleDestroy {
@@ -9,21 +10,41 @@ export class RedisService implements OnModuleDestroy {
     private readonly redisClient: Redis,
   ) {}
 
+  async assertAvailable(): Promise<void> {
+    try {
+      if ((await this.redisClient.ping()) !== 'PONG') {
+        throwRedisUnavailable();
+      }
+    } catch (error) {
+      throwRedisUnavailable(error);
+    }
+  }
+
+  private async run<T>(operation: () => Promise<T>): Promise<T> {
+    try {
+      return await operation();
+    } catch (error) {
+      throwRedisUnavailable(error);
+    }
+  }
+
   async delete(key: string | string[]): Promise<number> {
-    const keys = Array.isArray(key) ? key : [key];
-    return this.redisClient.del(...keys);
+    return this.run(async () => {
+      const keys = Array.isArray(key) ? key : [key];
+      return this.redisClient.del(...keys);
+    });
   }
 
   async exists(key: string): Promise<boolean> {
-    return (await this.redisClient.exists(key)) > 0;
+    return this.run(async () => (await this.redisClient.exists(key)) > 0);
   }
 
   async expire(key: string, ttlSeconds: number): Promise<boolean> {
-    return (await this.redisClient.expire(key, ttlSeconds)) === 1;
+    return this.run(async () => (await this.redisClient.expire(key, ttlSeconds)) === 1);
   }
 
   async get(key: string): Promise<string | null> {
-    return this.redisClient.get(key);
+    return this.run(async () => this.redisClient.get(key));
   }
 
   async getJson<T>(key: string): Promise<T | null> {
@@ -37,7 +58,15 @@ export class RedisService implements OnModuleDestroy {
   }
 
   async increment(key: string): Promise<number> {
-    return this.redisClient.incr(key);
+    return this.run(async () => this.redisClient.incr(key));
+  }
+
+  async ping(): Promise<boolean> {
+    try {
+      return (await this.redisClient.ping()) === 'PONG';
+    } catch {
+      return false;
+    }
   }
 
   async set(
@@ -45,11 +74,13 @@ export class RedisService implements OnModuleDestroy {
     value: string,
     ttlSeconds?: number,
   ): Promise<'OK' | null> {
-    if (ttlSeconds === undefined) {
-      return this.redisClient.set(key, value);
-    }
+    return this.run(async () => {
+      if (ttlSeconds === undefined) {
+        return this.redisClient.set(key, value);
+      }
 
-    return this.redisClient.set(key, value, 'EX', ttlSeconds);
+      return this.redisClient.set(key, value, 'EX', ttlSeconds);
+    });
   }
 
   async setJson(
@@ -61,7 +92,7 @@ export class RedisService implements OnModuleDestroy {
   }
 
   async ttl(key: string): Promise<number> {
-    return this.redisClient.ttl(key);
+    return this.run(async () => this.redisClient.ttl(key));
   }
 
   async onModuleDestroy(): Promise<void> {

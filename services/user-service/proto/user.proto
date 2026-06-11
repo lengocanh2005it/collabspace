@@ -25,6 +25,7 @@ message GetProfileRequest {
 message GetProfileResponse {
   string user_id = 1;
   string full_name = 2;
+  string username = 3;
 }
 
 message GetProfilesRequest {

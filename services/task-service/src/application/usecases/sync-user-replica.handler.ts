@@ -19,6 +19,9 @@ export class SyncUserReplicaHandler implements ICommandHandler<SyncUserReplicaCo
       fullName: command.fullName,
       displayName: command.displayName,
       avatarUrl: command.avatarUrl,
+      username: command.username?.toLowerCase() ?? undefined,
+      email: command.email,
+      isActive: command.isActive,
     });
   }
 }

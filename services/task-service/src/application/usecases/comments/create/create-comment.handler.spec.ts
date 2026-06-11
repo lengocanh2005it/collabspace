@@ -2,9 +2,10 @@ import { BadRequestException } from "@nestjs/common";
 import { CreateCommentHandler } from "./create-comment.handler";
 import { CreateCommentCommand } from "./create-comment.command";
 import { ITaskRepository } from "../../../ports/ITaskRepository";
-import { IUserReplicaRepository } from "../../../ports/IUserReplicaRepository";
+import { createMockTaskRepository } from "../../../../test-utils/mock-task-repository";
+import { UserReplicaLookupService } from "../../../services/user-replica-lookup.service";
 import { ICommentRepository } from "../../../../domain/repositories/comment.repository.interface";
-import { RabbitMqEventsService } from "../../../../infrastructure/messaging/rabbitmq/rabbitmq-events.service";
+import { TaskOutboxService } from "../../../../infrastructure/outbox/task-outbox.service";
 import { Task } from "../../../../domain/entities/Task";
 import { TaskId } from "../../../../domain/value-objects/TaskId";
 import { UserSnapshot } from "../../../../domain/value-objects/UserSnapshot";
@@ -15,8 +16,13 @@ describe("CreateCommentHandler", () => {
   let handler: CreateCommentHandler;
   let mockCommentRepo: jest.Mocked<ICommentRepository>;
   let mockTaskRepo: jest.Mocked<ITaskRepository>;
-  let mockUserReplicaRepo: jest.Mocked<IUserReplicaRepository>;
-  let mockRabbitMqEvents: jest.Mocked<RabbitMqEventsService>;
+  let mockUserReplicaLookup: jest.Mocked<
+    Pick<
+      UserReplicaLookupService,
+      "findActiveByIdAsync" | "findActiveByUsernameAsync"
+    >
+  >;
+  let mockTaskOutboxService: jest.Mocked<TaskOutboxService>;
 
   beforeEach(() => {
     mockCommentRepo = {
@@ -27,30 +33,24 @@ describe("CreateCommentHandler", () => {
       updateAsync: jest.fn(),
     };
 
-    mockTaskRepo = {
-      addAsync: jest.fn(),
-      updateAsync: jest.fn(),
-      deleteAsync: jest.fn(),
-      findByIdAsync: jest.fn(),
-      findByWorkspaceIdAsync: jest.fn(),
+    mockTaskRepo = createMockTaskRepository();
+
+    mockUserReplicaLookup = {
+      findActiveByIdAsync: jest.fn(),
+      findActiveByUsernameAsync: jest.fn(),
     };
 
-    mockUserReplicaRepo = {
-      addAsync: jest.fn(),
-      updateAsync: jest.fn(),
-      findByIdAsync: jest.fn(),
-    };
-
-    mockRabbitMqEvents = {
-      publishTaskAssigned: jest.fn(),
-      publishTaskCommented: jest.fn(),
+    mockTaskOutboxService = {
+      enqueueTaskAssigned: jest.fn(),
+      enqueueTaskCommented: jest.fn(),
+      enqueueCommentMentioned: jest.fn(),
     } as any;
 
     handler = new CreateCommentHandler(
       mockCommentRepo,
       mockTaskRepo,
-      mockUserReplicaRepo,
-      mockRabbitMqEvents,
+      mockUserReplicaLookup as UserReplicaLookupService,
+      mockTaskOutboxService,
     );
   });
 
@@ -105,7 +105,7 @@ describe("CreateCommentHandler", () => {
     const authorReplica = createMockReplica("author-1", true);
 
     mockTaskRepo.findByIdAsync.mockResolvedValue(task);
-    mockUserReplicaRepo.findByIdAsync.mockResolvedValue(authorReplica);
+    mockUserReplicaLookup.findActiveByIdAsync.mockResolvedValue(authorReplica);
     mockCommentRepo.createAsync.mockResolvedValue(
       "123e4567-e89b-12d3-a456-426614174001",
     );
@@ -114,8 +114,8 @@ describe("CreateCommentHandler", () => {
 
     expect(result.commentId).toBe("123e4567-e89b-12d3-a456-426614174001");
     expect(mockCommentRepo.createAsync).toHaveBeenCalledTimes(1);
-    expect(mockRabbitMqEvents.publishTaskCommented).toHaveBeenCalledTimes(1);
-    expect(mockRabbitMqEvents.publishTaskCommented).toHaveBeenCalledWith(
+    expect(mockTaskOutboxService.enqueueTaskCommented).toHaveBeenCalledTimes(1);
+    expect(mockTaskOutboxService.enqueueTaskCommented).toHaveBeenCalledWith(
       expect.objectContaining({
         taskId: "123e4567-e89b-12d3-a456-426614174000",
         recipientId: "assignee-1",
@@ -134,7 +134,7 @@ describe("CreateCommentHandler", () => {
     const authorReplica = createMockReplica("author-1", true);
 
     mockTaskRepo.findByIdAsync.mockResolvedValue(task);
-    mockUserReplicaRepo.findByIdAsync.mockResolvedValue(authorReplica);
+    mockUserReplicaLookup.findActiveByIdAsync.mockResolvedValue(authorReplica);
     mockCommentRepo.createAsync.mockResolvedValue(
       "123e4567-e89b-12d3-a456-426614174001",
     );
@@ -142,7 +142,7 @@ describe("CreateCommentHandler", () => {
     await handler.execute(command);
 
     expect(mockCommentRepo.createAsync).toHaveBeenCalledTimes(1);
-    expect(mockRabbitMqEvents.publishTaskCommented).not.toHaveBeenCalled();
+    expect(mockTaskOutboxService.enqueueTaskCommented).not.toHaveBeenCalled();
   });
 
   it("should create comment but NOT emit event if author IS the assignee", async () => {
@@ -155,7 +155,7 @@ describe("CreateCommentHandler", () => {
     const authorReplica = createMockReplica("author-1", true);
 
     mockTaskRepo.findByIdAsync.mockResolvedValue(task);
-    mockUserReplicaRepo.findByIdAsync.mockResolvedValue(authorReplica);
+    mockUserReplicaLookup.findActiveByIdAsync.mockResolvedValue(authorReplica);
     mockCommentRepo.createAsync.mockResolvedValue(
       "123e4567-e89b-12d3-a456-426614174001",
     );
@@ -163,7 +163,7 @@ describe("CreateCommentHandler", () => {
     await handler.execute(command);
 
     expect(mockCommentRepo.createAsync).toHaveBeenCalledTimes(1);
-    expect(mockRabbitMqEvents.publishTaskCommented).not.toHaveBeenCalled();
+    expect(mockTaskOutboxService.enqueueTaskCommented).not.toHaveBeenCalled();
   });
 
   it("should throw BadRequestException if task does not exist", async () => {
@@ -185,10 +185,9 @@ describe("CreateCommentHandler", () => {
       "Great task!",
     );
     const task = createMockTask("assignee-1");
-    const authorReplica = createMockReplica("author-1", false); // INACTIVE
 
     mockTaskRepo.findByIdAsync.mockResolvedValue(task);
-    mockUserReplicaRepo.findByIdAsync.mockResolvedValue(authorReplica);
+    mockUserReplicaLookup.findActiveByIdAsync.mockResolvedValue(null);
 
     await expect(handler.execute(command)).rejects.toThrow(BadRequestException);
     expect(mockCommentRepo.createAsync).not.toHaveBeenCalled();

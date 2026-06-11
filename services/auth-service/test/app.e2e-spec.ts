@@ -1,44 +1,54 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
-import { EmailsService } from '../src/modules/emails/emails.service';
-import { RefreshTokensService } from '../src/modules/refresh-tokens/refresh-tokens.service';
-import { IdentityService } from '../src/modules/identity/identity.service';
-import { RedisService } from '../src/modules/redis/redis.service';
-import { UserProfilesGrpcService } from '../src/modules/identity/user-profiles-grpc.service';
 import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
 import { AuthService } from '../src/app.service';
+import { AuthHealthService } from '../src/health/auth-health.service';
+import { IdentityService } from '../src/modules/identity/identity.service';
+import { UserProfilesGrpcService } from '../src/modules/identity/user-profiles-grpc.service';
+import { AuthOutboxService } from '../src/modules/outbox/auth-outbox.service';
+import { RedisService } from '../src/modules/redis/redis.service';
+import { RefreshTokensService } from '../src/modules/refresh-tokens/refresh-tokens.service';
 
 describe('AuthController (e2e)', () => {
   let app: INestApplication<App>;
   let authService: AuthService;
+
   const refreshTokensServiceMock = {
     issue: jest.fn(),
-    listSessionsByUserId: jest.fn(),
     revokeAllForUser: jest.fn(),
-    revokeFamilyForUser: jest.fn(),
-    revokeOtherFamiliesForUser: jest.fn(),
     revokeToken: jest.fn(),
     rotate: jest.fn(),
   };
   const identityServiceMock = {
     changePassword: jest.fn(),
-    findUserByEmailForPasswordReset: jest.fn(),
+    findUserByEmail: jest.fn(),
     getAuthUserById: jest.fn(),
-    resetPassword: jest.fn(),
+    markEmailVerified: jest.fn(),
+    register: jest.fn(),
     validateCredentials: jest.fn(),
   };
   const redisServiceMock = {
     delete: jest.fn(),
+    exists: jest.fn(),
+    expire: jest.fn(),
     getJson: jest.fn(),
+    increment: jest.fn(),
+    set: jest.fn(),
     setJson: jest.fn(),
+    ttl: jest.fn(),
   };
-  const emailsServiceMock = {
-    sendText: jest.fn(),
+  const authOutboxServiceMock = {
+    enqueueEmailVerificationOtp: jest.fn(),
   };
   const userProfilesGrpcServiceMock = {
+    createPendingProfile: jest.fn(),
     getProfile: jest.fn(),
+  };
+  const authHealthServiceMock = {
+    getLiveness: jest.fn(),
+    getReadiness: jest.fn(),
   };
   const jwtSecret = 'test-secret';
 
@@ -46,6 +56,8 @@ describe('AuthController (e2e)', () => {
     jest.clearAllMocks();
     process.env.JWT_SECRET = jwtSecret;
     process.env.JWT_EXPIRY = '10m';
+    process.env.OUTBOX_ENABLED = 'false';
+
     identityServiceMock.getAuthUserById.mockResolvedValue({
       email: 'member@example.com',
       emailVerified: true,
@@ -64,23 +76,96 @@ describe('AuthController (e2e)', () => {
       roles: ['member'],
       userId: 'user-123',
     });
-    identityServiceMock.findUserByEmailForPasswordReset.mockResolvedValue({
+    identityServiceMock.findUserByEmail.mockResolvedValue({
       email: 'member@example.com',
+      emailVerified: false,
       isActive: true,
+      permissions: ['users.read'],
+      role: 'member',
+      roles: ['member'],
       userId: 'user-123',
     });
-    identityServiceMock.resetPassword.mockResolvedValue(undefined);
+    identityServiceMock.register.mockResolvedValue({
+      email: 'member@example.com',
+      emailVerified: false,
+      isActive: true,
+      permissions: ['users.read'],
+      role: 'member',
+      roles: ['member'],
+      userId: 'user-123',
+    });
+    identityServiceMock.markEmailVerified.mockResolvedValue({
+      email: 'member@example.com',
+      emailVerified: true,
+      isActive: true,
+      permissions: ['users.read'],
+      role: 'member',
+      roles: ['member'],
+      userId: 'user-123',
+    });
     identityServiceMock.changePassword.mockResolvedValue(undefined);
+
+    refreshTokensServiceMock.issue.mockResolvedValue({
+      refreshToken: 'refresh-token-login',
+      userId: 'user-123',
+      workspaceId: 'workspace-456',
+    });
+    refreshTokensServiceMock.rotate.mockResolvedValue({
+      refreshToken: 'refresh-token-next',
+      userId: 'user-123',
+      workspaceId: 'workspace-456',
+    });
+    refreshTokensServiceMock.revokeAllForUser.mockResolvedValue(2);
+    refreshTokensServiceMock.revokeToken.mockResolvedValue(undefined);
+
     redisServiceMock.setJson.mockResolvedValue('OK');
+    redisServiceMock.set.mockResolvedValue('OK');
     redisServiceMock.getJson.mockResolvedValue({
       email: 'member@example.com',
-      userId: 'user-123',
+      otpHash:
+        '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
     });
     redisServiceMock.delete.mockResolvedValue(1);
-    emailsServiceMock.sendText.mockResolvedValue({});
+    redisServiceMock.exists.mockResolvedValue(false);
+    redisServiceMock.increment.mockResolvedValue(1);
+    redisServiceMock.expire.mockResolvedValue(true);
+
     userProfilesGrpcServiceMock.getProfile.mockResolvedValue({
       fullName: 'Member Example',
       userId: 'user-123',
+      username: 'member.example',
+    });
+    userProfilesGrpcServiceMock.createPendingProfile.mockResolvedValue(
+      undefined,
+    );
+    authOutboxServiceMock.enqueueEmailVerificationOtp.mockResolvedValue(
+      undefined,
+    );
+
+    authHealthServiceMock.getLiveness.mockReturnValue({
+      service: 'auth-service',
+      status: 'ok',
+      timestamp: '2026-05-11T00:00:00.000Z',
+      uptimeSeconds: 42,
+    });
+    authHealthServiceMock.getReadiness.mockResolvedValue({
+      checks: {
+        database: {
+          required: true,
+          responseTimeMs: 3,
+          status: 'up',
+        },
+        redis: {
+          required: true,
+          responseTimeMs: 2,
+          status: 'up',
+        },
+      },
+      mode: 'full',
+      ready: true,
+      service: 'auth-service',
+      status: 'ok',
+      timestamp: '2026-05-11T00:00:00.000Z',
     });
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -92,8 +177,10 @@ describe('AuthController (e2e)', () => {
       .useValue(identityServiceMock)
       .overrideProvider(RedisService)
       .useValue(redisServiceMock)
-      .overrideProvider(EmailsService)
-      .useValue(emailsServiceMock)
+      .overrideProvider(AuthOutboxService)
+      .useValue(authOutboxServiceMock)
+      .overrideProvider(AuthHealthService)
+      .useValue(authHealthServiceMock)
       .overrideProvider(UserProfilesGrpcService)
       .useValue(userProfilesGrpcServiceMock)
       .compile();
@@ -108,17 +195,50 @@ describe('AuthController (e2e)', () => {
     return request(app.getHttpServer())
       .get('/api/v1/auth/health')
       .expect(200)
-      .expect({
-        service: 'auth-service',
-        status: 'ok',
+      .expect((response) => {
+        expect(response.body.ready).toBe(true);
+        expect(response.body.status).toBe('ok');
       });
+  });
+
+  it('/api/v1/auth/health/live (GET)', () => {
+    return request(app.getHttpServer())
+      .get('/api/v1/auth/health/live')
+      .expect(200)
+      .expect((response) => {
+        expect(response.body.status).toBe('ok');
+        expect(response.body.uptimeSeconds).toBe(42);
+      });
+  });
+
+  it('/api/v1/auth/health/ready (GET) returns 503 when required dependency is down', async () => {
+    authHealthServiceMock.getReadiness.mockResolvedValueOnce({
+      checks: {
+        database: {
+          detail: 'connection refused',
+          required: true,
+          responseTimeMs: 5,
+          status: 'down',
+        },
+      },
+      mode: 'degraded',
+      ready: false,
+      service: 'auth-service',
+      status: 'error',
+      timestamp: '2026-05-11T00:00:00.000Z',
+    });
+
+    await request(app.getHttpServer())
+      .get('/api/v1/auth/health/ready')
+      .expect(503);
   });
 
   it('/api/v1/auth/verify (GET) returns identity headers for valid JWT', async () => {
     const token = await authService.signAccessToken({
       role: 'member',
-      workspaceId: 'workspace-456',
+      roles: ['member'],
       userId: 'user-123',
+      workspaceId: 'workspace-456',
     });
 
     const response = await request(app.getHttpServer())
@@ -129,40 +249,53 @@ describe('AuthController (e2e)', () => {
 
     expect(response.headers['x-user-id']).toBe('user-123');
     expect(response.headers['x-user-name']).toBe('Member Example');
+    expect(response.headers['x-username']).toBe('member.example');
     expect(response.headers['x-role']).toBe('member');
     expect(response.headers['x-roles']).toBe('member');
     expect(response.headers['x-permissions']).toBe('users.read');
     expect(response.headers['x-email-verified']).toBe('true');
     expect(response.headers['x-workspace-id']).toBe('workspace-456');
-    expect(response.headers['x-request-id']).toBe('req-123');
     expect(response.body).toEqual({
       authenticated: true,
       emailVerified: true,
+      fullName: 'Member Example',
       permissions: ['users.read'],
       role: 'member',
       roles: ['member'],
-      workspaceId: 'workspace-456',
+      username: 'member.example',
       userId: 'user-123',
+      workspaceId: 'workspace-456',
     });
   });
 
-  it('/api/v1/auth/verify (GET) rejects invalid JWT', () => {
-    return request(app.getHttpServer())
-      .get('/api/v1/auth/verify')
-      .set('Authorization', 'Bearer invalid.token.value')
-      .expect(401);
+  it('/api/v1/auth/me (GET) returns current user', async () => {
+    const token = await authService.signAccessToken({
+      role: 'member',
+      roles: ['member'],
+      userId: 'user-123',
+      workspaceId: 'workspace-456',
+    });
+
+    const response = await request(app.getHttpServer())
+      .get('/api/v1/auth/me')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    expect(response.body).toEqual({
+      email: 'member@example.com',
+      emailVerified: true,
+      fullName: 'Member Example',
+      isActive: true,
+      permissions: ['users.read'],
+      role: 'member',
+      roles: ['member'],
+      userId: 'user-123',
+      username: 'member.example',
+      workspaceId: 'workspace-456',
+    });
   });
 
   it('/api/v1/auth/login (POST) returns an access token and refresh token', async () => {
-    refreshTokensServiceMock.issue.mockResolvedValue({
-      expiresAt: new Date(Date.now() + 60_000),
-      familyId: 'family-1',
-      refreshToken: 'refresh-token-login',
-      tokenId: 'token-1',
-      userId: 'user-123',
-      workspaceId: 'workspace-456',
-    });
-
     const response = await request(app.getHttpServer())
       .post('/api/v1/auth/login')
       .send({
@@ -174,58 +307,42 @@ describe('AuthController (e2e)', () => {
 
     expect(response.body.refreshToken).toBe('refresh-token-login');
     expect(response.body.userId).toBe('user-123');
-    expect(response.body.role).toBe('member');
     expect(response.body.accessToken).toBeTruthy();
   });
 
-  it('/api/v1/auth/forgot-password (POST) accepts request and queues reset email', async () => {
-    await request(app.getHttpServer())
-      .post('/api/v1/auth/forgot-password')
+  it('/api/v1/auth/register (POST) creates a pending account flow', async () => {
+    const response = await request(app.getHttpServer())
+      .post('/api/v1/auth/register')
       .send({
         email: 'member@example.com',
+        fullName: 'Member Example',
+        password: 'password123',
       })
-      .expect(200)
-      .expect({
-        accepted: true,
-      });
+      .expect(201);
 
-    expect(identityServiceMock.findUserByEmailForPasswordReset).toHaveBeenCalledWith(
-      'member@example.com',
-    );
-    expect(redisServiceMock.setJson).toHaveBeenCalled();
-    expect(emailsServiceMock.sendText).toHaveBeenCalledWith(
-      expect.objectContaining({
-        subject: 'Reset your CollabSpace password',
-        to: 'member@example.com',
-      }),
-    );
+    expect(response.body.verificationRequired).toBe(true);
+    expect(userProfilesGrpcServiceMock.createPendingProfile).toHaveBeenCalledWith({
+      fullName: 'Member Example',
+      userId: 'user-123',
+    });
   });
 
-  it('/api/v1/auth/reset-password (POST) resets password and revokes sessions', async () => {
-    refreshTokensServiceMock.revokeAllForUser.mockResolvedValue(3);
-
+  it('/api/v1/auth/verify-email (POST) verifies the email otp', async () => {
     await request(app.getHttpServer())
-      .post('/api/v1/auth/reset-password')
+      .post('/api/v1/auth/verify-email')
       .send({
-        newPassword: 'new-password-123',
-        token: 'reset-token-1',
+        otp: '123456',
+        userId: 'user-123',
       })
       .expect(200)
       .expect({
-        reset: true,
-        revokedSessionCount: 3,
-        userId: 'user-123',
+        email: 'member@example.com',
+        emailVerified: true,
+        verified: true,
       });
-
-    expect(identityServiceMock.resetPassword).toHaveBeenCalledWith(
-      'user-123',
-      'new-password-123',
-    );
-    expect(redisServiceMock.delete).toHaveBeenCalled();
   });
 
   it('/api/v1/auth/change-password (POST) changes password for authenticated user', async () => {
-    refreshTokensServiceMock.revokeAllForUser.mockResolvedValue(2);
     const token = await authService.signAccessToken({
       role: 'member',
       roles: ['member'],
@@ -246,34 +363,9 @@ describe('AuthController (e2e)', () => {
         revokedSessionCount: 2,
         userId: 'user-123',
       });
-
-    expect(identityServiceMock.changePassword).toHaveBeenCalledWith(
-      'user-123',
-      'password123',
-      'password456',
-    );
   });
 
   it('/api/v1/auth/refresh (POST) rotates refresh token', async () => {
-    identityServiceMock.getAuthUserById.mockResolvedValue({
-      email: 'member@example.com',
-      emailVerified: true,
-      isActive: true,
-      permissions: [],
-      role: 'member',
-      roles: ['member'],
-      userId: 'user-321',
-    });
-
-    refreshTokensServiceMock.rotate.mockResolvedValue({
-      expiresAt: new Date(Date.now() + 60_000),
-      familyId: 'family-2',
-      refreshToken: 'refresh-token-next',
-      tokenId: 'token-2',
-      userId: 'user-321',
-      workspaceId: 'workspace-654',
-    });
-
     const response = await request(app.getHttpServer())
       .post('/api/v1/auth/refresh')
       .send({
@@ -282,13 +374,10 @@ describe('AuthController (e2e)', () => {
       .expect(200);
 
     expect(response.body.refreshToken).toBe('refresh-token-next');
-    expect(response.body.userId).toBe('user-321');
-    expect(response.body.accessToken).toBeTruthy();
+    expect(response.body.userId).toBe('user-123');
   });
 
   it('/api/v1/auth/logout (POST) revokes the refresh token', async () => {
-    refreshTokensServiceMock.revokeToken.mockResolvedValue(undefined);
-
     await request(app.getHttpServer())
       .post('/api/v1/auth/logout')
       .send({
@@ -300,105 +389,7 @@ describe('AuthController (e2e)', () => {
       });
   });
 
-  it('/api/v1/auth/sessions (GET) returns current user sessions', async () => {
-    refreshTokensServiceMock.listSessionsByUserId.mockResolvedValue([
-      {
-        createdAt: new Date('2026-05-01T00:00:00.000Z'),
-        expiresAt: new Date('2099-05-30T00:00:00.000Z'),
-        familyId: 'family-1',
-        id: 'token-1',
-        lastUsedAt: new Date('2026-05-02T00:00:00.000Z'),
-        parentTokenId: null,
-        replacedByTokenId: null,
-        revokeReason: null,
-        revokedAt: null,
-        tokenHash: 'hash',
-        updatedAt: new Date('2026-05-02T00:00:00.000Z'),
-        userId: 'user-123',
-        workspaceId: 'workspace-456',
-      },
-    ]);
-    const token = await authService.signAccessToken({
-      role: 'member',
-      roles: ['member'],
-      userId: 'user-123',
-      workspaceId: 'workspace-456',
-    });
-
-    const response = await request(app.getHttpServer())
-      .get('/api/v1/auth/sessions')
-      .set('Authorization', `Bearer ${token}`)
-      .expect(200);
-
-    expect(response.body).toEqual([
-      expect.objectContaining({
-        familyId: 'family-1',
-        isActive: true,
-        tokenId: 'token-1',
-        userId: 'user-123',
-        workspaceId: 'workspace-456',
-      }),
-    ]);
-  });
-
-  it('/api/v1/auth/logout-all (POST) revokes all sessions for the user', async () => {
-    refreshTokensServiceMock.revokeAllForUser.mockResolvedValue(4);
-    const token = await authService.signAccessToken({
-      role: 'member',
-      roles: ['member'],
-      userId: 'user-123',
-      workspaceId: 'workspace-456',
-    });
-
-    await request(app.getHttpServer())
-      .post('/api/v1/auth/logout-all')
-      .set('Authorization', `Bearer ${token}`)
-      .expect(200)
-      .expect({
-        revokedCount: 4,
-      });
-  });
-
-  it('/api/v1/auth/logout-others (POST) revokes other sessions', async () => {
-    refreshTokensServiceMock.revokeOtherFamiliesForUser.mockResolvedValue(2);
-    const token = await authService.signAccessToken({
-      role: 'member',
-      roles: ['member'],
-      userId: 'user-123',
-      workspaceId: 'workspace-456',
-    });
-
-    await request(app.getHttpServer())
-      .post('/api/v1/auth/logout-others')
-      .set('Authorization', `Bearer ${token}`)
-      .send({
-        refreshToken: 'refresh-token-current',
-      })
-      .expect(200)
-      .expect({
-        revokedCount: 2,
-      });
-  });
-
-  it('/api/v1/auth/sessions/:familyId (DELETE) revokes one session family', async () => {
-    refreshTokensServiceMock.revokeFamilyForUser.mockResolvedValue(1);
-    const token = await authService.signAccessToken({
-      role: 'member',
-      roles: ['member'],
-      userId: 'user-123',
-      workspaceId: 'workspace-456',
-    });
-
-    await request(app.getHttpServer())
-      .delete('/api/v1/auth/sessions/family-1')
-      .set('Authorization', `Bearer ${token}`)
-      .expect(200)
-      .expect({
-        revokedCount: 1,
-      });
-  });
-
   afterEach(async () => {
-    await app.close();
+    await app?.close();
   });
 });

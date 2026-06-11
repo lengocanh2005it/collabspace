@@ -1,0 +1,36 @@
+# Local / minikube / kind overrides — lighter footprint, NodePort gateway
+
+global:
+  secrets:
+    jwtSecret: collabspace-dev-jwt-secret-change-me
+  imagePullPolicy: IfNotPresent
+
+traefik:
+  deployment:
+    replicas: 1
+  service:
+    type: NodePort
+
+apps:
+  auth-service:
+    replicas: 1
+  user-service:
+    replicas: 1
+  workspace-service:
+    replicas: 1
+  task-service:
+    replicas: 1
+  notification-service:
+    replicas: 1
+
+hpa:
+  enabled: false
+
+observability:
+  prometheus:
+    enabled: false
+  exporters:
+    enabled: false
+
+networkPolicies:
+  enabled: false

@@ -1,0 +1,159 @@
+import { Injectable } from '@nestjs/common';
+import { InjectDataSource } from '@nestjs/typeorm';
+import { randomUUID } from 'crypto';
+import { DataSource, EntityManager } from 'typeorm';
+import { getWorkspaceOutboxConfig } from './workspace-outbox.config';
+import {
+  WORKSPACE_OUTBOX_EVENT_WORKSPACE_INVITED,
+  WorkspaceOutboxEventEntity,
+} from './entities/workspace-outbox-event.entity';
+
+type ClaimedOutboxEvent = {
+  attemptCount: number;
+  eventType: string;
+  id: string;
+  payload: Record<string, unknown>;
+};
+
+@Injectable()
+export class WorkspaceOutboxService {
+  constructor(
+    @InjectDataSource()
+    private readonly dataSource: DataSource,
+  ) {}
+
+  async enqueueWorkspaceInvited(
+    payload: Record<string, unknown>,
+    manager?: EntityManager,
+  ): Promise<void> {
+    await this.enqueueEvent(
+      WORKSPACE_OUTBOX_EVENT_WORKSPACE_INVITED,
+      payload,
+      manager,
+    );
+  }
+
+  async claimPendingBatch(limit?: number): Promise<ClaimedOutboxEvent[]> {
+    const { batchSize } = getWorkspaceOutboxConfig();
+    const tablePath = this.dataSource.getMetadata(
+      WorkspaceOutboxEventEntity,
+    ).tablePath;
+
+    return (await this.dataSource.query(
+      `
+        WITH candidate_events AS (
+          SELECT id
+          FROM ${tablePath}
+          WHERE processed_at IS NULL
+            AND failed_at IS NULL
+            AND claimed_at IS NULL
+            AND available_at <= NOW()
+          ORDER BY created_at ASC
+          LIMIT $1
+          FOR UPDATE SKIP LOCKED
+        )
+        UPDATE ${tablePath} AS outbox
+        SET claimed_at = NOW(),
+            attempt_count = outbox.attempt_count + 1,
+            updated_at = NOW()
+        FROM candidate_events
+        WHERE outbox.id = candidate_events.id
+        RETURNING outbox.id, outbox.event_type AS "eventType", outbox.payload, outbox.attempt_count AS "attemptCount"
+      `,
+      [limit ?? batchSize],
+    )) as ClaimedOutboxEvent[];
+  }
+
+  async markProcessed(id: string): Promise<void> {
+    await this.getRepository().update(
+      { id },
+      {
+        claimedAt: null,
+        failedAt: null,
+        lastError: null,
+        processedAt: new Date(),
+        updatedAt: new Date(),
+      },
+    );
+  }
+
+  async markFailed(
+    id: string,
+    attemptCount: number,
+    error: string,
+  ): Promise<void> {
+    const { maxAttempts } = getWorkspaceOutboxConfig();
+    const isPermanentFailure = attemptCount >= maxAttempts;
+
+    await this.getRepository().update(
+      { id },
+      {
+        availableAt: isPermanentFailure
+          ? undefined
+          : new Date(Date.now() + this.getRetryDelayMs(attemptCount)),
+        claimedAt: null,
+        failedAt: isPermanentFailure ? new Date() : null,
+        lastError: error,
+        updatedAt: new Date(),
+      },
+    );
+  }
+
+  async reclaimStaleClaims(): Promise<number> {
+    const tablePath = this.dataSource.getMetadata(
+      WorkspaceOutboxEventEntity,
+    ).tablePath;
+    const { staleClaimThresholdMs } = getWorkspaceOutboxConfig();
+
+    const rows = (await this.dataSource.query(
+      `
+        UPDATE ${tablePath}
+        SET claimed_at = NULL,
+            available_at = NOW(),
+            last_error = $2,
+            updated_at = NOW()
+        WHERE processed_at IS NULL
+          AND failed_at IS NULL
+          AND claimed_at IS NOT NULL
+          AND claimed_at <= NOW() - (($1::bigint || ' milliseconds')::interval)
+        RETURNING id
+      `,
+      [staleClaimThresholdMs, 'stale claim recovered for retry'],
+    )) as Array<{ id: string }>;
+
+    return rows.length;
+  }
+
+  private getRepository(manager?: EntityManager) {
+    return (manager ?? this.dataSource.manager).getRepository(
+      WorkspaceOutboxEventEntity,
+    );
+  }
+
+  private async enqueueEvent(
+    eventType: string,
+    payload: Record<string, unknown>,
+    manager?: EntityManager,
+  ): Promise<void> {
+    const repository = this.getRepository(manager);
+    await repository.save(
+      repository.create({
+        attemptCount: 0,
+        availableAt: new Date(),
+        claimedAt: null,
+        eventType,
+        failedAt: null,
+        id: randomUUID(),
+        lastError: null,
+        payload,
+        processedAt: null,
+      }),
+    );
+  }
+
+  private getRetryDelayMs(attemptCount: number): number {
+    const baseDelayMs = 5_000;
+    const cappedExponent = Math.min(Math.max(attemptCount - 1, 0), 6);
+    return baseDelayMs * 2 ** cappedExponent;
+  }
+}

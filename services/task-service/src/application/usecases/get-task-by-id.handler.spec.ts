@@ -1,6 +1,7 @@
 import { GetTaskByIdHandler } from "./get-task-by-id.handler";
 import { GetTaskByIdQuery } from "../queries/get-task-by-id.query";
 import { ITaskRepository } from "../ports/ITaskRepository";
+import { createMockTaskRepository } from "../../test-utils/mock-task-repository";
 import { Task } from "../../domain/entities/Task";
 import { TaskId } from "../../domain/value-objects/TaskId";
 import { UserSnapshot } from "../../domain/value-objects/UserSnapshot";
@@ -11,13 +12,7 @@ describe("GetTaskByIdHandler", () => {
   let mockTaskRepo: jest.Mocked<ITaskRepository>;
 
   beforeEach(() => {
-    mockTaskRepo = {
-      addAsync: jest.fn(),
-      updateAsync: jest.fn(),
-      deleteAsync: jest.fn(),
-      findByIdAsync: jest.fn(),
-      findByWorkspaceIdAsync: jest.fn(),
-    };
+    mockTaskRepo = createMockTaskRepository();
 
     handler = new GetTaskByIdHandler(mockTaskRepo);
   });

@@ -5,11 +5,16 @@ import {
   ExecutionContext,
   ForbiddenException,
   Inject,
+  ServiceUnavailableException,
+  UnauthorizedException,
 } from "@nestjs/common";
 import { ITaskRepository as ITaskRepositoryToken } from "../../application/ports/ITaskRepository";
 import type { ITaskRepository } from "../../application/ports/ITaskRepository";
 import { TaskId } from "../../domain/value-objects/TaskId";
-import { WorkspaceMockService } from "../../infrastructure/services/workspace.mock.service";
+import {
+  type IWorkspaceClient,
+  WORKSPACE_CLIENT_TOKEN,
+} from "../../application/ports/IWorkspaceClient";
 import { getHeaderValue } from "../http/request-context";
 import type { AppRequest } from "../http/request-context";
 
@@ -40,14 +45,15 @@ type WorkspaceGuardRequest = AppRequest<
  * Guard để validate workspace tồn tại và user có quyền truy cập
  * Sẽ kiểm tra:
  * 1. Workspace ID từ request params hoặc body
- * 2. User ID từ headers (x-user-id)
+ * 2. User ID from AuthGuard (`request.user`)
  * 3. Validate workspace tồn tại
  * 4. Validate user là member của workspace
  */
 @Injectable()
 export class WorkspaceValidationGuard implements CanActivate {
   constructor(
-    private readonly workspaceService: WorkspaceMockService,
+    @Inject(WORKSPACE_CLIENT_TOKEN)
+    private readonly workspaceService: IWorkspaceClient,
     @Inject(ITaskRepositoryToken)
     private readonly taskRepository: ITaskRepository,
   ) {}
@@ -55,11 +61,18 @@ export class WorkspaceValidationGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<WorkspaceGuardRequest>();
 
-    // Lấy userId từ headers (giả định được gửi từ API Gateway sau khi xác thực)
-    // Nếu không có, dùng mock user vì User Service chưa implement
-    const userId = getHeaderValue(request.headers, "x-user-id") || "user-123";
+    const userId = request.user?.id;
+    if (!userId) {
+      throw new UnauthorizedException({
+        code: "TOKEN_MISSING",
+        message: "Authenticated user is required",
+      });
+    }
+
     const userName =
-      getHeaderValue(request.headers, "x-user-name") || "Mock User";
+      request.user?.name ??
+      getHeaderValue(request.headers, "x-user-name") ??
+      "User";
 
     // Lấy workspaceId từ body (nếu POST/PUT) hoặc query params
     const workspaceId = await this.resolveWorkspaceId(request);
@@ -69,19 +82,37 @@ export class WorkspaceValidationGuard implements CanActivate {
       return true;
     }
 
-    // Validate workspace tồn tại
-    const workspaceExists =
-      await this.workspaceService.validateWorkspaceAsync(workspaceId);
+    let workspaceExists = false;
+    let isMember = false;
+
+    try {
+      workspaceExists = await this.workspaceService.validateWorkspaceAsync(
+        workspaceId,
+        userId,
+      );
+      isMember = await this.workspaceService.checkUserPermissionAsync(
+        workspaceId,
+        userId,
+        "member",
+      );
+    } catch (error) {
+      if (error instanceof ServiceUnavailableException) {
+        throw error;
+      }
+
+      throw new ServiceUnavailableException({
+        code: "WORKSPACE_SERVICE_UNAVAILABLE",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Workspace service validation failed",
+      });
+    }
+
     if (!workspaceExists) {
       throw new ForbiddenException(`Workspace ${workspaceId} not found`);
     }
 
-    // Validate user là member của workspace
-    const isMember = await this.workspaceService.checkUserPermissionAsync(
-      workspaceId,
-      userId,
-      "member",
-    );
     if (!isMember) {
       throw new ForbiddenException(
         `User ${userId} does not have access to workspace ${workspaceId}`,

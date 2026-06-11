@@ -1,6 +1,7 @@
 import { DeleteTaskHandler } from "./delete-task.handler";
 import { DeleteTaskCommand } from "../commands/delete-task.command";
 import { ITaskRepository } from "../ports/ITaskRepository";
+import { createMockTaskRepository } from "../../test-utils/mock-task-repository";
 import { TaskId } from "../../domain/value-objects/TaskId";
 
 describe("DeleteTaskHandler", () => {
@@ -8,13 +9,7 @@ describe("DeleteTaskHandler", () => {
   let mockTaskRepo: jest.Mocked<ITaskRepository>;
 
   beforeEach(() => {
-    mockTaskRepo = {
-      addAsync: jest.fn(),
-      updateAsync: jest.fn(),
-      deleteAsync: jest.fn(),
-      findByIdAsync: jest.fn(),
-      findByWorkspaceIdAsync: jest.fn(),
-    };
+    mockTaskRepo = createMockTaskRepository();
 
     handler = new DeleteTaskHandler(mockTaskRepo);
   });

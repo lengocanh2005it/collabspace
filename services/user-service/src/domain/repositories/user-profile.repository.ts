@@ -24,14 +24,8 @@ export type ListUserProfilesResult = {
 
 export type UpdateUserProfileInput = {
   bio?: string | null;
-  coverUrl?: string | null;
-  department?: string | null;
   displayName?: string | null;
   fullName?: string;
-  jobTitle?: string | null;
-  locale?: string | null;
-  location?: string | null;
-  timezone?: string | null;
   username?: string | null;
 };
 
@@ -58,12 +52,12 @@ export type UpdateUserStatusInput = {
 
 export interface UserProfileRepository {
   findByUserId(userId: string): Promise<UserProfile | null>;
+  findByUsername(username: string): Promise<UserProfile | null>;
   findManyByUserIds(userIds: string[]): Promise<UserProfile[]>;
   getPreferences(userId: string): Promise<UserPreferences>;
   getStatus(userId: string): Promise<UserStatus>;
   getStatusesByUserIds(userIds: string[]): Promise<UserStatus[]>;
   list(input: ListUserProfilesInput): Promise<ListUserProfilesResult>;
-  markEmailVerified(userId: string): Promise<UserProfile>;
   updatePreferences(
     userId: string,
     input: UpdateUserPreferencesInput,

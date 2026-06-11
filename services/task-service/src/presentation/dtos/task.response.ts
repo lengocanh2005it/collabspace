@@ -13,6 +13,10 @@ export interface TaskResponseData {
   description: string;
   status: string;
   workspaceId: string;
+  projectId: string | null;
+  priority: string;
+  dueDate: Date | null;
+  labels: string[];
   assigneeId: string | null;
   createdBy: TaskUserResponse;
   assignedTo: TaskUserResponse | null;
@@ -27,6 +31,10 @@ export class TaskResponse implements TaskResponseData {
   public readonly description: string;
   public readonly status: string;
   public readonly workspaceId: string;
+  public readonly projectId: string | null;
+  public readonly priority: string;
+  public readonly dueDate: Date | null;
+  public readonly labels: string[];
   public readonly assigneeId: string | null;
   public readonly createdBy: TaskUserResponse;
   public readonly assignedTo: TaskUserResponse | null;
@@ -40,6 +48,10 @@ export class TaskResponse implements TaskResponseData {
     this.description = data.description;
     this.status = data.status;
     this.workspaceId = data.workspaceId;
+    this.projectId = data.projectId;
+    this.priority = data.priority;
+    this.dueDate = data.dueDate;
+    this.labels = data.labels;
     this.assigneeId = data.assigneeId;
     this.createdBy = data.createdBy;
     this.assignedTo = data.assignedTo;

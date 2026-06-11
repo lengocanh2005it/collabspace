@@ -5,27 +5,37 @@ import { GetUserPreferencesUseCase } from './application/use-cases/get-user-pref
 import { GetUserProfileUseCase } from './application/use-cases/get-user-profile.use-case';
 import { GetUserStatusesUseCase } from './application/use-cases/get-user-statuses.use-case';
 import { GetUserSummaryUseCase } from './application/use-cases/get-user-summary.use-case';
-import { ListUserSummariesUseCase } from './application/use-cases/list-user-summaries.use-case';
+import { LookupUserReplicasUseCase } from './application/use-cases/lookup-user-replicas.use-case';
 import { UpdateUserPreferencesUseCase } from './application/use-cases/update-user-preferences.use-case';
 import { UpdateUserProfileUseCase } from './application/use-cases/update-user-profile.use-case';
 import { UpdateUserStatusUseCase } from './application/use-cases/update-user-status.use-case';
 import { VerifyUserProfileEmailUseCase } from './application/use-cases/verify-user-profile-email.use-case';
 import { USER_PROFILE_REPOSITORY } from './domain/repositories/user-profile.repository';
+import { ConfigurationModule } from './configuration/configuration.module';
 import { DatabaseModule } from './infrastructure/database/database.module';
+import { RabbitMqModule } from './infrastructure/messaging/rabbitmq/rabbitmq.module';
 import { AuthModule } from './integrations/auth/auth.module';
 import { InMemoryUserProfileRepository } from './infrastructure/repositories/in-memory-user-profile.repository';
 import { TypeOrmUserProfileRepository } from './infrastructure/repositories/typeorm-user-profile.repository';
+import { UserHealthService } from './health/user-health.service';
+import { MetricsModule } from './metrics/metrics.module';
 import { UsersController } from './presentation/http/users.controller';
+import { InternalUsersController } from './presentation/http/internal-users.controller';
 import { UserProfilesGrpcController } from './presentation/grpc/user-profiles.grpc.controller';
 import { AuthEventsController } from './presentation/rabbitmq/auth-events.controller';
-import { RabbitMqModule } from './infrastructure/messaging/rabbitmq/rabbitmq.module'; 
-import { ConfigurationModule } from './configuration/configuration.module';
 
 @Module({
-  imports: [ConfigurationModule, AuthModule, DatabaseModule, RabbitMqModule],
-  controllers: [UsersController, UserProfilesGrpcController, AuthEventsController],
+  imports: [
+    ConfigurationModule,
+    MetricsModule,
+    AuthModule,
+    DatabaseModule,
+    RabbitMqModule,
+  ],
+  controllers: [UsersController, InternalUsersController, UserProfilesGrpcController, AuthEventsController],
   providers: [
     BulkGetUserProfilesUseCase,
+    LookupUserReplicasUseCase,
     CreatePendingUserProfileUseCase,
     GetUserPreferencesUseCase,
     GetUserProfileUseCase,
@@ -34,6 +44,7 @@ import { ConfigurationModule } from './configuration/configuration.module';
     InMemoryUserProfileRepository,
     ListUserSummariesUseCase,
     TypeOrmUserProfileRepository,
+    UserHealthService,
     UpdateUserPreferencesUseCase,
     UpdateUserProfileUseCase,
     UpdateUserStatusUseCase,

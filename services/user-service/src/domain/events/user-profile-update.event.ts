@@ -6,5 +6,8 @@ export interface UserProfileUpdatedEventPayload {
   fullName?: string;
   displayName?: string | null;
   avatarUrl?: string | null;
-  isActive?: boolean; // Dự phòng trường hợp Admin khóa tài khoản
+  username?: string | null;
+  email?: string;
+  isActive?: boolean;
+  occurredAt?: string;
 }

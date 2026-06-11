@@ -6,11 +6,17 @@ import { App } from 'supertest/types';
 import { AuthGrpcService } from '../src/integrations/auth/auth-grpc.service';
 import { AppModule } from './../src/app.module';
 import { configureHttpApp } from '../src/app.setup';
+import { UserHealthService } from '../src/health/user-health.service';
 
 describe('AppController (e2e)', () => {
   let app: INestApplication<App>;
   const authGrpcServiceMock = {
+    ping: jest.fn(),
     verifyAccessToken: jest.fn(),
+  };
+  const userHealthServiceMock = {
+    getLiveness: jest.fn(),
+    getReadiness: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -28,12 +34,40 @@ describe('AppController (e2e)', () => {
         };
       },
     );
+    authGrpcServiceMock.ping.mockResolvedValue(undefined);
+    userHealthServiceMock.getLiveness.mockReturnValue({
+      service: 'user-service',
+      status: 'ok',
+      timestamp: '2026-05-11T00:00:00.000Z',
+      uptimeSeconds: 24,
+    });
+    userHealthServiceMock.getReadiness.mockResolvedValue({
+      checks: {
+        authGrpc: {
+          required: true,
+          responseTimeMs: 3,
+          status: 'up',
+        },
+        database: {
+          detail: 'DATABASE_URL not configured; using in-memory repository mode',
+          required: false,
+          status: 'disabled',
+        },
+      },
+      mode: 'full',
+      ready: true,
+      service: 'user-service',
+      status: 'ok',
+      timestamp: '2026-05-11T00:00:00.000Z',
+    });
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     })
       .overrideProvider(AuthGrpcService)
       .useValue(authGrpcServiceMock)
+      .overrideProvider(UserHealthService)
+      .useValue(userHealthServiceMock)
       .compile();
 
     app = moduleFixture.createNestApplication();
@@ -45,9 +79,46 @@ describe('AppController (e2e)', () => {
     return request(app.getHttpServer())
       .get('/api/v1/users/health')
       .expect(200)
-      .expect({
-        service: 'user-service',
-        status: 'ok',
+      .expect((response) => {
+        expect(response.body.ready).toBe(true);
+        expect(response.body.status).toBe('ok');
+        expect(response.body.service).toBe('user-service');
+      });
+  });
+
+  it('/health/live (GET)', () => {
+    return request(app.getHttpServer())
+      .get('/api/v1/users/health/live')
+      .expect(200)
+      .expect((response) => {
+        expect(response.body.status).toBe('ok');
+        expect(response.body.uptimeSeconds).toBe(24);
+      });
+  });
+
+  it('/health/ready (GET) returns 503 when auth dependency is down', () => {
+    userHealthServiceMock.getReadiness.mockResolvedValueOnce({
+      checks: {
+        authGrpc: {
+          detail: 'connect ECONNREFUSED',
+          required: true,
+          responseTimeMs: 8,
+          status: 'down',
+        },
+      },
+      mode: 'degraded',
+      ready: false,
+      service: 'user-service',
+      status: 'error',
+      timestamp: '2026-05-11T00:00:00.000Z',
+    });
+
+    return request(app.getHttpServer())
+      .get('/api/v1/users/health/ready')
+      .expect(503)
+      .expect((response) => {
+        expect(response.body.ready).toBe(false);
+        expect(response.body.status).toBe('error');
       });
   });
 
@@ -59,17 +130,10 @@ describe('AppController (e2e)', () => {
       .expect({
         avatarUrl: 'https://cdn.example.com/avatar-1.png',
         bio: 'Product designer',
-        coverUrl: null,
         createdAt: '2026-01-01T00:00:00.000Z',
-        department: 'Design',
         displayName: 'Jane',
-        emailVerified: true,
         fullName: 'Jane Doe',
         id: 'profile-1',
-        jobTitle: 'Design Lead',
-        locale: 'vi-VN',
-        location: 'Ho Chi Minh City',
-        timezone: 'Asia/Saigon',
         updatedAt: '2026-01-02T00:00:00.000Z',
         userId: 'user-1',
         username: 'jane.doe',

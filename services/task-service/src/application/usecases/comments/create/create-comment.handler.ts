@@ -1,11 +1,12 @@
 // src/application/usecases/comments/create/create-comment.handler.ts
 import { CommandHandler, ICommandHandler } from "@nestjs/cqrs";
 import { Inject, BadRequestException } from "@nestjs/common";
+import { randomUUID } from "crypto";
 import { CreateCommentCommand } from "./create-comment.command";
 import {
-  type IUserReplicaRepository,
-  USER_REPLICA_REPOSITORY_TOKEN,
-} from "../../../ports/IUserReplicaRepository";
+  USER_REPLICA_LOOKUP_TOKEN,
+  UserReplicaLookupService,
+} from "../../../services/user-replica-lookup.service";
 import {
   type ICommentRepository,
   COMMENT_REPOSITORY_TOKEN,
@@ -14,7 +15,8 @@ import { ITaskRepository as ITaskRepositoryToken } from "../../../ports/ITaskRep
 import type { ITaskRepository } from "../../../ports/ITaskRepository";
 import { Comment } from "../../../../domain/entities/comment.entity";
 import { TaskId } from "../../../../domain/value-objects/TaskId";
-import { RabbitMqEventsService } from "../../../../infrastructure/messaging/rabbitmq/rabbitmq-events.service";
+import { TaskOutboxService } from "../../../../infrastructure/outbox/task-outbox.service";
+import { parseMentionUsernames } from "../../../../domain/utils/mention-parser";
 import { v4 as uuid } from "uuid";
 
 export interface CreateCommentResponse {
@@ -35,10 +37,10 @@ export class CreateCommentHandler implements ICommandHandler<
     @Inject(ITaskRepositoryToken)
     private readonly taskRepository: ITaskRepository,
 
-    @Inject(USER_REPLICA_REPOSITORY_TOKEN)
-    private readonly userReplicaRepo: IUserReplicaRepository,
+    @Inject(USER_REPLICA_LOOKUP_TOKEN)
+    private readonly userReplicaLookup: UserReplicaLookupService,
 
-    private readonly rabbitMqEvents: RabbitMqEventsService,
+    private readonly taskOutboxService: TaskOutboxService,
   ) {}
 
   async execute(command: CreateCommentCommand): Promise<CreateCommentResponse> {
@@ -53,7 +55,7 @@ export class CreateCommentHandler implements ICommandHandler<
     }
 
     // 2. Tra cứu thông tin người comment từ Danh bạ nội bộ (Không tin Client)
-    const authorRecord = await this.userReplicaRepo.findByIdAsync(
+    const authorRecord = await this.userReplicaLookup.findActiveByIdAsync(
       command.authorId,
     );
 
@@ -69,11 +71,30 @@ export class CreateCommentHandler implements ICommandHandler<
       commentId,
       command.taskId,
       command.authorId,
-      authorRecord.fullName, // ✅ Tên thật từ hệ thống
-      authorRecord.avatarUrl || undefined, // ✅ Avatar thật từ hệ thống
+      authorRecord.fullName,
+      authorRecord.avatarUrl || undefined,
       command.content,
       command.parentId || null,
     );
+
+    const mentionedUserIds: string[] = [];
+    for (const username of parseMentionUsernames(command.content)) {
+      const mentionedUser = await this.userReplicaLookup.findActiveByUsernameAsync(
+        username,
+      );
+      if (
+        mentionedUser &&
+        mentionedUser.isActive &&
+        mentionedUser.userId !== command.authorId
+      ) {
+        try {
+          comment.addMention(mentionedUser.userId);
+          mentionedUserIds.push(mentionedUser.userId);
+        } catch {
+          // Ignore duplicate mentions in the same comment.
+        }
+      }
+    }
 
     // 4. Lưu Comment vào Database (TaskService DB)
     const savedCommentId = await this.commentRepository.createAsync(comment);
@@ -83,30 +104,45 @@ export class CreateCommentHandler implements ICommandHandler<
     const assigneeId = task.getAssigneeId();
 
     // Luật: Chỉ báo Noti nếu Task CÓ người phụ trách, VÀ người phụ trách KHÁC với người vừa comment
+    const commentPreview =
+      command.content.length > 50
+        ? command.content.substring(0, 50) + "..."
+        : command.content;
+
     if (assigneeId && assigneeId !== command.authorId) {
-      try {
-        await this.rabbitMqEvents.publishTaskCommented({
-          taskId: command.taskId,
-          taskTitle: task.getTitle(), // ✅ Lấy tên task từ Entity
-          recipientId: assigneeId, // ✅ Gửi thẳng cho người phụ trách
-          actorId: authorRecord.userId,
-          actorName: authorRecord.fullName,
-          actorAvatarUrl: authorRecord.avatarUrl || "",
-          commentId: savedCommentId,
-          // Cắt gọn nội dung comment nếu nó quá dài để làm preview
-          commentPreview:
-            command.content.length > 50
-              ? command.content.substring(0, 50) + "..."
-              : command.content,
-          createdAt: new Date().toISOString(),
-        });
-        console.log(
-          `📤 Bắn event comment_created thành công cho Task: ${command.taskId}`,
-        );
-      } catch (error) {
-        // Log lỗi nhưng không văng lỗi làm chết luồng chính
-        console.error("❌ RabbitMQ Publish comment_created Error:", error);
+      await this.taskOutboxService.enqueueTaskCommented({
+        eventId: randomUUID(),
+        occurredAt: new Date().toISOString(),
+        taskId: command.taskId,
+        taskTitle: task.getTitle(),
+        recipientId: assigneeId,
+        actorId: authorRecord.userId,
+        actorName: authorRecord.fullName,
+        actorAvatarUrl: authorRecord.avatarUrl || "",
+        commentId: savedCommentId,
+        commentPreview,
+        createdAt: new Date().toISOString(),
+      });
+    }
+
+    for (const recipientId of mentionedUserIds) {
+      if (recipientId === assigneeId) {
+        continue;
       }
+
+      await this.taskOutboxService.enqueueCommentMentioned({
+        eventId: randomUUID(),
+        occurredAt: new Date().toISOString(),
+        taskId: command.taskId,
+        taskTitle: task.getTitle(),
+        recipientId,
+        actorId: authorRecord.userId,
+        actorName: authorRecord.fullName,
+        actorAvatarUrl: authorRecord.avatarUrl || "",
+        commentId: savedCommentId,
+        commentPreview,
+        createdAt: new Date().toISOString(),
+      });
     }
 
     // 6. Trả về kết quả cho Controller

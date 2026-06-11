@@ -11,11 +11,10 @@ global:
     environment: 'development'
     project: 'collabspace'
 
-# Alertmanager configuration (optional - can be added later)
-# alerting:
-#   alertmanagers:
-#     - static_configs:
-#         - targets: ['alertmanager:9093']
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ['alertmanager:9093']
 
 # Rule files for recording rules and alerts
 rule_files:

@@ -16,6 +16,24 @@ export class UserReplicaRepository implements IUserReplicaRepository {
     return this.userReplicaModel.findOne({ userId }).lean().exec();
   }
 
+  async findByUsernameAsync(username: string): Promise<UserReplica | null> {
+    return this.userReplicaModel
+      .findOne({ username: username.toLowerCase(), isActive: true })
+      .lean()
+      .exec();
+  }
+
+  async findManyByIdsAsync(userIds: string[]): Promise<UserReplica[]> {
+    if (userIds.length === 0) {
+      return [];
+    }
+
+    return this.userReplicaModel
+      .find({ userId: { $in: userIds } })
+      .lean()
+      .exec();
+  }
+
   // 2. DÙNG CHO LUỒNG ĐĂNG KÝ (USER_REGISTERED_EVENT)
   async upsertAsync(data: Partial<UserReplica>): Promise<void> {
     await this.userReplicaModel

@@ -62,6 +62,7 @@ export default () => ({
     url: process.env.DATABASE_URL,
   },
   email: {
+    deliveryTimeoutMs: toNumber(process.env.MAIL_DELIVERY_TIMEOUT_MS, 5000),
     from: process.env.MAIL_FROM ?? 'no-reply@collabspace.local',
     host: process.env.MAIL_HOST ?? '127.0.0.1',
     ignoreTls: toBoolean(process.env.MAIL_IGNORE_TLS, false),
@@ -77,13 +78,32 @@ export default () => ({
     pollInterval: toNumber(process.env.GRAPHILE_WORKER_POLL_INTERVAL, 2000),
     schema: process.env.GRAPHILE_WORKER_SCHEMA ?? 'graphile_worker',
   },
+  outbox: {
+    batchSize: toNumber(process.env.OUTBOX_BATCH_SIZE, 20),
+    degradedFailedThreshold: toNumber(
+      process.env.OUTBOX_DEGRADED_FAILED_THRESHOLD,
+      1,
+    ),
+    degradedPendingThreshold: toNumber(
+      process.env.OUTBOX_DEGRADED_PENDING_THRESHOLD,
+      50,
+    ),
+    enabled: toBoolean(process.env.OUTBOX_ENABLED, true),
+    maxAttempts: toNumber(process.env.OUTBOX_MAX_ATTEMPTS, 10),
+    pollIntervalMs: toNumber(process.env.OUTBOX_POLL_INTERVAL_MS, 5000),
+    staleClaimThresholdMs: toNumber(
+      process.env.OUTBOX_STALE_CLAIM_THRESHOLD_MS,
+      60000,
+    ),
+  },
   grpc: {
-    enabled: toBoolean(process.env.GRPC_ENABLED, false),
+    enabled: toBoolean(process.env.GRPC_ENABLED, true),
     url: process.env.GRPC_URL ?? '0.0.0.0:50051',
   },
   rabbitmq: {
     enabled: toBoolean(process.env.RABBITMQ_ENABLED, false),
     noAck: toBoolean(process.env.RABBITMQ_NO_ACK, false),
+    publishTimeoutMs: toNumber(process.env.RABBITMQ_PUBLISH_TIMEOUT_MS, 3000),
     prefetchCount: toNumber(process.env.RABBITMQ_PREFETCH_COUNT, 10),
     queue: process.env.RABBITMQ_QUEUE ?? 'auth-service',
     queueDurable: toBoolean(process.env.RABBITMQ_QUEUE_DURABLE, true),
@@ -105,5 +125,6 @@ export default () => ({
   },
   userService: {
     grpcUrl: process.env.USER_SERVICE_GRPC_URL ?? 'user-service:50052',
+    grpcTimeoutMs: toNumber(process.env.USER_SERVICE_GRPC_TIMEOUT_MS, 3000),
   },
 });

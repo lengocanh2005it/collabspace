@@ -29,6 +29,18 @@ export class TaskPersistence {
   @Prop({ required: true })
   workspaceId!: string;
 
+  @Prop({ type: String, default: null, index: true })
+  projectId?: string | null;
+
+  @Prop({ required: true, enum: ["LOW", "MEDIUM", "HIGH"], default: "MEDIUM" })
+  priority!: string;
+
+  @Prop({ type: Date, default: null })
+  dueDate?: Date | null;
+
+  @Prop({ type: [String], default: [] })
+  labels!: string[];
+
   @Prop({ type: String, default: null })
   assigneeId?: string | null; // ID của người được gán task
 

@@ -1,0 +1,2 @@
+# Vendored by `helm dependency update` — Chart.lock pins versions.
+*.tgz

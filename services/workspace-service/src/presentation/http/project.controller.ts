@@ -16,10 +16,10 @@ import { CreateProjectUseCase } from '../../application/use-cases/project/create
 import { ListProjectsUseCase } from '../../application/use-cases/project/list-projects.use-case';
 import { UpdateProjectUseCase } from '../../application/use-cases/project/update-project.use-case';
 import { DeleteProjectUseCase } from '../../application/use-cases/project/delete-project.use-case';
-import { UserIdGuard } from './guards/user-id.guard';
+import { AuthGuard } from './guards/auth.guard';
 
 @Controller('workspaces/:workspaceId/projects')
-@UseGuards(UserIdGuard)
+@UseGuards(AuthGuard)
 export class ProjectController {
   constructor(
     private readonly createProjectUseCase: CreateProjectUseCase,

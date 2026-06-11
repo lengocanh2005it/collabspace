@@ -23,7 +23,7 @@ export type {
 export type {
   TaskCommentedEventPayload,
   CommentRepliedEventPayload,
-  CommentMentionedEventPayload,
+  CommentMentionedNotificationPayload,
   CommentEditedEventPayload,
   CommentDeletedEventPayload,
   CommentReactionAddedEventPayload,

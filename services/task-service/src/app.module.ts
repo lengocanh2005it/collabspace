@@ -5,7 +5,9 @@ import { MongooseModule } from "@nestjs/mongoose";
 import { ConfigModule, ConfigService } from "@nestjs/config";
 
 import { TaskController } from "./presentation/controllers/task.controller";
+import { HealthController } from "./presentation/controllers/health.controller";
 import { TaskCommentController } from "./presentation/controllers/task-comment.controller";
+import { TaskHealthService } from "./health/task-health.service";
 import { TaskEventController } from "./presentation/controllers/internal/task-event-internal.controller";
 import { UserEventController } from "./presentation/controllers/internal/user-event-internal.controller";
 
@@ -17,6 +19,7 @@ import { AssignTaskHandler } from "./application/usecases/assign-task.handler";
 import { DeleteTaskHandler } from "./application/usecases/delete-task.handler";
 import { GetTaskByIdHandler } from "./application/usecases/get-task-by-id.handler";
 import { GetTasksHandler } from "./application/usecases/get-tasks.handler";
+import { GetTaskBoardHandler } from "./application/usecases/get-task-board.handler";
 import { UploadAttachmentHandler } from "./application/usecases/upload-attachment.handler";
 import { DeleteAttachmentHandler } from "./application/usecases/delete-attachment.handler";
 import { CreateCommentHandler } from "./application/usecases/comments/create/create-comment.handler";
@@ -28,18 +31,43 @@ import { CreateUserReplicaHandler } from "./application/usecases/create-user-rep
 
 // Services
 import { AzureBlobService } from "./infrastructure/services/azure-blob.service";
+import { WORKSPACE_CLIENT_TOKEN } from "./application/ports/IWorkspaceClient";
+import { WorkspaceHttpClient } from "./infrastructure/clients/workspace-http.client";
+import { UserProfileHttpClient } from "./infrastructure/clients/user-profile-http.client";
+import {
+  USER_REPLICA_LOOKUP_TOKEN,
+  UserReplicaLookupService,
+} from "./application/services/user-replica-lookup.service";
 import { WorkspaceMockService } from "./infrastructure/services/workspace.mock.service";
+import { TaskOutboxService } from "./infrastructure/outbox/task-outbox.service";
+import { TaskOutboxProcessor } from "./infrastructure/outbox/task-outbox.processor";
+import {
+  TaskOutboxEvent,
+  TaskOutboxEventSchema,
+} from "./infrastructure/outbox/task-outbox.schema";
+import { IdempotencyService } from "./infrastructure/idempotency/idempotency.service";
+import {
+  IdempotencyKeyRecord,
+  IdempotencyKeySchema,
+} from "./infrastructure/idempotency/idempotency-key.schema";
 
 // Guards
 import { WorkspaceValidationGuard } from "./presentation/guards/workspace-validation.guard";
+import { AuthGuard } from "./presentation/guards/auth.guard";
 
 // Repository & Schema
 import { ITaskRepository } from "./application/ports/ITaskRepository";
-import { MongoTaskRepository } from "./infrastructure/repositories/mongo-task.repository";
+import { EventSourcedMongoTaskRepository } from "./infrastructure/repositories/event-sourced-mongo-task.repository";
+import { MongoTaskEventStore } from "./infrastructure/repositories/mongo-task-event.store";
+import { ITaskEventStore } from "./application/ports/ITaskEventStore";
 import {
   TaskSchema,
   TaskPersistence,
 } from "./infrastructure/persistence/task.schema";
+import {
+  TaskEventPersistence,
+  TaskEventSchema,
+} from "./infrastructure/persistence/task-event.schema";
 import { COMMENT_REPOSITORY_TOKEN } from "./domain/repositories/comment.repository.interface";
 import { CommentRepository } from "./infrastructure/repositories/comment.repository";
 import {
@@ -55,6 +83,8 @@ import { UserReplicaRepository } from "./infrastructure/repositories/mongo-user-
 
 import { RabbitMqModule } from "./infrastructure/messaging/rabbitmq/rabbitmq.module";
 import { ConfigurationModule } from "./configuration/configuration.module";
+import { MetricsModule } from "./metrics/metrics.module";
+import { AuthModule } from "./integrations/auth/auth.module";
 
 const Handlers = [
   CreateTaskHandler,
@@ -64,6 +94,7 @@ const Handlers = [
   DeleteTaskHandler,
   GetTaskByIdHandler,
   GetTasksHandler,
+  GetTaskBoardHandler,
   UploadAttachmentHandler,
   DeleteAttachmentHandler,
   CreateCommentHandler,
@@ -81,7 +112,9 @@ const Handlers = [
     }),
 
     ConfigurationModule,
+    MetricsModule,
     RabbitMqModule,
+    AuthModule,
     CqrsModule,
 
     MongooseModule.forRootAsync({
@@ -94,11 +127,15 @@ const Handlers = [
 
     MongooseModule.forFeature([
       { name: TaskPersistence.name, schema: TaskSchema },
+      { name: TaskEventPersistence.name, schema: TaskEventSchema },
       { name: TaskComment.name, schema: TaskCommentSchema },
-      { name: UserReplica.name, schema: UserReplicaSchema }, // 👈 Đăng ký bảng UserReplica vào Mongoose
+      { name: UserReplica.name, schema: UserReplicaSchema },
+      { name: TaskOutboxEvent.name, schema: TaskOutboxEventSchema },
+      { name: IdempotencyKeyRecord.name, schema: IdempotencyKeySchema },
     ]),
   ],
   controllers: [
+    HealthController,
     TaskController,
     TaskCommentController,
     TaskEventController,
@@ -106,12 +143,40 @@ const Handlers = [
   ],
   providers: [
     ...Handlers,
+    TaskHealthService,
     AzureBlobService,
     WorkspaceMockService,
+    WorkspaceHttpClient,
+    UserProfileHttpClient,
+    UserReplicaLookupService,
+    TaskOutboxService,
+    TaskOutboxProcessor,
+    IdempotencyService,
+    AuthGuard,
     WorkspaceValidationGuard,
     {
+      provide: WORKSPACE_CLIENT_TOKEN,
+      useFactory: (
+        configService: ConfigService,
+        mockClient: WorkspaceMockService,
+        httpClient: WorkspaceHttpClient,
+      ) => {
+        if (configService.get<string>("WORKSPACE_CLIENT_MODE") === "http") {
+          return httpClient;
+        }
+
+        return mockClient;
+      },
+      inject: [ConfigService, WorkspaceMockService, WorkspaceHttpClient],
+    },
+    MongoTaskEventStore,
+    {
+      provide: ITaskEventStore,
+      useExisting: MongoTaskEventStore,
+    },
+    {
       provide: ITaskRepository,
-      useClass: MongoTaskRepository,
+      useClass: EventSourcedMongoTaskRepository,
     },
     {
       provide: COMMENT_REPOSITORY_TOKEN,
@@ -120,6 +185,10 @@ const Handlers = [
     {
       provide: USER_REPLICA_REPOSITORY_TOKEN,
       useClass: UserReplicaRepository,
+    },
+    {
+      provide: USER_REPLICA_LOOKUP_TOKEN,
+      useExisting: UserReplicaLookupService,
     },
   ],
 })

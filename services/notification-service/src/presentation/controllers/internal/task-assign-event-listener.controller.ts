@@ -25,6 +25,10 @@ export class TaskEventController {
       );
 
       // 1. Gọi Use Case để lưu vào MongoDB
+      const eventId =
+        data.eventId ??
+        `task_assigned:${data.taskId}:${data.recipientId}:${data.assignedAt}`;
+
       await this.commandBus.execute(
         new CreateNotificationCommand(
           data.recipientId,
@@ -41,6 +45,7 @@ export class TaskEventController {
             assignedAt: data.assignedAt,
             workspaceId: data.workspaceId,
           },
+          eventId,
         ),
       );
 

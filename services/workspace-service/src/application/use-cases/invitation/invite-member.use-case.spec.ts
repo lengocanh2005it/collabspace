@@ -1,9 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { getDataSourceToken, getRepositoryToken } from '@nestjs/typeorm';
 import { InviteMemberUseCase } from './invite-member.use-case';
-import { getRepositoryToken } from '@nestjs/typeorm';
 import { InvitationOrmEntity } from '../../../infrastructure/database/entities/invitation.orm-entity';
 import { WorkspaceMemberOrmEntity } from '../../../infrastructure/database/entities/workspace-member.orm-entity';
 import { WorkspaceOrmEntity } from '../../../infrastructure/database/entities/workspace.orm-entity';
+import { WorkspaceOutboxService } from '../../../infrastructure/outbox/workspace-outbox.service';
 import { ForbiddenException } from '@nestjs/common';
 
 describe('InviteMemberUseCase', () => {
@@ -11,11 +12,7 @@ describe('InviteMemberUseCase', () => {
 
   const mockInvitationRepo = {
     create: jest.fn().mockImplementation((dto: unknown) => dto),
-    save: jest
-      .fn()
-      .mockImplementation((entity: unknown) =>
-        Promise.resolve({ id: 'inv-1', ...(entity as object) }),
-      ),
+    save: jest.fn(),
   };
 
   const mockMemberRepo = {
@@ -26,11 +23,33 @@ describe('InviteMemberUseCase', () => {
     findOne: jest.fn(),
   };
 
-  const mockRabbitChannel = {
-    publish: jest.fn(),
+  const mockOutboxService = {
+    enqueueWorkspaceInvited: jest.fn(),
+  };
+
+  const mockManager = {
+    create: jest.fn().mockImplementation((_entity, dto: unknown) => dto),
+    save: jest
+      .fn()
+      .mockImplementation((entity: { workspace_id?: string; inviter_id?: string; invitee_email?: string }) =>
+        Promise.resolve({
+          id: 'inv-1',
+          workspace_id: entity.workspace_id ?? 'ws-1',
+          inviter_id: entity.inviter_id ?? 'user-1',
+          invitee_email: entity.invitee_email ?? 'test@example.com',
+        }),
+      ),
+  };
+
+  const mockDataSource = {
+    transaction: jest.fn((operation: (manager: typeof mockManager) => Promise<unknown>) =>
+      operation(mockManager),
+    ),
   };
 
   beforeEach(async () => {
+    jest.clearAllMocks();
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         InviteMemberUseCase,
@@ -47,8 +66,12 @@ describe('InviteMemberUseCase', () => {
           useValue: mockWorkspaceRepo,
         },
         {
-          provide: 'RABBITMQ_CHANNEL',
-          useValue: mockRabbitChannel,
+          provide: getDataSourceToken(),
+          useValue: mockDataSource,
+        },
+        {
+          provide: WorkspaceOutboxService,
+          useValue: mockOutboxService,
         },
       ],
     }).compile();
@@ -63,7 +86,7 @@ describe('InviteMemberUseCase', () => {
     ).rejects.toThrow(ForbiddenException);
   });
 
-  it('should create invitation and publish event if allowed', async () => {
+  it('should create invitation and enqueue outbox event if allowed', async () => {
     mockMemberRepo.findOne.mockResolvedValue({ role: 'admin' });
     mockWorkspaceRepo.findOne.mockResolvedValue({
       id: 'ws-1',
@@ -74,12 +97,15 @@ describe('InviteMemberUseCase', () => {
       email: 'test@example.com',
     });
 
-    expect(mockInvitationRepo.create).toHaveBeenCalled();
-    expect(mockInvitationRepo.save).toHaveBeenCalled();
-    expect(mockRabbitChannel.publish).toHaveBeenCalledWith(
-      'collabspace_exchange',
-      'workspace.invited',
-      expect.any(Buffer),
+    expect(mockDataSource.transaction).toHaveBeenCalled();
+    expect(mockOutboxService.enqueueWorkspaceInvited).toHaveBeenCalledWith(
+      expect.objectContaining({
+        workspaceId: 'ws-1',
+        inviteEmail: 'test@example.com',
+        eventId: expect.any(String),
+        occurredAt: expect.any(String),
+      }),
+      mockManager,
     );
     expect(result.id).toBe('inv-1');
   });

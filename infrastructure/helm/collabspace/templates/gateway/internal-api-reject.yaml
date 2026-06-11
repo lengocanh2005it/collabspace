@@ -1,0 +1,22 @@
+{{- if .Values.gateway.enabled }}
+{{- $ns := include "collabspace.namespace" . }}
+---
+# Headless reject target — no endpoints; Traefik returns 503 for blocked internal paths.
+apiVersion: v1
+kind: Service
+metadata:
+  name: internal-api-reject
+  namespace: {{ $ns }}
+  labels:
+    app.kubernetes.io/part-of: collabspace
+    app.kubernetes.io/component: gateway
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
+      protocol: TCP
+  selector:
+    app.kubernetes.io/component: internal-api-reject
+{{- end }}

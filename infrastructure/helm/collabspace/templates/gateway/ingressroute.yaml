@@ -1,0 +1,81 @@
+{{- if .Values.gateway.enabled }}
+{{- $ns := include "collabspace.namespace" . }}
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: collabspace-routes
+  namespace: {{ $ns }}
+  labels:
+    app.kubernetes.io/part-of: collabspace
+spec:
+  entryPoints:
+    - web
+    - websecure
+  routes:
+    - match: PathPrefix(`/api/v1/workspaces/internal`) || PathPrefix(`/api/v1/users/internal`)
+      kind: Rule
+      priority: 200
+      services:
+        - name: internal-api-reject
+          port: 80
+    - match: Path(`/api/v1/auth/me`)
+      kind: Rule
+      priority: 100
+      services:
+        - name: auth-service
+          port: 3000
+      middlewares:
+        - name: strip-identity-headers
+        - name: forward-auth
+        - name: rate-limit
+        - name: cors-headers
+    - match: PathPrefix(`/api/v1/auth`)
+      kind: Rule
+      services:
+        - name: auth-service
+          port: 3000
+      middlewares:
+        - name: rate-limit
+        - name: cors-headers
+    - match: PathPrefix(`/api/v1/users`)
+      kind: Rule
+      services:
+        - name: user-service
+          port: 3000
+      middlewares:
+        - name: strip-identity-headers
+        - name: forward-auth
+        - name: rate-limit
+        - name: cors-headers
+    - match: PathPrefix(`/api/v1/workspaces`)
+      kind: Rule
+      services:
+        - name: workspace-service
+          port: 8080
+      middlewares:
+        - name: strip-identity-headers
+        - name: forward-auth
+        - name: rate-limit
+        - name: cors-headers
+    - match: PathPrefix(`/api/v1/tasks`)
+      kind: Rule
+      services:
+        - name: task-service
+          port: 3000
+      middlewares:
+        - name: strip-identity-headers
+        - name: forward-auth
+        - name: rate-limit
+        - name: cors-headers
+    - match: PathPrefix(`/api/v1/notifications`)
+      kind: Rule
+      services:
+        - name: notification-service
+          port: 3000
+      middlewares:
+        - name: strip-identity-headers
+        - name: forward-auth
+        - name: rate-limit
+        - name: cors-headers
+{{- end }}

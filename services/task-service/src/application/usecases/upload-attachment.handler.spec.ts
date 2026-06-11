@@ -1,6 +1,7 @@
 import { UploadAttachmentHandler } from "./upload-attachment.handler";
 import { UploadAttachmentCommand } from "../commands/upload-attachment.command";
 import { ITaskRepository } from "../ports/ITaskRepository";
+import { createMockTaskRepository } from "../../test-utils/mock-task-repository";
 import { AzureBlobService } from "../../infrastructure/services/azure-blob.service";
 import { Task } from "../../domain/entities/Task";
 import { TaskId } from "../../domain/value-objects/TaskId";
@@ -14,15 +15,7 @@ describe("UploadAttachmentHandler", () => {
   let mockAzureBlobService: jest.Mocked<AzureBlobService>;
 
   beforeEach(() => {
-    mockTaskRepo = {
-      addAsync: jest.fn(),
-      updateAsync: jest.fn(),
-      deleteAsync: jest.fn(),
-      findByIdAsync: jest.fn(),
-      findByWorkspaceIdAsync: jest.fn(),
-      addAttachmentAsync: jest.fn(),
-      removeAttachmentAsync: jest.fn(),
-    };
+    mockTaskRepo = createMockTaskRepository();
 
     mockAzureBlobService = {
       uploadFile: jest.fn(),
@@ -68,7 +61,7 @@ describe("UploadAttachmentHandler", () => {
     );
     const task = createMockTask();
 
-    mockTaskRepo.findByIdAsync.mockResolvedValue(task);
+    mockTaskRepo.loadAggregateByIdAsync.mockResolvedValue(task);
     mockAzureBlobService.uploadFile.mockResolvedValue(
       "https://azure.blob/test.jpg",
     );
@@ -82,10 +75,7 @@ describe("UploadAttachmentHandler", () => {
       mockFile,
       "123e4567-e89b-12d3-a456-426614174000",
     );
-    expect(mockTaskRepo.addAttachmentAsync).toHaveBeenCalledWith(
-      expect.any(TaskId),
-      "https://azure.blob/test.jpg",
-    );
+    expect(mockTaskRepo.saveAsync).toHaveBeenCalledWith(task);
   });
 
   it("should throw EntityNotFoundException if task does not exist", async () => {
@@ -100,12 +90,12 @@ describe("UploadAttachmentHandler", () => {
       mockFile,
     );
 
-    mockTaskRepo.findByIdAsync.mockResolvedValue(null);
+    mockTaskRepo.loadAggregateByIdAsync.mockResolvedValue(null);
 
     await expect(handler.execute(command)).rejects.toThrow(
       EntityNotFoundException,
     );
     expect(mockAzureBlobService.uploadFile).not.toHaveBeenCalled();
-    expect(mockTaskRepo.addAttachmentAsync).not.toHaveBeenCalled();
+    expect(mockTaskRepo.saveAsync).not.toHaveBeenCalled();
   });
 });

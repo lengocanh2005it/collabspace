@@ -1,92 +1,19 @@
 import { existsSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
+import { join } from 'node:path';
+import * as amqp from 'amqplib';
 import { DataSource } from 'typeorm';
 import { UserProfileOrmEntity } from './infrastructure/database/entities/user-profile.orm-entity';
 import { UserPreferencesOrmEntity } from './infrastructure/database/entities/user-preferences.orm-entity';
 import { UserStatusOrmEntity } from './infrastructure/database/entities/user-status.orm-entity';
+import {
+  avatarUrlFor,
+  loadDemoSeedData,
+  type DemoSeedUser,
+} from '../../../scripts/load-demo-seed-data';
 
-type SeedProfile = {
-  avatarUrl: string;
-  bio: string;
-  department: string;
-  fullName: string;
-  id: string;
-  jobTitle: string;
-  locale: string;
-  location: string;
-  timezone: string;
-  userId: string;
-  username: string;
-};
-
-const SEED_PROFILES: SeedProfile[] = [
-  {
-    avatarUrl: 'https://api.dicebear.com/9.x/initials/svg?seed=Phan%20Phu%20Tho',
-    bio: 'Infrastructure engineer managing Docker, CI/CD, API gateway, monitoring, tracing, and logging.',
-    department: 'Platform',
-    fullName: 'Phan Phu Tho',
-    id: 'a1111111-1111-4111-8111-111111111111',
-    jobTitle: 'Infrastructure Engineer',
-    locale: 'vi-VN',
-    location: 'Ho Chi Minh City',
-    timezone: 'Asia/Saigon',
-    userId: '11111111-1111-4111-8111-111111111111',
-    username: 'phan.phu.tho',
-  },
-  {
-    avatarUrl: 'https://api.dicebear.com/9.x/initials/svg?seed=Le%20Ngoc%20Anh',
-    bio: 'Owns JWT auth, RBAC, and user profile APIs for the collaboration platform.',
-    department: 'Platform',
-    fullName: 'Le Ngoc Anh',
-    id: 'b2222222-2222-4222-8222-222222222222',
-    jobTitle: 'Backend Engineer',
-    locale: 'vi-VN',
-    location: 'Ho Chi Minh City',
-    timezone: 'Asia/Saigon',
-    userId: '22222222-2222-4222-8222-222222222222',
-    username: 'le.ngoc.anh',
-  },
-  {
-    avatarUrl: 'https://api.dicebear.com/9.x/initials/svg?seed=Ngo%20Quang%20Tien',
-    bio: 'Builds workspace CRUD flows, member invitations, and workspace membership management.',
-    department: 'Collaboration',
-    fullName: 'Ngo Quang Tien',
-    id: 'c3333333-3333-4333-8333-333333333333',
-    jobTitle: 'Backend Engineer',
-    locale: 'vi-VN',
-    location: 'Ho Chi Minh City',
-    timezone: 'Asia/Saigon',
-    userId: '33333333-3333-4333-8333-333333333333',
-    username: 'ngo.quang.tien',
-  },
-  {
-    avatarUrl: 'https://api.dicebear.com/9.x/initials/svg?seed=Vo%20Trung%20Tin',
-    bio: 'Focuses on task workflows, comments, notifications, and event-driven delivery.',
-    department: 'Collaboration',
-    fullName: 'Vo Trung Tin',
-    id: 'd4444444-4444-4444-8444-444444444444',
-    jobTitle: 'Backend Engineer',
-    locale: 'vi-VN',
-    location: 'Ho Chi Minh City',
-    timezone: 'Asia/Saigon',
-    userId: '44444444-4444-4444-8444-444444444444',
-    username: 'vo.trung.tin',
-  },
-  {
-    avatarUrl: 'https://api.dicebear.com/9.x/initials/svg?seed=Demo%20Reviewer',
-    bio: 'Read-only stakeholder account for reviewing workspace, task, and notification flows in demos.',
-    department: 'Stakeholder',
-    fullName: 'Demo Reviewer',
-    id: 'e5555555-5555-4555-8555-555555555555',
-    jobTitle: 'Reviewer',
-    locale: 'en-US',
-    location: 'Remote',
-    timezone: 'UTC',
-    userId: '55555555-5555-4555-8555-555555555555',
-    username: 'demo.reviewer',
-  },
-];
+const USER_REGISTERED_EVENT = 'user_registered';
+const USER_PROFILE_UPDATED_EVENT = 'user_profile_updated';
 
 function loadEnvFile(): void {
   const envPath = join(process.cwd(), '.env');
@@ -137,9 +64,149 @@ function toBoolean(value: string | undefined, fallback: boolean): boolean {
   return ['1', 'true', 'yes', 'on'].includes(value.toLowerCase());
 }
 
+async function publishUserReplicaEvents(users: DemoSeedUser[]): Promise<void> {
+  if (!toBoolean(process.env.RABBITMQ_ENABLED, false)) {
+    console.log(
+      'RABBITMQ_ENABLED is false — skipping user replica event broadcast.',
+    );
+    return;
+  }
+
+  const rabbitUrl = process.env.RABBITMQ_URL;
+
+  if (!rabbitUrl) {
+    console.warn('RABBITMQ_URL is missing — skipping user replica event broadcast.');
+    return;
+  }
+
+  const connection = await amqp.connect(rabbitUrl);
+  const channel = await connection.createChannel();
+
+  try {
+    for (const queue of ['task-service', 'notification-service']) {
+      await channel.assertQueue(queue, { durable: true });
+    }
+
+    for (const user of users) {
+      const payload = {
+        userId: user.id,
+        fullName: user.fullName,
+        email: user.email,
+        username: user.username,
+        displayName: user.fullName,
+        avatarUrl: avatarUrlFor(user),
+        isActive: true,
+      };
+
+      const message = {
+        pattern: USER_REGISTERED_EVENT,
+        data: payload,
+      };
+
+      const body = Buffer.from(JSON.stringify(message));
+
+      for (const queue of ['task-service', 'notification-service']) {
+        channel.sendToQueue(queue, body, { persistent: true });
+      }
+
+      const profileUpdated = {
+        pattern: USER_PROFILE_UPDATED_EVENT,
+        data: payload,
+      };
+      const profileBody = Buffer.from(JSON.stringify(profileUpdated));
+
+      for (const queue of ['task-service', 'notification-service']) {
+        channel.sendToQueue(queue, profileBody, { persistent: true });
+      }
+    }
+
+    console.log(
+      `Published ${users.length} user_registered/user_profile_updated events to task-service and notification-service queues.`,
+    );
+  } finally {
+    await channel.close();
+    await connection.close();
+  }
+}
+
+async function seedProfiles(dataSource: DataSource, users: DemoSeedUser[]): Promise<void> {
+  const repository = dataSource.getRepository(UserProfileOrmEntity);
+  const preferencesRepository = dataSource.getRepository(UserPreferencesOrmEntity);
+  const statusRepository = dataSource.getRepository(UserStatusOrmEntity);
+
+  for (const seedProfile of users) {
+    const existingProfile = await repository.findOne({
+      where: {
+        userId: seedProfile.id,
+      },
+      withDeleted: true,
+    });
+
+    await repository.save(
+      repository.create({
+        avatarUrl: avatarUrlFor(seedProfile),
+        bio: seedProfile.bio,
+        deletedAt: null,
+        displayName: existingProfile?.displayName ?? seedProfile.fullName,
+        fullName: seedProfile.fullName,
+        id: existingProfile?.id ?? seedProfile.profileId,
+        userId: seedProfile.id,
+        username: seedProfile.username,
+      }),
+    );
+
+    const existingPreferences = await preferencesRepository.findOne({
+      where: {
+        userId: seedProfile.id,
+      },
+    });
+
+    await preferencesRepository.save(
+      preferencesRepository.create({
+        dateFormat: existingPreferences?.dateFormat ?? 'YYYY-MM-DD',
+        desktopNotificationsEnabled:
+          existingPreferences?.desktopNotificationsEnabled ?? true,
+        digestFrequency: existingPreferences?.digestFrequency ?? 'daily',
+        emailNotificationsEnabled:
+          existingPreferences?.emailNotificationsEnabled ?? true,
+        id: existingPreferences?.id ?? randomUUID(),
+        language:
+          existingPreferences?.language ?? seedProfile.preferredLanguage,
+        pushNotificationsEnabled:
+          existingPreferences?.pushNotificationsEnabled ?? true,
+        theme: existingPreferences?.theme ?? 'system',
+        timeFormat: existingPreferences?.timeFormat ?? '24h',
+        timezone:
+          existingPreferences?.timezone ?? seedProfile.preferredTimezone,
+        userId: seedProfile.id,
+        weekStartsOn: existingPreferences?.weekStartsOn ?? 'monday',
+      }),
+    );
+
+    const existingStatus = await statusRepository.findOne({
+      where: {
+        userId: seedProfile.id,
+      },
+    });
+
+    await statusRepository.save(
+      statusRepository.create({
+        clearAt: existingStatus?.clearAt ?? null,
+        emoji: existingStatus?.emoji ?? null,
+        id: existingStatus?.id ?? randomUUID(),
+        lastSeenAt: existingStatus?.lastSeenAt ?? new Date(),
+        status: existingStatus?.status ?? 'offline',
+        statusText: existingStatus?.statusText ?? null,
+        userId: seedProfile.id,
+      }),
+    );
+  }
+}
+
 async function main(): Promise<void> {
   loadEnvFile();
 
+  const demoData = loadDemoSeedData();
   const dataSource = new DataSource({
     entities: [
       UserProfileOrmEntity,
@@ -159,91 +226,23 @@ async function main(): Promise<void> {
   await dataSource.initialize();
 
   try {
-    const repository = dataSource.getRepository(UserProfileOrmEntity);
-    const preferencesRepository = dataSource.getRepository(
-      UserPreferencesOrmEntity,
-    );
-    const statusRepository = dataSource.getRepository(UserStatusOrmEntity);
-
-    for (const seedProfile of SEED_PROFILES) {
-      const existingProfile = await repository.findOne({
-        where: {
-          userId: seedProfile.userId,
-        },
-        withDeleted: true,
-      });
-
-      await repository.save(
-        repository.create({
-          avatarUrl: seedProfile.avatarUrl,
-          bio: seedProfile.bio,
-          coverUrl: existingProfile?.coverUrl ?? null,
-          department: seedProfile.department,
-          deletedAt: null,
-          displayName: existingProfile?.displayName ?? seedProfile.fullName,
-          emailVerified: true,
-          fullName: seedProfile.fullName,
-          id: existingProfile?.id ?? seedProfile.id,
-          jobTitle: seedProfile.jobTitle,
-          locale: seedProfile.locale,
-          location: seedProfile.location,
-          timezone: seedProfile.timezone,
-          userId: seedProfile.userId,
-          username: seedProfile.username,
-        }),
-      );
-
-      const existingPreferences = await preferencesRepository.findOne({
-        where: {
-          userId: seedProfile.userId,
-        },
-      });
-
-      await preferencesRepository.save(
-        preferencesRepository.create({
-          dateFormat: existingPreferences?.dateFormat ?? 'YYYY-MM-DD',
-          desktopNotificationsEnabled:
-            existingPreferences?.desktopNotificationsEnabled ?? true,
-          digestFrequency: existingPreferences?.digestFrequency ?? 'daily',
-          emailNotificationsEnabled:
-            existingPreferences?.emailNotificationsEnabled ?? true,
-          id: existingPreferences?.id ?? randomUUID(),
-          language: existingPreferences?.language ?? seedProfile.locale.slice(0, 2),
-          pushNotificationsEnabled:
-            existingPreferences?.pushNotificationsEnabled ?? true,
-          theme: existingPreferences?.theme ?? 'system',
-          timeFormat: existingPreferences?.timeFormat ?? '24h',
-          timezone: existingPreferences?.timezone ?? seedProfile.timezone,
-          userId: seedProfile.userId,
-          weekStartsOn: existingPreferences?.weekStartsOn ?? 'monday',
-        }),
-      );
-
-      const existingStatus = await statusRepository.findOne({
-        where: {
-          userId: seedProfile.userId,
-        },
-      });
-
-      await statusRepository.save(
-        statusRepository.create({
-          clearAt: existingStatus?.clearAt ?? null,
-          emoji: existingStatus?.emoji ?? null,
-          id: existingStatus?.id ?? randomUUID(),
-          lastSeenAt: existingStatus?.lastSeenAt ?? new Date(),
-          status: existingStatus?.status ?? 'offline',
-          statusText: existingStatus?.statusText ?? null,
-          userId: seedProfile.userId,
-        }),
+    await seedProfiles(dataSource, demoData.users);
+    try {
+      await publishUserReplicaEvents(demoData.users);
+    } catch (error) {
+      console.warn(
+        'RabbitMQ broadcast failed (task-service seed still upserts replicas directly):',
+        error instanceof Error ? error.message : error,
       );
     }
 
     console.log('user-service seed completed');
     console.table(
-      SEED_PROFILES.map((profile) => ({
+      demoData.users.map((profile) => ({
+        email: profile.email,
         fullName: profile.fullName,
-        profileId: profile.id,
-        userId: profile.userId,
+        userId: profile.id,
+        username: profile.username,
       })),
     );
   } finally {

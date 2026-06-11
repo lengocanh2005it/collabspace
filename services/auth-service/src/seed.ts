@@ -8,6 +8,10 @@ import { RolePermissionEntity } from '@/modules/identity/entities/role-permissio
 import { RoleEntity } from '@/modules/identity/entities/role.entity';
 import { UserRoleEntity } from '@/modules/identity/entities/user-role.entity';
 import { UserEntity } from '@/modules/identity/entities/user.entity';
+import {
+  loadDemoSeedData,
+  type DemoSeedUser,
+} from '../../../scripts/load-demo-seed-data';
 
 type SeedPermission = {
   description: string;
@@ -29,6 +33,19 @@ type SeedUser = {
   password: string;
   roleNames: string[];
 };
+
+function mapDemoUsers(
+  users: DemoSeedUser[],
+  defaultPassword: string,
+): SeedUser[] {
+  return users.map((user) => ({
+    email: user.email,
+    fullName: user.fullName,
+    id: user.id,
+    password: defaultPassword,
+    roleNames: user.roleNames,
+  }));
+}
 
 const scryptAsync = promisify(scrypt);
 
@@ -109,45 +126,13 @@ const SEED_ROLES: SeedRole[] = [
   },
 ];
 
-const DEFAULT_PASSWORD = 'collabspace123';
+const demoData = loadDemoSeedData();
+const DEFAULT_PASSWORD = demoData.defaultPassword;
 
-const SEED_USERS: SeedUser[] = [
-  {
-    email: 'tho@collabspace.dev',
-    fullName: 'Phan Phu Tho',
-    id: '11111111-1111-4111-8111-111111111111',
-    password: DEFAULT_PASSWORD,
-    roleNames: ['admin'],
-  },
-  {
-    email: 'ngocanh@collabspace.dev',
-    fullName: 'Le Ngoc Anh',
-    id: '22222222-2222-4222-8222-222222222222',
-    password: DEFAULT_PASSWORD,
-    roleNames: ['member'],
-  },
-  {
-    email: 'quangtien@collabspace.dev',
-    fullName: 'Ngo Quang Tien',
-    id: '33333333-3333-4333-8333-333333333333',
-    password: DEFAULT_PASSWORD,
-    roleNames: ['member'],
-  },
-  {
-    email: 'trungtin@collabspace.dev',
-    fullName: 'Vo Trung Tin',
-    id: '44444444-4444-4444-8444-444444444444',
-    password: DEFAULT_PASSWORD,
-    roleNames: ['member'],
-  },
-  {
-    email: 'reviewer@collabspace.dev',
-    fullName: 'Demo Reviewer',
-    id: '55555555-5555-4555-8555-555555555555',
-    password: DEFAULT_PASSWORD,
-    roleNames: ['viewer'],
-  },
-];
+const SEED_USERS: SeedUser[] = mapDemoUsers(
+  demoData.users,
+  DEFAULT_PASSWORD,
+);
 
 function loadEnvFile(): void {
   const envPath = join(process.cwd(), '.env');
@@ -393,7 +378,7 @@ async function main(): Promise<void> {
       SEED_USERS.map((user) => ({
         email: user.email,
         name: user.fullName,
-        password: user.password,
+        password: '***',
         roles: user.roleNames.join(','),
       })),
     );

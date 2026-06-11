@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 import { DatabaseModule } from './infrastructure/database/database.module';
+import { IdempotencyService } from './infrastructure/idempotency/idempotency.service';
+import { OutboxModule } from './infrastructure/outbox/outbox.module';
 import { RabbitMqModule } from './infrastructure/messaging/rabbitmq.module';
 import { WorkspaceController } from './presentation/http/workspace.controller';
 import { HealthController } from './presentation/http/health.controller';
@@ -17,11 +19,18 @@ import { DeleteProjectUseCase } from './application/use-cases/project/delete-pro
 import { InviteMemberUseCase } from './application/use-cases/invitation/invite-member.use-case';
 import { AcceptInvitationUseCase } from './application/use-cases/invitation/accept-invitation.use-case';
 import { RejectInvitationUseCase } from './application/use-cases/invitation/reject-invitation.use-case';
+import { CheckWorkspaceMembershipUseCase } from './application/use-cases/workspace/check-workspace-membership.use-case';
+import { WorkspaceHealthService } from './health/workspace-health.service';
+import { MetricsModule } from './metrics/metrics.module';
+import { AuthModule } from './integrations/auth/auth.module';
+import { AuthGuard } from './presentation/http/guards/auth.guard';
+import { InternalWorkspaceController } from './presentation/http/internal-workspace.controller';
 
 @Module({
-  imports: [DatabaseModule, RabbitMqModule],
+  imports: [DatabaseModule, MetricsModule, OutboxModule, RabbitMqModule, AuthModule],
   controllers: [
     HealthController,
+    InternalWorkspaceController,
     WorkspaceController,
     ProjectController,
     InvitationController,
@@ -32,6 +41,7 @@ import { RejectInvitationUseCase } from './application/use-cases/invitation/reje
     ListWorkspacesUseCase,
     UpdateWorkspaceUseCase,
     ListMembersUseCase,
+    CheckWorkspaceMembershipUseCase,
     CreateProjectUseCase,
     ListProjectsUseCase,
     UpdateProjectUseCase,
@@ -39,6 +49,9 @@ import { RejectInvitationUseCase } from './application/use-cases/invitation/reje
     InviteMemberUseCase,
     AcceptInvitationUseCase,
     RejectInvitationUseCase,
+    WorkspaceHealthService,
+    IdempotencyService,
+    AuthGuard,
   ],
 })
 export class AppModule {}

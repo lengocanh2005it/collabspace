@@ -43,6 +43,20 @@ export class TypeOrmUserProfileRepository implements UserProfileRepository {
     return this.toDomainProfile(profile);
   }
 
+  async findByUsername(username: string): Promise<UserProfile | null> {
+    const profile = await this.repository
+      .createQueryBuilder('profile')
+      .where('LOWER(profile.username) = LOWER(:username)', { username })
+      .andWhere('profile.deletedAt IS NULL')
+      .getOne();
+
+    if (!profile) {
+      return null;
+    }
+
+    return this.toDomainProfile(profile);
+  }
+
   async findManyByUserIds(userIds: string[]): Promise<UserProfile[]> {
     if (userIds.length === 0) {
       return [];
@@ -152,8 +166,6 @@ export class TypeOrmUserProfileRepository implements UserProfileRepository {
           LOWER(profile.fullName) LIKE :q
           OR LOWER(COALESCE(profile.displayName, '')) LIKE :q
           OR LOWER(COALESCE(profile.username, '')) LIKE :q
-          OR LOWER(COALESCE(profile.department, '')) LIKE :q
-          OR LOWER(COALESCE(profile.jobTitle, '')) LIKE :q
         )`,
         { q },
       );
@@ -169,24 +181,6 @@ export class TypeOrmUserProfileRepository implements UserProfileRepository {
     };
   }
 
-  async markEmailVerified(userId: string): Promise<UserProfile> {
-    const profile = await this.repository.findOne({
-      where: {
-        userId,
-      },
-    });
-
-    if (!profile) {
-      throw new NotFoundException({
-        code: 'USER_PROFILE_NOT_FOUND',
-        message: `Profile for user ${userId} was not found`,
-      });
-    }
-
-    profile.emailVerified = true;
-    return this.toDomainProfile(await this.repository.save(profile));
-  }
-
   async upsertPending(
     input: CreatePendingUserProfileInput,
   ): Promise<UserProfile> {
@@ -200,17 +194,10 @@ export class TypeOrmUserProfileRepository implements UserProfileRepository {
       this.repository.create({
         avatarUrl: existingProfile?.avatarUrl ?? null,
         bio: existingProfile?.bio ?? null,
-        coverUrl: existingProfile?.coverUrl ?? null,
-        department: existingProfile?.department ?? null,
         deletedAt: null,
         displayName: existingProfile?.displayName ?? null,
-        emailVerified: existingProfile?.emailVerified ?? false,
         fullName: input.fullName,
         id: existingProfile?.id ?? randomUUID(),
-        jobTitle: existingProfile?.jobTitle ?? null,
-        locale: existingProfile?.locale ?? null,
-        location: existingProfile?.location ?? null,
-        timezone: existingProfile?.timezone ?? null,
         userId: input.userId,
         username: existingProfile?.username ?? this.createUsername(input.fullName),
       }),
@@ -237,20 +224,9 @@ export class TypeOrmUserProfileRepository implements UserProfileRepository {
     }
 
     profile.bio = input.bio === undefined ? profile.bio : input.bio;
-    profile.coverUrl =
-      input.coverUrl === undefined ? profile.coverUrl : input.coverUrl;
-    profile.department =
-      input.department === undefined ? profile.department : input.department;
     profile.displayName =
       input.displayName === undefined ? profile.displayName : input.displayName;
     profile.fullName = input.fullName ?? profile.fullName;
-    profile.jobTitle =
-      input.jobTitle === undefined ? profile.jobTitle : input.jobTitle;
-    profile.locale = input.locale === undefined ? profile.locale : input.locale;
-    profile.location =
-      input.location === undefined ? profile.location : input.location;
-    profile.timezone =
-      input.timezone === undefined ? profile.timezone : input.timezone;
     profile.username =
       input.username === undefined ? profile.username : input.username;
 
@@ -372,14 +348,7 @@ export class TypeOrmUserProfileRepository implements UserProfileRepository {
       profile.fullName,
       profile.displayName,
       profile.avatarUrl,
-      profile.coverUrl,
       profile.bio,
-      profile.jobTitle,
-      profile.department,
-      profile.location,
-      profile.timezone,
-      profile.locale,
-      profile.emailVerified,
       profile.deletedAt,
       profile.createdAt,
       profile.updatedAt,

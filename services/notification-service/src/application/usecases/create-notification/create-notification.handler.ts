@@ -7,6 +7,10 @@ import {
   type INotificationRepository,
   NOTIFICATION_REPOSITORY_TOKEN,
 } from "../../../domain/repositories/INotificationRepository";
+import {
+  type IProcessedEventRepository,
+  PROCESSED_EVENT_REPOSITORY_TOKEN,
+} from "../../../domain/repositories/IProcessedEventRepository";
 
 export interface CreateNotificationResponse {
   notificationId: string;
@@ -21,11 +25,26 @@ export class CreateNotificationHandler implements ICommandHandler<
   constructor(
     @Inject(NOTIFICATION_REPOSITORY_TOKEN)
     private readonly notificationRepository: INotificationRepository,
+    @Inject(PROCESSED_EVENT_REPOSITORY_TOKEN)
+    private readonly processedEventRepository: IProcessedEventRepository,
   ) {}
 
   async execute(
     command: CreateNotificationCommand,
   ): Promise<CreateNotificationResponse> {
+    if (command.eventId) {
+      const claimed = await this.processedEventRepository.tryClaim(
+        command.eventId,
+      );
+
+      if (!claimed) {
+        return {
+          notificationId: "",
+          message: "Notification already processed for event",
+        };
+      }
+    }
+
     // Step 1: Create notification entity with validation
     const notification = Notification.create(
       command.recipientId,

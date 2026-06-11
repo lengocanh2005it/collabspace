@@ -2,6 +2,7 @@ import { ForbiddenException, NotFoundException } from "@nestjs/common";
 import { DeleteCommentHandler } from "./delete-comment.handler";
 import { DeleteCommentCommand } from "./delete-comment.command";
 import { ITaskRepository } from "../../../../application/ports/ITaskRepository";
+import { createMockTaskRepository } from "../../../../test-utils/mock-task-repository";
 import { ICommentRepository } from "../../../../domain/repositories/comment.repository.interface";
 import { Task } from "../../../../domain/entities/Task";
 import { TaskId } from "../../../../domain/value-objects/TaskId";
@@ -23,13 +24,7 @@ describe("DeleteCommentHandler", () => {
       findByTaskIdAsync: jest.fn(),
     } as any;
 
-    mockTaskRepo = {
-      addAsync: jest.fn(),
-      updateAsync: jest.fn(),
-      deleteAsync: jest.fn(),
-      findByIdAsync: jest.fn(),
-      findByWorkspaceIdAsync: jest.fn(),
-    };
+    mockTaskRepo = createMockTaskRepository();
 
     handler = new DeleteCommentHandler(mockCommentRepo, mockTaskRepo);
   });

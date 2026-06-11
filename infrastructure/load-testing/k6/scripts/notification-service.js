@@ -6,11 +6,11 @@ export let options = {
   duration: "30s",
 };
 
-const BASE_URL = __ENV.BASE_URL || "http://localhost";
+const BASE_URL = __ENV.BASE_URL || "http://localhost:3004/api";
 
 export default function () {
   group("Notification Service Health", function () {
-    let res = http.get(`${BASE_URL}/notifications/health`);
+    let res = http.get(`${BASE_URL}/v1/notifications/health`);
     check(res, { "health status 200": (r) => r.status === 200 });
   });
 

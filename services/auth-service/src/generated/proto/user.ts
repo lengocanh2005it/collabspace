@@ -37,6 +37,7 @@ export namespace user {
     export interface GetProfileResponse {
         userId?: string;
         fullName?: string;
+        username?: string;
     }
     export interface GetProfilesRequest {
         userIds?: string[];

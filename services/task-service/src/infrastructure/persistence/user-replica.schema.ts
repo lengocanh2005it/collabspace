@@ -10,6 +10,9 @@ export class UserReplica {
   @Prop({ type: String, required: true })
   email!: string;
 
+  @Prop({ type: String, default: null, index: true })
+  username?: string | null;
+
   @Prop({ type: String, required: true })
   fullName!: string;
 

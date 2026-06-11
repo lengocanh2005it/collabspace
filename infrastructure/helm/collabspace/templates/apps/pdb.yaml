@@ -1,0 +1,18 @@
+{{- if .Values.pdb.enabled }}
+{{- $ns := include "collabspace.namespace" . -}}
+{{- range $name, $app := .Values.apps }}
+{{- if $app.enabled }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ $name }}-pdb
+  namespace: {{ $ns }}
+spec:
+  minAvailable: {{ $.Values.pdb.minAvailable }}
+  selector:
+    matchLabels:
+      app: {{ $name }}
+{{- end }}
+{{- end }}
+{{- end }}

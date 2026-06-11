@@ -8,6 +8,9 @@ describe('EmailsService', () => {
   const normalizeOptionsMock = jest.fn();
   const sendMock = jest.fn();
   const configurationServiceMock = {
+    getEmailConfig: jest.fn(() => ({
+      deliveryTimeoutMs: 5000,
+    })),
     getGraphileWorkerConfig: jest.fn(() => ({
       concurrency: 5,
       connectionString: 'postgresql://worker-db',
@@ -135,6 +138,38 @@ describe('EmailsService', () => {
       subject: 'Direct send',
       text: 'hello',
       to: 'user@example.com',
+    });
+  });
+
+  it('maps direct email delivery timeouts to ServiceUnavailableException', async () => {
+    (
+      configurationServiceMock.getGraphileWorkerConfig as jest.Mock
+    ).mockReturnValue({
+      concurrency: 5,
+      connectionString: undefined,
+      enabled: false,
+      pollInterval: 2000,
+      schema: 'graphile_worker',
+    });
+    (
+      configurationServiceMock.getEmailConfig as jest.Mock
+    ).mockReturnValue({
+      deliveryTimeoutMs: 1,
+    });
+    sendMock.mockImplementation(
+      () => new Promise(() => undefined),
+    );
+
+    await expect(
+      emailsService.sendText({
+        subject: 'Timeout send',
+        text: 'hello',
+        to: 'user@example.com',
+      }),
+    ).rejects.toMatchObject({
+      response: expect.objectContaining({
+        code: 'EMAIL_DELIVERY_TIMEOUT',
+      }),
     });
   });
 });

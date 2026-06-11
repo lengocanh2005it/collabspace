@@ -1,3 +1,5 @@
+import './observability/instrumentation';
+import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -6,6 +8,9 @@ import { DataSource } from 'typeorm';
 
 import { AppModule } from './app.module';
 import { configureHttpApp } from './app.setup';
+import { UserHealthService } from './health/user-health.service';
+import { MetricsService } from './metrics/metrics.service';
+import { registerMetricsMiddleware } from './metrics/register-metrics.middleware';
 
 const toBoolean = (
   value: string | undefined,
@@ -24,10 +29,8 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   configureHttpApp(app);
+  registerMetricsMiddleware(app, app.get(MetricsService));
 
-  // =========================
-  // Swagger Configuration
-  // =========================
   const swaggerConfig = new DocumentBuilder()
     .setTitle('User Service API')
     .setDescription('CollabSpace User Service')
@@ -128,19 +131,24 @@ async function bootstrap() {
     await app.startAllMicroservices();
   }
 
+  const readiness = await app.get(UserHealthService).getReadiness();
+  Logger.log(
+    `Startup mode=${readiness.mode} ready=${readiness.ready} checks=${Object.entries(
+      readiness.checks,
+    )
+      .map(([name, check]) => `${name}:${check.status}`)
+      .join(', ')}`,
+    'Bootstrap',
+  );
+
   const port = Number(
     process.env.PORT ?? 3000,
   );
 
   await app.listen(port);
 
-  console.log(
-    `HTTP Server: http://localhost:${port}`,
-  );
-
-  console.log(
-    `Swagger Docs: http://localhost:${port}/swagger`,
-  );
+  Logger.log(`HTTP Server: http://localhost:${port}`, 'Bootstrap');
+  Logger.log(`Swagger Docs: http://localhost:${port}/swagger`, 'Bootstrap');
 }
 
 bootstrap();

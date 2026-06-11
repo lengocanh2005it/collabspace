@@ -37,6 +37,7 @@ RUN apk add --no-cache wget
 # Copy only necessary files
 COPY --from=prod-deps /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/proto ./proto
 COPY --from=builder /app/package.json ./
 
 # Security: Non-root user
@@ -46,6 +47,6 @@ USER appuser
 EXPOSE 3000
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
-  CMD wget -qO- http://localhost:3000/api/notifications/health || exit 1
+  CMD wget -qO- http://localhost:3000/api/v1/notifications/health/ready || exit 1
 
 CMD ["node", "dist/main.js"]

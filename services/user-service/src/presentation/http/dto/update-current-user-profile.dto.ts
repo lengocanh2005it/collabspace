@@ -2,7 +2,6 @@ import { Transform } from 'class-transformer';
 import {
   IsOptional,
   IsString,
-  IsUrl,
   Matches,
   MaxLength,
 } from 'class-validator';
@@ -19,18 +18,6 @@ export class UpdateCurrentUserProfileDto {
   bio?: string | null;
 
   @Transform(toNullableTrimmedString)
-  @IsUrl()
-  @MaxLength(1024)
-  @IsOptional()
-  coverUrl?: string | null;
-
-  @Transform(toNullableTrimmedString)
-  @IsString()
-  @MaxLength(100)
-  @IsOptional()
-  department?: string | null;
-
-  @Transform(toNullableTrimmedString)
   @IsString()
   @MaxLength(120)
   @IsOptional()
@@ -41,30 +28,6 @@ export class UpdateCurrentUserProfileDto {
   @MaxLength(120)
   @IsOptional()
   fullName?: string;
-
-  @Transform(toNullableTrimmedString)
-  @IsString()
-  @MaxLength(100)
-  @IsOptional()
-  jobTitle?: string | null;
-
-  @Transform(toNullableTrimmedString)
-  @IsString()
-  @MaxLength(20)
-  @IsOptional()
-  locale?: string | null;
-
-  @Transform(toNullableTrimmedString)
-  @IsString()
-  @MaxLength(120)
-  @IsOptional()
-  location?: string | null;
-
-  @Transform(toNullableTrimmedString)
-  @IsString()
-  @MaxLength(100)
-  @IsOptional()
-  timezone?: string | null;
 
   @Transform(toNullableTrimmedString)
   @IsString()

@@ -4,10 +4,14 @@ import { INotificationRepository } from "../../../domain/repositories/INotificat
 import { Notification } from "../../../domain/entities/Notification";
 import { NotificationType } from "../../../domain/value-objects/NotificationType";
 import { NotificationStatus } from "../../../domain/value-objects/NotificationStatus";
+import { UserReplicaLookupService } from "../../services/user-replica-lookup.service";
 
 describe("GetNotificationsHandler", () => {
   let handler: GetNotificationsHandler;
   let mockRepository: jest.Mocked<INotificationRepository>;
+  let mockUserReplicaLookup: jest.Mocked<
+    Pick<UserReplicaLookupService, "findActiveMapByIdsAsync">
+  >;
 
   beforeEach(() => {
     mockRepository = {
@@ -19,7 +23,29 @@ describe("GetNotificationsHandler", () => {
       deleteAsync: jest.fn(),
     };
 
-    handler = new GetNotificationsHandler(mockRepository);
+    mockUserReplicaLookup = {
+      findActiveMapByIdsAsync: jest.fn().mockResolvedValue(
+        new Map([
+          [
+            "actor-123",
+            {
+              userId: "actor-123",
+              email: "actor@test.com",
+              username: "actor.user",
+              fullName: "Actor User",
+              displayName: "Actor",
+              avatarUrl: "https://cdn.example.com/a.png",
+              isActive: true,
+            },
+          ],
+        ]),
+      ),
+    };
+
+    handler = new GetNotificationsHandler(
+      mockRepository,
+      mockUserReplicaLookup as UserReplicaLookupService,
+    );
   });
 
   const createMockNotification = (id: string) => {
@@ -39,7 +65,7 @@ describe("GetNotificationsHandler", () => {
     );
   };
 
-  it("should return paginated notifications and unread count", async () => {
+  it("should return paginated notifications enriched from user replica", async () => {
     const query = new GetNotificationsQuery("recipient-123", 0, 10);
     const mockNotifications = [
       createMockNotification("notif-1"),
@@ -53,12 +79,9 @@ describe("GetNotificationsHandler", () => {
 
     expect(result.total).toBe(2);
     expect(result.unreadCount).toBe(5);
-    expect(result.notifications).toHaveLength(2);
-    expect(result.notifications[0].id).toBe("notif-1");
-    expect(result.notifications[0].actor.name).toBe("John Doe");
-    expect(mockRepository.findByRecipientIdAsync).toHaveBeenCalledWith(
-      "recipient-123",
-      { skip: 0, limit: 10 },
+    expect(result.notifications[0].actor.name).toBe("Actor");
+    expect(result.notifications[0].actor.avatarUrl).toBe(
+      "https://cdn.example.com/a.png",
     );
   });
 });

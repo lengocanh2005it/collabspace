@@ -27,7 +27,7 @@ export class UploadAttachmentHandler implements ICommandHandler<UploadAttachment
   ): Promise<UploadAttachmentResponse> {
     // Step 1: Validate task exists
     const taskId = new TaskId(command.taskId);
-    const task = await this.taskRepository.findByIdAsync(taskId);
+    const task = await this.taskRepository.loadAggregateByIdAsync(taskId);
     if (!task) {
       throw new EntityNotFoundException("Task", command.taskId);
     }
@@ -38,8 +38,9 @@ export class UploadAttachmentHandler implements ICommandHandler<UploadAttachment
       command.taskId,
     );
 
-    // Step 3: Add attachment to task in database
-    await this.taskRepository.addAttachmentAsync(taskId, fileUrl);
+    // Step 3: Persist attachment via event-sourced aggregate
+    task.addAttachment(fileUrl);
+    await this.taskRepository.saveAsync(task);
 
     // Step 4: Return response
     return {

@@ -2,6 +2,8 @@
 
 **A workspace collaboration management platform** — a mini Notion/Slack/Jira hybrid built with microservices architecture.
 
+**Product features & status:** [docs/features.md](docs/features.md) · **MVP demo scope:** [docs/mvp-demo-scope.md](docs/mvp-demo-scope.md) · **API routes:** [docs/api-routes.md](docs/api-routes.md)
+
 ## Architecture
 
 ```
@@ -34,9 +36,9 @@
 |---------|-----------|------|----------|-----------------|
 | **auth-service** | NestJS + TypeORM | 3000 | PostgreSQL (`collabspace_auth`) | `/api/v1/auth/health` |
 | **user-service** | NestJS + TypeORM | 3000 | PostgreSQL (`collabspace_user`) | `/api/v1/users/health` |
-| **workspace-service** | Java/Kotlin + Flyway | **8080** | PostgreSQL (`collabspace_workspace`) | `/workspaces/health` |
-| **task-service** | Node.js + MongoDB | 3000 | MongoDB (`collabspace_task`) | `/tasks/health` |
-| **notification-service** | Node.js | 3000 | Redis / MongoDB | `/notifications/health` |
+| **workspace-service** | NestJS + TypeORM | **8080** | PostgreSQL (`collabspace_workspace`) | `/api/v1/workspaces/health/ready` |
+| **task-service** | NestJS + MongoDB | 3000 | MongoDB (`collabspace_task`) | `/api/v1/tasks/health/ready` |
+| **notification-service** | NestJS + MongoDB | 3000 | MongoDB | `/api/v1/notifications/health/ready` |
 
 > **CRITICAL**: `workspace-service` runs on port **8080** (Java/Kotlin), not 3000 like Node.js services.
 
@@ -127,35 +129,37 @@ docker-compose -f docker-compose.yml -f docker-compose.db.yml -f docker-compose.
 
 ### Seeded Development Accounts
 
-After seeding `auth-service` and `user-service`, these demo accounts are available:
+After `./scripts/seed.sh` (or the per-service commands below), demo data includes:
 
-| Name | Email | Role | Password |
-|------|-------|------|----------|
-| Phan Phu Tho | `tho@collabspace.dev` | `admin` | `collabspace123` |
-| Le Ngoc Anh | `ngocanh@collabspace.dev` | `member` | `collabspace123` |
-| Ngo Quang Tien | `quangtien@collabspace.dev` | `member` | `collabspace123` |
-| Vo Trung Tin | `trungtin@collabspace.dev` | `member` | `collabspace123` |
-| Demo Reviewer | `reviewer@collabspace.dev` | `viewer` | `collabspace123` |
+| Name | Email | Username | Role | Password |
+|------|-------|----------|------|----------|
+| Phan Phu Tho | `tho@collabspace.dev` | `phan.phu.tho` | `admin` | `collabspace123` |
+| Le Ngoc Anh (User A) | `ngocanh@collabspace.dev` | `le.ngoc.anh` | `member` | `collabspace123` |
+| Ngo Quang Tien (User B) | `quangtien@collabspace.dev` | `ngo.quang.tien` | `member` | `collabspace123` |
+| Vo Trung Tin | `trungtin@collabspace.dev` | `vo.trung.tin` | `member` | `collabspace123` |
+| Demo Reviewer | `reviewer@collabspace.dev` | `demo.reviewer` | `viewer` | `collabspace123` |
 
-Seed order for aligned demo data:
+Also seeded: demo workspace **CollabSpace Demo**, project **MVP Sprint**, 3 tasks (one assigned to User B), sample `@ngo.quang.tien` comment, and sample notifications for User B.
+
+Source of truth: [`scripts/demo-seed-data.json`](scripts/demo-seed-data.json).
+
+Seed order (required):
 
 ```powershell
-cd services/auth-service
-npm run seed
-
-cd ../user-service
-npm run seed
+./scripts/seed.sh
 ```
 
-Or run the shell wrappers that are easier to reuse in Docker images and CI jobs:
+Or manually:
 
-```sh
-sh ./services/auth-service/scripts/seed.sh
-sh ./services/user-service/scripts/seed.sh
-
-# seed both in the correct order
-sh ./scripts/seed.sh
+```powershell
+cd services/auth-service; pnpm run seed
+cd ../user-service; pnpm run seed
+cd ../workspace-service; pnpm run seed
+cd ../task-service; pnpm run seed
+cd ../notification-service; pnpm run seed
 ```
+
+Prerequisites: run `./scripts/migrate.sh` first; Postgres + MongoDB must be reachable via each service `.env`.
 
 ## Team
 
@@ -168,68 +172,9 @@ sh ./scripts/seed.sh
 
 ## API Routes
 
-### Auth Service (`/auth`)
-Base prefix: `/api/v1`
-- `GET /api/v1/auth/health` - Health check
-- `POST /api/v1/auth/register` - Register user, create pending profile in `user-service`, send email verification OTP
-- `POST /api/v1/auth/login` - Login and return access token + refresh token
-- `POST /api/v1/auth/refresh` - Rotate refresh token and issue a new session
-- `POST /api/v1/auth/logout` - Revoke one refresh token
-- `POST /api/v1/auth/logout-all` - Revoke all sessions for the authenticated user
-- `POST /api/v1/auth/logout-others` - Revoke all other session families except the current one
-- `GET /api/v1/auth/sessions` - List current user's refresh-token sessions
-- `DELETE /api/v1/auth/sessions/{familyId}` - Revoke a specific session family
-- `GET /api/v1/auth/me` - Get current authenticated user from access token
-- `GET /api/v1/auth/verify` - Verify bearer token and return identity; also sets `X-User-Id`, `X-User-Name`, `X-Role`, `X-Roles`, `X-Permissions`, `X-Email-Verified`, `X-Workspace-Id`, `X-Request-Id`
-- `POST /api/v1/auth/resend-verification-otp` - Resend email verification OTP with cooldown and max-attempt limits
-- `POST /api/v1/auth/verify-email` - Verify email OTP and mark email as verified
-- `POST /api/v1/auth/forgot-password` - Accept password reset request and send reset token by email
-- `POST /api/v1/auth/reset-password` - Reset password with reset token and revoke existing sessions
-- `POST /api/v1/auth/change-password` - Change password for authenticated user and revoke existing sessions
-- `POST /api/v1/auth/roles` - Create role
-- `POST /api/v1/auth/permissions` - Create permission
-- `POST /api/v1/auth/users/{userId}/roles` - Assign a role to a user
-- `POST /api/v1/auth/roles/{roleId}/permissions` - Assign a permission to a role
+Route index by service (auth, user, workspace, task, notification), gateway headers, and gRPC entry points: **[docs/api-routes.md](docs/api-routes.md)**.
 
-### User Service (`/users`)
-Base prefix: `/api/v1`
-- `GET /api/v1/users/health` - Health check
-- `GET /api/v1/users/me` - Get current user profile
-- `PATCH /api/v1/users/me` - Update current user profile
-- `GET /api/v1/users/me/preferences` - Get current user preferences
-- `PATCH /api/v1/users/me/preferences` - Update current user preferences
-- `PATCH /api/v1/users/me/status` - Update current user presence/status (`status`, `statusText`, `emoji`, `clearAt`, `lastSeenAt`)
-- `GET /api/v1/users/presence?userIds=...` - Get statuses for multiple users
-- `POST /api/v1/users/bulk` - Fetch multiple user profiles by `userIds`
-- `GET /api/v1/users?limit=&offset=&q=` - List user summaries with pagination and optional search query
-- `GET /api/v1/users/search?q=&limit=&offset=` - Search user summaries
-- `GET /api/v1/users/{id}/summary` - Get lightweight user summary
-- `GET /api/v1/users/{id}` - Get full user profile
-
-Internal service contracts:
-- `auth-service` exposes gRPC `AuthService.VerifyAccessToken` for downstream auth checks
-- `auth-service` publishes `AUTH_EMAIL_VERIFIED_EVENT` after successful email verification
-- `user-service` exposes gRPC `UserProfilesService.CreatePendingProfile` so `auth-service` can bootstrap pending profiles at registration time
-- `user-service` exposes gRPC `UserProfilesService.GetProfile` for full-name/profile hydration
-- `user-service` exposes gRPC `UserProfilesService.GetProfiles` for bulk profile hydration
-- `user-service` consumes `AUTH_EMAIL_VERIFIED_EVENT` to mark the corresponding profile as email-verified
-
-### Workspace Service (`/workspaces`)
-- `POST /workspaces` - Create workspace
-- `GET /workspaces` - List user's workspaces
-- `POST /workspaces/{id}/invite` - Invite member
-- `GET /workspaces/{id}/members` - List members
-
-### Task Service (`/tasks`)
-- `POST /tasks` - Create task
-- `GET /tasks` - List tasks (filtered by workspace)
-- `PATCH /tasks/{id}` - Update task
-- `POST /tasks/{id}/comments` - Add comment
-- `GET /tasks/health` - Health check
-
-### Notification Service
-- WebSocket: `/notifications/ws` - Real-time notifications
-- Consumes RabbitMQ events: `TASK_ASSIGNED`, `WORKSPACE_INVITED`, `COMMENT_CREATED`
+Request/response contracts and event payloads: [`.claude/docs/service-contracts.md`](.claude/docs/service-contracts.md).
 
 ## Monitoring & Observability
 
@@ -254,32 +199,29 @@ Internal service contracts:
 
 > **WARNING**: Change all credentials for production deployments!
 
-## Kubernetes Deployment
+## Kubernetes Deployment (Helm)
 
 ### Prerequisites
 - Kubernetes cluster (1.24+)
-- kubectl configured
-- Persistent volume provisioner (for storage)
+- Helm 3.12+ and `kubectl`
+- Persistent volume provisioner (for Bitnami PVCs)
+- Container images `collabspace/*` available to the cluster
 
-### Deploy to Kubernetes
+### Deploy with Helm
 
 ```bash
-# Create namespace
-kubectl apply -f infrastructure/k8s/auth-deployment.yaml
+# Recommended — umbrella chart (Bitnami data stores + Traefik + apps)
+./infrastructure/helm/scripts/install.sh
 
-# Deploy application services
-kubectl apply -f infrastructure/k8s/
+# Local minikube/kind (lighter)
+./infrastructure/helm/scripts/install.sh --local
 
-# Deploy observability stack
-kubectl apply -f infrastructure/monitoring/grafana-deployment.yaml
-kubectl apply -f infrastructure/logging/elasticsearch-deployment.yaml
-kubectl apply -f infrastructure/logging/kibana-deployment.yaml
-kubectl apply -f infrastructure/tracing/jaeger-deployment.yaml
-
-# Check deployment status
+# Check status
 kubectl get pods -n collabspace
-kubectl get services -n collabspace
+kubectl get svc traefik -n collabspace
 ```
+
+Chart docs: [infrastructure/helm/README.md](infrastructure/helm/README.md). Legacy plain YAML: [infrastructure/k8s/README.md](infrastructure/k8s/README.md).
 
 ### K8s Resource Summary
 
@@ -319,7 +261,8 @@ collabspace/
 │   └── notification-service/# Notifications (Node.js + Redis)
 ├── infrastructure/
 │   ├── docker/              # Docker Compose files
-│   ├── k8s/                 # Kubernetes manifests
+│   ├── helm/                # Helm umbrella chart (preferred for K8s)
+│   ├── k8s/                 # Legacy Kubernetes manifests
 │   ├── monitoring/          # Prometheus + Grafana configs
 │   ├── logging/             # ELK Stack configs
 │   ├── tracing/             # Jaeger configs

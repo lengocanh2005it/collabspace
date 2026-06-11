@@ -6,6 +6,8 @@ import {
   TaskAssignedEventPayload,
 } from "../../../domain/events/task.events";
 import {
+  COMMENT_MENTIONED_EVENT,
+  CommentMentionedEventPayload,
   TASK_COMMENTED_EVENT,
   TaskCommentedEventPayload,
 } from "../../../domain/events/comment.events";
@@ -30,6 +32,13 @@ export class RabbitMqEventsService implements OnModuleDestroy {
     console.log(`📤 [RABBITMQ] Đang bắn event: ${TASK_COMMENTED_EVENT}`);
 
     await lastValueFrom(this.client.emit(TASK_COMMENTED_EVENT, payload));
+  }
+
+  async publishCommentMentioned(
+    payload: CommentMentionedEventPayload,
+  ): Promise<void> {
+    await this.client.connect();
+    await lastValueFrom(this.client.emit(COMMENT_MENTIONED_EVENT, payload));
   }
 
   async onModuleDestroy(): Promise<void> {

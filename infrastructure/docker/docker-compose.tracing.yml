@@ -2,9 +2,39 @@ services:
   jaeger:
     image: jaegertracing/all-in-one:1.41
     container_name: jaeger
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
     ports:
       - "16686:16686"
+      - "4317:4317"
+      - "4318:4318"
       - "6831:6831/udp"
       - "6832:6832/udp"
     networks:
       - collabspace-network
+
+  auth-service:
+    environment:
+      TRACING_ENABLED: "true"
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318/v1/traces
+
+  user-service:
+    environment:
+      TRACING_ENABLED: "true"
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318/v1/traces
+
+  workspace-service:
+    environment:
+      TRACING_ENABLED: "true"
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318/v1/traces
+      AUTH_SERVICE_GRPC_URL: auth-service:50051
+
+  task-service:
+    environment:
+      TRACING_ENABLED: "true"
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318/v1/traces
+
+  notification-service:
+    environment:
+      TRACING_ENABLED: "true"
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318/v1/traces

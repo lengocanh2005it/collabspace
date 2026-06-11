@@ -8,6 +8,7 @@ describe('RedisService', () => {
     expire: jest.fn(),
     get: jest.fn(),
     incr: jest.fn(),
+    ping: jest.fn(),
     quit: jest.fn(),
     set: jest.fn(),
     status: 'ready',
@@ -81,5 +82,13 @@ describe('RedisService', () => {
 
     expect(redisClientMock.disconnect).toHaveBeenCalled();
     expect(redisClientMock.quit).not.toHaveBeenCalled();
+  });
+
+  it('assertAvailable throws REDIS_UNAVAILABLE when ping fails', async () => {
+    redisClientMock.ping.mockRejectedValue(new Error('ECONNREFUSED'));
+
+    await expect(redisService.assertAvailable()).rejects.toMatchObject({
+      response: { code: 'REDIS_UNAVAILABLE' },
+    });
   });
 });

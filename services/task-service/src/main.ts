@@ -1,3 +1,4 @@
+import "./observability/instrumentation";
 import "reflect-metadata";
 import { NestFactory } from "@nestjs/core";
 import { ValidationPipe } from "@nestjs/common";
@@ -5,7 +6,9 @@ import { AppModule } from "./app.module";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import { MicroserviceOptions, Transport } from "@nestjs/microservices";
 import { ConfigurationService } from "./configuration/configuration.service"; // Import service của bạn
-
+import { MetricsService } from "./metrics/metrics.service";
+import { registerRequestIdMiddleware } from "./common/http/register-request-id.middleware";
+import { registerMetricsMiddleware } from "./metrics/register-metrics.middleware";
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
@@ -49,6 +52,8 @@ async function bootstrap() {
   });
 
   app.setGlobalPrefix("api");
+  registerRequestIdMiddleware(app);
+  registerMetricsMiddleware(app, app.get(MetricsService));
 
   const config = new DocumentBuilder()
     .setTitle("CollabSpace - Task Service API")

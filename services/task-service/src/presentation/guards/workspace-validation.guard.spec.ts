@@ -43,7 +43,8 @@ describe("WorkspaceValidationGuard", () => {
     );
 
     const request = {
-      headers: { "x-user-id": "user-123", "x-user-name": "Dev User" },
+      headers: { "x-user-name": "Dev User" },
+      user: { id: "user-123", name: "Dev User" },
       body: { workspaceId: "workspace-001" },
       query: {},
       params: {},
@@ -55,6 +56,7 @@ describe("WorkspaceValidationGuard", () => {
     expect(taskRepository.findByIdAsync).not.toHaveBeenCalled();
     expect(workspaceService.validateWorkspaceAsync).toHaveBeenCalledWith(
       "workspace-001",
+      "user-123",
     );
     expect(workspaceService.checkUserPermissionAsync).toHaveBeenCalledWith(
       "workspace-001",
@@ -85,7 +87,8 @@ describe("WorkspaceValidationGuard", () => {
     );
 
     const request = {
-      headers: { "x-user-id": "user-123", "x-user-name": "Dev User" },
+      headers: { "x-user-name": "Dev User" },
+      user: { id: "user-123", name: "Dev User" },
       body: {},
       query: {},
       params: { id: taskId },
@@ -97,6 +100,7 @@ describe("WorkspaceValidationGuard", () => {
     expect(taskRepository.findByIdAsync).toHaveBeenCalledTimes(1);
     expect(workspaceService.validateWorkspaceAsync).toHaveBeenCalledWith(
       "workspace-002",
+      "user-123",
     );
     expect(workspaceService.checkUserPermissionAsync).toHaveBeenCalledWith(
       "workspace-002",
