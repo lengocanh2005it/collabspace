@@ -1,5 +1,6 @@
 import { ServiceUnavailableException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
+import { requestIdStorage } from "../../common/http/request-id.context";
 import { WorkspaceHttpClient } from "./workspace-http.client";
 
 describe("WorkspaceHttpClient", () => {
@@ -56,6 +57,36 @@ describe("WorkspaceHttpClient", () => {
         headers: {
           "X-Internal-Service-Token": "shared-secret",
         },
+      }),
+    );
+  });
+
+  it("forwards X-Request-Id from async context", async () => {
+    process.env.NODE_ENV = "production";
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        workspaceId,
+        userId,
+        isMember: true,
+        role: "member",
+      }),
+    });
+
+    const client = createClient("shared-secret");
+
+    await requestIdStorage.run({ requestId: "trace-abc" }, () =>
+      client.validateWorkspaceAsync(workspaceId, userId),
+    );
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          "X-Request-Id": "trace-abc",
+          "X-Internal-Service-Token": "shared-secret",
+        }),
       }),
     );
   });

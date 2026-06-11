@@ -1,5 +1,6 @@
 import { Injectable, ServiceUnavailableException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
+import { outboundRequestIdHeaders } from "../../common/http/request-id.context";
 import type {
   IWorkspaceClient,
   WorkspaceMember,
@@ -94,7 +95,9 @@ export class WorkspaceHttpClient implements IWorkspaceClient {
 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
-    const headers: Record<string, string> = {};
+    const headers: Record<string, string> = {
+      ...outboundRequestIdHeaders(),
+    };
 
     if (this.internalToken) {
       headers["X-Internal-Service-Token"] = this.internalToken;

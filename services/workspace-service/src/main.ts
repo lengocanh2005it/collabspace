@@ -5,6 +5,7 @@ import { ValidationPipe, Logger } from '@nestjs/common';
 import { GlobalExceptionFilter } from './presentation/http/filters/global-exception.filter';
 import { DatabaseService } from './infrastructure/database/database.service';
 import { MetricsService } from './metrics/metrics.service';
+import { registerRequestIdMiddleware } from './common/http/register-request-id.middleware';
 import { registerMetricsMiddleware } from './metrics/register-metrics.middleware';
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
@@ -13,6 +14,7 @@ async function bootstrap() {
   await app.get(DatabaseService).initialize();
 
   app.setGlobalPrefix('api/v1');
+  registerRequestIdMiddleware(app);
   registerMetricsMiddleware(app, app.get(MetricsService));
 
   app.useGlobalPipes(

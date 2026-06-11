@@ -173,6 +173,13 @@ Purpose:
 - `X-Workspace-Id`
 - `X-Request-Id`
 
+### Correlation ID (`X-Request-Id`)
+
+- Traefik `forward-auth` forwards `X-Request-Id` to `auth-service` `/verify`, which echoes it on the verify response.
+- Every HTTP service runs request-id middleware: read incoming `X-Request-Id` or generate a UUID, attach it to the request, set the response header, and store it in `AsyncLocalStorage` for outbound calls.
+- Service-to-service HTTP clients (`task-service` → `workspace-service`, `task-service` / `notification-service` → `user-service`) forward `X-Request-Id` when present in the current async context.
+- `task-service` also includes `meta.requestId` in JSON API envelopes when the header is present.
+
 Rules:
 
 - Treat these headers as trusted only if they come from the API gateway or an internal trusted hop.

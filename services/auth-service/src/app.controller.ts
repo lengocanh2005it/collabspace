@@ -15,6 +15,7 @@ import type {
   ResendEmailVerificationOtpInput,
   VerifyEmailOtpInput,
 } from '@/common/types/identity.type';
+import type { RequestWithId } from '@/common/http/request-id.middleware';
 import type { Request, Response } from 'express';
 import { AuthHealthService } from './health/auth-health.service';
 import { assertMetricsAccess } from './metrics/metrics-access';
@@ -120,8 +121,6 @@ export class AuthController {
       request.header('authorization'),
     );
 
-    const requestId = request.header('x-request-id');
-
     response.setHeader('X-User-Id', identity.userId);
 
     if (identity.fullName) {
@@ -150,9 +149,10 @@ export class AuthController {
       response.setHeader('X-Workspace-Id', identity.workspaceId);
     }
 
-    if (requestId) {
-      response.setHeader('X-Request-Id', requestId);
-    }
+    response.setHeader(
+      'X-Request-Id',
+      (request as RequestWithId).requestId,
+    );
 
     return {
       authenticated: true,

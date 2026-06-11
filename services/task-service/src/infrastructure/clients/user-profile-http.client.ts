@@ -1,5 +1,6 @@
 import { Injectable, ServiceUnavailableException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
+import { outboundRequestIdHeaders } from "../../common/http/request-id.context";
 
 export type RemoteUserReplica = {
   userId: string;
@@ -69,6 +70,7 @@ export class UserProfileHttpClient {
     const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
+      ...outboundRequestIdHeaders(),
     };
 
     if (this.internalToken) {
