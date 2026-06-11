@@ -163,12 +163,12 @@ Prerequisites: run `./scripts/migrate.sh` first; Postgres + MongoDB must be reac
 
 ## Team
 
-| Member | Name | Role | Responsibilities |
-|--------|------|------|-----------------|
-| Member 1 | Phan Phu Tho | Infrastructure Engineer | Docker, K8s, CI/CD, Monitoring, Tracing, Logging, API Gateway |
-| Member 2 | Le Ngoc Anh | Auth & User Service | JWT auth, RBAC, Profile APIs |
-| Member 3 | Ngo Quang Tien | Workspace Service | Workspace CRUD, Member invitations |
-| Member 4 | Vo Trung Tin | Task & Notification Service | Task CRUD, Comments, Events |
+| Member | Name | Role | Responsibilities | Backlog |
+|--------|------|------|------------------|---------|
+| Member 1 | Phan Phú Thọ | Infrastructure Engineer | Docker, K8s, CI/CD, secrets, backup, monitoring | [infra backlog](docs/team/phan-phu-tho-infrastructure-backlog.md) |
+| Member 2 | Lê Ngọc Anh | Auth & User Service | JWT auth, OTP, profile, user directory, gRPC | [app backlog § Anh](docs/team/application-backlog.md#lê-ngọc-anh--auth--user) |
+| Member 3 | Ngô Quang Tiến | Workspace Service | Workspace, project, invite, membership, task↔workspace integration | [app backlog § Tiến](docs/team/application-backlog.md#ngô-quang-tiến--workspace--task-integration) |
+| Member 4 | Võ Trung Tín | Task & Notification Service | Task, board, comments, notifications, demo E2E | [app backlog § Tín](docs/team/application-backlog.md#võ-trung-tín--task--notification--demo) |
 
 ## API Routes
 

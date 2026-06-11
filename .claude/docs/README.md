@@ -29,7 +29,8 @@ Detailed project context for AI agents. Keep root `CLAUDE.md` concise; put long 
 | `mvp-demo-scope.md` | MVP demo story and acceptance checklist |
 | `resilience-overview.md` | Resilience summary (Vietnamese) |
 | `backup-policy.md` | RPO/RTO, backup/restore policy |
-| `team/phan-phu-tho-infrastructure-backlog.md` | Infra engineer backlog (secrets, CI/CD, DR) |
+| `team/phan-phu-tho-infrastructure-backlog.md` | Infra backlog (Phan Phú Thọ) |
+| `team/application-backlog.md` | App backlog per developer (Anh, Tiến, Tín) |
 
 ## Related config (not in this folder)
 

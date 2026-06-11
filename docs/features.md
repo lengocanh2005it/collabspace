@@ -232,4 +232,5 @@ Hướng dẫn chạy demo: [mvp-demo-scope.md](./mvp-demo-scope.md#demo-story).
 | [README.md](../README.md) | Quick start, Docker, team |
 | [production-hardening.md](./production-hardening.md) | Prod checklist (Phase B/C) |
 | [backup-policy.md](./backup-policy.md) | Backup RPO/RTO, restore drill |
-| [team/phan-phu-tho-infrastructure-backlog.md](./team/phan-phu-tho-infrastructure-backlog.md) | Infra/DevOps việc còn lại |
+| [team/phan-phu-tho-infrastructure-backlog.md](./team/phan-phu-tho-infrastructure-backlog.md) | Infra/DevOps (Phan Phú Thọ) |
+| [team/application-backlog.md](./team/application-backlog.md) | Logic app, test, E2E, activity feed (Anh, Tiến, Tín) |

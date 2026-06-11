@@ -24,7 +24,8 @@ This repository uses **Claude Code**-style agent documentation. `CLAUDE.md` is t
 | `docs/nfrs.md` | Non-functional requirements |
 | `docs/trade-offs.md` | Architecture trade-offs |
 | `docs/production-hardening.md` | Prod checklist (Phase B trust boundaries, Phase C correlation ID) |
-| `docs/team/phan-phu-tho-infrastructure-backlog.md` | Infra/DevOps backlog (secrets, backup, CI/CD, observability) |
+| `docs/team/phan-phu-tho-infrastructure-backlog.md` | Infra/DevOps backlog (Phan Phú Thọ) |
+| `docs/team/application-backlog.md` | Application backlog (Lê Ngọc Anh, Ngô Quang Tiến, Võ Trung Tín) |
 | `docs/backup-policy.md` | RPO/RTO, backup scripts, restore drill policy |
 | `.claude/docs/mvp-roadmap.md` | MVP build order for agents |
 | `docs/mvp-demo-scope.md` | MVP demo acceptance checklist |
