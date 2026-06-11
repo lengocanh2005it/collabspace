@@ -2,7 +2,7 @@
 
 **A workspace collaboration management platform** — a mini Notion/Slack/Jira hybrid built with microservices architecture.
 
-**Product features & status:** [docs/features.md](docs/features.md) · **MVP demo scope:** [docs/mvp-demo-scope.md](docs/mvp-demo-scope.md) · **API routes:** [docs/api-routes.md](docs/api-routes.md)
+**Product features & status:** [docs/features.md](docs/features.md) · **MVP demo scope:** [docs/mvp-demo-scope.md](docs/mvp-demo-scope.md) · **API routes:** [docs/api-routes.md](docs/api-routes.md) · **Infra backlog:** [docs/team/phan-phu-tho-infrastructure-backlog.md](docs/team/phan-phu-tho-infrastructure-backlog.md)
 
 ## Architecture
 
@@ -40,7 +40,7 @@
 | **task-service** | NestJS + MongoDB | 3000 | MongoDB (`collabspace_task`) | `/api/v1/tasks/health/ready` |
 | **notification-service** | NestJS + MongoDB | 3000 | MongoDB | `/api/v1/notifications/health/ready` |
 
-> **CRITICAL**: `workspace-service` runs on port **8080** (Java/Kotlin), not 3000 like Node.js services.
+> **CRITICAL**: `workspace-service` runs on port **8080**, not 3000 like the other NestJS services.
 
 ## Infrastructure Components
 
@@ -64,7 +64,7 @@
 ### Prerequisites
 - Docker & Docker Compose
 - Node.js 18+ (for local development)
-- Java 17+ (for workspace-service local development)
+- pnpm (for NestJS services — run from each `services/*` directory)
 
 ### Docker Compose Commands
 
@@ -256,7 +256,7 @@ collabspace/
 ├── services/
 │   ├── auth-service/        # Authentication (NestJS + TypeORM)
 │   ├── user-service/        # User profiles (NestJS + TypeORM)
-│   ├── workspace-service/   # Workspaces (Java/Kotlin + Flyway)
+│   ├── workspace-service/   # Workspaces, projects, invites (NestJS + TypeORM, port 8080)
 │   ├── task-service/        # Tasks (Node.js + MongoDB)
 │   └── notification-service/# Notifications (Node.js + Redis)
 ├── infrastructure/
@@ -312,7 +312,7 @@ This project is for educational purposes.
 
 ## 🏗 Platform Foundation V2 (Convergence Hardening)
 
-The infrastructure has been converged with the service implementations (`auth`, `user`, `task`, `notification` on NestJS, `workspace` on Java).
+All five application services run on **NestJS** (`workspace-service` listens on port **8080**). Infra gaps (secrets, backup cron, CI/CD): [docs/team/phan-phu-tho-infrastructure-backlog.md](docs/team/phan-phu-tho-infrastructure-backlog.md).
 
 ### Key Upgrades:
 - **API Gateway**: Migrated all routes to `/api/v1/*` with true `forward-auth` middleware leveraging `auth-service`.

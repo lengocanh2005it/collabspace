@@ -137,4 +137,5 @@ Protected routes require `Authorization: Bearer …` (auth gRPC). Dev-only `X-Us
 |----------|----------|
 | [service-contracts.md](../.claude/docs/service-contracts.md) | Request/response shapes, error codes, event payloads |
 | [features.md](features.md) | What is implemented vs planned |
-| [mvp-demo-scope.md](mvp-demo-scope.md) | End-to-end demo script |
+| [mvp-demo-scope.md](mvp-demo-scope.md) | Demo story + acceptance (E2E script planned) |
+| [team/phan-phu-tho-infrastructure-backlog.md](team/phan-phu-tho-infrastructure-backlog.md) | Infra/DevOps backlog |

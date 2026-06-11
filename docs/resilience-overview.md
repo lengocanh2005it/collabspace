@@ -36,6 +36,8 @@ Microservices CollabSpace phụ thuộc lẫn nhau (gRPC, RabbitMQ, DB). **Desig
 - **Backup policy** → `docs/backup-policy.md`, scripts `infrastructure/backup/scripts/`.
 - **NFRs** → `docs/nfrs.md` (thuộc tính chất lượng hệ thống).
 - **Trade-offs** → `docs/trade-offs.md` (quyết định kiến trúc và cái giá).
+- **Phase C — Correlation ID** → `X-Request-Id` middleware (5 services), S2S HTTP forward; structured log injection trong app chưa 100%.
+- **Infra backlog** → `docs/team/phan-phu-tho-infrastructure-backlog.md` (Secret Manager, CI/CD, backup/restore, ELK, …).
 
 ## Drills
 
@@ -59,8 +61,16 @@ Chi tiết: `infrastructure/resilience/drills/README.md`.
 
 Chi tiết từng endpoint: xem bảng đầy đủ trong `.claude/docs/resilience.md` mục 4.
 
-## Production còn lại (ngoài code app)
+## Production còn lại (infra / vận hành)
 
-- Secrets từ External Secrets / vault — không plaintext trong Helm values prod.
-- Network policy / ingress hạn chế `/metrics` ngay cả khi có token.
-- Backup tự động + restore drill theo `docs/backup-policy.md`.
+Xem checklist đầy đủ: [production-hardening.md](./production-hardening.md) và [phan-phu-tho-infrastructure-backlog.md](./team/phan-phu-tho-infrastructure-backlog.md).
+
+| Hạng mục | Trạng thái |
+|----------|------------|
+| Secret Manager + `.env` staging/prod | Chưa — script backup có, chưa cron/offsite |
+| CI/CD pipeline (GH Actions / Jenkinsfile) | Chưa |
+| Monitoring stack trên K8s + alert routing | Manifest có, chưa deploy operational |
+| Backup tự động + restore drill | Policy + `backup-*.sh` có; chưa CronJob / restore script |
+| ELK ship log từ container | Compose có, chưa nối agent |
+| Tracing prod (`TRACING_ENABLED`) | Optional compose; chưa staging default |
+| Demo E2E script 7 bước | App team — chưa có script |

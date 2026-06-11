@@ -21,6 +21,8 @@ Read before broad changes:
 - Product features: `docs/features.md`
 - API routes & gateway: `docs/api-routes.md`
 - Trust boundaries (Phase B): `docs/production-hardening.md`, `.claude/docs/service-contracts.md` → Auth Header Propagation
+- Correlation ID (Phase C): `X-Request-Id` — `.claude/docs/service-contracts.md` → Correlation ID
+- Infra backlog: `docs/team/phan-phu-tho-infrastructure-backlog.md`
 - Cross-service data: `docs/cross-service-data.md`, `.claude/docs/read-models.md`
 - MVP roadmap: `.claude/docs/mvp-roadmap.md`
 - MVP demo acceptance: `docs/mvp-demo-scope.md`
@@ -52,7 +54,7 @@ Subagents in `.claude/agents/`: `nest-reviewer`, `mvp-implementer`, `contract-gu
   - workspace: host `3002` -> container `8080`
   - task: host `3003` -> container `3000`
   - notification: host `3004` -> container `3000`
-- Auth and user services are the most complete codebases. Workspace/task/notification are the main MVP gaps.
+- **MVP backend APIs** are largely complete per `docs/features.md`; remaining product gaps: activity feed, demo E2E script, frontend UI. **Infra prod gaps:** `docs/team/phan-phu-tho-infrastructure-backlog.md`.
 - There is no root `package.json`. Run `pnpm` commands from each service directory.
 - Use `pnpm`, not npm, for the NestJS services unless a service-specific file proves otherwise.
 

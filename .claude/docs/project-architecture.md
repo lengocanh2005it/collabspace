@@ -224,6 +224,13 @@ Trust boundaries (Phase B):
 - Internal paths `/users/internal/*`, `/workspaces/internal/*` blocked at gateway (503); S2S uses cluster DNS + `X-Internal-Service-Token`.
 - K8s: `infrastructure/k8s/network-policies.yaml` (or Helm `networkPolicies`) — default deny + per-service allow lists.
 
+Correlation ID (Phase C):
+
+- `X-Request-Id` middleware on all five HTTP services; S2S HTTP clients forward when present in async context.
+- See `.claude/docs/service-contracts.md` → Correlation ID.
+
+Infra operations backlog: `docs/team/phan-phu-tho-infrastructure-backlog.md`.
+
 When changing route prefixes, update:
 
 - Service controllers/global prefixes.

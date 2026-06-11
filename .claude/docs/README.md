@@ -24,10 +24,12 @@ Detailed project context for AI agents. Keep root `CLAUDE.md` concise; put long 
 | `api-routes.md` | HTTP route index, gateway headers, internal API rules |
 | `cross-service-data.md` | Read models, replicas, S2S patterns (Vietnamese) |
 | `nfrs.md` | Non-functional requirements |
-| `trade-offs.md` | Architecture trade-offs (incl. Phase B) |
+| `trade-offs.md` | Architecture trade-offs (Phase B, Phase C) |
 | `production-hardening.md` | Production checklist |
 | `mvp-demo-scope.md` | MVP demo story and acceptance checklist |
 | `resilience-overview.md` | Resilience summary (Vietnamese) |
+| `backup-policy.md` | RPO/RTO, backup/restore policy |
+| `team/phan-phu-tho-infrastructure-backlog.md` | Infra engineer backlog (secrets, CI/CD, DR) |
 
 ## Related config (not in this folder)
 

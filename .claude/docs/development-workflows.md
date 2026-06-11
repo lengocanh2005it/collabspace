@@ -16,7 +16,7 @@ Expected tools:
 - Docker and Docker Compose.
 - Node.js 18+ for NestJS services.
 - `pnpm` for service dependency management.
-- Java 17+ only if implementing/running `workspace-service` as Java/Kotlin.
+- All five app services are NestJS; `workspace-service` uses port **8080**.
 
 ## Environment Files
 

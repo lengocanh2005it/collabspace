@@ -19,11 +19,13 @@ Read:
 
 ## Default Priority
 
-If the user says "continue MVP" without a target, read `docs/features.md` for **Partial** items first. Typical gaps:
+If the user says "continue MVP" without a target, read `docs/features.md` for **Planned** / **Partial** items first. Typical gaps (2026-06 sync):
 
-1. Notification mark-read API and demo polish.
-2. Task delete HTTP endpoint, priority/due date, board/activity gaps.
-3. End-to-end gateway demo verification.
+1. **Demo E2E script** — 7-step story via gateway (`docs/mvp-demo-scope.md`).
+2. **Activity feed** — task/workspace timeline.
+3. **Frontend UI** — out of scope repo; backend APIs largely Done.
+
+Do **not** re-implement: board API, task delete, mark-read, Phase B/C platform work — see `docs/features.md`.
 
 ## Planning Rules
 
