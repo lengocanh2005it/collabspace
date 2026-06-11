@@ -31,7 +31,7 @@ export class TaskOutboxService {
       eventType: TASK_OUTBOX_EVENT_TASK_ASSIGNED,
       failedAt: null,
       lastError: null,
-      payload: payload as unknown as Record<string, unknown>,
+      payload: payload,
       processedAt: null,
     });
   }

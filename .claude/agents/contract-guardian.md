@@ -26,4 +26,4 @@ Report mismatches with:
 - Port or prefix drift (`/api/v1` for NestJS)
 - Identity header trust boundaries
 
-Do not edit files. End with a short sync checklist if gaps exist.
+Do not edit files. End with a short sync checklist if gaps exist, including which **agent docs** and **skills** (`.claude/skills/*/SKILL.md`) should be updated per `.claude/rules/docs-and-skills-sync.md`.

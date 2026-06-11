@@ -1,62 +1,68 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { DeleteProjectUseCase } from './delete-project.use-case';
-import { getRepositoryToken } from '@nestjs/typeorm';
-import { ProjectOrmEntity } from '../../../infrastructure/database/entities/project.orm-entity';
-import { WorkspaceMemberOrmEntity } from '../../../infrastructure/database/entities/workspace-member.orm-entity';
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
+import { DeleteProjectUseCase } from './delete-project.use-case';
+import { PROJECT_REPOSITORY } from '../../../domain/repositories/project.repository';
+import { WORKSPACE_MEMBER_REPOSITORY } from '../../../domain/repositories/workspace-member.repository';
+import { Project } from '../../../domain/entities/project.entity';
+import { WorkspaceMember } from '../../../domain/entities/workspace-member.entity';
 
 describe('DeleteProjectUseCase', () => {
   let useCase: DeleteProjectUseCase;
 
-  const mockProjectRepo = {
-    findOne: jest.fn(),
-    save: jest.fn(),
-  };
-
-  const mockMemberRepo = {
-    findOne: jest.fn(),
-  };
+  const mockProjectRepo = { findById: jest.fn(), softDelete: jest.fn() };
+  const mockMemberRepo = { findByWorkspaceAndUser: jest.fn() };
 
   beforeEach(async () => {
+    jest.clearAllMocks();
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         DeleteProjectUseCase,
-        {
-          provide: getRepositoryToken(ProjectOrmEntity),
-          useValue: mockProjectRepo,
-        },
-        {
-          provide: getRepositoryToken(WorkspaceMemberOrmEntity),
-          useValue: mockMemberRepo,
-        },
+        { provide: PROJECT_REPOSITORY, useValue: mockProjectRepo },
+        { provide: WORKSPACE_MEMBER_REPOSITORY, useValue: mockMemberRepo },
       ],
     }).compile();
-
     useCase = module.get<DeleteProjectUseCase>(DeleteProjectUseCase);
   });
 
   it('should throw ForbiddenException if user is not owner or admin', async () => {
-    mockMemberRepo.findOne.mockResolvedValue({ role: 'member' });
+    mockMemberRepo.findByWorkspaceAndUser.mockResolvedValue(
+      new WorkspaceMember('m-1', 'ws-1', 'user-1', 'member', new Date()),
+    );
     await expect(useCase.execute('user-1', 'ws-1', 'proj-1')).rejects.toThrow(
       ForbiddenException,
     );
   });
 
   it('should throw NotFoundException if project does not exist', async () => {
-    mockMemberRepo.findOne.mockResolvedValue({ role: 'admin' });
-    mockProjectRepo.findOne.mockResolvedValue(null);
+    mockMemberRepo.findByWorkspaceAndUser.mockResolvedValue(
+      new WorkspaceMember('m-1', 'ws-1', 'user-1', 'admin', new Date()),
+    );
+    mockProjectRepo.findById.mockResolvedValue(null);
     await expect(useCase.execute('user-1', 'ws-1', 'proj-1')).rejects.toThrow(
       NotFoundException,
     );
   });
 
   it('should soft delete project if allowed', async () => {
-    mockMemberRepo.findOne.mockResolvedValue({ role: 'owner' });
-    const project = { id: 'proj-1', is_deleted: false };
-    mockProjectRepo.findOne.mockResolvedValue(project);
+    mockMemberRepo.findByWorkspaceAndUser.mockResolvedValue(
+      new WorkspaceMember('m-1', 'ws-1', 'user-1', 'owner', new Date()),
+    );
+    mockProjectRepo.findById.mockResolvedValue(
+      new Project(
+        'proj-1',
+        'ws-1',
+        'P',
+        null,
+        'user-1',
+        false,
+        new Date(),
+        new Date(),
+      ),
+    );
+    mockProjectRepo.softDelete.mockResolvedValue(undefined);
+
     const result = await useCase.execute('user-1', 'ws-1', 'proj-1');
-    expect(project.is_deleted).toBe(true);
-    expect(mockProjectRepo.save).toHaveBeenCalledWith(project);
+    expect(mockProjectRepo.softDelete).toHaveBeenCalledWith('proj-1', 'ws-1');
     expect(result).toEqual({ status: 'deleted' });
   });
 });

@@ -1,28 +1,10 @@
-// src/domain/events/workspace-events.ts
+export {
+  WORKSPACE_INVITED_EVENT,
+  type EventEnvelopeFields,
+  type WorkspaceInvitedEventPayload,
+} from "@collabspace/shared";
 
-/**
- * Workspace-related Event Payloads
- * Events triggered when workspace operations occur
- */
-
-export const WORKSPACE_INVITED_EVENT = "workspace_invited";
-
-export type EventEnvelopeFields = {
-  eventId: string;
-  occurredAt: string;
-};
-
-export interface WorkspaceInvitedEventPayload extends EventEnvelopeFields {
-  workspaceId: string;
-  workspaceName: string;
-  invitedUserId: string;
-  invitedById: string;
-  invitedByName: string;
-  invitedByAvatarUrl?: string;
-  role?: string; // 'member', 'admin', etc.
-  inviteEmail?: string;
-}
-
+// Notification-service-specific workspace event types
 export interface WorkspaceMemberJoinedEventPayload {
   workspaceId: string;
   workspaceName: string;
@@ -64,11 +46,7 @@ export interface WorkspaceUpdatedEventPayload {
   workspaceName: string;
   updatedBy: string;
   updatedByName: string;
-  changes: {
-    fieldName: string;
-    oldValue: any;
-    newValue: any;
-  }[];
+  changes: { fieldName: string; oldValue: unknown; newValue: unknown }[];
 }
 
 export interface WorkspaceDeletedEventPayload {

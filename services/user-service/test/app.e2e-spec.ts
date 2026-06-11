@@ -10,6 +10,7 @@ import { UserHealthService } from '../src/health/user-health.service';
 
 describe('AppController (e2e)', () => {
   let app: INestApplication<App>;
+  const originalDatabaseUrl = process.env.DATABASE_URL;
   const authGrpcServiceMock = {
     ping: jest.fn(),
     verifyAccessToken: jest.fn(),
@@ -21,6 +22,8 @@ describe('AppController (e2e)', () => {
 
   beforeEach(async () => {
     jest.clearAllMocks();
+    delete process.env.DATABASE_URL;
+    process.env.INTERNAL_SERVICE_TOKEN = 'test-internal-token';
     authGrpcServiceMock.verifyAccessToken.mockImplementation(
       async (authorizationHeader?: string) => {
         if (!authorizationHeader) {
@@ -49,7 +52,8 @@ describe('AppController (e2e)', () => {
           status: 'up',
         },
         database: {
-          detail: 'DATABASE_URL not configured; using in-memory repository mode',
+          detail:
+            'DATABASE_URL not configured; using in-memory repository mode',
           required: false,
           status: 'disabled',
         },
@@ -196,7 +200,37 @@ describe('AppController (e2e)', () => {
       .expect(400);
   });
 
+  it('POST /users/internal/replicas accepts internal service token', () => {
+    return request(app.getHttpServer())
+      .post('/api/v1/users/internal/replicas')
+      .set('X-Internal-Service-Token', 'test-internal-token')
+      .send({ username: 'jane.doe' })
+      .expect(201)
+      .expect((response) => {
+        expect(response.body).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              userId: 'user-1',
+              username: 'jane.doe',
+            }),
+          ]),
+        );
+      });
+  });
+
+  it('POST /users/internal/replicas rejects missing internal token', () => {
+    return request(app.getHttpServer())
+      .post('/api/v1/users/internal/replicas')
+      .send({ username: 'jane.doe' })
+      .expect(401);
+  });
+
   afterEach(async () => {
     await app.close();
+    if (originalDatabaseUrl === undefined) {
+      delete process.env.DATABASE_URL;
+    } else {
+      process.env.DATABASE_URL = originalDatabaseUrl;
+    }
   });
 });

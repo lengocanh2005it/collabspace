@@ -37,7 +37,7 @@ Microservices CollabSpace phụ thuộc lẫn nhau (gRPC, RabbitMQ, DB). **Desig
 - **NFRs** → `docs/nfrs.md` (thuộc tính chất lượng hệ thống).
 - **Trade-offs** → `docs/trade-offs.md` (quyết định kiến trúc và cái giá).
 - **Phase C — Correlation ID** → `X-Request-Id` middleware (5 services), S2S HTTP forward; structured log injection trong app chưa 100%.
-- **Infra backlog** → `docs/team/phan-phu-tho-infrastructure-backlog.md` (Secret Manager, CI/CD, backup/restore, ELK, …).
+- **Infra backlog** → `docs/team/phan-phu-tho-infrastructure-backlog.md` (Vault HA + ESO operational, CI/CD, backup/restore, ELK, …). Vault scaffold: `infrastructure/vault/README.md`.
 
 ## Drills
 
@@ -67,7 +67,7 @@ Xem checklist đầy đủ: [production-hardening.md](./production-hardening.md)
 
 | Hạng mục | Trạng thái |
 |----------|------------|
-| Secret Manager + `.env` staging/prod | Chưa — script backup có, chưa cron/offsite |
+| HashiCorp Vault + ESO (staging/prod) | **Partial** — scaffold `infrastructure/vault/` (dev Compose, seed/sync, ESO YAML); chưa deploy Vault HA + rotation operational |
 | CI/CD pipeline (GH Actions / Jenkinsfile) | Chưa |
 | Monitoring stack trên K8s + alert routing | Manifest có, chưa deploy operational |
 | Backup tự động + restore drill | Policy + `backup-*.sh` có; chưa CronJob / restore script |

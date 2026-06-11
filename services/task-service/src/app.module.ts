@@ -28,6 +28,7 @@ import { EditCommentHandler } from "./application/usecases/comments/edit/edit-co
 import { DeleteCommentHandler } from "./application/usecases/comments/delete/delete-comment.handler";
 import { SyncUserReplicaHandler } from "./application/usecases/sync-user-replica.handler";
 import { CreateUserReplicaHandler } from "./application/usecases/create-user-replica.handler";
+import { GetTaskActivityHandler } from "./application/usecases/get-task-activity.handler";
 
 // Services
 import { AzureBlobService } from "./infrastructure/services/azure-blob.service";
@@ -103,6 +104,7 @@ const Handlers = [
   DeleteCommentHandler,
   SyncUserReplicaHandler,
   CreateUserReplicaHandler,
+  GetTaskActivityHandler,
 ];
 
 @Module({

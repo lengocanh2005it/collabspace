@@ -53,11 +53,13 @@ export class MongoTaskEventStore implements ITaskEventStore {
       );
     }
 
-    const storedEvents: StoredTaskDomainEvent[] = events.map((event, index) => ({
-      ...event,
-      streamId,
-      version: expectedVersion + index + 1,
-    }));
+    const storedEvents: StoredTaskDomainEvent[] = events.map(
+      (event, index) => ({
+        ...event,
+        streamId,
+        version: expectedVersion + index + 1,
+      }),
+    );
 
     try {
       await this.eventModel.insertMany(

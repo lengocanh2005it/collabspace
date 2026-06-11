@@ -10,6 +10,13 @@ import {
   Headers,
   Res,
 } from '@nestjs/common';
+import {
+  ApiBearerAuth,
+  ApiHeader,
+  ApiOperation,
+  ApiParam,
+  ApiTags,
+} from '@nestjs/swagger';
 import type { Response } from 'express';
 import { UserId } from './decorators/user-id.decorator';
 import { CreateWorkspaceDto } from '../../application/dto/create-workspace.dto';
@@ -22,6 +29,8 @@ import { ListMembersUseCase } from '../../application/use-cases/workspace/list-m
 import { IdempotencyService } from '../../infrastructure/idempotency/idempotency.service';
 import { AuthGuard } from './guards/auth.guard';
 
+@ApiTags('workspaces')
+@ApiBearerAuth()
 @Controller('workspaces')
 @UseGuards(AuthGuard)
 export class WorkspaceController {
@@ -35,6 +44,12 @@ export class WorkspaceController {
   ) {}
 
   @Post()
+  @ApiOperation({ summary: 'Create workspace' })
+  @ApiHeader({
+    name: 'Idempotency-Key',
+    required: false,
+    description: 'Optional idempotency key (24h replay)',
+  })
   async createWorkspace(
     @UserId() userId: string,
     @Body() dto: CreateWorkspaceDto,
@@ -72,11 +87,14 @@ export class WorkspaceController {
   }
 
   @Get()
+  @ApiOperation({ summary: 'List workspaces for current user' })
   async listWorkspaces(@UserId() userId: string) {
     return this.listWorkspacesUseCase.execute(userId);
   }
 
   @Get(':id')
+  @ApiOperation({ summary: 'Get workspace by id' })
+  @ApiParam({ name: 'id', format: 'uuid' })
   async getWorkspace(
     @UserId() userId: string,
     @Param('id', ParseUUIDPipe) workspaceId: string,
@@ -85,6 +103,8 @@ export class WorkspaceController {
   }
 
   @Patch(':id')
+  @ApiOperation({ summary: 'Update workspace' })
+  @ApiParam({ name: 'id', format: 'uuid' })
   async updateWorkspace(
     @UserId() userId: string,
     @Param('id', ParseUUIDPipe) workspaceId: string,
@@ -94,6 +114,8 @@ export class WorkspaceController {
   }
 
   @Get(':id/members')
+  @ApiOperation({ summary: 'List workspace members' })
+  @ApiParam({ name: 'id', format: 'uuid' })
   async listMembers(
     @UserId() userId: string,
     @Param('id', ParseUUIDPipe) workspaceId: string,

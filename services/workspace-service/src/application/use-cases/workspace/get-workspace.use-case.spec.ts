@@ -1,61 +1,60 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { GetWorkspaceUseCase } from './get-workspace.use-case';
-import { getRepositoryToken } from '@nestjs/typeorm';
-import { WorkspaceOrmEntity } from '../../../infrastructure/database/entities/workspace.orm-entity';
-import { WorkspaceMemberOrmEntity } from '../../../infrastructure/database/entities/workspace-member.orm-entity';
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
+import { GetWorkspaceUseCase } from './get-workspace.use-case';
+import { WORKSPACE_REPOSITORY } from '../../../domain/repositories/workspace.repository';
+import { WORKSPACE_MEMBER_REPOSITORY } from '../../../domain/repositories/workspace-member.repository';
+import { Workspace } from '../../../domain/entities/workspace.entity';
+import { WorkspaceMember } from '../../../domain/entities/workspace-member.entity';
 
 describe('GetWorkspaceUseCase', () => {
   let useCase: GetWorkspaceUseCase;
 
-  const mockWorkspaceRepo = {
-    findOne: jest.fn(),
-  };
-
-  const mockMemberRepo = {
-    findOne: jest.fn(),
-  };
+  const mockWorkspaceRepo = { findById: jest.fn() };
+  const mockMemberRepo = { findByWorkspaceAndUser: jest.fn() };
 
   beforeEach(async () => {
+    jest.clearAllMocks();
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         GetWorkspaceUseCase,
-        {
-          provide: getRepositoryToken(WorkspaceOrmEntity),
-          useValue: mockWorkspaceRepo,
-        },
-        {
-          provide: getRepositoryToken(WorkspaceMemberOrmEntity),
-          useValue: mockMemberRepo,
-        },
+        { provide: WORKSPACE_REPOSITORY, useValue: mockWorkspaceRepo },
+        { provide: WORKSPACE_MEMBER_REPOSITORY, useValue: mockMemberRepo },
       ],
     }).compile();
-
     useCase = module.get<GetWorkspaceUseCase>(GetWorkspaceUseCase);
   });
 
   it('should throw ForbiddenException if user is not a member', async () => {
-    mockMemberRepo.findOne.mockResolvedValue(null);
-    await expect(useCase.execute('user-1', 'workspace-1')).rejects.toThrow(
+    mockMemberRepo.findByWorkspaceAndUser.mockResolvedValue(null);
+    await expect(useCase.execute('user-1', 'ws-1')).rejects.toThrow(
       ForbiddenException,
     );
   });
 
   it('should throw NotFoundException if workspace does not exist', async () => {
-    mockMemberRepo.findOne.mockResolvedValue({ role: 'member' });
-    mockWorkspaceRepo.findOne.mockResolvedValue(null);
-    await expect(useCase.execute('user-1', 'workspace-1')).rejects.toThrow(
+    mockMemberRepo.findByWorkspaceAndUser.mockResolvedValue(
+      new WorkspaceMember('m-1', 'ws-1', 'user-1', 'member', new Date()),
+    );
+    mockWorkspaceRepo.findById.mockResolvedValue(null);
+    await expect(useCase.execute('user-1', 'ws-1')).rejects.toThrow(
       NotFoundException,
     );
   });
 
   it('should return workspace if user is member and workspace exists', async () => {
-    mockMemberRepo.findOne.mockResolvedValue({ role: 'member' });
-    mockWorkspaceRepo.findOne.mockResolvedValue({
-      id: 'workspace-1',
-      name: 'Test',
-    });
-    const result = await useCase.execute('user-1', 'workspace-1');
-    expect(result).toEqual({ id: 'workspace-1', name: 'Test' });
+    const ws = new Workspace(
+      'ws-1',
+      'Test',
+      null,
+      'user-1',
+      new Date(),
+      new Date(),
+    );
+    mockMemberRepo.findByWorkspaceAndUser.mockResolvedValue(
+      new WorkspaceMember('m-1', 'ws-1', 'user-1', 'member', new Date()),
+    );
+    mockWorkspaceRepo.findById.mockResolvedValue(ws);
+    const result = await useCase.execute('user-1', 'ws-1');
+    expect(result).toBe(ws);
   });
 });

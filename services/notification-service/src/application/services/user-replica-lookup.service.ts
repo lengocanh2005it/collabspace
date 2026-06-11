@@ -21,7 +21,9 @@ export class UserReplicaLookupService {
   async findActiveMapByIdsAsync(
     userIds: string[],
   ): Promise<Map<string, UserReplica>> {
-    const uniqueIds = [...new Set(userIds.map((id) => id.trim()).filter(Boolean))];
+    const uniqueIds = [
+      ...new Set(userIds.map((id) => id.trim()).filter(Boolean)),
+    ];
     const result = new Map<string, UserReplica>();
 
     if (uniqueIds.length === 0) {
@@ -38,12 +40,16 @@ export class UserReplicaLookupService {
 
     const missing = uniqueIds.filter((userId) => !result.has(userId));
 
-    if (missing.length === 0 || !this.userProfileHttpClient.isFallbackEnabled()) {
+    if (
+      missing.length === 0 ||
+      !this.userProfileHttpClient.isFallbackEnabled()
+    ) {
       return result;
     }
 
-    const remoteReplicas =
-      await this.userProfileHttpClient.lookupReplicas({ userIds: missing });
+    const remoteReplicas = await this.userProfileHttpClient.lookupReplicas({
+      userIds: missing,
+    });
 
     if (remoteReplicas.length > 0) {
       this.metricsService.recordReplicaFallback("findManyByIds");

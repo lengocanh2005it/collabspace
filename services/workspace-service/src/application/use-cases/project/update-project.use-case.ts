@@ -1,21 +1,26 @@
 import {
+  ForbiddenException,
+  Inject,
   Injectable,
   NotFoundException,
-  ForbiddenException,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { ProjectOrmEntity } from '../../../infrastructure/database/entities/project.orm-entity';
-import { WorkspaceMemberOrmEntity } from '../../../infrastructure/database/entities/workspace-member.orm-entity';
 import { UpdateProjectDto } from '../../dto/update-project.dto';
+import {
+  type IProjectRepository,
+  PROJECT_REPOSITORY,
+} from '../../../domain/repositories/project.repository';
+import {
+  type IWorkspaceMemberRepository,
+  WORKSPACE_MEMBER_REPOSITORY,
+} from '../../../domain/repositories/workspace-member.repository';
 
 @Injectable()
 export class UpdateProjectUseCase {
   constructor(
-    @InjectRepository(ProjectOrmEntity)
-    private readonly projectRepo: Repository<ProjectOrmEntity>,
-    @InjectRepository(WorkspaceMemberOrmEntity)
-    private readonly memberRepo: Repository<WorkspaceMemberOrmEntity>,
+    @Inject(PROJECT_REPOSITORY)
+    private readonly projectRepo: IProjectRepository,
+    @Inject(WORKSPACE_MEMBER_REPOSITORY)
+    private readonly memberRepo: IWorkspaceMemberRepository,
   ) {}
 
   async execute(
@@ -24,25 +29,22 @@ export class UpdateProjectUseCase {
     projectId: string,
     dto: UpdateProjectDto,
   ) {
-    const member = await this.memberRepo.findOne({
-      where: { workspace_id: workspaceId, user_id: userId },
-    });
-
+    const member = await this.memberRepo.findByWorkspaceAndUser(
+      workspaceId,
+      userId,
+    );
     if (!member || (member.role !== 'owner' && member.role !== 'admin')) {
       throw new ForbiddenException('Only admins or owners can update projects');
     }
 
-    const project = await this.projectRepo.findOne({
-      where: { id: projectId, workspace_id: workspaceId, is_deleted: false },
-    });
-
+    const project = await this.projectRepo.findById(projectId, workspaceId);
     if (!project) {
       throw new NotFoundException('Project not found');
     }
 
-    if (dto.name !== undefined) project.name = dto.name;
-    if (dto.description !== undefined) project.description = dto.description;
-
-    return this.projectRepo.save(project);
+    return this.projectRepo.update(projectId, workspaceId, {
+      name: dto.name,
+      description: dto.description,
+    });
   }
 }

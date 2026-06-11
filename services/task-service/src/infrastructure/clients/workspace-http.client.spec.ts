@@ -99,9 +99,9 @@ describe("WorkspaceHttpClient", () => {
     });
 
     const client = createClient();
-    await expect(client.validateWorkspaceAsync(workspaceId, userId)).resolves.toBe(
-      false,
-    );
+    await expect(
+      client.validateWorkspaceAsync(workspaceId, userId),
+    ).resolves.toBe(false);
   });
 
   it("should reject when internal token is missing in production", async () => {

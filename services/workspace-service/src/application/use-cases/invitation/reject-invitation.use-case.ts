@@ -1,32 +1,28 @@
 import {
+  BadRequestException,
+  Inject,
   Injectable,
   NotFoundException,
-  BadRequestException,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { InvitationOrmEntity } from '../../../infrastructure/database/entities/invitation.orm-entity';
+import {
+  type IInvitationRepository,
+  INVITATION_REPOSITORY,
+} from '../../../domain/repositories/invitation.repository';
 
 @Injectable()
 export class RejectInvitationUseCase {
   constructor(
-    @InjectRepository(InvitationOrmEntity)
-    private readonly invitationRepo: Repository<InvitationOrmEntity>,
+    @Inject(INVITATION_REPOSITORY)
+    private readonly invitationRepo: IInvitationRepository,
   ) {}
 
   async execute(userId: string, invitationId: string) {
-    const invitation = await this.invitationRepo.findOne({
-      where: { id: invitationId },
-    });
-
+    const invitation = await this.invitationRepo.findById(invitationId);
     if (!invitation) throw new NotFoundException('Invitation not found');
     if (invitation.status !== 'pending')
       throw new BadRequestException('Invitation is not pending');
 
-    invitation.status = 'rejected';
-    invitation.invitee_user_id = userId;
-    await this.invitationRepo.save(invitation);
-
+    await this.invitationRepo.updateStatus(invitationId, 'rejected', userId);
     return { status: 'rejected' };
   }
 }

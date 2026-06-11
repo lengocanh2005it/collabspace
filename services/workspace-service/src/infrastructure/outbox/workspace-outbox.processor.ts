@@ -58,7 +58,9 @@ export class WorkspaceOutboxProcessor implements OnModuleInit, OnModuleDestroy {
       const reclaimed = await this.workspaceOutboxService.reclaimStaleClaims();
 
       if (reclaimed > 0) {
-        this.logger.warn(`Reclaimed ${reclaimed} stale workspace outbox event(s)`);
+        this.logger.warn(
+          `Reclaimed ${reclaimed} stale workspace outbox event(s)`,
+        );
       }
 
       const events = await this.workspaceOutboxService.claimPendingBatch();

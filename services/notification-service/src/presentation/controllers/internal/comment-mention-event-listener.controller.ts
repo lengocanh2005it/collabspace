@@ -9,7 +9,9 @@ import { NotificationType } from "../../../domain/value-objects/NotificationType
 
 @Controller()
 export class CommentMentionEventListenerController {
-  private readonly logger = new Logger(CommentMentionEventListenerController.name);
+  private readonly logger = new Logger(
+    CommentMentionEventListenerController.name,
+  );
 
   constructor(private readonly commandBus: CommandBus) {}
 

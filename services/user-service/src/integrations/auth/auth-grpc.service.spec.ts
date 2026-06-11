@@ -4,8 +4,8 @@ import { AuthGrpcService } from './auth-grpc.service';
 
 describe('AuthGrpcService', () => {
   const verifyAccessTokenMock = jest.fn();
-  const waitForReadyMock = jest.fn((_: number, callback: (error?: Error | null) => void) =>
-    callback(null),
+  const waitForReadyMock = jest.fn(
+    (_: number, callback: (error?: Error | null) => void) => callback(null),
   );
   const clientMock = {
     getClientByServiceName: jest.fn(() => ({
@@ -22,7 +22,7 @@ describe('AuthGrpcService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     process.env.AUTH_SERVICE_GRPC_TIMEOUT_MS = '3000';
-    service = new AuthGrpcService(clientMock as never);
+    service = new AuthGrpcService(clientMock);
     service.onModuleInit();
   });
 
@@ -43,9 +43,7 @@ describe('AuthGrpcService', () => {
       }),
     );
 
-    await expect(
-      service.verifyAccessToken('Bearer token-1'),
-    ).resolves.toEqual({
+    await expect(service.verifyAccessToken('Bearer token-1')).resolves.toEqual({
       emailVerified: true,
       permissions: ['users.read'],
       role: 'member',
@@ -69,9 +67,7 @@ describe('AuthGrpcService', () => {
   });
 
   it('maps timeout errors to AUTH_SERVICE_GRPC_TIMEOUT', async () => {
-    verifyAccessTokenMock.mockReturnValue(
-      throwError(() => new TimeoutError()),
-    );
+    verifyAccessTokenMock.mockReturnValue(throwError(() => new TimeoutError()));
 
     await expect(
       service.verifyAccessToken('Bearer token-1'),

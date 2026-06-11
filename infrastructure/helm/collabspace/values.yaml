@@ -5,8 +5,14 @@ global:
   namespace: collabspace
   createNamespace: true
   imagePullPolicy: Always
+  # When true, Helm does not render {app}-secrets — use External Secrets Operator + Vault
+  # (infrastructure/vault/k8s/). Pods still mount secrets via secretRef in deployment.yaml.
+  externalSecrets:
+    enabled: false
+    vaultKvPath: collabspace/dev
   secrets:
     jwtSecret: change-me-in-production
+    internalServiceToken: change-me-in-production
     postgresPassword: postgres
     mongoUsername: admin
     mongoPassword: password

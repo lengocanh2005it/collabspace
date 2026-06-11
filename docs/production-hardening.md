@@ -8,7 +8,7 @@ Use before exposing CollabSpace beyond local/demo environments.
 - [x] `preStop` sleep + `terminationGracePeriodSeconds` (see `infrastructure/k8s/*-deployment.yaml` and Helm templates).
 - [ ] Resource requests/limits tuned after load test.
 - [x] PodDisruptionBudgets for stateless app tiers (`infrastructure/k8s/pdb.yaml`).
-- [ ] **Secrets:** replace placeholder `stringData` — use External Secrets Operator, Sealed Secrets, or cloud secret manager. Set `global.secrets.*` in Helm only via CI/CD secret injection, not committed values.
+- [ ] **Secrets:** replace placeholder `stringData` — use **HashiCorp Vault + External Secrets Operator** (`infrastructure/vault/`) or Sealed Secrets / cloud secret manager. Set `global.secrets.*` in Helm only via CI/CD secret injection, not committed values. Enable `global.externalSecrets.enabled: true` when ESO manages `{app}-secrets`.
 - [x] Prometheus scrape paths: `/api/v1/*/metrics` on each service.
 - [ ] **Metrics auth:** set `global.secrets.metricsAuthToken` in Helm; configure Prometheus `authorization.credentials` or `bearer_token` / custom header `X-Metrics-Token`. Leave empty only in local dev.
 
@@ -50,8 +50,8 @@ Use before exposing CollabSpace beyond local/demo environments.
 
 | Secret | Consumers | Source |
 |--------|-----------|--------|
-| `JWT_SECRET` | auth (sign); peers verify via auth gRPC | Secret manager |
-| `INTERNAL_SERVICE_TOKEN` | user, workspace (inbound); task, notification (outbound S2S) | Secret manager — **Helm template gap:** not yet in `secret.yaml` |
+| `JWT_SECRET` | auth (sign); peers verify via auth gRPC | Vault `secret/collabspace/<env>` → ESO |
+| `INTERNAL_SERVICE_TOKEN` | user, workspace (inbound); task, notification (outbound S2S) | Vault → ESO; Helm `global.secrets.internalServiceToken` when ESO disabled |
 | `POSTGRES_PASSWORD` | auth, user, workspace + Bitnami postgres | Managed DB or secret |
 | `REDIS_PASSWORD` | auth, notification | Secret manager |
 | `RABBITMQ_PASSWORD` | publishers/consumers | Secret manager |
@@ -62,6 +62,7 @@ Helm: `infrastructure/helm/collabspace/values.yaml` → `global.secrets` is for 
 
 ## Related docs
 
+- Vault + ESO setup: `infrastructure/vault/README.md`
 - Resilience policy: `.claude/docs/resilience.md`
 - Backup policy: `docs/backup-policy.md`
 - Overview (VI): `docs/resilience-overview.md`

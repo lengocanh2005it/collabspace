@@ -167,13 +167,7 @@ export class Task {
       [],
       null,
       null,
-      UserSnapshot.create(
-        "legacy",
-        "legacy@local",
-        "Legacy",
-        "Legacy",
-        null,
-      ),
+      UserSnapshot.create("legacy", "legacy@local", "Legacy", "Legacy", null),
       new Date(0),
       new Date(0),
     );

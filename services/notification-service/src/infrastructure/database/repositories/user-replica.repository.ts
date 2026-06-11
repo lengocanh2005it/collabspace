@@ -1,8 +1,8 @@
 import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
-import { IUserReplicaRepository } from "../../application/ports/IUserReplicaRepository";
-import { UserReplica } from "../database/schemas/user-replica.schema";
+import { IUserReplicaRepository } from "../../../application/ports/IUserReplicaRepository";
+import { UserReplica } from "../schemas/user-replica.schema";
 
 @Injectable()
 export class UserReplicaRepository implements IUserReplicaRepository {
@@ -35,7 +35,11 @@ export class UserReplicaRepository implements IUserReplicaRepository {
 
   async upsertAsync(data: Partial<UserReplica>): Promise<void> {
     await this.userReplicaModel
-      .findOneAndUpdate({ userId: data.userId }, { $set: data }, { upsert: true, new: true })
+      .findOneAndUpdate(
+        { userId: data.userId },
+        { $set: data },
+        { upsert: true, new: true },
+      )
       .exec();
   }
 

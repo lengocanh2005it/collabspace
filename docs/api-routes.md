@@ -18,6 +18,20 @@ Clients must **not** send identity headers — Traefik removes them before forwa
 
 Internal service-to-service paths (`/users/internal/*`, `/workspaces/internal/*`) are **blocked at the gateway**; use Docker/K8s service DNS with `X-Internal-Service-Token`.
 
+## OpenAPI (Swagger UI)
+
+Each service exposes interactive docs at **`/swagger`** on its HTTP port (direct access, not via Traefik path prefix):
+
+| Service | URL (Docker host port) |
+|---------|-------------------------|
+| auth | http://localhost:3000/swagger |
+| user | http://localhost:3001/swagger |
+| workspace | http://localhost:3002/swagger |
+| task | http://localhost:3003/swagger |
+| notification | http://localhost:3004/swagger |
+
+Use **Authorize** with Bearer JWT for protected routes. Internal S2S routes document `X-Internal-Service-Token`.
+
 ---
 
 ## Auth Service
@@ -101,6 +115,7 @@ Protected routes require `Authorization: Bearer …` (auth gRPC). Dev-only `X-Us
 | GET | `/` | List tasks (`workspaceId`, `status`, `assigneeId`, `priority`, `projectId`) |
 | GET | `/board` | Kanban board grouped by status |
 | GET | `/{id}` | Task detail |
+| GET | `/{id}/activity` | Activity timeline (`limit`, `offset`) |
 | PATCH | `/{id}/details` | Title, description, priority, dueDate, labels |
 | PATCH | `/{id}/status` | Change status |
 | PATCH | `/{id}/assignee` | Assign / unassign (`Idempotency-Key` supported) |

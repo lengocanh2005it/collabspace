@@ -9,5 +9,20 @@
   },
   "env": {
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "0"
+  },
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "shell": "bash",
+            "command": "SERVICES=(auth-service user-service workspace-service task-service notification-service); CHANGED=$(git diff --name-only HEAD 2>/dev/null; git diff --cached --name-only 2>/dev/null); for svc in \"${SERVICES[@]}\"; do if echo \"$CHANGED\" | grep -q \"^services/$svc/\"; then echo \"=== Verifying $svc ===\"; (cd \"services/$svc\" && pnpm run lint && pnpm run build && pnpm run test); fi; done",
+            "timeout": 300,
+            "statusMessage": "Verifying changed services (lint + build + test)..."
+          }
+        ]
+      }
+    ]
   }
 }

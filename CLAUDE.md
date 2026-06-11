@@ -23,6 +23,7 @@ Read before broad changes:
 - Trust boundaries (Phase B): `docs/production-hardening.md`, `.claude/docs/service-contracts.md` → Auth Header Propagation
 - Correlation ID (Phase C): `X-Request-Id` — `.claude/docs/service-contracts.md` → Correlation ID
 - Infra backlog: `docs/team/phan-phu-tho-infrastructure-backlog.md`
+- Secrets (HashiCorp Vault): `infrastructure/vault/README.md`
 - App backlog (Anh, Tiến, Tín): `docs/team/application-backlog.md`
 - Cross-service data: `docs/cross-service-data.md`, `.claude/docs/read-models.md`
 - MVP roadmap: `.claude/docs/mvp-roadmap.md`
@@ -40,6 +41,7 @@ Subagents in `.claude/agents/`: `nest-reviewer`, `mvp-implementer`, `contract-gu
 - `services/task-service`: NestJS + CQRS + MongoDB tasks/comments service.
 - `services/notification-service`: NestJS + CQRS + MongoDB notification consumer/list API.
 - `infrastructure/docker`: Docker Compose stack.
+- `infrastructure/vault`: HashiCorp Vault (dev Compose, seed/sync scripts, ESO manifests).
 - `infrastructure/k8s`: Kubernetes manifests.
 - `api-gateway`: Traefik static/dynamic config.
 - `docs/features.md`: product features and implementation status (canonical).
@@ -55,8 +57,8 @@ Subagents in `.claude/agents/`: `nest-reviewer`, `mvp-implementer`, `contract-gu
   - workspace: host `3002` -> container `8080`
   - task: host `3003` -> container `3000`
   - notification: host `3004` -> container `3000`
-- **MVP backend APIs** are largely complete per `docs/features.md`; remaining product gaps: activity feed, demo E2E script, frontend UI. **Infra prod gaps:** `docs/team/phan-phu-tho-infrastructure-backlog.md`.
-- There is no root `package.json`. Run `pnpm` commands from each service directory.
+- **MVP backend APIs** are largely complete per `docs/features.md`; remaining product gaps: workspace-level activity feed, per-service e2e tests, OpenAPI 5/5, frontend UI. **Demo E2E script:** `scripts/demo-e2e.sh` / `.ps1`. **Infra prod gaps:** `docs/team/phan-phu-tho-infrastructure-backlog.md`.
+- **pnpm workspace** at repo root (`package.json`, `pnpm-workspace.yaml`) — `pnpm run build|test` from root, or per `services/*`.
 - Use `pnpm`, not npm, for the NestJS services unless a service-specific file proves otherwise.
 
 ## Default Working Style
@@ -66,13 +68,16 @@ Subagents in `.claude/agents/`: `nest-reviewer`, `mvp-implementer`, `contract-gu
 - Preserve existing module style (see `.claude/docs/service-architecture.md`):
   - `auth-service`: feature modules under `src/modules/*`, `AppService` orchestration.
   - `user-service`: presentation → application/use-cases → domain ports → infrastructure.
-  - `workspace-service`: presentation → use-cases → direct TypeORM repositories.
+  - `workspace-service`: presentation → use-cases → domain ports → TypeORM adapters.
   - `task-service` / `notification-service`: CQRS handlers, domain entities, Mongo repositories.
 - Service-local cheat sheets: `services/<service>/CLAUDE.md`.
 - Add focused tests for new use cases, service methods, repository behavior, gRPC integrations, and controller behavior when the change has user-visible behavior.
+- **Docs & skills sync:** when code changes routes, events, env, auth, resilience, or MVP status, update related agent docs (`.claude/docs/`, `services/*/CLAUDE.md`, `.claude/rules/`) and skills (`.claude/skills/`) in the same change when needed — see `.claude/docs/agent-onboarding.md` and `.claude/rules/docs-and-skills-sync.md`.
 - Avoid broad rewrites, dependency churn, or formatting unrelated files.
 - Do not invent production secrets. Use `.env.example` patterns and document required variables.
-- Shared local dev secrets (see `infrastructure/docker/.env.example`): `JWT_SECRET`, `INTERNAL_SERVICE_TOKEN` (same value in user/workspace/task/notification); `ALLOW_DEV_IDENTITY_HEADERS=true` only in local `.env`, never production.
+- **Secrets:** apps read env vars only. **Local:** `.env` or optional Vault dev (`docker-compose.vault.yml` → `infrastructure/vault/scripts/`). **K8s:** Vault + External Secrets Operator → `{app}-secrets`; Helm `global.externalSecrets.enabled: true`. See `infrastructure/vault/README.md`.
+- Shared dev values (manual `.env` or Vault seed): `JWT_SECRET`, `INTERNAL_SERVICE_TOKEN` (same in user/workspace/task/notification) — `infrastructure/docker/.env.example`.
+- `ALLOW_DEV_IDENTITY_HEADERS=true` only in local `.env`, never production.
 
 ## Common Commands
 

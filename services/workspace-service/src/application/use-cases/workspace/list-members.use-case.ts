@@ -1,26 +1,25 @@
-import { Injectable, ForbiddenException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { WorkspaceMemberOrmEntity } from '../../../infrastructure/database/entities/workspace-member.orm-entity';
+import { ForbiddenException, Inject, Injectable } from '@nestjs/common';
+import {
+  type IWorkspaceMemberRepository,
+  WORKSPACE_MEMBER_REPOSITORY,
+} from '../../../domain/repositories/workspace-member.repository';
 
 @Injectable()
 export class ListMembersUseCase {
   constructor(
-    @InjectRepository(WorkspaceMemberOrmEntity)
-    private readonly memberRepo: Repository<WorkspaceMemberOrmEntity>,
+    @Inject(WORKSPACE_MEMBER_REPOSITORY)
+    private readonly memberRepo: IWorkspaceMemberRepository,
   ) {}
 
   async execute(userId: string, workspaceId: string) {
-    const requestingMember = await this.memberRepo.findOne({
-      where: { workspace_id: workspaceId, user_id: userId },
-    });
-
+    const requestingMember = await this.memberRepo.findByWorkspaceAndUser(
+      workspaceId,
+      userId,
+    );
     if (!requestingMember) {
       throw new ForbiddenException('You are not a member of this workspace');
     }
 
-    return this.memberRepo.find({
-      where: { workspace_id: workspaceId },
-    });
+    return this.memberRepo.findByWorkspace(workspaceId);
   }
 }

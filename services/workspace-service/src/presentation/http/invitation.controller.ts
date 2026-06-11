@@ -8,6 +8,13 @@ import {
   Headers,
   Res,
 } from '@nestjs/common';
+import {
+  ApiBearerAuth,
+  ApiHeader,
+  ApiOperation,
+  ApiParam,
+  ApiTags,
+} from '@nestjs/swagger';
 import type { Response } from 'express';
 import { UserId } from './decorators/user-id.decorator';
 import { InviteMemberDto } from '../../application/dto/invite-member.dto';
@@ -17,6 +24,8 @@ import { RejectInvitationUseCase } from '../../application/use-cases/invitation/
 import { IdempotencyService } from '../../infrastructure/idempotency/idempotency.service';
 import { AuthGuard } from './guards/auth.guard';
 
+@ApiTags('invitations')
+@ApiBearerAuth()
 @Controller()
 @UseGuards(AuthGuard)
 export class InvitationController {
@@ -28,6 +37,13 @@ export class InvitationController {
   ) {}
 
   @Post('workspaces/:workspaceId/invite')
+  @ApiOperation({ summary: 'Invite member by email' })
+  @ApiParam({ name: 'workspaceId', format: 'uuid' })
+  @ApiHeader({
+    name: 'Idempotency-Key',
+    required: false,
+    description: 'Optional idempotency key (24h replay)',
+  })
   async inviteMember(
     @UserId() userId: string,
     @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
@@ -70,6 +86,8 @@ export class InvitationController {
   }
 
   @Post('invitations/:id/accept')
+  @ApiOperation({ summary: 'Accept workspace invitation' })
+  @ApiParam({ name: 'id', format: 'uuid', description: 'Invitation id' })
   async acceptInvitation(
     @UserId() userId: string,
     @Param('id', ParseUUIDPipe) invitationId: string,
@@ -78,6 +96,8 @@ export class InvitationController {
   }
 
   @Post('invitations/:id/reject')
+  @ApiOperation({ summary: 'Reject workspace invitation' })
+  @ApiParam({ name: 'id', format: 'uuid', description: 'Invitation id' })
   async rejectInvitation(
     @UserId() userId: string,
     @Param('id', ParseUUIDPipe) invitationId: string,

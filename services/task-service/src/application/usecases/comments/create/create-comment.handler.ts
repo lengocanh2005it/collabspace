@@ -79,9 +79,8 @@ export class CreateCommentHandler implements ICommandHandler<
 
     const mentionedUserIds: string[] = [];
     for (const username of parseMentionUsernames(command.content)) {
-      const mentionedUser = await this.userReplicaLookup.findActiveByUsernameAsync(
-        username,
-      );
+      const mentionedUser =
+        await this.userReplicaLookup.findActiveByUsernameAsync(username);
       if (
         mentionedUser &&
         mentionedUser.isActive &&

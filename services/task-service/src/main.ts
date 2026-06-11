@@ -56,22 +56,20 @@ async function bootstrap() {
   registerMetricsMiddleware(app, app.get(MetricsService));
 
   const config = new DocumentBuilder()
-    .setTitle("CollabSpace - Task Service API")
-    .setDescription("Complete CRUD API with Clean Architecture + CQRS pattern")
-    .setVersion("1.0.0")
-    .addTag("tasks", "Task management endpoints")
-    .addBearerAuth(
-      { type: "http", scheme: "bearer", bearerFormat: "JWT" },
-      "JWT",
+    .setTitle("Task Service API")
+    .setDescription(
+      "CollabSpace tasks, board, comments, attachments, activity feed. JWT via auth gRPC. Idempotency-Key on create task and assign.",
     )
+    .setVersion("1.0")
+    .addBearerAuth()
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup("docs", app, document);
+  SwaggerModule.setup("swagger", app, document);
 
   const port = process.env.PORT || 3000;
   await app.listen(port);
-  console.log(`✅ Task Service is running on port ${port}`);
-  console.log(`📚 API Documentation: http://localhost:${port}/api/docs`);
+  console.log(`Task Service is running on port ${port}`);
+  console.log(`Swagger Docs: http://localhost:${port}/swagger`);
 }
 void bootstrap();

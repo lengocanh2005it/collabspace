@@ -21,6 +21,11 @@ For docs-only changes:
 
 - No build/test required unless docs include generated examples or commands that need validation.
 
+When **code** changes verify commands, ports, compose files, or health URLs:
+
+- Update this `SKILL.md` and `.claude/docs/development-workflows.md` in the same PR.
+- See `.claude/rules/docs-and-skills-sync.md`.
+
 For TypeScript compile/module changes:
 
 - Run target service `pnpm run build`.
@@ -62,6 +67,18 @@ pnpm run build
 pnpm run test
 pnpm run test:e2e
 ```
+
+Optional Vault (shared secrets → service `.env`):
+
+```powershell
+cd infrastructure/docker
+docker compose -f docker-compose.vault.yml up -d
+cd ../..
+.\infrastructure\vault\scripts\seed-dev-secrets.ps1
+.\infrastructure\vault\scripts\sync-env-from-vault.ps1
+```
+
+See `infrastructure/vault/README.md`.
 
 Core Docker stack:
 

@@ -19,6 +19,7 @@ Read these files as needed:
 - `.claude/docs/service-contracts.md`
 - `.claude/docs/mvp-roadmap.md`
 - `docs/team/phan-phu-tho-infrastructure-backlog.md` (infra/DevOps gaps)
+- `infrastructure/vault/README.md` (HashiCorp Vault — local dev + K8s ESO)
 
 ## Orientation Steps
 
@@ -30,7 +31,7 @@ Read these files as needed:
    - notification/activity
    - infrastructure/observability/CI
 2. Map the request to the owning service.
-3. Check `docs/features.md` for Done / Planned — all five app services are implemented; main gaps are activity feed, E2E script, frontend, infra ops.
+3. Check `docs/features.md` for Done / Planned — all five app services are implemented; main gaps: workspace activity feed, per-service e2e + CI smoke, contract tests, frontend, infra ops. OpenAPI: `/swagger` on each service. Demo E2E: `scripts/demo-e2e.sh` / `.ps1`.
 4. Read `services/<service>/CLAUDE.md` and `.claude/docs/service-architecture.md` for that service's layering rules.
 5. Read the target service's `src/app.module.ts`, controllers, use cases/handlers, entities, repositories, migrations, and tests.
 6. Summarize the current state before proposing cross-service work.
@@ -43,7 +44,7 @@ Read these files as needed:
 - Projects, boards, tasks, comments, mentions, activity: `services/task-service`.
 - Notification persistence, notification list/read API, event consumption: `services/notification-service`.
 - Gateway routing: `api-gateway`.
-- Compose/K8s/observability/CI: `infrastructure`.
+- Compose/K8s/Vault/observability/CI: `infrastructure` (`infrastructure/vault/` for secrets).
 
 ## Output Style
 
@@ -58,5 +59,5 @@ When implementing:
 
 - Do not stop at a high-level plan if the request asks for code.
 - Keep edits scoped to the owning service unless integration files must change.
-- Update docs if contracts, ports, env vars, or MVP status changed.
+- **Docs & skills sync:** if contracts, ports, env vars, events, auth, resilience, or MVP status change, update related agent docs (`.claude/docs/`, `services/*/CLAUDE.md`, `docs/features.md`, …) and skills (this file, `nest-service-change`, `mvp-feature-planner`, `local-dev-verify`) in the **same change** when needed. See `.claude/rules/docs-and-skills-sync.md`.
 

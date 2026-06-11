@@ -12,4 +12,5 @@ export class ProcessedEvent {
   processedAt!: Date;
 }
 
-export const ProcessedEventSchema = SchemaFactory.createForClass(ProcessedEvent);
+export const ProcessedEventSchema =
+  SchemaFactory.createForClass(ProcessedEvent);

@@ -75,7 +75,9 @@ async function publishUserReplicaEvents(users: DemoSeedUser[]): Promise<void> {
   const rabbitUrl = process.env.RABBITMQ_URL;
 
   if (!rabbitUrl) {
-    console.warn('RABBITMQ_URL is missing — skipping user replica event broadcast.');
+    console.warn(
+      'RABBITMQ_URL is missing — skipping user replica event broadcast.',
+    );
     return;
   }
 
@@ -129,9 +131,14 @@ async function publishUserReplicaEvents(users: DemoSeedUser[]): Promise<void> {
   }
 }
 
-async function seedProfiles(dataSource: DataSource, users: DemoSeedUser[]): Promise<void> {
+async function seedProfiles(
+  dataSource: DataSource,
+  users: DemoSeedUser[],
+): Promise<void> {
   const repository = dataSource.getRepository(UserProfileOrmEntity);
-  const preferencesRepository = dataSource.getRepository(UserPreferencesOrmEntity);
+  const preferencesRepository = dataSource.getRepository(
+    UserPreferencesOrmEntity,
+  );
   const statusRepository = dataSource.getRepository(UserStatusOrmEntity);
 
   for (const seedProfile of users) {

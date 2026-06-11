@@ -1,39 +1,23 @@
-import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { WorkspaceOrmEntity } from '../../../infrastructure/database/entities/workspace.orm-entity';
-import { WorkspaceMemberOrmEntity } from '../../../infrastructure/database/entities/workspace-member.orm-entity';
+import { Inject, Injectable } from '@nestjs/common';
 import { CreateWorkspaceDto } from '../../dto/create-workspace.dto';
+import {
+  type IWorkspaceRepository,
+  WORKSPACE_REPOSITORY,
+} from '../../../domain/repositories/workspace.repository';
 
 @Injectable()
 export class CreateWorkspaceUseCase {
   constructor(
-    @InjectRepository(WorkspaceOrmEntity)
-    private readonly workspaceRepo: Repository<WorkspaceOrmEntity>,
-    @InjectRepository(WorkspaceMemberOrmEntity)
-    private readonly memberRepo: Repository<WorkspaceMemberOrmEntity>,
+    @Inject(WORKSPACE_REPOSITORY)
+    private readonly workspaceRepo: IWorkspaceRepository,
   ) {}
 
   async execute(userId: string, dto: CreateWorkspaceDto) {
-    // Start transaction
-    return this.workspaceRepo.manager.transaction(async (manager) => {
-      const workspace = manager.create(WorkspaceOrmEntity, {
-        name: dto.name,
-        description: dto.description,
-        owner_id: userId,
-      });
-
-      const savedWorkspace = await manager.save(workspace);
-
-      const member = manager.create(WorkspaceMemberOrmEntity, {
-        workspace_id: savedWorkspace.id,
-        user_id: userId,
-        role: 'owner',
-      });
-
-      await manager.save(member);
-
-      return savedWorkspace;
+    return this.workspaceRepo.createWithOwner({
+      name: dto.name,
+      description: dto.description,
+      ownerId: userId,
+      userId,
     });
   }
 }

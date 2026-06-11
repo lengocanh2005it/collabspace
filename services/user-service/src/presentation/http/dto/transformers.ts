@@ -54,5 +54,11 @@ export const toUniqueStringArray = ({ value }: TransformFnParams) => {
     return value;
   }
 
-  return [...new Set(value.map((item) => (typeof item === 'string' ? item.trim() : item)).filter((item) => typeof item === 'string' && item.length > 0))];
+  return [
+    ...new Set(
+      value
+        .map((item) => (typeof item === 'string' ? item.trim() : item))
+        .filter((item) => typeof item === 'string' && item.length > 0),
+    ),
+  ];
 };

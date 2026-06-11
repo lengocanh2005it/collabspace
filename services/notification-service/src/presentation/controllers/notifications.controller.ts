@@ -9,6 +9,13 @@ import {
   Res,
   UseGuards,
 } from "@nestjs/common";
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiTags,
+} from "@nestjs/swagger";
 import type { Request, Response } from "express";
 import { CommandBus, QueryBus } from "@nestjs/cqrs";
 
@@ -22,6 +29,7 @@ import { MetricsService } from "../../metrics/metrics.service";
 import { AuthGuard } from "../guards/auth.guard";
 import type { AuthenticatedRequest } from "../http/authenticated-request";
 
+@ApiTags("notifications")
 @Controller("v1/notifications")
 export class NotificationsController {
   constructor(
@@ -32,6 +40,7 @@ export class NotificationsController {
   ) {}
 
   @Get("health")
+  @ApiOperation({ summary: "Health summary (readiness)" })
   async getHealth(@Res({ passthrough: true }) response: Response) {
     const report = await this.notificationHealthService.getReadiness();
 
@@ -42,11 +51,13 @@ export class NotificationsController {
 
   @Get("health/live")
   @HttpCode(200)
+  @ApiOperation({ summary: "Liveness probe" })
   getLiveness() {
     return this.notificationHealthService.getLiveness();
   }
 
   @Get("health/ready")
+  @ApiOperation({ summary: "Readiness probe" })
   async getReadiness(@Res({ passthrough: true }) response: Response) {
     const report = await this.notificationHealthService.getReadiness();
 
@@ -65,6 +76,10 @@ export class NotificationsController {
 
   @Get()
   @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: "List notifications for current user" })
+  @ApiQuery({ name: "skip", required: false, type: Number, example: 0 })
+  @ApiQuery({ name: "limit", required: false, type: Number, example: 20 })
   async listNotifications(
     @Req() req: AuthenticatedRequest,
     @Query("skip") skip?: string,
@@ -82,6 +97,8 @@ export class NotificationsController {
   @Patch("read-all")
   @HttpCode(200)
   @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: "Mark all notifications as read" })
   async markAllAsRead(@Req() req: AuthenticatedRequest) {
     return this.commandBus.execute(
       new MarkAllNotificationsReadCommand(req.user.id),
@@ -91,6 +108,9 @@ export class NotificationsController {
   @Patch(":id/read")
   @HttpCode(200)
   @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: "Mark one notification as read" })
+  @ApiParam({ name: "id", description: "Notification id" })
   async markAsRead(
     @Param("id") notificationId: string,
     @Req() req: AuthenticatedRequest,

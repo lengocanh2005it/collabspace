@@ -9,6 +9,12 @@ import {
   UseGuards,
   ParseUUIDPipe,
 } from '@nestjs/common';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiParam,
+  ApiTags,
+} from '@nestjs/swagger';
 import { UserId } from './decorators/user-id.decorator';
 import { CreateProjectDto } from '../../application/dto/create-project.dto';
 import { UpdateProjectDto } from '../../application/dto/update-project.dto';
@@ -18,6 +24,8 @@ import { UpdateProjectUseCase } from '../../application/use-cases/project/update
 import { DeleteProjectUseCase } from '../../application/use-cases/project/delete-project.use-case';
 import { AuthGuard } from './guards/auth.guard';
 
+@ApiTags('projects')
+@ApiBearerAuth()
 @Controller('workspaces/:workspaceId/projects')
 @UseGuards(AuthGuard)
 export class ProjectController {
@@ -29,6 +37,8 @@ export class ProjectController {
   ) {}
 
   @Post()
+  @ApiOperation({ summary: 'Create project in workspace' })
+  @ApiParam({ name: 'workspaceId', format: 'uuid' })
   async createProject(
     @UserId() userId: string,
     @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
@@ -38,6 +48,8 @@ export class ProjectController {
   }
 
   @Get()
+  @ApiOperation({ summary: 'List projects in workspace' })
+  @ApiParam({ name: 'workspaceId', format: 'uuid' })
   async listProjects(
     @UserId() userId: string,
     @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
@@ -46,6 +58,9 @@ export class ProjectController {
   }
 
   @Patch(':id')
+  @ApiOperation({ summary: 'Update project' })
+  @ApiParam({ name: 'workspaceId', format: 'uuid' })
+  @ApiParam({ name: 'id', format: 'uuid' })
   async updateProject(
     @UserId() userId: string,
     @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
@@ -61,6 +76,9 @@ export class ProjectController {
   }
 
   @Delete(':id')
+  @ApiOperation({ summary: 'Soft-delete project' })
+  @ApiParam({ name: 'workspaceId', format: 'uuid' })
+  @ApiParam({ name: 'id', format: 'uuid' })
   async deleteProject(
     @UserId() userId: string,
     @Param('workspaceId', ParseUUIDPipe) workspaceId: string,

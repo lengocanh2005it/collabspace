@@ -1,25 +1,25 @@
-import { existsSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
-import mongoose from 'mongoose';
-import { loadDemoSeedData } from '../../../scripts/load-demo-seed-data';
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+import mongoose from "mongoose";
+import { loadDemoSeedData } from "../../../scripts/load-demo-seed-data";
 
 function loadEnvFile(): void {
-  const envPath = join(process.cwd(), '.env');
+  const envPath = join(process.cwd(), ".env");
 
   if (!existsSync(envPath)) {
     return;
   }
 
-  const content = readFileSync(envPath, 'utf8');
+  const content = readFileSync(envPath, "utf8");
 
   for (const line of content.split(/\r?\n/)) {
     const trimmedLine = line.trim();
 
-    if (!trimmedLine || trimmedLine.startsWith('#')) {
+    if (!trimmedLine || trimmedLine.startsWith("#")) {
       continue;
     }
 
-    const separatorIndex = trimmedLine.indexOf('=');
+    const separatorIndex = trimmedLine.indexOf("=");
 
     if (separatorIndex < 0) {
       continue;
@@ -38,7 +38,7 @@ function requireMongoUri(): string {
   const mongoUri = process.env.MONGO_URI;
 
   if (!mongoUri) {
-    throw new Error('MONGO_URI is required to run notification-service seed');
+    throw new Error("MONGO_URI is required to run notification-service seed");
   }
 
   return mongoUri;
@@ -54,12 +54,12 @@ async function main(): Promise<void> {
     const db = mongoose.connection.db;
 
     if (!db) {
-      throw new Error('MongoDB connection is not ready');
+      throw new Error("MongoDB connection is not ready");
     }
 
-    const notifications = db.collection('notifications');
-    const userReplicas = db.collection('user_replicas');
-    const now = new Date('2026-01-15T09:05:00.000Z');
+    const notifications = db.collection("notifications");
+    const userReplicas = db.collection("user_replicas");
+    const now = new Date("2026-01-15T09:05:00.000Z");
 
     for (const user of demoData.users) {
       await userReplicas.updateOne(
@@ -95,7 +95,7 @@ async function main(): Promise<void> {
             message: sample.message,
             targetId: sample.targetId,
             targetType: sample.targetType,
-            status: 'UNREAD',
+            status: "UNREAD",
             metadata: { seeded: true },
             createdAt: now,
             updatedAt: now,
@@ -105,7 +105,7 @@ async function main(): Promise<void> {
       );
     }
 
-    console.log('notification-service seed completed');
+    console.log("notification-service seed completed");
     console.table(
       demoData.demo.sampleNotifications.map((notification) => ({
         recipientId: notification.recipientId,
@@ -119,7 +119,7 @@ async function main(): Promise<void> {
 }
 
 void main().catch((error: unknown) => {
-  console.error('notification-service seed failed');
+  console.error("notification-service seed failed");
   console.error(error);
   process.exitCode = 1;
 });

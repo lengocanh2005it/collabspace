@@ -82,9 +82,9 @@ async function main(): Promise<void> {
       )
     `);
 
-    const executedRows = (await dataSource.query(
+    const executedRows = await dataSource.query(
       'SELECT filename FROM schema_migrations',
-    )) as Array<{ filename: string }>;
+    );
     const executedFiles = new Set(executedRows.map((row) => row.filename));
 
     for (const migrationFile of migrationFiles) {

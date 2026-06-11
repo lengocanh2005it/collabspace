@@ -8,7 +8,7 @@
 - Use `userId` as the cross-service user identity key.
 - Keep DTOs and transport payloads stable.
 - Add tests where behavior changes.
-- Update docs when route, env, contract, migration, or service status changes.
+- **Docs & skills sync:** when code changes affect routes, env, contracts, events, auth, resilience, MVP status, or verify workflows, update the related **agent docs** (`.claude/docs/`, `services/*/CLAUDE.md`, `.claude/rules/`) and **skills** (`.claude/skills/*/SKILL.md`) in the **same change** when needed. See `.claude/docs/agent-onboarding.md` → Docs & skills sync; auto rule `.claude/rules/docs-and-skills-sync.md`.
 
 ## TypeScript/NestJS Style
 
@@ -42,6 +42,7 @@ Config:
 - Avoid scattered `process.env` reads in auth-service.
 - Provide defaults only when safe for development.
 - Required production secrets should fail clearly if missing.
+- Production values live in **HashiCorp Vault** (synced via ESO to K8s `Secret`); local dev uses `.env` or Vault dev + `sync-env-from-vault` — see `infrastructure/vault/README.md`.
 
 Security:
 

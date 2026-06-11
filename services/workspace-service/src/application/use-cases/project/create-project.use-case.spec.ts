@@ -1,56 +1,59 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { CreateProjectUseCase } from './create-project.use-case';
-import { getRepositoryToken } from '@nestjs/typeorm';
-import { ProjectOrmEntity } from '../../../infrastructure/database/entities/project.orm-entity';
-import { WorkspaceMemberOrmEntity } from '../../../infrastructure/database/entities/workspace-member.orm-entity';
 import { ForbiddenException } from '@nestjs/common';
+import { CreateProjectUseCase } from './create-project.use-case';
+import { PROJECT_REPOSITORY } from '../../../domain/repositories/project.repository';
+import { WORKSPACE_MEMBER_REPOSITORY } from '../../../domain/repositories/workspace-member.repository';
+import { Project } from '../../../domain/entities/project.entity';
+import { WorkspaceMember } from '../../../domain/entities/workspace-member.entity';
 
 describe('CreateProjectUseCase', () => {
   let useCase: CreateProjectUseCase;
 
-  const mockProjectRepo = {
-    create: jest.fn().mockImplementation((dto: unknown) => dto),
-    save: jest
-      .fn()
-      .mockImplementation((entity: unknown) =>
-        Promise.resolve({ id: 'proj-1', ...(entity as object) }),
-      ),
-  };
-
-  const mockMemberRepo = {
-    findOne: jest.fn(),
-  };
+  const mockProjectRepo = { create: jest.fn() };
+  const mockMemberRepo = { findByWorkspaceAndUser: jest.fn() };
 
   beforeEach(async () => {
+    jest.clearAllMocks();
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CreateProjectUseCase,
-        {
-          provide: getRepositoryToken(ProjectOrmEntity),
-          useValue: mockProjectRepo,
-        },
-        {
-          provide: getRepositoryToken(WorkspaceMemberOrmEntity),
-          useValue: mockMemberRepo,
-        },
+        { provide: PROJECT_REPOSITORY, useValue: mockProjectRepo },
+        { provide: WORKSPACE_MEMBER_REPOSITORY, useValue: mockMemberRepo },
       ],
     }).compile();
-
     useCase = module.get<CreateProjectUseCase>(CreateProjectUseCase);
   });
 
   it('should throw ForbiddenException if user is not a member', async () => {
-    mockMemberRepo.findOne.mockResolvedValue(null);
+    mockMemberRepo.findByWorkspaceAndUser.mockResolvedValue(null);
     await expect(
       useCase.execute('user-1', 'ws-1', { name: 'Proj' }),
     ).rejects.toThrow(ForbiddenException);
   });
 
-  it('should create and save project if user is a member', async () => {
-    mockMemberRepo.findOne.mockResolvedValue({ role: 'member' });
+  it('should create project if user is a member', async () => {
+    const project = new Project(
+      'proj-1',
+      'ws-1',
+      'Proj',
+      null,
+      'user-1',
+      false,
+      new Date(),
+      new Date(),
+    );
+    mockMemberRepo.findByWorkspaceAndUser.mockResolvedValue(
+      new WorkspaceMember('m-1', 'ws-1', 'user-1', 'member', new Date()),
+    );
+    mockProjectRepo.create.mockResolvedValue(project);
+
     const result = await useCase.execute('user-1', 'ws-1', { name: 'Proj' });
-    expect(mockProjectRepo.create).toHaveBeenCalled();
-    expect(mockProjectRepo.save).toHaveBeenCalled();
-    expect(result.id).toBe('proj-1');
+    expect(mockProjectRepo.create).toHaveBeenCalledWith({
+      workspaceId: 'ws-1',
+      name: 'Proj',
+      description: undefined,
+      createdBy: 'user-1',
+    });
+    expect(result).toBe(project);
   });
 });

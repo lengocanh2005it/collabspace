@@ -24,17 +24,27 @@ This repository uses **Claude Code**-style agent documentation. `CLAUDE.md` is t
 | `docs/nfrs.md` | Non-functional requirements |
 | `docs/trade-offs.md` | Architecture trade-offs |
 | `docs/production-hardening.md` | Prod checklist (Phase B trust boundaries, Phase C correlation ID) |
+| `infrastructure/vault/README.md` | **HashiCorp Vault** — local dev, KV layout, ESO → K8s Secrets |
 | `docs/team/phan-phu-tho-infrastructure-backlog.md` | Infra/DevOps backlog (Phan Phú Thọ) |
 | `docs/team/application-backlog.md` | Application backlog (Lê Ngọc Anh, Ngô Quang Tiến, Võ Trung Tín) |
 | `docs/backup-policy.md` | RPO/RTO, backup scripts, restore drill policy |
 | `.claude/docs/mvp-roadmap.md` | MVP build order for agents |
 | `docs/mvp-demo-scope.md` | MVP demo acceptance checklist |
 
+## When changing code — sync docs & skills
+
+If a code change affects **API contracts, events, env, auth, resilience, MVP status, or verify workflows**, update related **agent docs** and **skills** in the **same PR** when necessary.
+
+- Guide: [.claude/docs/agent-onboarding.md](./.claude/docs/agent-onboarding.md) → **Docs & skills sync**
+- Auto rule (loads on `services/**`, `infrastructure/**`, …): [.claude/rules/docs-and-skills-sync.md](./.claude/rules/docs-and-skills-sync.md)
+
+Report which doc/skill files were updated in the completion summary (or state that sync was not required).
+
 ## Automation
 
 - **Skills** (`.claude/skills/`): `/collabspace-codebase`, `/nest-service-change`, `/mvp-feature-planner`, `/local-dev-verify`
 - **Subagents** (`.claude/agents/`): `nest-reviewer`, `mvp-implementer`, `contract-guardian`
-- **Path rules** (`.claude/rules/`): auto-load when editing matching service paths
+- **Path rules** (`.claude/rules/`): auto-load when editing matching service paths (incl. `docs-and-skills-sync.md`)
 
 ## Service-local context
 

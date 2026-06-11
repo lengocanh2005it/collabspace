@@ -117,9 +117,7 @@ Tài liệu này là **nguồn chính** mô tả chức năng và mức độ ho
 - **Event sourcing** cho aggregate `Task` (create, details, status, assign, delete, **attachments**)
 - Upload / xóa attachment — mock Azure khi chưa cấu hình storage; event `TaskAttachmentAdded` / `TaskAttachmentRemoved`
 
-**Planned**
-
-- Activity feed (ai tạo task, đổi status, comment)
+- Activity feed — `GET /api/v1/tasks/:id/activity` trả về timeline task events + comments, sorted by `occurredAt`, `limit`/`offset` pagination
 
 ---
 
@@ -135,7 +133,7 @@ Tài liệu này là **nguồn chính** mô tả chức năng và mức độ ho
 
 **Planned**
 
-- Activity timeline tập trung cho task/workspace
+- Activity timeline **workspace-level** (`GET /workspaces/:id/activity`) — task-level đã có ở §5
 
 ---
 
@@ -172,8 +170,9 @@ Không phải tính năng end-user nhưng hỗ trợ demo và vận hành:
 | Prometheus metrics + Grafana dashboard | Done |
 | OpenTelemetry → Jaeger | Done — bật qua `docker-compose.tracing.yml` (`TRACING_ENABLED=true`) |
 | Runbooks & failure drills | Done |
+| HashiCorp Vault (secrets) | **Partial** — dev Compose + seed/sync + ESO manifests (`infrastructure/vault/`); Vault HA + operational rotation chưa |
 
-Chi tiết: [resilience-overview.md](./resilience-overview.md), [production-hardening.md](./production-hardening.md), [tracing-setup.md](./tracing-setup.md).
+Chi tiết: [resilience-overview.md](./resilience-overview.md), [production-hardening.md](./production-hardening.md), [tracing-setup.md](./tracing-setup.md), [infrastructure/vault/README.md](../infrastructure/vault/README.md).
 
 ---
 
@@ -231,6 +230,7 @@ Hướng dẫn chạy demo: [mvp-demo-scope.md](./mvp-demo-scope.md#demo-story).
 | [project-architecture.md](../.claude/docs/project-architecture.md) | Kiến trúc hệ thống, port, datastore |
 | [README.md](../README.md) | Quick start, Docker, team |
 | [production-hardening.md](./production-hardening.md) | Prod checklist (Phase B/C) |
+| [infrastructure/vault/README.md](../infrastructure/vault/README.md) | HashiCorp Vault — KV paths, local dev, ESO on K8s |
 | [backup-policy.md](./backup-policy.md) | Backup RPO/RTO, restore drill |
 | [team/phan-phu-tho-infrastructure-backlog.md](./team/phan-phu-tho-infrastructure-backlog.md) | Infra/DevOps (Phan Phú Thọ) |
 | [team/application-backlog.md](./team/application-backlog.md) | Logic app, test, E2E, activity feed (Anh, Tiến, Tín) |

@@ -1,37 +1,15 @@
-// src/domain/events/comment-events.ts
+export {
+  TASK_COMMENTED_EVENT,
+  COMMENT_MENTIONED_EVENT,
+  type EventEnvelopeFields,
+  type TaskCommentedEventPayload,
+  type CommentMentionedEventPayload,
+} from "@collabspace/shared";
 
-/**
- * Comment-related Event Payloads
- * Events triggered when comment operations occur
- */
+// Alias kept for backward compatibility with existing imports
+export type { CommentMentionedEventPayload as CommentMentionedNotificationPayload } from "@collabspace/shared";
 
-// src/domain/events/comment.events.ts
-
-// 1. Định nghĩa Routing Key (Tên sự kiện) để không bao giờ bị gõ sai chính tả
-export const TASK_COMMENTED_EVENT = "comment_created";
-export const COMMENT_MENTIONED_EVENT = "comment_mentioned";
-
-export type EventEnvelopeFields = {
-  eventId: string;
-  occurredAt: string;
-};
-
-// 2. Định nghĩa cấu trúc Hợp đồng (Payload)
-export interface TaskCommentedEventPayload extends EventEnvelopeFields {
-  taskId: string;
-  taskTitle: string;
-
-  recipientId: string; // ID của người nhận Noti (VD: Assignee của Task)
-
-  actorId: string; // Người thực hiện hành động (Người comment)
-  actorName: string;
-  actorAvatarUrl?: string;
-
-  commentId: string; // ID của comment vừa tạo
-  commentPreview: string; // Trích xuất nội dung ngắn
-  createdAt: string; // Thời gian tạo (ISO String)
-}
-
+// Notification-service-specific types (not cross-service contracts)
 export interface CommentRepliedEventPayload {
   commentId: string;
   parentCommentId: string;
@@ -41,20 +19,8 @@ export interface CommentRepliedEventPayload {
   authorName: string;
   authorAvatarUrl?: string;
   content: string;
-  originalCommentAuthorId: string; // Notify tác giả comment gốc
+  originalCommentAuthorId: string;
   workspaceId: string;
-}
-
-export interface CommentMentionedNotificationPayload extends EventEnvelopeFields {
-  taskId: string;
-  taskTitle: string;
-  recipientId: string;
-  actorId: string;
-  actorName: string;
-  actorAvatarUrl?: string;
-  commentId: string;
-  commentPreview: string;
-  createdAt: string;
 }
 
 export interface CommentEditedEventPayload {
@@ -73,8 +39,8 @@ export interface CommentDeletedEventPayload {
   commentId: string;
   taskId: string;
   taskTitle: string;
-  authorId: string; // Original author
-  deletedBy: string; // Who deleted it
+  authorId: string;
+  deletedBy: string;
   deletedByName: string;
   workspaceId: string;
 }
@@ -85,7 +51,7 @@ export interface CommentReactionAddedEventPayload {
   taskTitle: string;
   authorId: string;
   authorName: string;
-  reactionType: string; // 'like', 'love', 'thumbsup', etc.
+  reactionType: string;
   reactedBy: string;
   reactedByName: string;
   workspaceId: string;

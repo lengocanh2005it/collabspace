@@ -1,45 +1,31 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ListWorkspacesUseCase } from './list-workspaces.use-case';
-import { getRepositoryToken } from '@nestjs/typeorm';
-import { WorkspaceOrmEntity } from '../../../infrastructure/database/entities/workspace.orm-entity';
+import { WORKSPACE_REPOSITORY } from '../../../domain/repositories/workspace.repository';
+import { Workspace } from '../../../domain/entities/workspace.entity';
 
 describe('ListWorkspacesUseCase', () => {
   let useCase: ListWorkspacesUseCase;
 
-  const mockQueryBuilder = {
-    innerJoin: jest.fn().mockReturnThis(),
-    getMany: jest.fn().mockResolvedValue([{ id: 'ws-1' }]),
-  };
-
-  const mockWorkspaceRepo = {
-    createQueryBuilder: jest.fn().mockReturnValue(mockQueryBuilder),
-  };
+  const mockWorkspaceRepo = { findByMember: jest.fn() };
 
   beforeEach(async () => {
+    jest.clearAllMocks();
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ListWorkspacesUseCase,
-        {
-          provide: getRepositoryToken(WorkspaceOrmEntity),
-          useValue: mockWorkspaceRepo,
-        },
+        { provide: WORKSPACE_REPOSITORY, useValue: mockWorkspaceRepo },
       ],
     }).compile();
-
     useCase = module.get<ListWorkspacesUseCase>(ListWorkspacesUseCase);
   });
 
-  it('should list workspaces using inner join on members', async () => {
+  it('should list workspaces for user', async () => {
+    const workspaces = [
+      new Workspace('ws-1', 'Test', null, 'user-1', new Date(), new Date()),
+    ];
+    mockWorkspaceRepo.findByMember.mockResolvedValue(workspaces);
     const result = await useCase.execute('user-1');
-    expect(mockWorkspaceRepo.createQueryBuilder).toHaveBeenCalledWith(
-      'workspace',
-    );
-    expect(mockQueryBuilder.innerJoin).toHaveBeenCalledWith(
-      'workspace.members',
-      'member',
-      'member.user_id = :userId',
-      { userId: 'user-1' },
-    );
-    expect(result).toEqual([{ id: 'ws-1' }]);
+    expect(mockWorkspaceRepo.findByMember).toHaveBeenCalledWith('user-1');
+    expect(result).toBe(workspaces);
   });
 });

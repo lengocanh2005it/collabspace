@@ -97,7 +97,9 @@ export class TypeOrmUserProfileRepository implements UserProfileRepository {
       weekStartsOn: 'monday',
     });
 
-    return this.toDomainPreferences(await this.preferencesRepository.save(defaults));
+    return this.toDomainPreferences(
+      await this.preferencesRepository.save(defaults),
+    );
   }
 
   async getStatus(userId: string): Promise<UserStatus> {
@@ -134,7 +136,9 @@ export class TypeOrmUserProfileRepository implements UserProfileRepository {
         userId: In(userIds),
       },
     });
-    const statusMap = new Map(statuses.map((status) => [status.userId, status]));
+    const statusMap = new Map(
+      statuses.map((status) => [status.userId, status]),
+    );
     const results: UserStatus[] = [];
 
     for (const userId of userIds) {
@@ -199,7 +203,8 @@ export class TypeOrmUserProfileRepository implements UserProfileRepository {
         fullName: input.fullName,
         id: existingProfile?.id ?? randomUUID(),
         userId: input.userId,
-        username: existingProfile?.username ?? this.createUsername(input.fullName),
+        username:
+          existingProfile?.username ?? this.createUsername(input.fullName),
       }),
     );
 
@@ -248,7 +253,8 @@ export class TypeOrmUserProfileRepository implements UserProfileRepository {
     existingPreferences.emailNotificationsEnabled =
       input.emailNotificationsEnabled ??
       existingPreferences.emailNotificationsEnabled;
-    existingPreferences.language = input.language ?? existingPreferences.language;
+    existingPreferences.language =
+      input.language ?? existingPreferences.language;
     existingPreferences.pushNotificationsEnabled =
       input.pushNotificationsEnabled ??
       existingPreferences.pushNotificationsEnabled;
@@ -286,7 +292,9 @@ export class TypeOrmUserProfileRepository implements UserProfileRepository {
         ? existingStatus.statusText
         : input.statusText;
 
-    return this.toDomainStatus(await this.statusRepository.save(existingStatus));
+    return this.toDomainStatus(
+      await this.statusRepository.save(existingStatus),
+    );
   }
 
   private async getPreferencesEntity(

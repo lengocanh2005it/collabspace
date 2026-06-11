@@ -23,9 +23,9 @@ export class AuthGuard implements CanActivate {
       return true;
     }
 
-    if (process.env.ALLOW_DEV_IDENTITY_HEADERS === "true") {
-      const userId = request.headers["x-user-id"];
-      if (typeof userId === "string" && userId.trim()) {
+    if (process.env.ALLOW_DEV_IDENTITY_HEADERS === 'true') {
+      const userId = request.headers['x-user-id'];
+      if (typeof userId === 'string' && userId.trim()) {
         // @ts-expect-error dev fallback user
         request.user = { id: userId.trim() };
         return true;

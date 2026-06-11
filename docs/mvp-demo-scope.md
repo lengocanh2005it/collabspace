@@ -40,8 +40,8 @@ Checklist chi tiết theo service: [mvp-roadmap.md — Demo Acceptance Checklist
 
 API đã có; còn thiếu **chứng minh tự động** và client:
 
-- [ ] Script demo E2E 7 bước (`scripts/demo-e2e` — chưa có)
-- [ ] Smoke qua Traefik gateway (không chỉ curl trực tiếp port service)
+- [x] Script demo E2E 7 bước (`scripts/demo-e2e.sh` + `scripts/demo-e2e.ps1`)
+- [x] Smoke qua Traefik gateway (`BASE_URL=http://localhost/api/v1` mặc định)
 - [ ] Frontend / UI client trong repo
 
 ## Out of Scope
@@ -58,10 +58,11 @@ Cập nhật đầy đủ tại [features.md](./features.md). Tóm tắt **sau k
 | Task priority / due date / labels | **Done** | PATCH task details |
 | Xóa task | **Done** | `DELETE /tasks/:id` |
 | Notification mark-read | **Done** | `PATCH /notifications/:id/read`, `read-all` |
-| Activity feed | **Planned** | Timeline task/workspace |
+| Activity feed (task) | **Done** | `GET /tasks/:id/activity` — timeline events + comments |
+| Activity feed (workspace) | **Planned** | `GET /workspaces/:id/activity` — aggregate chưa có |
 | WebSocket realtime | **Out of scope** | Polling `GET /notifications` |
 | Frontend | **Out of scope** | Backend + infra trong repo |
-| Demo E2E script | **Planned** | Tự động hóa 7 bước demo |
+| Demo E2E script | **Done** | `scripts/demo-e2e.sh` + `.ps1` — 7 bước qua Traefik |
 | Infra prod-ready | **In progress** | [phan-phu-tho-infrastructure-backlog.md](./team/phan-phu-tho-infrastructure-backlog.md) |
 | App logic / test / E2E | **In progress** | [application-backlog.md](./team/application-backlog.md) |
 

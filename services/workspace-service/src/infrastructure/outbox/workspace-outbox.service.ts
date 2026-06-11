@@ -39,7 +39,7 @@ export class WorkspaceOutboxService {
       WorkspaceOutboxEventEntity,
     ).tablePath;
 
-    return (await this.dataSource.query(
+    return await this.dataSource.query(
       `
         WITH candidate_events AS (
           SELECT id
@@ -61,7 +61,7 @@ export class WorkspaceOutboxService {
         RETURNING outbox.id, outbox.event_type AS "eventType", outbox.payload, outbox.attempt_count AS "attemptCount"
       `,
       [limit ?? batchSize],
-    )) as ClaimedOutboxEvent[];
+    );
   }
 
   async markProcessed(id: string): Promise<void> {
@@ -105,7 +105,7 @@ export class WorkspaceOutboxService {
     ).tablePath;
     const { staleClaimThresholdMs } = getWorkspaceOutboxConfig();
 
-    const rows = (await this.dataSource.query(
+    const rows = await this.dataSource.query(
       `
         UPDATE ${tablePath}
         SET claimed_at = NULL,
@@ -119,7 +119,7 @@ export class WorkspaceOutboxService {
         RETURNING id
       `,
       [staleClaimThresholdMs, 'stale claim recovered for retry'],
-    )) as Array<{ id: string }>;
+    );
 
     return rows.length;
   }

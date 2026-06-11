@@ -1,1 +1,4 @@
-export const WORKSPACE_INVITED_EVENT = 'workspace_invited';
+export {
+  WORKSPACE_INVITED_EVENT,
+  type WorkspaceInvitedEventPayload,
+} from '@collabspace/shared';

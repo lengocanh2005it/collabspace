@@ -33,6 +33,8 @@ pnpm run build
 pnpm run test
 ```
 
+**Swagger:** `http://localhost:3000/swagger` (Docker host port **3004**).
+
 ## Conventions
 
 - Global prefix `api`; `@Controller('v1/notifications')` → `/api/v1/notifications`

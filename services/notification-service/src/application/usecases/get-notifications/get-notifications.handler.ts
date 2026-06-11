@@ -82,7 +82,8 @@ export class GetNotificationsHandler implements IQueryHandler<
       const metadata = notification.getMetadata();
       const actorId = notification.getActorId();
       const replica = actorReplicas.get(actorId);
-      const fallbackName = getMetadataString(metadata, "actorName") || "Unknown";
+      const fallbackName =
+        getMetadataString(metadata, "actorName") || "Unknown";
       const fallbackAvatar = getMetadataString(metadata, "actorAvatarUrl");
 
       return {
@@ -90,10 +91,7 @@ export class GetNotificationsHandler implements IQueryHandler<
         recipientId: notification.getRecipientId(),
         actor: {
           id: actorId,
-          name:
-            replica?.displayName ||
-            replica?.fullName ||
-            fallbackName,
+          name: replica?.displayName || replica?.fullName || fallbackName,
           avatarUrl: replica?.avatarUrl || fallbackAvatar,
         },
         type: notification.getType(),

@@ -2,7 +2,9 @@
 
 **A workspace collaboration management platform** — a mini Notion/Slack/Jira hybrid built with microservices architecture.
 
-**Product features & status:** [docs/features.md](docs/features.md) · **MVP demo scope:** [docs/mvp-demo-scope.md](docs/mvp-demo-scope.md) · **API routes:** [docs/api-routes.md](docs/api-routes.md) · **Infra backlog:** [docs/team/phan-phu-tho-infrastructure-backlog.md](docs/team/phan-phu-tho-infrastructure-backlog.md)
+**Product features & status:** [docs/features.md](docs/features.md) · **MVP demo scope:** [docs/mvp-demo-scope.md](docs/mvp-demo-scope.md) · **API routes:** [docs/api-routes.md](docs/api-routes.md) · **App backlog:** [docs/team/application-backlog.md](docs/team/application-backlog.md) · **Infra backlog:** [docs/team/phan-phu-tho-infrastructure-backlog.md](docs/team/phan-phu-tho-infrastructure-backlog.md)
+
+**MVP backend (2026-06):** Luồng demo 7 bước **Done** (API + `scripts/demo-e2e`). Còn lại chủ yếu: frontend, e2e per service, CI smoke, workspace activity feed, OpenAPI 5/5.
 
 ## Architecture
 
@@ -22,8 +24,10 @@
       │      │ │     │ │:8080 │ │        │ │              │
       └──┬───┘ └──┬──┘ └──┬───┘ └───┬────┘ └──────┬───────┘
          │        │       │         │              │
-         │   PostgreSQL   │     MongoDB        Redis/Mongo
-         │    :5432       │     :27017          :6379
+         │   PostgreSQL   │     MongoDB        MongoDB
+         │    :5432       │     :27017         :27017
+         │                │                    (task + notification)
+         │    Redis :6379 (auth OTP/session)
          │                │
          └────────────────┘
                   ↕ (RabbitMQ :5672 / :15672)
@@ -58,13 +62,14 @@
 | Kibana | kibana:8.8.2 | 5601 | Log visualization |
 | Jaeger | jaegertracing/all-in-one:1.41 | 16686 | Distributed tracing |
 | Jenkins | jenkins/jenkins:lts | 8081 | CI/CD |
+| HashiCorp Vault (optional) | hashicorp/vault:1.17 | 8200 | Dev secrets store — see `infrastructure/vault/` |
 
 ## Quick Start
 
 ### Prerequisites
 - Docker & Docker Compose
-- Node.js 18+ (for local development)
-- pnpm (for NestJS services — run from each `services/*` directory)
+- Node.js 18+ (Node 20 recommended for Docker images)
+- pnpm 8+ — **pnpm workspace** at repo root (`package.json`, `pnpm-workspace.yaml`, `packages/shared`)
 
 ### Docker Compose Commands
 
@@ -104,13 +109,18 @@ docker-compose -f docker-compose.yml -f docker-compose.db.yml -f docker-compose.
 
 2. **Set up environment files**
    ```powershell
-   # Run the env setup script
+   # Option A — copy templates (simplest)
    ./scripts/env-setup.sh
-   
-   # Or manually copy .env.example files
-   cp services/auth-service/.env.example services/auth-service/.env
-   # ... repeat for other services
+   # Or: cp services/auth-service/.env.example services/auth-service/.env  (repeat per service)
+
+   # Option B — HashiCorp Vault dev (single source for shared secrets)
+   cd infrastructure/docker
+   docker compose -f docker-compose.vault.yml up -d
+   cd ../..
+   .\infrastructure\vault\scripts\seed-dev-secrets.ps1
+   .\infrastructure\vault\scripts\sync-env-from-vault.ps1
    ```
+   See [infrastructure/vault/README.md](infrastructure/vault/README.md). Staging/prod: Vault + External Secrets Operator on K8s.
 
 3. **Initialize databases**
    ```powershell
@@ -161,6 +171,37 @@ cd ../notification-service; pnpm run seed
 
 Prerequisites: run `./scripts/migrate.sh` first; Postgres + MongoDB must be reachable via each service `.env`.
 
+### Monorepo build & test (pnpm workspace)
+
+From repo root (builds `packages/shared` + all services):
+
+```powershell
+pnpm install
+pnpm run build
+pnpm run test
+```
+
+Or per service: `cd services/<name> && pnpm run build && pnpm run test`.
+
+### Verify MVP demo (E2E script)
+
+Requires Docker stack with **Traefik** + databases + migrations + seed:
+
+```powershell
+# Full stack example (see Docker Compose section above)
+cd infrastructure/docker
+docker compose -f docker-compose.yml -f docker-compose.db.yml -f docker-compose.override.yml -f docker-compose.traefik.yml up -d
+cd ../..
+./scripts/migrate.sh
+./scripts/seed.sh
+
+# 7-step story via gateway (default BASE_URL=http://localhost/api/v1)
+./scripts/demo-e2e.sh
+# Windows: .\scripts\demo-e2e.ps1
+```
+
+Details: [docs/mvp-demo-scope.md](docs/mvp-demo-scope.md). CI integration: [infra backlog § smoke](docs/team/phan-phu-tho-infrastructure-backlog.md#11-post-deploy-smoke).
+
 ## Team
 
 | Member | Name | Role | Responsibilities | Backlog |
@@ -168,13 +209,27 @@ Prerequisites: run `./scripts/migrate.sh` first; Postgres + MongoDB must be reac
 | Member 1 | Phan Phú Thọ | Infrastructure Engineer | Docker, K8s, CI/CD, secrets, backup, monitoring | [infra backlog](docs/team/phan-phu-tho-infrastructure-backlog.md) |
 | Member 2 | Lê Ngọc Anh | Auth & User Service | JWT auth, OTP, profile, user directory, gRPC | [app backlog § Anh](docs/team/application-backlog.md#lê-ngọc-anh--auth--user) |
 | Member 3 | Ngô Quang Tiến | Workspace Service | Workspace, project, invite, membership, task↔workspace integration | [app backlog § Tiến](docs/team/application-backlog.md#ngô-quang-tiến--workspace--task-integration) |
-| Member 4 | Võ Trung Tín | Task & Notification Service | Task, board, comments, notifications, demo E2E | [app backlog § Tín](docs/team/application-backlog.md#võ-trung-tín--task--notification--demo) |
+| Member 4 | Võ Trung Tín | Task & Notification Service | Task, board, activity feed, comments, notifications; lead `demo-e2e` (Done) | [app backlog § Tín](docs/team/application-backlog.md#võ-trung-tín--task--notification--demo) |
 
 ## API Routes
 
 Route index by service (auth, user, workspace, task, notification), gateway headers, and gRPC entry points: **[docs/api-routes.md](docs/api-routes.md)**.
 
 Request/response contracts and event payloads: [`.claude/docs/service-contracts.md`](.claude/docs/service-contracts.md).
+
+### OpenAPI (Swagger UI)
+
+Mỗi service expose **`/swagger`** (local dev, mapped Docker ports):
+
+| Service | Swagger URL (Docker host ports) |
+|---------|----------------------------------|
+| auth-service | http://localhost:3000/swagger |
+| user-service | http://localhost:3001/swagger |
+| workspace-service | http://localhost:3002/swagger |
+| task-service | http://localhost:3003/swagger |
+| notification-service | http://localhost:3004/swagger |
+
+Protected routes: **Authorize** → Bearer JWT. Internal S2S routes (user/workspace): header `X-Internal-Service-Token`.
 
 ## Monitoring & Observability
 
@@ -253,14 +308,19 @@ Jenkins is available at http://localhost:8081 when running docker-compose.jenkin
 
 ```
 collabspace/
+├── package.json             # pnpm workspace root (build/test all)
+├── pnpm-workspace.yaml
+├── packages/
+│   └── shared/              # @collabspace/shared — event types
 ├── services/
-│   ├── auth-service/        # Authentication (NestJS + TypeORM)
-│   ├── user-service/        # User profiles (NestJS + TypeORM)
-│   ├── workspace-service/   # Workspaces, projects, invites (NestJS + TypeORM, port 8080)
-│   ├── task-service/        # Tasks (Node.js + MongoDB)
-│   └── notification-service/# Notifications (Node.js + Redis)
+│   ├── auth-service/        # Auth (NestJS + TypeORM + Redis)
+│   ├── user-service/        # Profiles (NestJS + TypeORM)
+│   ├── workspace-service/   # Workspace, project, invite (NestJS + TypeORM, port 8080)
+│   ├── task-service/        # Tasks, comments, board (NestJS + CQRS + MongoDB)
+│   └── notification-service/# Notifications (NestJS + CQRS + MongoDB)
 ├── infrastructure/
 │   ├── docker/              # Docker Compose files
+│   ├── vault/               # HashiCorp Vault (dev + ESO manifests)
 │   ├── helm/                # Helm umbrella chart (preferred for K8s)
 │   ├── k8s/                 # Legacy Kubernetes manifests
 │   ├── monitoring/          # Prometheus + Grafana configs
@@ -271,7 +331,7 @@ collabspace/
 │   ├── jenkins/             # CI/CD configs
 │   └── load-testing/        # k6 load tests
 ├── api-gateway/             # Traefik configuration
-├── scripts/                 # Utility scripts
+├── scripts/                 # migrate, seed, demo-e2e, …
 └── docs/                    # Documentation
 ```
 
@@ -306,17 +366,19 @@ This project is for educational purposes.
 ---
 
 **Infrastructure Engineer**: Phan Phu Tho  
-**Last Updated**: 2026-05-11
+**Last Updated**: 2026-06-11
 
 ---
 
 ## 🏗 Platform Foundation V2 (Convergence Hardening)
 
-All five application services run on **NestJS** (`workspace-service` listens on port **8080**). Infra gaps (secrets, backup cron, CI/CD): [docs/team/phan-phu-tho-infrastructure-backlog.md](docs/team/phan-phu-tho-infrastructure-backlog.md).
+All five application services run on **NestJS** (`workspace-service` listens on port **8080**). **Secrets:** HashiCorp Vault scaffolding in [infrastructure/vault/](infrastructure/vault/); operational prod (Vault HA, ESO deploy, rotation) — [docs/team/phan-phu-tho-infrastructure-backlog.md](docs/team/phan-phu-tho-infrastructure-backlog.md).
 
 ### Key Upgrades:
-- **API Gateway**: Migrated all routes to `/api/v1/*` with true `forward-auth` middleware leveraging `auth-service`.
-- **Docker Tooling**: Upgraded to Node 20, NestJS builds, and `pnpm` where applicable. Restart policies and memory limits applied.
-- **K8s Manifests**: Real health check probes (`/api/v1/*/health`), HPAs added, and shared ConfigMaps implemented.
-- **Observability**: Prometheus metrics enabled with Node exporters (Postgres, Redis, MongoDB). Grafana dashboards auto-provisioned.
-- **Dev Tooling**: Re-created `infrastructure/dev/` tooling (`dev.bat`, `stop_all.bat`, `dev-mode.ps1`) for frictionless local startup.
+- **API Gateway**: Routes `/api/v1/*` with `forward-auth` via `auth-service`; internal S2S paths blocked at gateway.
+- **Monorepo**: pnpm workspace + `packages/shared` (`@collabspace/shared` event contracts).
+- **MVP automation**: `scripts/demo-e2e.sh` / `.ps1` — 7-step story through Traefik.
+- **Docker Tooling**: Node 20, NestJS builds, `pnpm`. Restart policies and memory limits applied.
+- **K8s / Helm**: Health probes, HPAs, ConfigMaps, Vault ESO scaffold (`infrastructure/vault/`).
+- **Observability**: Prometheus metrics, optional Jaeger/ELK profiles, Grafana dashboards.
+- **Dev Tooling**: `infrastructure/dev/` (`dev.bat`, `stop_all.bat`, `dev-mode.ps1`).

@@ -1,31 +1,31 @@
-import { existsSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
-import mongoose from 'mongoose';
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+import mongoose from "mongoose";
 import {
   avatarUrlFor,
   loadDemoSeedData,
   userSnapshot,
   type DemoSeedTask,
   type DemoSeedUser,
-} from '../../../scripts/load-demo-seed-data';
+} from "../../../scripts/load-demo-seed-data";
 
 function loadEnvFile(): void {
-  const envPath = join(process.cwd(), '.env');
+  const envPath = join(process.cwd(), ".env");
 
   if (!existsSync(envPath)) {
     return;
   }
 
-  const content = readFileSync(envPath, 'utf8');
+  const content = readFileSync(envPath, "utf8");
 
   for (const line of content.split(/\r?\n/)) {
     const trimmedLine = line.trim();
 
-    if (!trimmedLine || trimmedLine.startsWith('#')) {
+    if (!trimmedLine || trimmedLine.startsWith("#")) {
       continue;
     }
 
-    const separatorIndex = trimmedLine.indexOf('=');
+    const separatorIndex = trimmedLine.indexOf("=");
 
     if (separatorIndex < 0) {
       continue;
@@ -44,7 +44,7 @@ function requireMongoUri(): string {
   const mongoUri = process.env.MONGO_URI;
 
   if (!mongoUri) {
-    throw new Error('MONGO_URI is required to run task-service seed');
+    throw new Error("MONGO_URI is required to run task-service seed");
   }
 
   return mongoUri;
@@ -86,13 +86,13 @@ async function seedUserReplicas(
 async function seedTask(
   taskSeed: DemoSeedTask,
   users: DemoSeedUser[],
-  demo: ReturnType<typeof loadDemoSeedData>['demo'],
+  demo: ReturnType<typeof loadDemoSeedData>["demo"],
   taskEvents: mongoose.mongo.Collection,
   tasks: mongoose.mongo.Collection,
 ): Promise<void> {
   const createdByUser = findUser(users, taskSeed.createdByUserId);
   const createdBy = userSnapshot(createdByUser);
-  const createdAt = new Date('2026-01-15T08:00:00.000Z');
+  const createdAt = new Date("2026-01-15T08:00:00.000Z");
   const assigneeUser = taskSeed.assigneeUserId
     ? findUser(users, taskSeed.assigneeUserId)
     : null;
@@ -118,7 +118,7 @@ async function seedTask(
         streamId: taskSeed.id,
         version: 1,
         eventId: `${taskSeed.id}-created`,
-        eventType: 'TaskCreated',
+        eventType: "TaskCreated",
         occurredAt: createdAt,
         payload: createdPayload,
       },
@@ -134,8 +134,8 @@ async function seedTask(
           streamId: taskSeed.id,
           version: 2,
           eventId: `${taskSeed.id}-assigned`,
-          eventType: 'TaskAssigneeChanged',
-          occurredAt: new Date('2026-01-15T08:05:00.000Z'),
+          eventType: "TaskAssigneeChanged",
+          occurredAt: new Date("2026-01-15T08:05:00.000Z"),
           payload: {
             assigneeId: taskSeed.assigneeUserId,
             assignedTo,
@@ -172,7 +172,7 @@ async function seedTask(
 }
 
 async function seedSampleComment(
-  demo: ReturnType<typeof loadDemoSeedData>['demo'],
+  demo: ReturnType<typeof loadDemoSeedData>["demo"],
   users: DemoSeedUser[],
   comments: mongoose.mongo.Collection,
 ): Promise<void> {
@@ -196,8 +196,8 @@ async function seedSampleComment(
         isEdited: false,
         deletedAt: null,
         reactionCount: 0,
-        createdAt: new Date('2026-01-15T09:00:00.000Z'),
-        updatedAt: new Date('2026-01-15T09:00:00.000Z'),
+        createdAt: new Date("2026-01-15T09:00:00.000Z"),
+        updatedAt: new Date("2026-01-15T09:00:00.000Z"),
       },
     },
     { upsert: true },
@@ -214,13 +214,13 @@ async function main(): Promise<void> {
     const db = mongoose.connection.db;
 
     if (!db) {
-      throw new Error('MongoDB connection is not ready');
+      throw new Error("MongoDB connection is not ready");
     }
 
-    const userReplicas = db.collection('user_replicas');
-    const taskEvents = db.collection('task_events');
-    const tasks = db.collection('tasks');
-    const comments = db.collection('task_comments');
+    const userReplicas = db.collection("user_replicas");
+    const taskEvents = db.collection("task_events");
+    const tasks = db.collection("tasks");
+    const comments = db.collection("task_comments");
 
     await seedUserReplicas(demoData.users, userReplicas);
 
@@ -236,13 +236,13 @@ async function main(): Promise<void> {
 
     await seedSampleComment(demoData.demo, demoData.users, comments);
 
-    console.log('task-service seed completed');
+    console.log("task-service seed completed");
     console.table(
       demoData.demo.tasks.map((task) => ({
         taskId: task.id,
         title: task.title,
         status: task.status,
-        assigneeUserId: task.assigneeUserId ?? '(none)',
+        assigneeUserId: task.assigneeUserId ?? "(none)",
       })),
     );
   } finally {
@@ -251,7 +251,7 @@ async function main(): Promise<void> {
 }
 
 void main().catch((error: unknown) => {
-  console.error('task-service seed failed');
+  console.error("task-service seed failed");
   console.error(error);
   process.exitCode = 1;
 });
