@@ -63,6 +63,7 @@ Cập nhật đầy đủ tại [features.md](./features.md). Tóm tắt **sau k
 | Frontend | **Out of scope** | Backend + infra trong repo |
 | Demo E2E script | **Planned** | Tự động hóa 7 bước demo |
 | Infra prod-ready | **In progress** | [phan-phu-tho-infrastructure-backlog.md](./team/phan-phu-tho-infrastructure-backlog.md) |
+| App logic / test / E2E | **In progress** | [application-backlog.md](./team/application-backlog.md) |
 
 ## Service mapping (tham chiếu nhanh)
 

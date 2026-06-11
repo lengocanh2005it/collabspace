@@ -398,15 +398,17 @@ Dùng bảng này khi tạo secret JSON trong Secret Manager (`collabspace/stagi
 
 ## Việc **không** thuộc Phan Phú Thọ (application team)
 
-| Hạng mục | Owner gợi ý |
-|----------|-------------|
-| Demo E2E script 7 bước MVP | Backend / QA |
-| Activity feed API | task-service dev |
-| Swagger/OpenAPI thiếu service | từng service owner |
-| Inject `requestId` vào Nest Logger (structured log trong code) | app dev |
-| Feature mới auth/task/notification | service teams |
+Xem chi tiết: [application-backlog.md](./application-backlog.md) (Lê Ngọc Anh, Ngô Quang Tiến, Võ Trung Tín).
 
-Infra **hỗ trợ** bằng: ELK field extraction, trace collector, smoke job — không viết business API.
+| Hạng mục | Owner |
+|----------|-------|
+| Demo E2E script 7 bước MVP | Võ Trung Tín (lead) |
+| Activity feed API | Võ Trung Tín |
+| Swagger/OpenAPI thiếu service | Anh / Tiến / Tín theo service |
+| Inject `requestId` vào Nest Logger | Application devs |
+| User/auth use-case tests | Lê Ngọc Anh |
+
+Infra **hỗ trợ** bằng: ELK field extraction, trace collector, smoke job CI — không viết business API.
 
 ---
 
