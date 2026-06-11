@@ -230,3 +230,6 @@ Hướng dẫn chạy demo: [mvp-demo-scope.md](./mvp-demo-scope.md#demo-story).
 | [service-contracts.md](../.claude/docs/service-contracts.md) | Route, event, header, error codes |
 | [project-architecture.md](../.claude/docs/project-architecture.md) | Kiến trúc hệ thống, port, datastore |
 | [README.md](../README.md) | Quick start, Docker, team |
+| [production-hardening.md](./production-hardening.md) | Prod checklist (Phase B/C) |
+| [backup-policy.md](./backup-policy.md) | Backup RPO/RTO, restore drill |
+| [team/phan-phu-tho-infrastructure-backlog.md](./team/phan-phu-tho-infrastructure-backlog.md) | Infra/DevOps việc còn lại |

@@ -11,7 +11,7 @@ skills:
 
 You implement CollabSpace MVP features as small demo-verifiable vertical slices.
 
-Default order if unspecified: workspace → project/board → task → comments/mentions → notifications.
+Default if unspecified: read `docs/features.md` — prefer demo E2E script or activity feed; core workspace/task/notification APIs are Done.
 
 For each slice:
 

@@ -144,6 +144,19 @@ Chi tiết: [cross-service-data.md](./cross-service-data.md)
 
 ---
 
+## 10.1 Correlation ID — `X-Request-Id` (Phase C)
+
+| | Propagate request ID (CollabSpace) | Không có correlation |
+|---|-----------------------------------|----------------------|
+| **Chọn** | ✅ Middleware 5 services + S2S HTTP forward | |
+| **Gain** | Tra cứu log/response theo một ID; gateway → auth verify → downstream | |
+| **Cost** | Chưa inject `requestId` vào mọi log line; gRPC chưa carry metadata | |
+| **Infra tiếp** | ELK/Loki parse field; optional OTel trace link | |
+
+Chi tiết: `.claude/docs/service-contracts.md` → Correlation ID.
+
+---
+
 ## 11. JWT + forward-auth vs session server-side only
 
 | | JWT access + refresh (CollabSpace) | Server session cookie |
@@ -202,13 +215,14 @@ Chi tiết: [cross-service-data.md](./cross-service-data.md)
 
 | Ưu tiên demo | Cố ý chưa làm / làm một phần |
 |--------------|------------------------------|
-| Luồng 7 bước MVP | Frontend UI |
-| Resilience 0–4 | SLO p99, multi-region |
+| Luồng 7 bước MVP (API) | Frontend UI; script E2E tự động |
+| Resilience 0–4, Phase B/C | SLO p99, multi-region |
 | Read model user | mTLS mesh, workspace replica |
-| Seed thống nhất | E2E script CI full story |
-| Docs NFR/trade-off | Backup cron, External Secrets automation |
+| Activity feed | WebSocket realtime |
+| Seed thống nhất | — |
+| Infra vận hành | Backup cron, restore drill, Secret Manager, CI/CD — [phan-phu-tho-infrastructure-backlog.md](./team/phan-phu-tho-infrastructure-backlog.md) |
 
-Xem checklist: [production-hardening.md](./production-hardening.md), [nfrs.md](./nfrs.md).
+Xem checklist: [production-hardening.md](./production-hardening.md), [nfrs.md](./nfrs.md), [mvp-demo-scope.md](./mvp-demo-scope.md).
 
 ---
 

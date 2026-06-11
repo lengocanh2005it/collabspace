@@ -28,6 +28,7 @@ Use before exposing CollabSpace beyond local/demo environments.
 - [x] K8s NetworkPolicies: default deny + per-service ingress (task→workspace/user internal, gRPC auth verify, Traefik public HTTP only).
 - [x] Gateway blocks `/api/v1/workspaces/internal` and `/api/v1/users/internal` from Traefik (503 — use cluster DNS + internal token).
 - [x] `/metrics` gated by `METRICS_AUTH_TOKEN` when set (all five services).
+- [x] **Correlation ID (Phase C):** `X-Request-Id` middleware on all five HTTP services; forward on task→workspace and task/notification→user S2S HTTP.
 
 ## Observability
 
@@ -49,8 +50,9 @@ Use before exposing CollabSpace beyond local/demo environments.
 
 | Secret | Consumers | Source |
 |--------|-----------|--------|
-| `JWT_SECRET` | auth, user, workspace, task, notification | Secret manager |
-| `POSTGRES_PASSWORD` | Nest/Kotlin DB services | Managed DB or secret |
+| `JWT_SECRET` | auth (sign); peers verify via auth gRPC | Secret manager |
+| `INTERNAL_SERVICE_TOKEN` | user, workspace (inbound); task, notification (outbound S2S) | Secret manager — **Helm template gap:** not yet in `secret.yaml` |
+| `POSTGRES_PASSWORD` | auth, user, workspace + Bitnami postgres | Managed DB or secret |
 | `REDIS_PASSWORD` | auth, notification | Secret manager |
 | `RABBITMQ_PASSWORD` | publishers/consumers | Secret manager |
 | `METRICS_AUTH_TOKEN` | Prometheus scrape, all app `/metrics` | Secret manager |
@@ -65,3 +67,5 @@ Helm: `infrastructure/helm/collabspace/values.yaml` → `global.secrets` is for 
 - Overview (VI): `docs/resilience-overview.md`
 - NFRs (VI): `docs/nfrs.md`
 - Trade-offs (VI): `docs/trade-offs.md`
+- Infra engineer backlog: `docs/team/phan-phu-tho-infrastructure-backlog.md`
+- Correlation ID: `.claude/docs/service-contracts.md` → Correlation ID (`X-Request-Id`)

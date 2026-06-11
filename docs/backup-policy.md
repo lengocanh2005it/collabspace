@@ -44,7 +44,10 @@ Artifacts land in `infrastructure/backup/artifacts/` (gitignored). Rotate locall
 2. Restore Mongo archive into a test cluster; verify task/notification read APIs.
 3. Record elapsed time vs RTO; file gaps in this doc.
 
+**Hiện trạng repo:** có `backup-postgres.sh` / `backup-mongo.sh` (chạy tay, Docker); **chưa có** `restore-*.sh`, CronJob, offsite copy, runbook restore chi tiết — xem [phan-phu-tho-infrastructure-backlog.md](./team/phan-phu-tho-infrastructure-backlog.md) mục 14–15.
+
 ## Related
 
 - Production checklist: `docs/production-hardening.md`
+- Infra backlog (backup automation): `docs/team/phan-phu-tho-infrastructure-backlog.md`
 - Resilience drills: `infrastructure/resilience/drills/README.md`

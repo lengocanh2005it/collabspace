@@ -27,3 +27,7 @@ docker logs collabspace-postgres --tail 50
 2. Wait for `pg_isready`, then restart app services that cache connections.
 3. Verify readiness endpoints return 200.
 4. Check disk space and connection limits if Postgres exits repeatedly.
+
+## Data loss / corrupt volume
+
+If the database volume is lost or corrupted, restore from backup — see `docs/backup-policy.md` and `infrastructure/backup/scripts/`. Infra backlog: automated backup + restore drill in `docs/team/phan-phu-tho-infrastructure-backlog.md`.

@@ -18,6 +18,7 @@ Read these files as needed:
 - `.claude/docs/service-architecture.md` (per-service folder layout and patterns)
 - `.claude/docs/service-contracts.md`
 - `.claude/docs/mvp-roadmap.md`
+- `docs/team/phan-phu-tho-infrastructure-backlog.md` (infra/DevOps gaps)
 
 ## Orientation Steps
 
@@ -29,7 +30,7 @@ Read these files as needed:
    - notification/activity
    - infrastructure/observability/CI
 2. Map the request to the owning service.
-3. Check whether the target service is implemented or still scaffold-level.
+3. Check `docs/features.md` for Done / Planned — all five app services are implemented; main gaps are activity feed, E2E script, frontend, infra ops.
 4. Read `services/<service>/CLAUDE.md` and `.claude/docs/service-architecture.md` for that service's layering rules.
 5. Read the target service's `src/app.module.ts`, controllers, use cases/handlers, entities, repositories, migrations, and tests.
 6. Summarize the current state before proposing cross-service work.

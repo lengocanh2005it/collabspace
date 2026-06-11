@@ -135,7 +135,7 @@ Chi tiết kỹ thuật:
 | Service boundaries rõ | Một team/feature → một service | ✅ auth, user, workspace, task, notification |
 | Contract docs | API + event | ✅ `service-contracts.md`, `api-routes.md` |
 | Unit tests | Logic nghiệp vụ | ✅ auth, user, task, notification (mức độ khác nhau) |
-| E2E cross-service | Demo story tự động | ❌ Chưa script full 7 bước |
+| E2E cross-service | Demo story tự động | ⚠️ API đủ 7 bước; chưa script `demo-e2e` |
 | Coding conventions | Layering nhất quán | ✅ `.claude/docs/coding-conventions.md`, per-service CLAUDE.md |
 
 ---
@@ -176,3 +176,5 @@ Dự án **có cơ sở thực tế** (code + infra + doc) cho các NFR sau — 
 | Gateway resilience | `api-gateway/dynamic/middlewares.yml` |
 | Backup | `docs/backup-policy.md` |
 | Prod gaps | `docs/production-hardening.md` |
+| Infra backlog | `docs/team/phan-phu-tho-infrastructure-backlog.md` |
+| Backup / restore | `docs/backup-policy.md`, `infrastructure/backup/scripts/` |

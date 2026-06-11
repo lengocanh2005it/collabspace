@@ -1,6 +1,6 @@
 # CollabSpace MVP Demo Scope
 
-Tài liệu này định nghĩa **phạm vi demo MVP** và tiêu chí chấp nhận. Danh sách tính năng chi tiết và trạng thái implement: **[features.md](./features.md)**.
+Tài liệu này định nghĩa **phạm vi demo MVP** và tiêu chí chấp nhận. Danh sách tính năng chi tiết và trạng thái implement: **[features.md](./features.md)** (nguồn chính).
 
 ## Goal
 
@@ -11,7 +11,7 @@ MVP tập trung vào một luồng demo ngắn nhưng trọn vẹn:
 3. Tạo project / task
 4. Gán task và đổi trạng thái
 5. Comment có `@username`
-6. Xem notification
+6. Xem notification và đánh dấu đã đọc
 
 ## Demo Story
 
@@ -19,22 +19,30 @@ MVP tập trung vào một luồng demo ngắn nhưng trọn vẹn:
 2. User A tạo workspace → mời User B
 3. User B accept lời mời
 4. User A tạo project → tạo 3 task → assign một task cho User B
-5. User B đổi task từ `todo` sang `in_progress`
+5. User B đổi task sang `DOING` (board: cột `TODO` → `DOING`)
 6. User A comment và mention `@user-b`
-7. User B thấy notification liên quan
+7. User B mở danh sách notification → `PATCH .../read` hoặc `read-all`
 
-## MVP Acceptance
+## MVP Acceptance — backend API
 
-Đủ MVP demo khi:
+Các API cốt lõi cho demo (theo [features.md](./features.md)):
 
-- [ ] Đăng ký, verify email, đăng nhập
-- [ ] Tạo workspace và thêm thành viên (invite + accept)
-- [ ] Tạo project và task trong workspace
-- [ ] Assign task và đổi trạng thái
-- [ ] Comment và mention `@username`
-- [ ] User B list được notification (invite / assign / mention)
+- [x] Đăng ký, verify email, đăng nhập
+- [x] Tạo workspace và thêm thành viên (invite + accept)
+- [x] Tạo project và task trong workspace
+- [x] Assign task và đổi trạng thái
+- [x] Comment và mention `@username`
+- [x] User B list notification (invite / assign / mention) + mark-read
 
 Checklist chi tiết theo service: [mvp-roadmap.md — Demo Acceptance Checklist](../.claude/docs/mvp-roadmap.md#demo-acceptance-checklist).
+
+## Demo verification — chưa đóng
+
+API đã có; còn thiếu **chứng minh tự động** và client:
+
+- [ ] Script demo E2E 7 bước (`scripts/demo-e2e` — chưa có)
+- [ ] Smoke qua Traefik gateway (không chỉ curl trực tiếp port service)
+- [ ] Frontend / UI client trong repo
 
 ## Out of Scope
 
@@ -42,16 +50,19 @@ Xem [features.md — Ngoài phạm vi MVP](./features.md#ngoài-phạm-vi-mvp).
 
 ## Gaps còn lại (snapshot)
 
-Cập nhật đầy đủ tại [features.md](./features.md). Tóm tắt:
+Cập nhật đầy đủ tại [features.md](./features.md). Tóm tắt **sau khi sync 2026-06**:
 
-| Hạng mục | Ghi chú |
-|----------|---------|
-| Board API riêng | Client group từ list task; chưa có endpoint Kanban |
-| Task priority / due date | Chưa có trong API |
-| Xóa task qua HTTP | Handler có, endpoint chưa expose |
-| Activity feed | Chưa có |
-| Notification mark-read / realtime | List API có; chưa mark-read, chưa WebSocket |
-| Frontend | Chưa có client UI trong repo |
+| Hạng mục | Trạng thái | Ghi chú |
+|----------|------------|---------|
+| Board API | **Done** | `GET /tasks/board?workspaceId=` |
+| Task priority / due date / labels | **Done** | PATCH task details |
+| Xóa task | **Done** | `DELETE /tasks/:id` |
+| Notification mark-read | **Done** | `PATCH /notifications/:id/read`, `read-all` |
+| Activity feed | **Planned** | Timeline task/workspace |
+| WebSocket realtime | **Out of scope** | Polling `GET /notifications` |
+| Frontend | **Out of scope** | Backend + infra trong repo |
+| Demo E2E script | **Planned** | Tự động hóa 7 bước demo |
+| Infra prod-ready | **In progress** | [phan-phu-tho-infrastructure-backlog.md](./team/phan-phu-tho-infrastructure-backlog.md) |
 
 ## Service mapping (tham chiếu nhanh)
 
@@ -62,5 +73,5 @@ Chi tiết route: [service-contracts.md](../.claude/docs/service-contracts.md).
 | auth-service | Auth flow |
 | user-service | Profile & directory |
 | workspace-service | Workspace, invite, project |
-| task-service | Task, comment, assign |
-| notification-service | Notification list từ events |
+| task-service | Task, board, comment, assign |
+| notification-service | Notification list + mark-read từ events |

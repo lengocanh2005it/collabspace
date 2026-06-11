@@ -8,13 +8,13 @@ Kế hoạch triển khai cho developer và AI agent. **Danh sách tính năng v
 2. User A creates workspace → invites User B
 3. User B accepts invitation
 4. User A creates project and tasks → assigns one to User B
-5. User B moves task to `in_progress`
+5. User B moves task to `DOING`
 6. User A comments with `@user-b`
-7. User B lists notifications
+7. User B lists notifications → mark as read
 
 ## Recommended Build Order
 
-Các phase dưới đây phản ánh thứ tự implement lịch sử. Nhiều mục đã **Done** — xem [features.md](../../docs/features.md) trước khi làm trùng.
+Các phase dưới đây phản ánh thứ tự implement lịch sử. **Luôn đọc [features.md](../../docs/features.md) trước khi làm trùng.**
 
 ### Phase 1: Auth/User base — **Done**
 
@@ -30,29 +30,38 @@ Các phase dưới đây phản ánh thứ tự implement lịch sử. Nhiều m
 
 - Project CRUD trong `workspace-service`
 
-### Phase 4: Task MVP — **Mostly done**
+### Phase 4: Task MVP — **Done**
 
-- Task create/list/detail, status, assignee, workspace guard
-- Outbox events, idempotency, workspace HTTP client
+- Task CRUD, list/detail, status, assignee, workspace guard
+- Board API, priority/due date/labels, `DELETE /tasks/:id`
+- Outbox events, idempotency, workspace internal HTTP client + `INTERNAL_SERVICE_TOKEN`
+- Event sourcing aggregate Task, attachments (mock Azure)
 
-**Remaining:** expose delete-task HTTP, priority/due date, board endpoint
+### Phase 5: Comments & mentions — **Done**
 
-### Phase 5: Comments & mentions — **Mostly done**
+- Comment CRUD, mention parse, `comment_created` / `comment_mentioned` events
+- User replica sync + HTTP fallback hydrate
 
-- Comment CRUD, mention parse, `comment_created` event
+**Remaining:** activity feed (timeline)
 
-**Remaining:** activity feed
-
-### Phase 6: Notification MVP — **Mostly done**
+### Phase 6: Notification MVP — **Done**
 
 - Consumers, persistence, dedupe `eventId`, list API
+- `PATCH /notifications/:id/read`, `PATCH /notifications/read-all`
+- User replica enrichment on list
 
-**Remaining:** mark-as-read API, optional realtime
+**Out of scope:** WebSocket / push realtime
 
 ### Phase 7: Platform hardening — **In progress**
 
-- Resilience phases 0–4, observability stack
-- See [resilience.md](./resilience.md)
+| Sub-phase | Nội dung | Trạng thái |
+|-----------|----------|------------|
+| 7.0 | Resilience phases 0–4 (health, outbox, metrics, chaos scripts) | **Done** |
+| 7.B | Trust boundaries — JWT gRPC, gateway strip, internal token, NetworkPolicy | **Done** |
+| 7.C | Correlation ID `X-Request-Id` middleware + S2S forward | **Done** |
+| 7.infra | Secret Manager, CI/CD, backup cron, ELK ship, staging deploy | **Backlog** — [phan-phu-tho-infrastructure-backlog.md](../../docs/team/phan-phu-tho-infrastructure-backlog.md) |
+
+Chi tiết resilience: [resilience.md](./resilience.md), [resilience-overview.md](../../docs/resilience-overview.md).
 
 ## Demo Acceptance Checklist
 
@@ -60,17 +69,16 @@ Các phase dưới đây phản ánh thứ tự implement lịch sử. Nhiều m
 - **User:** search/list/bulk by username
 - **Workspace:** create → invite → accept → member list
 - **Project:** create in workspace
-- **Task:** create → assign → status `todo` → `in_progress`
+- **Task:** create → assign → status `TODO` → `DOING` (board columns)
 - **Comment:** add with `@username` → mention in event payload
-- **Notification:** User B lists invite, assign, mention notifications
+- **Notification:** User B lists invite, assign, mention → mark-read
 
-## Good First Slice (khi tiếp tục MVP)
+## Good First Slice (khi tiếp tục)
 
-Ưu tiên đóng gap từ [features.md](../../docs/features.md):
+Ưu tiên từ [features.md](../../docs/features.md) và [mvp-demo-scope.md](../../docs/mvp-demo-scope.md):
 
-1. `PATCH /notifications/:id/read` (hoặc tương đương)
-2. `DELETE /tasks/:id` HTTP endpoint (handler đã có)
-3. Board query hoặc document client grouping contract
-4. Activity feed tối thiểu trên task
+1. **Demo E2E script** — 7 bước qua gateway (highest ROI cho chứng minh MVP)
+2. **Activity feed** tối thiểu trên task/workspace
+3. **Infra** — theo backlog Phan Phú Thọ (secrets, backup, CI smoke) nếu role infra
 
 Nếu chưa rõ service nào: đọc [service-architecture.md](./service-architecture.md) và [features.md](../../docs/features.md) trước.

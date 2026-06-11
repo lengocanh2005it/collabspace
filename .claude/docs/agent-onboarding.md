@@ -98,6 +98,10 @@ Sau khi sửa code:
 
 ## "Continue MVP" default
 
-Nếu user không chỉ rõ service → bắt đầu **workspace-service** (unlock membership cho task/notification).
+Đọc `docs/features.md` trước — **backend MVP APIs đã Done** (board, mark-read, delete task, Phase B/C).
 
-Thứ tự: workspace → project/board → task → comments/mentions → notifications.
+Ưu tiên còn lại:
+
+1. Demo E2E script 7 bước (`docs/mvp-demo-scope.md`)
+2. Activity feed
+3. Infra vận hành → `docs/team/phan-phu-tho-infrastructure-backlog.md`

@@ -26,3 +26,5 @@ curl -s -o /dev/null -w "%{http_code}" http://localhost:3004/api/v1/notification
 ```
 
 Automated drill: `infrastructure/resilience/drills/verify-readiness.ps1` (Windows) or `verify-readiness.sh` (Linux/macOS).
+
+Backup / restore policy: [backup-policy.md](../backup-policy.md). Infra automation backlog: [phan-phu-tho-infrastructure-backlog.md](../team/phan-phu-tho-infrastructure-backlog.md).
