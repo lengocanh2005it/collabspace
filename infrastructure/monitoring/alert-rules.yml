@@ -1,0 +1,136 @@
+groups:
+  - name: collabspace_service_alerts
+    rules:
+      # Service availability
+      - alert: ServiceDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Instance {{ $labels.instance }} down"
+          description: "{{ $labels.instance }} of job {{ $labels.job }} has been down for more than 1 minute."
+
+      - alert: ServiceHighRestartRate
+        expr: changes(process_start_time_seconds[15m]) > 2
+        for: 0m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Service {{ $labels.job }} restarting frequently"
+          description: "{{ $labels.job }} has restarted more than 2 times in 15 minutes."
+
+      # HTTP error rates
+      - alert: HighErrorRate5xx
+        expr: |
+          sum by (job) (rate(http_requests_total{status=~"5.."}[5m]))
+          / sum by (job) (rate(http_requests_total[5m])) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High 5xx error rate on {{ $labels.job }}"
+          description: "5xx error rate is above 5% over 5 minutes on {{ $labels.job }}."
+
+      - alert: HighErrorRate4xx
+        expr: |
+          sum by (job) (rate(http_requests_total{status=~"4.."}[5m]))
+          / sum by (job) (rate(http_requests_total[5m])) > 0.25
+        for: 10m
+        labels:
+          severity: info
+        annotations:
+          summary: "High 4xx error rate on {{ $labels.job }}"
+          description: "4xx error rate is above 25% over 10 minutes."
+
+      # Latency
+      - alert: HighLatencyP99
+        expr: |
+          histogram_quantile(0.99,
+            sum by (job, le) (rate(http_request_duration_seconds_bucket[5m]))
+          ) > 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High p99 latency on {{ $labels.job }}"
+          description: "p99 latency is above 2 seconds on {{ $labels.job }}."
+
+      # Memory
+      - alert: HighMemoryUsage
+        expr: process_resident_memory_bytes > 450 * 1024 * 1024
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage on {{ $labels.job }}"
+          description: "{{ $labels.job }} is using more than 450MB of RSS memory."
+
+  - name: collabspace_infra_alerts
+    rules:
+      # Database connectivity
+      - alert: PostgresDown
+        expr: pg_up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "PostgreSQL is down"
+          description: "PostgreSQL exporter reports the database is unreachable."
+
+      - alert: RedisDown
+        expr: redis_up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Redis is down"
+          description: "Redis exporter reports Redis is unreachable."
+
+      - alert: MongoDown
+        expr: up{job="mongodb"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "MongoDB is down"
+          description: "MongoDB exporter scrape target is unreachable."
+
+      # RabbitMQ
+      - alert: RabbitMQHighQueueDepth
+        expr: rabbitmq_queue_messages > 1000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "RabbitMQ queue {{ $labels.queue }} has high message backlog"
+          description: "Queue {{ $labels.queue }} has {{ $value }} messages waiting."
+
+      - alert: RabbitMQDLQNotEmpty
+        expr: rabbitmq_queue_messages{queue=~".*\\.dlq"} > 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Dead letter queue {{ $labels.queue }} has messages"
+          description: "DLQ {{ $labels.queue }} has {{ $value }} failed messages."
+
+      # PostgreSQL connection pool
+      - alert: PostgresHighConnections
+        expr: pg_stat_activity_count > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "PostgreSQL connection count is high"
+          description: "PostgreSQL has {{ $value }} active connections (limit is usually 100)."
+
+      # Redis memory
+      - alert: RedisHighMemoryUsage
+        expr: redis_memory_max_bytes > 0 and redis_memory_used_bytes / redis_memory_max_bytes > 0.85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Redis memory usage is above 85%"
+          description: "Redis is using {{ $value | humanizePercentage }} of its configured max memory."
