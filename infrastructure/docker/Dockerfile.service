@@ -48,6 +48,9 @@ COPY --from=builder /app/packages/shared/dist ./packages/shared/dist
 COPY --from=builder /app/packages/shared/package.json ./packages/shared/package.json
 COPY --from=builder /app/services/${SERVICE_NAME}/dist ./services/${SERVICE_NAME}/dist
 COPY --from=builder /app/services/${SERVICE_NAME}/package.json ./services/${SERVICE_NAME}/package.json
+RUN if [ ! -f "./services/${SERVICE_NAME}/dist/main.js" ] && [ -f "./services/${SERVICE_NAME}/dist/src/main.js" ]; then \
+      ln -s src/main.js "./services/${SERVICE_NAME}/dist/main.js"; \
+    fi
 RUN --mount=from=builder,source=/app/services/${SERVICE_NAME},target=/svc,ro \
     if [ -d /svc/migrations ]; then \
       mkdir -p "./services/${SERVICE_NAME}/migrations" && \

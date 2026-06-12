@@ -25,6 +25,8 @@ Lộ trình: [docs/deployment-k3s-phases.md](../../docs/deployment-k3s-phases.md
 
 Workflow: `.github/workflows/docker-deploy.yml`
 
+> CI deploy applies Helm manifests first, then waits for datastores, runs migrations, and finally waits for app rollouts. This avoids deadlock when a fresh app image requires new tables before its readiness probe can pass.
+
 ## Pipeline
 
 ```text
@@ -32,7 +34,7 @@ push main (hoặc workflow_dispatch)
   → build-images (5 service → GHCR, tag = commit SHA)
   → deploy (SSH Droplet)
        → git pull
-       → helm-deploy-ci.sh (helm upgrade + migration + rollout)
+       → helm-deploy-ci.sh (helm apply + migration + rollout)
        → verify-k8s-readiness.sh
 ```
 

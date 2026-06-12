@@ -24,7 +24,7 @@ spec:
           image: oliver006/redis_exporter:v1.66.0
           env:
             - name: REDIS_ADDR
-              value: {{ printf "redis://:%s@redis:6379" $redisPass | quote }}
+              value: {{ printf "redis://:%s@%s:6379" $redisPass (include "collabspace.redis.host" (dict "root" .)) | quote }}
           ports:
             - containerPort: 9121
 ---

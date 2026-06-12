@@ -140,8 +140,7 @@ helm upgrade --install "$RELEASE" "$CHART_DIR" \
   --create-namespace \
   -f "$CHART_DIR/values.yaml" \
   -f "$VALUES_PROD" \
-  "${tag_sets[@]}" \
-  --wait --timeout 20m
+  "${tag_sets[@]}"
 
 echo "==> Scaling down Postgres app deployments (migration window)..."
 for dep in auth-service user-service workspace-service; do
