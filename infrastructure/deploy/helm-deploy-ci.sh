@@ -10,8 +10,7 @@
 set -euo pipefail
 
 if [[ -z "${IMAGE_TAG:-}" ]]; then
-  echo "IMAGE_TAG is required for CI deploy."
-  exit 1
+  echo "IMAGE_TAG not set — helm-only deploy, image tags unchanged."
 fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
