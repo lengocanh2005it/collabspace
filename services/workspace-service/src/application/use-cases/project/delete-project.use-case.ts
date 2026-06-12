@@ -12,6 +12,10 @@ import {
   type IWorkspaceMemberRepository,
   WORKSPACE_MEMBER_REPOSITORY,
 } from '../../../domain/repositories/workspace-member.repository';
+import {
+  type IWorkspaceActivityRepository,
+  WORKSPACE_ACTIVITY_REPOSITORY,
+} from '../../../domain/repositories/workspace-activity.repository';
 
 @Injectable()
 export class DeleteProjectUseCase {
@@ -20,6 +24,8 @@ export class DeleteProjectUseCase {
     private readonly projectRepo: IProjectRepository,
     @Inject(WORKSPACE_MEMBER_REPOSITORY)
     private readonly memberRepo: IWorkspaceMemberRepository,
+    @Inject(WORKSPACE_ACTIVITY_REPOSITORY)
+    private readonly activityRepo: IWorkspaceActivityRepository,
   ) {}
 
   async execute(userId: string, workspaceId: string, projectId: string) {
@@ -37,6 +43,16 @@ export class DeleteProjectUseCase {
     }
 
     await this.projectRepo.softDelete(projectId, workspaceId);
+
+    await this.activityRepo.record({
+      workspaceId,
+      actorId: userId,
+      actorName: null,
+      type: 'project_deleted',
+      summary: `Project "${project.name}" was deleted`,
+      meta: { projectId, projectName: project.name },
+    });
+
     return { status: 'deleted' };
   }
 }

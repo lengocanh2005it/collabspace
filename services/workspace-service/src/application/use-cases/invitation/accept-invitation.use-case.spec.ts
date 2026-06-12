@@ -1,11 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AcceptInvitationUseCase } from './accept-invitation.use-case';
 import { INVITATION_REPOSITORY } from '../../../domain/repositories/invitation.repository';
+import { WORKSPACE_ACTIVITY_REPOSITORY } from '../../../domain/repositories/workspace-activity.repository';
 
 describe('AcceptInvitationUseCase', () => {
   let useCase: AcceptInvitationUseCase;
 
   const mockInvitationRepo = { acceptAndJoinWorkspace: jest.fn() };
+  const mockActivityRepo = { record: jest.fn().mockResolvedValue(undefined) };
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -13,6 +15,7 @@ describe('AcceptInvitationUseCase', () => {
       providers: [
         AcceptInvitationUseCase,
         { provide: INVITATION_REPOSITORY, useValue: mockInvitationRepo },
+        { provide: WORKSPACE_ACTIVITY_REPOSITORY, useValue: mockActivityRepo },
       ],
     }).compile();
     useCase = module.get<AcceptInvitationUseCase>(AcceptInvitationUseCase);

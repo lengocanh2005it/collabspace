@@ -96,6 +96,7 @@ Protected routes require `Authorization: Bearer …` (auth gRPC). Dev-only `X-Us
 |------|----------|
 | Workspace | `POST /`, `GET /`, `GET /{id}`, `PATCH /{id}` |
 | Members | `GET /{id}/members` |
+| Activity | `GET /{id}/activity` — workspace timeline (`limit`, `offset`) |
 | Invitations | `POST /{id}/invite`, `POST /invitations/{token}/accept`, `POST /invitations/{token}/reject` |
 | Projects | `POST /{workspaceId}/projects`, `GET /{workspaceId}/projects`, `PATCH /projects/{id}`, `DELETE /projects/{id}` |
 | Health | `GET /health/live`, `GET /health/ready` |

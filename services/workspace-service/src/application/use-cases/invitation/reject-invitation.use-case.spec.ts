@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { RejectInvitationUseCase } from './reject-invitation.use-case';
 import { INVITATION_REPOSITORY } from '../../../domain/repositories/invitation.repository';
+import { WORKSPACE_ACTIVITY_REPOSITORY } from '../../../domain/repositories/workspace-activity.repository';
 import { Invitation } from '../../../domain/entities/invitation.entity';
 
 describe('RejectInvitationUseCase', () => {
@@ -11,6 +12,7 @@ describe('RejectInvitationUseCase', () => {
     findById: jest.fn(),
     updateStatus: jest.fn(),
   };
+  const mockActivityRepo = { record: jest.fn().mockResolvedValue(undefined) };
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -18,6 +20,7 @@ describe('RejectInvitationUseCase', () => {
       providers: [
         RejectInvitationUseCase,
         { provide: INVITATION_REPOSITORY, useValue: mockInvitationRepo },
+        { provide: WORKSPACE_ACTIVITY_REPOSITORY, useValue: mockActivityRepo },
       ],
     }).compile();
     useCase = module.get<RejectInvitationUseCase>(RejectInvitationUseCase);

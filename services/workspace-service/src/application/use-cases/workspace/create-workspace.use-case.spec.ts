@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { CreateWorkspaceUseCase } from './create-workspace.use-case';
 import { WORKSPACE_REPOSITORY } from '../../../domain/repositories/workspace.repository';
+import { WORKSPACE_ACTIVITY_REPOSITORY } from '../../../domain/repositories/workspace-activity.repository';
 import { Workspace } from '../../../domain/entities/workspace.entity';
 
 describe('CreateWorkspaceUseCase', () => {
@@ -10,6 +11,8 @@ describe('CreateWorkspaceUseCase', () => {
     createWithOwner: jest.fn(),
   };
 
+  const mockActivityRepo = { record: jest.fn().mockResolvedValue(undefined) };
+
   beforeEach(async () => {
     jest.clearAllMocks();
 
@@ -17,6 +20,7 @@ describe('CreateWorkspaceUseCase', () => {
       providers: [
         CreateWorkspaceUseCase,
         { provide: WORKSPACE_REPOSITORY, useValue: mockWorkspaceRepo },
+        { provide: WORKSPACE_ACTIVITY_REPOSITORY, useValue: mockActivityRepo },
       ],
     }).compile();
 

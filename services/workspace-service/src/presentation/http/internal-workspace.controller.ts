@@ -6,7 +6,13 @@ import {
   Query,
   Req,
 } from '@nestjs/common';
-import { ApiOperation, ApiParam, ApiQuery, ApiSecurity, ApiTags } from '@nestjs/swagger';
+import {
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiSecurity,
+  ApiTags,
+} from '@nestjs/swagger';
 import type { Request } from 'express';
 import { CheckWorkspaceMembershipUseCase } from '../../application/use-cases/workspace/check-workspace-membership.use-case';
 import { assertInternalServiceAccess } from './internal-service-access';

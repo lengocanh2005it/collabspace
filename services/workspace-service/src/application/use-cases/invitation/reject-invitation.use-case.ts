@@ -8,12 +8,18 @@ import {
   type IInvitationRepository,
   INVITATION_REPOSITORY,
 } from '../../../domain/repositories/invitation.repository';
+import {
+  type IWorkspaceActivityRepository,
+  WORKSPACE_ACTIVITY_REPOSITORY,
+} from '../../../domain/repositories/workspace-activity.repository';
 
 @Injectable()
 export class RejectInvitationUseCase {
   constructor(
     @Inject(INVITATION_REPOSITORY)
     private readonly invitationRepo: IInvitationRepository,
+    @Inject(WORKSPACE_ACTIVITY_REPOSITORY)
+    private readonly activityRepo: IWorkspaceActivityRepository,
   ) {}
 
   async execute(userId: string, invitationId: string) {
@@ -23,6 +29,16 @@ export class RejectInvitationUseCase {
       throw new BadRequestException('Invitation is not pending');
 
     await this.invitationRepo.updateStatus(invitationId, 'rejected', userId);
+
+    await this.activityRepo.record({
+      workspaceId: invitation.workspaceId,
+      actorId: userId,
+      actorName: null,
+      type: 'invitation_rejected',
+      summary: 'An invitation was declined',
+      meta: { invitationId },
+    });
+
     return { status: 'rejected' };
   }
 }
