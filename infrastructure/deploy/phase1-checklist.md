@@ -75,4 +75,4 @@ chmod +x infrastructure/deploy/fetch-kubeconfig.sh
 | `helm dependency update` lỗi OCI | Kiểm tra outbound HTTPS; retry |
 | Node NotReady | `journalctl -u k3s -e`; kiểm tra disk/RAM |
 
-**Xong Phase 1 →** [Phase 2: Vault + ESO](../../docs/deployment-k3s-phases.md#phase-2--vault--external-secrets-operator)
+**Xong Phase 1 →** [Phase 2 checklist](./phase2-checklist.md)

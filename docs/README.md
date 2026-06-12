@@ -26,6 +26,7 @@ Chỉ mục tài liệu dự án (tiếng Việt có dấu). Tài liệu kỹ th
 | [deployment-k3s-phases.md](./deployment-k3s-phases.md) | **Lộ trình production** — k3s + Helm + Vault + ESO (theo phase) |
 | [../infrastructure/deploy/phase0-checklist.md](../infrastructure/deploy/phase0-checklist.md) | Checklist Phase 0 (Droplet, values-prod, secrets) |
 | [../infrastructure/deploy/phase1-checklist.md](../infrastructure/deploy/phase1-checklist.md) | Checklist Phase 1 (bootstrap k3s) |
+| [../infrastructure/deploy/phase2-checklist.md](../infrastructure/deploy/phase2-checklist.md) | Checklist Phase 2 (Vault + ESO) |
 | [deployment-digitalocean-droplet.md](./deployment-digitalocean-droplet.md) | Deploy legacy Docker Compose trên Droplet |
 | [production-hardening.md](./production-hardening.md) | Checklist cứng hóa production |
 | [backup-policy.md](./backup-policy.md) | Chính sách backup & phục hồi |

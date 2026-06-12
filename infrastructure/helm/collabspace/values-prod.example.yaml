@@ -7,9 +7,8 @@
 #   ./infrastructure/deploy/prepare-prod-values.sh
 #
 # Cài đặt (Phase 3):
-#   helm upgrade --install collabspace . \
-#     -n collabspace --create-namespace \
-#     -f values.yaml -f values-prod.yaml
+#   sudo bash infrastructure/deploy/helm-deploy-phase3.sh
+#   sudo bash infrastructure/deploy/verify-phase3.sh
 #
 # Lộ trình: docs/deployment-k3s-phases.md
 

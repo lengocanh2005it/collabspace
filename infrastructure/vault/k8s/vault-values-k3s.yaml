@@ -1,0 +1,40 @@
+# HashiCorp Vault Helm values — k3s single-node (production MVP).
+# Install: helm upgrade --install vault hashicorp/vault -n vault -f vault-values-k3s.yaml
+#
+# NOT dev mode — requires manual init/unseal (vault-eso-phase2.sh).
+
+global:
+  enabled: true
+
+server:
+  enabled: true
+  standalone:
+    enabled: true
+  dev:
+    enabled: false
+  affinity: ""
+  resources:
+    requests:
+      memory: 256Mi
+      cpu: 200m
+    limits:
+      memory: 512Mi
+      cpu: 500m
+  dataStorage:
+    enabled: true
+    size: 5Gi
+    storageClass: null
+  service:
+    enabled: true
+    type: ClusterIP
+    port: 8200
+
+injector:
+  enabled: false
+
+ui:
+  enabled: true
+  serviceType: ClusterIP
+
+csi:
+  enabled: false

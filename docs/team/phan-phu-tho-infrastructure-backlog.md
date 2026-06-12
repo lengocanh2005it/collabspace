@@ -70,6 +70,8 @@ P3  Chaos quarterly (staging)       →  chứng minh recovery
 - [ ] Định nghĩa **3 tầng**: `local` (Compose), `staging` (K8s), `production` (K8s hoặc managed).
 - [x] Tạo `values-prod.example.yaml` + script `prepare-prod-values` — [phase0-checklist.md](../../infrastructure/deploy/phase0-checklist.md).
 - [x] Script Phase 1: `k3s-bootstrap.sh`, `verify-phase1.sh`, `fetch-kubeconfig` — [phase1-checklist.md](../../infrastructure/deploy/phase1-checklist.md).
+- [x] Script Phase 2: `vault-eso-phase2.sh`, `verify-phase2.sh`, `external-secrets.prod.yaml` — [phase2-checklist.md](../../infrastructure/deploy/phase2-checklist.md).
+- [ ] Chạy Phase 2 trên Droplet; backup `.vault-k3s-init.json` off-server.
 - [ ] Điền `phase0.env` và chạy script trên máy ops; không commit `values-prod.yaml`.
 - [ ] Chạy `k3s-bootstrap.sh` trên Droplet thật; `verify-phase1.sh` pass.
 - [ ] Tạo `values-staging.yaml` nếu cần môi trường staging riêng.

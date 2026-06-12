@@ -134,6 +134,8 @@ kubectl get nodes
 
 **Mục tiêu:** Secret không nằm trong Git; app đọc env từ K8s Secret.
 
+**Checklist:** [infrastructure/deploy/phase2-checklist.md](../infrastructure/deploy/phase2-checklist.md)
+
 ```text
 Vault KV secret/collabspace/prod
   → ExternalSecret (ESO)
@@ -142,25 +144,39 @@ Vault KV secret/collabspace/prod
   → NestJS process.env
 ```
 
-### Thứ tự
-
-1. Cài [External Secrets Operator](https://external-secrets.io/latest/introduction/getting-started/)
-2. Deploy Vault persistent (**không** dùng `-dev` mode)
-3. `init` / `unseal` Vault — lưu unseal keys **ngoài** Droplet
-4. Enable KV v2 mount `secret/`
-5. Seed `secret/collabspace/prod`
-6. Tạo policy read-only cho ESO; production nên dùng [Kubernetes auth](https://developer.hashicorp.com/vault/docs/auth/kubernetes)
-7. Apply manifest: `infrastructure/vault/k8s/cluster-secret-store.yaml`, `external-secrets.yaml`
-8. Đồng bộ password Bitnami subchart với Vault (`postgres_password`, `mongo_password`, …)
+### Bước nhanh (trên Droplet)
 
 ```bash
-kubectl apply -f infrastructure/vault/k8s/cluster-secret-store.yaml
-kubectl apply -f infrastructure/vault/k8s/external-secrets.yaml
-kubectl get externalsecrets -n collabspace
-kubectl get secret auth-service-secrets -n collabspace
+cd /opt/collabspace
+# Cần phase0.env đã điền secret
+sudo bash infrastructure/deploy/vault-eso-phase2.sh
+sudo bash infrastructure/deploy/verify-phase2.sh
 ```
 
-**Definition of Done:** ExternalSecret trạng thái `Synced`; K8s Secret tồn tại; không dùng root token cho app.
+### Artifact trong repo
+
+| File | Mục đích |
+|------|----------|
+| `infrastructure/deploy/vault-eso-phase2.sh` | Cài ESO + Vault, init, seed, apply ExternalSecrets |
+| `infrastructure/deploy/verify-phase2.sh` | Kiểm tra DoD Phase 2 |
+| `infrastructure/vault/k8s/vault-values-k3s.yaml` | Helm values Vault standalone |
+| `infrastructure/vault/k8s/external-secrets.prod.yaml` | ExternalSecret → `collabspace/prod` |
+| `infrastructure/vault/scripts/seed-vault-k3s-from-phase0.sh` | Seed Vault từ `phase0.env` |
+
+File gitignored sau chạy: `.vault-k3s-init.json`, `.vault-k3s-eso-token.json`
+
+### Thứ tự (tự động trong script)
+
+1. Cài External Secrets Operator (Helm)
+2. Cài Vault persistent (**không** dev mode)
+3. Init / unseal — **backup** `.vault-k3s-init.json` ngoài Droplet
+4. KV v2 `secret/`, policy `collabspace-prod-read`, token ESO
+5. Seed `secret/collabspace/prod` từ `phase0.env`
+6. `cluster-secret-store.yaml` + `external-secrets.prod.yaml`
+
+Password Bitnami trong `values-prod.yaml` phải **khớp** Vault (`postgres_password`, `mongo_password`, …) — Phase 3.
+
+**Definition of Done:** `verify-phase2.sh` pass; 5 ExternalSecret `Ready`; 5 K8s Secret tồn tại.
 
 ---
 
@@ -168,14 +184,27 @@ kubectl get secret auth-service-secrets -n collabspace
 
 **Mục tiêu:** Toàn bộ stack chạy; API truy cập được.
 
+**Checklist:** [infrastructure/deploy/phase3-checklist.md](../infrastructure/deploy/phase3-checklist.md)
+
+### Bước nhanh (trên Droplet)
+
 ```bash
-helm upgrade --install collabspace infrastructure/helm/collabspace \
-  -n collabspace \
-  -f infrastructure/helm/collabspace/values.yaml \
-  -f infrastructure/helm/collabspace/values-prod.yaml
+cd /opt/collabspace
+# Cần values-prod.yaml (Phase 0) + Phase 2 pass
+sudo bash infrastructure/deploy/helm-deploy-phase3.sh
+sudo bash infrastructure/deploy/verify-phase3.sh
 ```
 
-### Thứ tự sau khi data layer Ready
+### Script trong repo
+
+| Script | Mục đích |
+|--------|----------|
+| `infrastructure/deploy/helm-deploy-phase3.sh` | Helm install, chờ datastore, migration, rollout app |
+| `infrastructure/deploy/run-k8s-migrations.sh` | Job K8s: auth → user → workspace (`migrate:prod`) |
+| `infrastructure/deploy/verify-phase3.sh` | Kiểm tra DoD Phase 3 |
+| `infrastructure/deploy/verify-k8s-readiness.sh` | `curl` readiness qua Traefik |
+
+### Thứ tự (tự động trong script)
 
 1. PostgreSQL, MongoDB, Redis, RabbitMQ (Bitnami subcharts + PVC)
 2. **Migration** (thứ tự bắt buộc): `auth-service` → `user-service` → `workspace-service`
@@ -184,13 +213,14 @@ helm upgrade --install collabspace infrastructure/helm/collabspace \
 5. Smoke test
 
 ```bash
-# Trên cluster hoặc qua port-forward
-curl -fsS http://<ip>/api/v1/auth/health
-curl -fsS http://<ip>/api/v1/auth/health/ready
+# Readiness qua gateway (tự resolve Traefik IP)
+sudo bash infrastructure/deploy/verify-k8s-readiness.sh
 
-# MVP E2E
+# MVP E2E (tùy chọn)
 BASE_URL=http://<ip>/api/v1 ./scripts/demo-e2e.sh
 ```
+
+**Migration trong image production:** `pnpm run migrate:prod` (`node dist/.../migrate.js`) — không dùng `ts-node`. SQL migrations (`user-service/migrations/`) được COPY vào image.
 
 **Cờ production quan trọng:**
 
@@ -198,7 +228,7 @@ BASE_URL=http://<ip>/api/v1 ./scripts/demo-e2e.sh
 - `NODE_ENV=production`
 - `DATABASE_SYNCHRONIZE=false` (workspace-service)
 
-**Definition of Done:** Tất cả pod `Running`; demo story 7 bước pass; readiness 200.
+**Definition of Done:** `verify-phase3.sh` pass; tất cả pod `Running`; readiness 200 qua gateway.
 
 ---
 

@@ -44,6 +44,11 @@ RUN apk add --no-cache wget \
 COPY --from=prod-deps /app/node_modules ./node_modules
 COPY --from=builder /app/packages/shared/dist ./packages/shared/dist
 COPY --from=builder /app/services/${SERVICE_NAME}/dist ./services/${SERVICE_NAME}/dist
+RUN --mount=from=builder,source=/app/services/${SERVICE_NAME},target=/svc,ro \
+    if [ -d /svc/migrations ]; then \
+      mkdir -p "./services/${SERVICE_NAME}/migrations" && \
+      cp -a /svc/migrations/. "./services/${SERVICE_NAME}/migrations/"; \
+    fi
 COPY --from=builder /app/services/${SERVICE_NAME}/proto ./services/${SERVICE_NAME}/proto
 COPY --from=builder /app/services/${SERVICE_NAME}/package.json ./services/${SERVICE_NAME}/package.json
 USER appuser

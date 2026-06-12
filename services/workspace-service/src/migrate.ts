@@ -1,3 +1,4 @@
+import { join } from 'node:path';
 import { DataSource } from 'typeorm';
 import { WorkspaceOrmEntity } from './infrastructure/database/entities/workspace.orm-entity';
 import { WorkspaceMemberOrmEntity } from './infrastructure/database/entities/workspace-member.orm-entity';
@@ -22,7 +23,13 @@ const dataSource = new DataSource({
     WorkspaceOutboxEventEntity,
     IdempotencyRecordOrmEntity,
   ],
-  migrations: [__dirname + '/infrastructure/database/migrations/*.ts'],
+  migrations: [
+    join(
+      __dirname,
+      'infrastructure/database/migrations',
+      __filename.endsWith('.js') ? '*.js' : '*.ts',
+    ),
+  ],
   synchronize: process.env.DATABASE_SYNCHRONIZE === 'true',
 });
 

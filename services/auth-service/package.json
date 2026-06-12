@@ -6,7 +6,7 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
-    "build": "nest build && tsc-alias -p tsconfig.build.json",
+    "build": "nest build && tsc-alias -p tsconfig.build.json && tsc -p tsconfig.migrate.json",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "proto:gen": "node ./scripts/proto/generate.cjs",
     "start": "nest start",
@@ -14,6 +14,7 @@
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
     "migrate": "node -r ts-node/register -r tsconfig-paths/register src/migrate.ts",
+    "migrate:prod": "node dist/src/migrate.js",
     "seed": "node -r ts-node/register -r tsconfig-paths/register src/seed.ts",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js",
