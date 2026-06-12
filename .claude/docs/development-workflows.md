@@ -317,8 +317,8 @@ Rules:
 GitHub Actions is the preferred CI/CD path for Droplet deployment:
 
 - `.github/workflows/ci.yml` runs root `pnpm install`, `pnpm run build`, and `pnpm run test`.
-- `.github/workflows/docker-deploy.yml` builds five service images using `infrastructure/docker/Dockerfile.service`, pushes them to GHCR, then deploys to the Droplet over SSH.
-- Droplet scripts live in `infrastructure/deploy/`.
+- `.github/workflows/docker-deploy.yml` builds five service images using `infrastructure/docker/Dockerfile.service`, pushes them to GHCR, then SSH deploys to k3s via `helm-deploy-ci.sh` + `verify-k8s-readiness.sh` (Phase 4).
+- Droplet scripts live in `infrastructure/deploy/` (`helm-rollout.sh`, `run-k8s-migrations.sh`, phase checklists).
 - Production Compose overlay: `infrastructure/docker/docker-compose.prod.yml`.
 - DigitalOcean production (k3s + Helm): `docs/deployment-k3s-phases.md`.
 - DigitalOcean Compose legacy: `docs/deployment-digitalocean-droplet.md`.

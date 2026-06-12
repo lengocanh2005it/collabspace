@@ -236,36 +236,55 @@ BASE_URL=http://<ip>/api/v1 ./scripts/demo-e2e.sh
 
 **Mục tiêu:** Push `main` → build image → deploy Helm không cần SSH tay.
 
-### Hiện trạng workflow
+**Checklist:** [infrastructure/deploy/phase4-checklist.md](../infrastructure/deploy/phase4-checklist.md)
 
-| Job | Trạng thái |
-|-----|------------|
-| `CI / build-test` | ✅ Pass |
-| `build-images` (5 service → GHCR) | ✅ Pass |
-| `deploy` (SSH + Docker Compose) | ❌ Cần thay bằng Helm/k3s |
+### Workflow
 
-### Pipeline mục tiêu
+File: `.github/workflows/docker-deploy.yml`
+
+| Job | Việc |
+|-----|------|
+| `build-images` | Build & push 5 image GHCR (tag = commit SHA) |
+| `deploy` | SSH Droplet → `helm-deploy-ci.sh` → `verify-k8s-readiness.sh` |
+
+Workflow `CI` (`.github/workflows/ci.yml`) chạy riêng trên PR/push: `pnpm build` + `test`.
+
+### Pipeline
 
 ```text
-push main
-  → pnpm build + test
-  → build & push 5 images (GHCR)
-  → helm upgrade --install (kubeconfig / SSH)
-  → migration Job (nếu schema đổi)
-  → verify-readiness.sh + demo-e2e (smoke)
+push main (hoặc workflow_dispatch)
+  → build-images (GHCR)
+  → deploy over SSH
+       → git pull /opt/collabspace
+       → helm-deploy-ci.sh (helm upgrade + migration + rollout)
+       → verify-k8s-readiness.sh
 ```
 
-### GitHub Secrets cần có
+### Script trong repo
+
+| Script | Mục đích |
+|--------|----------|
+| `infrastructure/deploy/helm-deploy-ci.sh` | Entrypoint CI — bắt buộc `IMAGE_TAG` |
+| `infrastructure/deploy/helm-rollout.sh` | Logic chung Helm + migration (Phase 3 & 4) |
+| `infrastructure/deploy/verify-k8s-readiness.sh` | Smoke readiness qua Traefik |
+
+### GitHub Secrets
 
 | Secret | Mục đích |
 |--------|----------|
 | `DROPLET_HOST` | IP Droplet |
 | `DROPLET_USER` | User SSH (`root`) |
 | `DROPLET_SSH_KEY` | Private key SSH |
-| `KUBECONFIG` hoặc setup trên server | `kubectl` / `helm` từ CI |
-| `GHCR_USERNAME` / `GHCR_TOKEN` | Pull image private (nếu package không public) |
+| `GHCR_USERNAME` / `GHCR_TOKEN` | Pull image private trên cluster (nếu cần) |
 
-**Definition of Done:** Merge PR → Actions xanh → version mới live.
+**Không** cần `KUBECONFIG` trong GitHub — CI SSH vào Droplet và dùng `/etc/rancher/k3s/k3s.yaml`.
+
+### Điều kiện trên Droplet
+
+- Phase 1–3 đã chạy; `values-prod.yaml` + `phase0.env` có trên server
+- Repo clone tại `/opt/collabspace`
+
+**Definition of Done:** Push `main` → Actions job `deploy` xanh → readiness 200 qua gateway.
 
 ---
 

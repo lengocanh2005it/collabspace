@@ -16,14 +16,18 @@ if [[ -f "$PHASE0_ENV" ]]; then
 fi
 
 GHCR_OWNER="${GHCR_OWNER:-}"
-IMAGE_TAG="${IMAGE_TAG:-latest}"
+IMAGE_TAG="${IMAGE_TAG:-}"
 
 if [[ -f "$VALUES_PROD" ]]; then
   if grep -q 'ghcr.io/' "$VALUES_PROD"; then
     GHCR_OWNER="${GHCR_OWNER:-$(grep -m1 'repository: ghcr.io/' "$VALUES_PROD" | sed -E 's|.*/ghcr.io/([^/]+)/.*|\1|')}"
-    IMAGE_TAG="${IMAGE_TAG:-$(grep -m1 'tag:' "$VALUES_PROD" | awk '{print $2}')}"
+    if [[ -z "$IMAGE_TAG" ]]; then
+      IMAGE_TAG="$(grep -m1 'tag:' "$VALUES_PROD" | awk '{print $2}')"
+    fi
   fi
 fi
+
+IMAGE_TAG="${IMAGE_TAG:-latest}"
 
 if [[ -z "$GHCR_OWNER" ]]; then
   echo "GHCR_OWNER required (phase0.env or values-prod.yaml)."

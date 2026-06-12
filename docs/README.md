@@ -27,6 +27,8 @@ Chỉ mục tài liệu dự án (tiếng Việt có dấu). Tài liệu kỹ th
 | [../infrastructure/deploy/phase0-checklist.md](../infrastructure/deploy/phase0-checklist.md) | Checklist Phase 0 (Droplet, values-prod, secrets) |
 | [../infrastructure/deploy/phase1-checklist.md](../infrastructure/deploy/phase1-checklist.md) | Checklist Phase 1 (bootstrap k3s) |
 | [../infrastructure/deploy/phase2-checklist.md](../infrastructure/deploy/phase2-checklist.md) | Checklist Phase 2 (Vault + ESO) |
+| [../infrastructure/deploy/phase3-checklist.md](../infrastructure/deploy/phase3-checklist.md) | Checklist Phase 3 (Helm deploy) |
+| [../infrastructure/deploy/phase4-checklist.md](../infrastructure/deploy/phase4-checklist.md) | Checklist Phase 4 (CI/CD k3s) |
 | [deployment-digitalocean-droplet.md](./deployment-digitalocean-droplet.md) | Deploy legacy Docker Compose trên Droplet |
 | [production-hardening.md](./production-hardening.md) | Checklist cứng hóa production |
 | [backup-policy.md](./backup-policy.md) | Chính sách backup & phục hồi |

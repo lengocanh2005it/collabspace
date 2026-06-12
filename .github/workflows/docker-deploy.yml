@@ -16,7 +16,7 @@ permissions:
   packages: write
 
 concurrency:
-  group: droplet-deploy
+  group: k3s-deploy
   cancel-in-progress: false
 
 env:
@@ -77,26 +77,28 @@ jobs:
     needs: build-images
     if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
     steps:
-      - name: Deploy over SSH
+      - name: Deploy Helm on k3s over SSH
         uses: appleboy/ssh-action@v1.2.0
         env:
-          IMAGE_REGISTRY: ghcr.io/${{ github.repository_owner }}
           IMAGE_TAG: ${{ github.event.inputs.image_tag || github.sha }}
+          GHCR_OWNER: ${{ github.repository_owner }}
           GHCR_USERNAME: ${{ secrets.GHCR_USERNAME }}
           GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
         with:
           host: ${{ secrets.DROPLET_HOST }}
           username: ${{ secrets.DROPLET_USER }}
           key: ${{ secrets.DROPLET_SSH_KEY }}
-          envs: IMAGE_REGISTRY,IMAGE_TAG,GHCR_USERNAME,GHCR_TOKEN
+          command_timeout: 30m
+          envs: IMAGE_TAG,GHCR_OWNER,GHCR_USERNAME,GHCR_TOKEN
           script: |
-            set -e
+            set -euo pipefail
             cd /opt/collabspace
             git pull --ff-only
-            if [ ! -f infrastructure/deploy/droplet.env ]; then
-              cp infrastructure/deploy/droplet.env.example infrastructure/deploy/droplet.env
-            fi
-            image_registry="$(printf '%s' "$IMAGE_REGISTRY" | tr '[:upper:]' '[:lower:]')"
-            sed -i "s#^COLLABSPACE_IMAGE_REGISTRY=.*#COLLABSPACE_IMAGE_REGISTRY=${image_registry}#" infrastructure/deploy/droplet.env
-            sed -i "s#^COLLABSPACE_IMAGE_TAG=.*#COLLABSPACE_IMAGE_TAG=${IMAGE_TAG}#" infrastructure/deploy/droplet.env
-            COLLABSPACE_IMAGE_REGISTRY="$image_registry" COLLABSPACE_IMAGE_TAG="$IMAGE_TAG" GHCR_USERNAME="$GHCR_USERNAME" GHCR_TOKEN="$GHCR_TOKEN" bash infrastructure/deploy/droplet-deploy.sh
+            export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+            export APP_DIR=/opt/collabspace
+            export IMAGE_TAG
+            export GHCR_OWNER
+            export GHCR_USERNAME
+            export GHCR_TOKEN
+            bash infrastructure/deploy/helm-deploy-ci.sh
+            bash infrastructure/deploy/verify-k8s-readiness.sh
