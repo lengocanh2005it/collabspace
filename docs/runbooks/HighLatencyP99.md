@@ -1,16 +1,16 @@
 # HighLatencyP99
 
-**Alert:** p99 latency > 2s for 5 minutes  
-**Severity:** warning
+**Cảnh báo:** p99 latency > 2 giây trong 5 phút  
+**Mức độ:** warning
 
-## Diagnosis
+## Chẩn đoán
 
-1. Check slow dependency calls (gRPC user profile, workspace HTTP client).
-2. Inspect DB slow queries and Mongo index usage.
-3. Review traffic spike vs capacity.
+1. Kiểm tra gọi dependency chậm (gRPC user profile, HTTP client workspace).
+2. Xem slow query DB và index Mongo.
+3. So sánh traffic spike với capacity.
 
-## Remediation
+## Khắc phục
 
-1. Restore slow dependencies or enable circuit-breaker fail-fast paths.
-2. Add indexes or optimize hot queries.
-3. Scale replicas and verify connection pool limits.
+1. Khôi phục dependency chậm hoặc bật circuit-breaker fail-fast.
+2. Thêm index hoặc tối ưu query nóng.
+3. Scale replica và verify giới hạn connection pool.

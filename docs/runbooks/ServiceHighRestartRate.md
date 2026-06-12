@@ -1,14 +1,14 @@
 # ServiceHighRestartRate
 
-**Alert:** more than 2 restarts in 15 minutes  
-**Severity:** warning
+**Cảnh báo:** hơn 2 lần restart trong 15 phút  
+**Mức độ:** warning
 
-## Diagnosis
+## Chẩn đoán
 
-Check OOM kills, unhandled startup exceptions, and failed readiness probes.
+Kiểm tra OOM kill, exception khởi động chưa xử lý, và readiness probe fail.
 
-## Remediation
+## Khắc phục
 
-1. Increase memory limits if OOMKilled (see `docs/production-hardening.md`).
-2. Fix startup dependency ordering (DB migrations before traffic).
-3. Ensure `preStop` sleep allows graceful drain (K8s deployments).
+1. Tăng memory limit nếu OOMKilled (xem `docs/production-hardening.md`).
+2. Sửa thứ tự dependency khởi động (migration DB trước traffic).
+3. Đảm bảo `preStop` sleep cho phép drain graceful (K8s deployment).

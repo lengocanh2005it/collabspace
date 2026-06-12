@@ -1,72 +1,75 @@
-# Production hardening checklist (Phase 4)
+# Checklist cứng hóa production (Phase 4)
 
-Use before exposing CollabSpace beyond local/demo environments.
+Dùng trước khi expose CollabSpace ra ngoài môi trường local/demo.
+
+**Lộ trình triển khai:** [deployment-k3s-phases.md](./deployment-k3s-phases.md) (Phase 5).
 
 ## Kubernetes / Helm
 
-- [x] Readiness: `/health/ready` (503 when dependency missing). Liveness: `/health/live`.
-- [x] `preStop` sleep + `terminationGracePeriodSeconds` (see `infrastructure/k8s/*-deployment.yaml` and Helm templates).
-- [ ] Resource requests/limits tuned after load test.
-- [x] PodDisruptionBudgets for stateless app tiers (`infrastructure/k8s/pdb.yaml`).
-- [ ] **Secrets:** replace placeholder `stringData` — use **HashiCorp Vault + External Secrets Operator** (`infrastructure/vault/`) or Sealed Secrets / cloud secret manager. Set `global.secrets.*` in Helm only via CI/CD secret injection, not committed values. Enable `global.externalSecrets.enabled: true` when ESO manages `{app}-secrets`.
-- [x] Prometheus scrape paths: `/api/v1/*/metrics` on each service.
-- [ ] **Metrics auth:** set `global.secrets.metricsAuthToken` in Helm; configure Prometheus `authorization.credentials` or `bearer_token` / custom header `X-Metrics-Token`. Leave empty only in local dev.
+- [x] Readiness: `/health/ready` (503 khi dependency thiếu). Liveness: `/health/live`.
+- [x] `preStop` sleep + `terminationGracePeriodSeconds` (xem `infrastructure/k8s/*-deployment.yaml` và template Helm).
+- [ ] Tune resource requests/limits sau load test.
+- [x] PodDisruptionBudget cho tầng app stateless (`infrastructure/k8s/pdb.yaml`).
+- [ ] **Secrets:** thay placeholder `stringData` — dùng **HashiCorp Vault + External Secrets Operator** (`infrastructure/vault/`) hoặc Sealed Secrets / cloud secret manager. Chỉ inject `global.secrets.*` qua CI/CD, không commit values. Bật `global.externalSecrets.enabled: true` khi ESO quản lý `{app}-secrets`.
+- [x] Đường scrape Prometheus: `/api/v1/*/metrics` trên mỗi service.
+- [ ] **Xác thực metrics:** đặt `global.secrets.metricsAuthToken` trong Helm; cấu hình Prometheus `authorization.credentials` hoặc `bearer_token` / header `X-Metrics-Token`. Chỉ để trống ở local dev.
 
-## Application (implemented)
+## Ứng dụng (đã implement)
 
-- [x] `Idempotency-Key` on mutating workspace/task APIs.
-- [x] Transactional outbox for cross-service events (auth email, workspace invite, task assign).
-- [x] Notification `eventId` dedupe on consumers.
-- [x] Register saga rollback on auth → user profile failure.
-- [x] Register returns `503` `REDIS_UNAVAILABLE` when Redis is down (with rollback for new users).
-- [x] `profileStatus: unavailable` on `/auth/me` when user-service gRPC fails.
-- [x] `WORKSPACE_CLIENT_MODE=http` in task-service with timeouts.
-- [x] workspace-service `AuthGuard`: JWT via auth gRPC; dev-only `X-User-Id` when `ALLOW_DEV_IDENTITY_HEADERS=true`.
-- [x] task-service + notification-service `AuthGuard`: JWT via auth gRPC; removed mock `user-123` / raw `X-User-Id` trust.
-- [x] Traefik `strip-identity-headers`: drop client `X-User-*` / role headers before `forward-auth` sets verified values.
-- [x] task-service → workspace-service membership via `GET /workspaces/internal/.../membership` + `X-Internal-Service-Token` (no `X-User-Id` on S2S calls).
-- [x] K8s NetworkPolicies: default deny + per-service ingress (task→workspace/user internal, gRPC auth verify, Traefik public HTTP only).
-- [x] Gateway blocks `/api/v1/workspaces/internal` and `/api/v1/users/internal` from Traefik (503 — use cluster DNS + internal token).
-- [x] `/metrics` gated by `METRICS_AUTH_TOKEN` when set (all five services).
-- [x] **Correlation ID (Phase C):** `X-Request-Id` middleware on all five HTTP services; forward on task→workspace and task/notification→user S2S HTTP.
+- [x] `Idempotency-Key` trên API ghi workspace/task.
+- [x] Transactional outbox cho event xuyên service (email auth, invite workspace, assign task).
+- [x] Dedupe notification theo `eventId` trên consumer.
+- [x] Saga rollback register khi auth → user profile thất bại.
+- [x] Register trả `503` `REDIS_UNAVAILABLE` khi Redis down (rollback user mới).
+- [x] `profileStatus: unavailable` trên `/auth/me` khi user-service gRPC fail.
+- [x] `WORKSPACE_CLIENT_MODE=http` trong task-service kèm timeout.
+- [x] workspace-service `AuthGuard`: JWT qua auth gRPC; dev-only `X-User-Id` khi `ALLOW_DEV_IDENTITY_HEADERS=true`.
+- [x] task-service + notification-service `AuthGuard`: JWT qua auth gRPC; bỏ mock `user-123` / tin `X-User-Id` thô.
+- [x] Traefik `strip-identity-headers`: xóa header `X-User-*` / role từ client trước `forward-auth`.
+- [x] task-service → workspace-service membership qua `GET /workspaces/internal/.../membership` + `X-Internal-Service-Token`.
+- [x] K8s NetworkPolicies: default deny + ingress theo service (task→workspace/user internal, gRPC auth, Traefik HTTP public).
+- [x] Gateway chặn `/api/v1/workspaces/internal` và `/api/v1/users/internal` từ Traefik (503).
+- [x] `/metrics` yêu cầu `METRICS_AUTH_TOKEN` khi đặt (cả 5 service).
+- [x] **Correlation ID (Phase C):** middleware `X-Request-Id` trên 5 service HTTP; forward trên S2S HTTP task→workspace và task/notification→user.
 
-## Observability
+## Quan sát (Observability)
 
 - [x] Prometheus + Alertmanager + alert rules (`infrastructure/monitoring/`).
 - [x] Infra exporters (Docker: `docker-compose.exporters.yml`; K8s: `exporters-deployment.yaml`).
-- [ ] K8s: apply monitoring stack and sync rules via `k8s/scripts/sync-prometheus-alert-rules.ps1` in target cluster.
-- [ ] Grafana datasource UID `prometheus` matches dashboard JSON in your environment.
-- [x] Runbooks linked from alerts (`docs/runbooks/`).
-- [ ] Periodic readiness drill — run `infrastructure/resilience/drills/verify-readiness.sh` after deploy (see `infrastructure/resilience/drills/README.md`).
-- [ ] `TRACING_ENABLED=true` only when Jaeger/OTLP collector is reachable.
+- [ ] K8s: apply monitoring stack và sync rules qua `k8s/scripts/sync-prometheus-alert-rules.ps1` trên cluster đích.
+- [ ] Grafana datasource UID `prometheus` khớp dashboard JSON trong môi trường của bạn.
+- [x] Runbook liên kết từ alert (`docs/runbooks/`).
+- [ ] Drill readiness định kỳ — chạy `infrastructure/resilience/drills/verify-readiness.sh` sau deploy.
+- [ ] `TRACING_ENABLED=true` chỉ khi Jaeger/OTLP collector reachable.
 
 ## Chaos / DR
 
-- [ ] Run `infrastructure/chaos/chaos-stop-service.sh` in staging quarterly.
-- [x] RPO/RTO documented — `docs/backup-policy.md`.
-- [ ] Automated Postgres/Mongo backups scheduled; restore drill logged quarterly.
+- [ ] Chạy `infrastructure/chaos/chaos-stop-service.sh` trên staging hàng quý.
+- [x] RPO/RTO đã document — `docs/backup-policy.md`.
+- [ ] Lịch backup Postgres/Mongo tự động; restore drill ghi log hàng quý.
 
-## Secrets reference (never commit real values)
+## Tham chiếu secret (không bao giờ commit giá trị thật)
 
-| Secret | Consumers | Source |
-|--------|-----------|--------|
-| `JWT_SECRET` | auth (sign); peers verify via auth gRPC | Vault `secret/collabspace/<env>` → ESO |
-| `INTERNAL_SERVICE_TOKEN` | user, workspace (inbound); task, notification (outbound S2S) | Vault → ESO; Helm `global.secrets.internalServiceToken` when ESO disabled |
-| `POSTGRES_PASSWORD` | auth, user, workspace + Bitnami postgres | Managed DB or secret |
+| Secret | Consumer | Nguồn |
+|--------|----------|-------|
+| `JWT_SECRET` | auth (ký); peer verify qua auth gRPC | Vault `secret/collabspace/<env>` → ESO |
+| `INTERNAL_SERVICE_TOKEN` | user, workspace (inbound); task, notification (outbound S2S) | Vault → ESO; Helm `global.secrets.internalServiceToken` khi tắt ESO |
+| `POSTGRES_PASSWORD` | auth, user, workspace + Bitnami postgres | Managed DB hoặc secret |
 | `REDIS_PASSWORD` | auth, notification | Secret manager |
-| `RABBITMQ_PASSWORD` | publishers/consumers | Secret manager |
-| `METRICS_AUTH_TOKEN` | Prometheus scrape, all app `/metrics` | Secret manager |
+| `RABBITMQ_PASSWORD` | publisher/consumer | Secret manager |
+| `METRICS_AUTH_TOKEN` | Prometheus scrape, `/metrics` app | Secret manager |
 | SMTP / email | auth outbox | Secret manager |
 
-Helm: `infrastructure/helm/collabspace/values.yaml` → `global.secrets` is for **local/chart defaults only**. Production installs should use `-f values-prod.yaml` from a secure pipeline or `--set-file` from CI secrets.
+Helm: `infrastructure/helm/collabspace/values.yaml` → `global.secrets` chỉ cho **default local/chart**. Production dùng `-f values-prod.yaml` từ pipeline an toàn hoặc `--set-file` từ CI secrets.
 
-## Related docs
+## Tài liệu liên quan
 
-- Vault + ESO setup: `infrastructure/vault/README.md`
-- Resilience policy: `.claude/docs/resilience.md`
-- Backup policy: `docs/backup-policy.md`
-- Overview (VI): `docs/resilience-overview.md`
-- NFRs (VI): `docs/nfrs.md`
-- Trade-offs (VI): `docs/trade-offs.md`
-- Infra engineer backlog: `docs/team/phan-phu-tho-infrastructure-backlog.md`
+- Vault + ESO: `infrastructure/vault/README.md`
+- Chính sách resilience: `.claude/docs/resilience.md`
+- Backup: `docs/backup-policy.md`
+- Tổng quan resilience: `docs/resilience-overview.md`
+- NFR: `docs/nfrs.md`
+- Trade-offs: `docs/trade-offs.md`
+- Backlog infra: `docs/team/phan-phu-tho-infrastructure-backlog.md`
 - Correlation ID: `.claude/docs/service-contracts.md` → Correlation ID (`X-Request-Id`)
+- Lộ trình deploy: `docs/deployment-k3s-phases.md`

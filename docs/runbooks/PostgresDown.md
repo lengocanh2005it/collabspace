@@ -1,33 +1,36 @@
 # PostgresDown
 
-**Alert:** `pg_up == 0` for 1 minute  
-**Severity:** critical
+**Cảnh báo:** `pg_up == 0` trong 1 phút  
+**Mức độ:** critical
 
-## Affected services
+## Service bị ảnh hưởng
 
 - auth-service (`collabspace_auth`)
 - user-service (`collabspace_user`)
 - workspace-service (`collabspace_workspace`)
 
-## Symptoms
+## Triệu chứng
 
-- `/health/ready` returns **503** with `postgres: down` or `unavailable`.
-- Auth login/register and workspace mutations fail.
+- `/health/ready` trả **503** với `postgres: down` hoặc `unavailable`.
+- Login/register và mutation workspace fail.
 
-## Diagnosis
+## Chẩn đoán
 
 ```sh
 docker ps --filter name=postgres
 docker logs collabspace-postgres --tail 50
+# Kubernetes:
+kubectl -n collabspace get pods -l app.kubernetes.io/name=postgresql
+kubectl -n collabspace logs statefulset/postgres --tail 50
 ```
 
-## Remediation
+## Khắc phục
 
-1. Start Postgres: `docker compose -f infrastructure/docker/docker-compose.db.yml up -d postgres`
-2. Wait for `pg_isready`, then restart app services that cache connections.
-3. Verify readiness endpoints return 200.
-4. Check disk space and connection limits if Postgres exits repeatedly.
+1. Khởi động Postgres: `docker compose -f infrastructure/docker/docker-compose.db.yml up -d postgres` hoặc scale StatefulSet Bitnami.
+2. Đợi `pg_isready`, restart app service cache connection.
+3. Verify readiness endpoint trả 200.
+4. Kiểm tra disk và connection limit nếu Postgres thoát liên tục.
 
-## Data loss / corrupt volume
+## Mất dữ liệu / volume hỏng
 
-If the database volume is lost or corrupted, restore from backup — see `docs/backup-policy.md` and `infrastructure/backup/scripts/`. Infra backlog: automated backup + restore drill in `docs/team/phan-phu-tho-infrastructure-backlog.md`.
+Restore từ backup — xem `docs/backup-policy.md` và `infrastructure/backup/scripts/`. Backlog: backup tự động + restore drill trong `docs/team/phan-phu-tho-infrastructure-backlog.md`.

@@ -5,7 +5,7 @@ Tài liệu này liệt kê **công việc hạ tầng / DevOps / observability 
 **Phạm vi:** chỉ infra, platform, pipeline, cluster, datastore, gateway, observability stack.  
 **Ngoài phạm vi file này:** feature API, business logic, middleware trong NestJS app services (thuộc application team).
 
-**Trạng thái repo (snapshot 2026-06-11):**
+**Trạng thái repo (snapshot 2026-06-12):**
 
 | Đã có sẵn | Chưa operational hóa / prod-ready |
 |-----------|-----------------------------------|
@@ -13,18 +13,23 @@ Tài liệu này liệt kê **công việc hạ tầng / DevOps / observability 
 | **pnpm workspace** — root `package.json`, `pnpm-workspace.yaml`, `packages/shared` | CI `pnpm -r run build\|test` từ root trong pipeline |
 | **Demo E2E script** — `scripts/demo-e2e.sh` + `scripts/demo-e2e.ps1` (7 bước qua Traefik) | Gắn script vào CI smoke / nightly |
 | **HashiCorp Vault scaffold** (`infrastructure/vault/`) — dev Compose, KV seed/sync, ESO YAML, Helm `externalSecrets` | Vault HA deploy, K8s auth, rotation, smoke sau ESO sync |
-| Helm umbrella chart (`infrastructure/helm/collabspace/`) | CI/CD end-to-end, image registry |
+| Helm umbrella chart (`infrastructure/helm/collabspace/`) | `values-prod.yaml` + deploy k3s lần đầu |
+| **GHCR image build** — GitHub Actions `build-images` 5 service ✅ | Workflow deploy Helm/k3s (thay Compose SSH) |
+| **Lộ trình deploy DO** — [deployment-k3s-phases.md](../deployment-k3s-phases.md) | Thực hiện Phase 0–5 trên Droplet thật |
 | K8s manifests legacy (`infrastructure/k8s/`) — tham chiếu | Load test baseline → tune resources |
 | Traefik gateway + forward-auth (`api-gateway/`) | Backup tự động + restore drill |
 | Prometheus + Alertmanager + Grafana (`infrastructure/monitoring/`) | ELK/Logstash ship log từ container |
 | Jaeger / OTLP (`docker-compose.tracing.yml`, `infrastructure/tracing/`) | Tracing bật trên staging/prod |
-| Jenkins container + shell scripts (`infrastructure/jenkins/`), GitHub Actions CI/CD (`.github/workflows/`) | Wire real repository secrets + first Droplet deploy |
+| Jenkins container + shell scripts (`infrastructure/jenkins/`), GitHub Actions CI/CD (`.github/workflows/`) | GitHub Secrets `DROPLET_*` + workflow `helm upgrade` |
 | k6 load tests (`infrastructure/load-testing/`) | Chaos drill định kỳ trên staging |
 | Backup scripts (`infrastructure/backup/scripts/`) | ESO installed + Vault reachable on cluster |
 | Drills (`verify-readiness`, `chaos-stop-service`) | Smoke job sau mỗi deploy (readiness + `demo-e2e`) |
 
 **Tài liệu liên quan:**
 
+- [deployment-k3s-phases.md](../deployment-k3s-phases.md) — **lộ trình production DO (k3s + Helm + Vault + ESO)**
+- [digitalocean-production-options.md](../digitalocean-production-options.md) — so sánh phương án DO
+- [deployment-digitalocean-droplet.md](../deployment-digitalocean-droplet.md) — legacy Compose trên Droplet
 - [production-hardening.md](../production-hardening.md)
 - [nfrs.md](../nfrs.md)
 - [backup-policy.md](../backup-policy.md)
@@ -42,9 +47,10 @@ Tài liệu này liệt kê **công việc hạ tầng / DevOps / observability 
 ## Thứ tự ưu tiên đề xuất
 
 ```text
-P0  HashiCorp Vault + .env chuẩn hóa →  scaffold có; operationalize HA + ESO trên staging
+P0  Lộ trình k3s Phase 0–2           →  Droplet + k3s + Vault + ESO (xem deployment-k3s-phases.md)
+P0  HashiCorp Vault + .env chuẩn hóa →  scaffold có; operationalize HA + ESO trên cluster
 P0  Secrets + môi trường staging     →  deploy an toàn, không lộ credential
-P1  CI/CD + image registry          →  build/test/deploy lặp lại được (`pnpm -r` + per-service Docker)
+P1  CI/CD + image registry          →  GHCR build ✅; cần workflow helm upgrade deploy
 P1  Monitoring stack trên K8s       →  scrape metrics, alert, Grafana
 P1  MVP smoke trong CI              →  `scripts/demo-e2e` sau Compose + Traefik (phối hợp Tín)
 P2  Smoke / readiness sau deploy    →  verify-readiness + demo-e2e trong pipeline
@@ -229,8 +235,10 @@ Dùng bảng này khi seed Vault KV (`secret/collabspace/staging`, …).
   3. Build Docker image khi merge `main` / tag release.
   4. Push registry.
   5. Trigger deploy staging (Helm upgrade).
-- [x] **Option B — GitHub Actions:** root CI + GHCR image build + SSH Droplet deploy scaffold.
-- [ ] Add real GitHub Actions secrets (`DROPLET_*`, `GHCR_*`) and run first deployment.
+- [x] **Option B — GitHub Actions:** root CI + GHCR image build 5 service ✅.
+- [x] Docker image build fix (shared node_modules, seed.ts exclude) — 2026-06-12.
+- [ ] Workflow deploy **k3s/Helm** (thay Compose SSH trong `docker-deploy.yml`).
+- [ ] Thêm GitHub Actions secrets (`DROPLET_*`, `GHCR_*`, `KUBECONFIG` nếu cần) và chạy deploy lần đầu theo [deployment-k3s-phases.md](../deployment-k3s-phases.md).
 - [ ] Cache `pnpm` / Docker layer để pipeline < 15 phút (mục tiêu ban đầu).
 - [ ] Branch protection: PR bắt buộc pass test trước merge.
 

@@ -1,15 +1,15 @@
 # MongoDown
 
-**Alert:** `up{job="mongodb"} == 0`  
-**Severity:** critical  
-**Affected:** task-service, notification-service
+**Cảnh báo:** `up{job="mongodb"} == 0`  
+**Mức độ:** critical  
+**Bị ảnh hưởng:** task-service, notification-service
 
-## Remediation
+## Khắc phục
 
-1. `docker compose -f infrastructure/docker/docker-compose.db.yml up -d mongodb`
-2. Restart task-service and notification-service.
-3. Verify `/api/v1/tasks/health/ready` and `/api/v1/notifications/health/ready`.
+1. `docker compose -f infrastructure/docker/docker-compose.db.yml up -d mongodb` hoặc restart StatefulSet Mongo trên K8s.
+2. Restart task-service và notification-service.
+3. Verify `/api/v1/tasks/health/ready` và `/api/v1/notifications/health/ready`.
 
-## Data loss / corrupt volume
+## Mất dữ liệu / volume hỏng
 
-Restore from `infrastructure/backup/scripts/backup-mongo.sh` artifacts — see `docs/backup-policy.md`.
+Restore từ artifact `infrastructure/backup/scripts/backup-mongo.sh` — xem `docs/backup-policy.md`.

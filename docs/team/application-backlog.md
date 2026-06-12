@@ -1,4 +1,4 @@
-# Backlog application logic — Lê Ngọc Anh, Ngô Quang Tiến, Võ Trung Tín
+# Backlog ứng dụng — Lê Ngọc Anh, Ngô Quang Tiến, Võ Trung Tín
 
 Tài liệu này liệt kê **việc còn lại về logic code / API / test / demo** sau khi rà soát codebase (2026-06-11).  
 **Nguồn chính trạng thái tính năng:** [features.md](../features.md). **Infra/DevOps:** [phan-phu-tho-infrastructure-backlog.md](./phan-phu-tho-infrastructure-backlog.md) (Phan Phú Thọ).

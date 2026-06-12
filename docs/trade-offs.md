@@ -1,4 +1,4 @@
-# CollabSpace — Architecture trade-offs
+# CollabSpace — Đánh đổi kiến trúc
 
 Tài liệu ghi **quyết định kiến trúc**, **lợi ích**, **cái giá phải trả**, và **khi nào nên chọn cách khác**. CollabSpace là dự án demo/học microservices — trade-off ưu tiên **minh bạch và end-to-end**, không tối ưu cost/latency production tuyệt đối.
 

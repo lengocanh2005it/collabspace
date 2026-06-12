@@ -27,6 +27,10 @@ This repository uses **Claude Code**-style agent documentation. `CLAUDE.md` is t
 | `infrastructure/vault/README.md` | **HashiCorp Vault** — local dev, KV layout, ESO → K8s Secrets |
 | `docs/team/phan-phu-tho-infrastructure-backlog.md` | Infra/DevOps backlog (Phan Phú Thọ) |
 | `docs/team/application-backlog.md` | Application backlog (Lê Ngọc Anh, Ngô Quang Tiến, Võ Trung Tín) |
+| `docs/deployment-k3s-phases.md` | Lộ trình production DO — k3s + Helm + Vault + ESO (theo phase) |
+| `docs/digitalocean-production-options.md` | So sánh phương án triển khai DigitalOcean |
+| `docs/deployment-digitalocean-droplet.md` | Deploy legacy Docker Compose trên Droplet |
+| `docs/README.md` | Chỉ mục tài liệu `docs/` (tiếng Việt) |
 | `docs/backup-policy.md` | RPO/RTO, backup scripts, restore drill policy |
 | `.claude/docs/mvp-roadmap.md` | MVP build order for agents |
 | `docs/mvp-demo-scope.md` | MVP demo acceptance checklist |

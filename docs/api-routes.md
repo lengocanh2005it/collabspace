@@ -1,26 +1,26 @@
-# CollabSpace API Routes
+# Chỉ mục route API CollabSpace
 
-Human-readable route index for local development and demos. All HTTP services use global prefix `/api` unless noted.
+Route HTTP đọc nhanh cho phát triển local và demo. Mọi service HTTP dùng prefix global `/api` trừ khi ghi chú khác.
 
-**Canonical contracts** (payloads, headers, events): [`.claude/docs/service-contracts.md`](../.claude/docs/service-contracts.md)  
-**Feature status:** [`features.md`](features.md)
+**Hợp đồng chính thức** (payload, header, event): [`.claude/docs/service-contracts.md`](../.claude/docs/service-contracts.md)  
+**Trạng thái tính năng:** [`features.md`](features.md)
 
-## Gateway access
+## Truy cập qua gateway
 
-| Mode | Base URL | Notes |
-|------|----------|--------|
+| Chế độ | Base URL | Ghi chú |
+|--------|----------|---------|
 | Traefik | `http://localhost/api/v1/...` | `strip-identity-headers` → `forward-auth` → `auth-service` `/api/v1/auth/verify` |
-| Direct (Docker mapped ports) | See [README — Services](../README.md#services) | Send `Authorization: Bearer …`; dev-only `X-User-Id` when `ALLOW_DEV_IDENTITY_HEADERS=true` |
+| Trực tiếp (Docker mapped ports) | Xem [README — Services](../README.md#services) | Gửi `Authorization: Bearer …`; dev-only `X-User-Id` khi `ALLOW_DEV_IDENTITY_HEADERS=true` |
 
-Common gateway headers after auth: `X-User-Id`, `X-User-Name`, `X-Username`, `X-Role`, `X-Roles`, `X-Permissions`, `X-Email-Verified`, `X-Workspace-Id`, `X-Request-Id`.
+Header gateway thường gặp sau auth: `X-User-Id`, `X-User-Name`, `X-Username`, `X-Role`, `X-Roles`, `X-Permissions`, `X-Email-Verified`, `X-Workspace-Id`, `X-Request-Id`.
 
-Clients must **not** send identity headers — Traefik removes them before forward-auth.
+Client **không được** gửi header identity — Traefik xóa trước forward-auth.
 
-Internal service-to-service paths (`/users/internal/*`, `/workspaces/internal/*`) are **blocked at the gateway**; use Docker/K8s service DNS with `X-Internal-Service-Token`.
+Route S2S nội bộ (`/users/internal/*`, `/workspaces/internal/*`) **bị chặn tại gateway**; dùng DNS service Docker/K8s với `X-Internal-Service-Token`.
 
 ## OpenAPI (Swagger UI)
 
-Each service exposes interactive docs at **`/swagger`** on its HTTP port (direct access, not via Traefik path prefix):
+Mỗi service có docs tương tác tại **`/swagger`** trên cổng HTTP (truy cập trực tiếp, không qua prefix Traefik):
 
 | Service | URL (Docker host port) |
 |---------|-------------------------|
@@ -30,128 +30,129 @@ Each service exposes interactive docs at **`/swagger`** on its HTTP port (direct
 | task | http://localhost:3003/swagger |
 | notification | http://localhost:3004/swagger |
 
-Use **Authorize** with Bearer JWT for protected routes. Internal S2S routes document `X-Internal-Service-Token`.
+Dùng **Authorize** với Bearer JWT cho route protected. Route S2S nội bộ document `X-Internal-Service-Token`.
 
 ---
 
 ## Auth Service
 
-Base: `/api/v1/auth` · Port **3000** (host **3000**)
+Base: `/api/v1/auth` · Cổng **3000** (host **3000**)
 
-| Method | Path | Description |
-|--------|------|-------------|
+| Method | Path | Mô tả |
+|--------|------|-------|
 | GET | `/health` | Health check |
 | GET | `/health/live` | Liveness |
 | GET | `/health/ready` | Readiness |
-| POST | `/register` | Register; create pending profile in user-service; send email OTP |
-| POST | `/resend-verification-otp` | Resend OTP (cooldown + max attempts) |
-| POST | `/verify-email` | Verify email OTP |
-| POST | `/login` | Login → access + refresh tokens |
-| POST | `/refresh` | Rotate refresh token |
-| POST | `/logout` | Revoke refresh token |
-| POST | `/change-password` | Change password; revoke sessions |
-| GET | `/me` | Current user from access token |
-| GET | `/verify` | Verify bearer token; sets identity headers for downstream services |
+| POST | `/register` | Đăng ký; tạo profile pending ở user-service; gửi OTP email |
+| POST | `/resend-verification-otp` | Gửi lại OTP (cooldown + giới hạn lần) |
+| POST | `/verify-email` | Xác thực OTP email |
+| POST | `/login` | Đăng nhập → access + refresh token |
+| POST | `/refresh` | Xoay refresh token |
+| POST | `/logout` | Thu hồi refresh token |
+| POST | `/change-password` | Đổi mật khẩu; thu hồi session |
+| GET | `/me` | User hiện tại từ access token |
+| GET | `/verify` | Verify bearer token; set header identity cho service downstream |
 
-**gRPC:** `AuthService.VerifyAccessToken` on port **50051** (container `auth-service:50051`).
+**gRPC:** `AuthService.VerifyAccessToken` cổng **50051** (container `auth-service:50051`).
 
 ---
 
 ## User Service
 
-Base: `/api/v1/users` · Port **3000** (host **3001**)
+Base: `/api/v1/users` · Cổng **3000** (host **3001**)
 
-| Method | Path | Description |
-|--------|------|-------------|
+| Method | Path | Mô tả |
+|--------|------|-------|
 | GET | `/health` | Health check |
 | GET | `/health/live` | Liveness |
 | GET | `/health/ready` | Readiness |
-| GET | `/me` | Current user profile |
-| PATCH | `/me` | Update profile |
-| GET | `/me/preferences` | User preferences |
-| PATCH | `/me/preferences` | Update preferences |
-| GET | `/me/status` | User status |
-| PATCH | `/me/status` | Update status |
-| POST | `/bulk` | Bulk profiles by `userIds` |
-| GET | `/?limit=&offset=&q=` | List / search summaries |
-| GET | `/search?q=&limit=&offset=` | Search summaries |
-| GET | `/{id}/summary` | Lightweight summary |
-| GET | `/{id}` | Full profile |
+| GET | `/me` | Profile user hiện tại |
+| PATCH | `/me` | Cập nhật profile |
+| GET | `/me/preferences` | Tùy chọn user |
+| PATCH | `/me/preferences` | Cập nhật tùy chọn |
+| GET | `/me/status` | Trạng thái user |
+| PATCH | `/me/status` | Cập nhật trạng thái |
+| POST | `/bulk` | Bulk profile theo `userIds` |
+| GET | `/?limit=&offset=&q=` | List / tìm kiếm summary |
+| GET | `/search?q=&limit=&offset=` | Tìm kiếm summary |
+| GET | `/{id}/summary` | Summary nhẹ |
+| GET | `/{id}` | Profile đầy đủ |
 
-**gRPC** (port **50052**):
+**gRPC** (cổng **50052**):
 
-- `UserProfilesService.CreatePendingProfile` — auth registration bootstrap
-- `UserProfilesService.GetProfile` — profile hydration
-- `UserProfilesService.GetProfiles` — bulk hydration
+- `UserProfilesService.CreatePendingProfile` — bootstrap register auth
+- `UserProfilesService.GetProfile` — hydrate profile
+- `UserProfilesService.GetProfiles` — bulk hydrate
 
 ---
 
 ## Workspace Service
 
-Base: `/api/v1/workspaces` · Port **8080** (host **3002**)
+Base: `/api/v1/workspaces` · Cổng **8080** (host **3002**)
 
-Protected routes require `Authorization: Bearer …` (auth gRPC). Dev-only `X-User-Id` when `ALLOW_DEV_IDENTITY_HEADERS=true`.
+Route protected yêu cầu `Authorization: Bearer …` (auth gRPC). Dev-only `X-User-Id` khi `ALLOW_DEV_IDENTITY_HEADERS=true`.
 
-| Area | Examples |
-|------|----------|
+| Vùng | Ví dụ |
+|------|-------|
 | Workspace | `POST /`, `GET /`, `GET /{id}`, `PATCH /{id}` |
-| Members | `GET /{id}/members` |
-| Activity | `GET /{id}/activity` — workspace timeline (`limit`, `offset`) |
-| Invitations | `POST /{id}/invite`, `POST /invitations/{token}/accept`, `POST /invitations/{token}/reject` |
-| Projects | `POST /{workspaceId}/projects`, `GET /{workspaceId}/projects`, `PATCH /projects/{id}`, `DELETE /projects/{id}` |
+| Thành viên | `GET /{id}/members` |
+| Activity | `GET /{id}/activity` — timeline workspace (`limit`, `offset`) |
+| Lời mời | `POST /{id}/invite`, `POST /invitations/{token}/accept`, `POST /invitations/{token}/reject` |
+| Project | `POST /{workspaceId}/projects`, `GET /{workspaceId}/projects`, `PATCH /projects/{id}`, `DELETE /projects/{id}` |
 | Health | `GET /health/live`, `GET /health/ready` |
 
 ---
 
 ## Task Service
 
-Base: `/api/v1/tasks` · Port **3000** (host **3003**)
+Base: `/api/v1/tasks` · Cổng **3000** (host **3003**)
 
-Protected routes require `Authorization: Bearer …` (auth gRPC). Dev-only `X-User-Id` when `ALLOW_DEV_IDENTITY_HEADERS=true`.
+Route protected yêu cầu `Authorization: Bearer …` (auth gRPC). Dev-only `X-User-Id` khi `ALLOW_DEV_IDENTITY_HEADERS=true`.
 
-| Method | Path | Description |
-|--------|------|-------------|
+| Method | Path | Mô tả |
+|--------|------|-------|
 | GET | `/health/live`, `/health/ready` | Health |
-| POST | `/` | Create task (`Idempotency-Key` supported) |
-| GET | `/` | List tasks (`workspaceId`, `status`, `assigneeId`, `priority`, `projectId`) |
-| GET | `/board` | Kanban board grouped by status |
-| GET | `/{id}` | Task detail |
-| GET | `/{id}/activity` | Activity timeline (`limit`, `offset`) |
+| POST | `/` | Tạo task (hỗ trợ `Idempotency-Key`) |
+| GET | `/` | List task (`workspaceId`, `status`, `assigneeId`, `priority`, `projectId`) |
+| GET | `/board` | Kanban board theo status |
+| GET | `/{id}` | Chi tiết task |
+| GET | `/{id}/activity` | Timeline activity (`limit`, `offset`) |
 | PATCH | `/{id}/details` | Title, description, priority, dueDate, labels |
-| PATCH | `/{id}/status` | Change status |
-| PATCH | `/{id}/assignee` | Assign / unassign (`Idempotency-Key` supported) |
-| DELETE | `/{id}` | Delete task |
+| PATCH | `/{id}/status` | Đổi status |
+| PATCH | `/{id}/assignee` | Gán / bỏ gán (`Idempotency-Key` hỗ trợ) |
+| DELETE | `/{id}` | Xóa task |
 | POST | `/{id}/attachments` | Upload attachment (multipart) |
-| DELETE | `/{id}/attachments?fileUrl=` | Remove attachment |
+| DELETE | `/{id}/attachments?fileUrl=` | Xóa attachment |
 
-**Comments** (base `/api/v1/tasks/{taskId}/comments`): create, list, edit, delete — see service contracts.
+**Comment** (base `/api/v1/tasks/{taskId}/comments`): tạo, list, sửa, xóa — xem service contracts.
 
-**Events published** (outbox → RabbitMQ): `task_assigned`, `comment_created`, `comment_mentioned`.
+**Event publish** (outbox → RabbitMQ): `task_assigned`, `comment_created`, `comment_mentioned`.
 
 ---
 
 ## Notification Service
 
-Base: `/api/v1/notifications` · Port **3000** (host **3004**)
+Base: `/api/v1/notifications` · Cổng **3000** (host **3004**)
 
-Protected routes require `Authorization: Bearer …` (auth gRPC). Dev-only `X-User-Id` when `ALLOW_DEV_IDENTITY_HEADERS=true`.
+Route protected yêu cầu `Authorization: Bearer …` (auth gRPC). Dev-only `X-User-Id` khi `ALLOW_DEV_IDENTITY_HEADERS=true`.
 
-| Method | Path | Description |
-|--------|------|-------------|
+| Method | Path | Mô tả |
+|--------|------|-------|
 | GET | `/health/live`, `/health/ready` | Health |
-| GET | `/` | List notifications (`skip`, `limit`) |
-| PATCH | `/{id}/read` | Mark one notification read |
-| PATCH | `/read-all` | Mark all read for current user |
+| GET | `/` | List notification (`skip`, `limit`) |
+| PATCH | `/{id}/read` | Đánh dấu một notification đã đọc |
+| PATCH | `/read-all` | Đánh dấu tất cả đã đọc cho user hiện tại |
 
-**Events consumed:** `workspace_invited`, `task_assigned`, `comment_created`, `comment_mentioned`.
+**Event consume:** `workspace_invited`, `task_assigned`, `comment_created`, `comment_mentioned`.
 
 ---
 
-## Related docs
+## Tài liệu liên quan
 
-| Document | Use when |
+| Tài liệu | Dùng khi |
 |----------|----------|
-| [service-contracts.md](../.claude/docs/service-contracts.md) | Request/response shapes, error codes, event payloads |
-| [features.md](features.md) | What is implemented vs planned |
-| [mvp-demo-scope.md](mvp-demo-scope.md) | Demo story + acceptance (E2E script planned) |
-| [team/phan-phu-tho-infrastructure-backlog.md](team/phan-phu-tho-infrastructure-backlog.md) | Infra/DevOps backlog |
+| [service-contracts.md](../.claude/docs/service-contracts.md) | Shape request/response, mã lỗi, payload event |
+| [features.md](features.md) | Tính năng đã/chưa implement |
+| [mvp-demo-scope.md](mvp-demo-scope.md) | Kịch bản demo + tiêu chí chấp nhận |
+| [team/phan-phu-tho-infrastructure-backlog.md](team/phan-phu-tho-infrastructure-backlog.md) | Backlog infra/DevOps |
+| [deployment-k3s-phases.md](deployment-k3s-phases.md) | Deploy production |

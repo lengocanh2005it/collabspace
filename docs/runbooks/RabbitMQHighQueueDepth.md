@@ -1,22 +1,22 @@
 # RabbitMQHighQueueDepth
 
-**Alert:** `rabbitmq_queue_messages > 1000` for 5 minutes  
-**Severity:** warning
+**Cảnh báo:** `rabbitmq_queue_messages > 1000` trong 5 phút  
+**Mức độ:** warning
 
-## Symptoms
+## Triệu chứng
 
-- Events lag (notifications delayed, outbox backlog).
-- Consumer pods may be down or slow.
+- Event trễ (notification chậm, outbox tồn đọng).
+- Consumer pod có thể down hoặc chậm.
 
-## Diagnosis
+## Chẩn đoán
 
-1. Open RabbitMQ management UI (port 15672) and inspect queue depth.
-2. Check notification-service and auth/user consumers are running.
-3. Review DLQ runbook if messages are poison.
+1. Mở RabbitMQ management UI (cổng 15672) và xem độ sâu hàng đợi.
+2. Kiểm tra notification-service và consumer auth/user đang chạy.
+3. Xem runbook DLQ nếu message poison.
 
-## Remediation
+## Khắc phục
 
-1. Scale consumer services (notification-service replicas).
-2. Fix crashing consumers (check logs).
-3. After fixing root cause, drain backlog; monitor queue depth trending down.
-4. For sustained load, tune `prefetchCount` and outbox poll interval.
+1. Scale consumer (replica notification-service).
+2. Sửa consumer crash (xem log).
+3. Sau khi sửa root cause, theo dõi hàng đợi giảm dần.
+4. Tải cao kéo dài: tune `prefetchCount` và interval poll outbox.

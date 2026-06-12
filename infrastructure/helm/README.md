@@ -70,6 +70,8 @@ kubectl get svc traefik -n collabspace
 
 ## Production overrides
 
+**Lộ trình deploy production (DigitalOcean k3s):** [docs/deployment-k3s-phases.md](../../docs/deployment-k3s-phases.md).
+
 Create `values-prod.yaml` (do **not** commit secrets).
 
 **With HashiCorp Vault + External Secrets Operator** (recommended): see `infrastructure/vault/README.md`. Set `global.externalSecrets.enabled: true` so Helm does not render `{app}-secrets` (ESO syncs from Vault).
