@@ -41,9 +41,8 @@ WORKDIR /app
 RUN apk add --no-cache wget \
     && addgroup -S appgroup \
     && adduser -S appuser -G appgroup
-# pnpm workspace: root store + per-package node_modules symlinks — copy both layers.
+# pnpm workspace: hoisted store at root + service-level symlinks.
 COPY --from=prod-deps /app/node_modules ./node_modules
-COPY --from=prod-deps /app/packages/shared/node_modules ./packages/shared/node_modules
 COPY --from=prod-deps /app/services/${SERVICE_NAME}/node_modules ./services/${SERVICE_NAME}/node_modules
 COPY --from=builder /app/packages/shared/dist ./packages/shared/dist
 COPY --from=builder /app/packages/shared/package.json ./packages/shared/package.json
