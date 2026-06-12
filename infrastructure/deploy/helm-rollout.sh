@@ -49,6 +49,48 @@ if [[ -n "${IMAGE_TAG:-}" ]]; then
   echo "    Image tag override: ${IMAGE_TAG}"
 fi
 
+adopt_namespace_for_helm() {
+  if kubectl get namespace "$APP_NS" >/dev/null 2>&1; then
+    kubectl label namespace "$APP_NS" app.kubernetes.io/managed-by=Helm --overwrite
+    kubectl annotate namespace "$APP_NS" \
+      meta.helm.sh/release-name="$RELEASE" \
+      meta.helm.sh/release-namespace="$APP_NS" \
+      --overwrite
+  fi
+}
+
+ensure_app_external_secrets() {
+  if ! grep -A3 'externalSecrets:' "$VALUES_PROD" 2>/dev/null | grep -q 'enabled: true'; then
+    return
+  fi
+  local eso_manifest="$APP_DIR/infrastructure/vault/k8s/external-secrets.prod.yaml"
+  local eso_token_file="${VAULT_ESO_TOKEN_FILE:-$APP_DIR/infrastructure/vault/.vault-k3s-eso-token.json}"
+  if [[ ! -f "$eso_manifest" ]]; then
+    echo "WARN: externalSecrets enabled but missing $eso_manifest"
+    return
+  fi
+  if [[ -f "$eso_token_file" ]] && command -v jq >/dev/null 2>&1; then
+    local eso_token
+    eso_token="$(jq -r '.auth.client_token' "$eso_token_file")"
+    if [[ -n "$eso_token" && "$eso_token" != null ]]; then
+      kubectl create secret generic vault-eso-token \
+        -n "$APP_NS" \
+        --from-literal=token="$eso_token" \
+        --dry-run=client -o yaml | kubectl apply -f -
+    fi
+  fi
+  echo "==> Applying ExternalSecrets (Vault sync)..."
+  kubectl apply -f "$eso_manifest"
+  for es in auth-service user-service workspace-service task-service notification-service; do
+    kubectl wait --for=condition=Ready "externalsecret/${es}-secrets" -n "$APP_NS" --timeout=180s
+  done
+}
+
+echo "==> Ensuring namespace ${APP_NS} exists..."
+kubectl create namespace "$APP_NS" --dry-run=client -o yaml | kubectl apply -f -
+adopt_namespace_for_helm
+ensure_app_external_secrets
+
 if [[ -n "${GHCR_TOKEN:-}" ]]; then
   echo "==> Creating/updating ghcr-credentials..."
   kubectl create secret docker-registry ghcr-credentials \
@@ -65,6 +107,8 @@ fi
 
 echo "==> Helm dependency update..."
 helm dependency update "$CHART_DIR"
+
+adopt_namespace_for_helm
 
 mapfile -t tag_sets < <(helm_image_tag_sets)
 

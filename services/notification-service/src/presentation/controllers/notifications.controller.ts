@@ -30,7 +30,7 @@ import { AuthGuard } from "../guards/auth.guard";
 import type { AuthenticatedRequest } from "../http/authenticated-request";
 
 @ApiTags("notifications")
-@Controller("v1/notifications")
+@Controller("notifications")
 export class NotificationsController {
   constructor(
     private readonly queryBus: QueryBus,

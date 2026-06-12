@@ -6,7 +6,7 @@ paths:
 # task-service Rules
 
 - Pattern: **Clean + CQRS** — `CommandBus` / `QueryBus`; handlers in `application/usecases/*.handler.ts`.
-- Global prefix `api`; version on controller: `@Controller('v1/tasks')`.
+- Global prefix `api/v1`; controllers use `@Controller('tasks')` → `/api/v1/tasks`.
 - New write flow: `application/commands/` + handler; reads: `application/queries/` + handler.
 - Domain rules in `domain/entities/`; persistence in `infrastructure/persistence/` + `repositories/`.
 - Register new handlers in `Handlers` array in `app.module.ts`.

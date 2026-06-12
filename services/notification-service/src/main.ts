@@ -38,7 +38,7 @@ async function bootstrap() {
   });
   // 2. Cấu hình HTTP API
   app.useGlobalPipes(new ValidationPipe({ transform: true }));
-  app.setGlobalPrefix("api");
+  app.setGlobalPrefix("api/v1");
   registerRequestIdMiddleware(app);
   registerMetricsMiddleware(app, app.get(MetricsService));
 

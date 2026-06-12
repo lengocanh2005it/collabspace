@@ -5,6 +5,9 @@ global:
   namespace: collabspace
   createNamespace: true
   imagePullPolicy: Always
+  # Bitnami moved docker.io/bitnami/* to docker.io/bitnamilegacy/* (2025 catalog change).
+  security:
+    allowInsecureImages: true
   # imagePullSecrets: []  # e.g. - name: ghcr-credentials (production GHCR private)
   # When true, Helm does not render {app}-secrets — use External Secrets Operator + Vault
   # (infrastructure/vault/k8s/). Pods still mount secrets via secretRef in deployment.yaml.
@@ -33,6 +36,14 @@ infra:
 postgresql:
   enabled: true
   fullnameOverride: postgres
+  image:
+    repository: bitnamilegacy/postgresql
+  volumePermissions:
+    image:
+      repository: bitnamilegacy/os-shell
+  metrics:
+    image:
+      repository: bitnamilegacy/postgres-exporter
   auth:
     postgresPassword: postgres
     username: postgres
@@ -51,19 +62,23 @@ postgresql:
         cpu: 500m
     initdb:
       scripts:
-        init-databases.sh: |
-          #!/bin/bash
-          set -e
-          psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" <<-EOSQL
-            CREATE DATABASE collabspace_auth;
-            CREATE DATABASE collabspace_user;
-            CREATE DATABASE collabspace_workspace;
-          EOSQL
+        init-databases.sql: |
+          CREATE DATABASE collabspace_auth;
+          CREATE DATABASE collabspace_user;
+          CREATE DATABASE collabspace_workspace;
 
 # --- Bitnami MongoDB (task + notification) ---
 mongodb:
   enabled: true
   fullnameOverride: mongo
+  image:
+    repository: bitnamilegacy/mongodb
+  volumePermissions:
+    image:
+      repository: bitnamilegacy/os-shell
+  metrics:
+    image:
+      repository: bitnamilegacy/mongodb-exporter
   architecture: standalone
   auth:
     enabled: true
@@ -84,6 +99,23 @@ mongodb:
 redis:
   enabled: true
   fullnameOverride: redis
+  image:
+    repository: bitnamilegacy/redis
+  sentinel:
+    image:
+      repository: bitnamilegacy/redis-sentinel
+  metrics:
+    image:
+      repository: bitnamilegacy/redis-exporter
+  volumePermissions:
+    image:
+      repository: bitnamilegacy/os-shell
+  kubectl:
+    image:
+      repository: bitnamilegacy/kubectl
+  sysctl:
+    image:
+      repository: bitnamilegacy/os-shell
   architecture: standalone
   auth:
     enabled: true
@@ -104,6 +136,11 @@ redis:
 rabbitmq:
   enabled: true
   fullnameOverride: rabbitmq
+  image:
+    repository: bitnamilegacy/rabbitmq
+  volumePermissions:
+    image:
+      repository: bitnamilegacy/os-shell
   auth:
     username: guest
     password: guest

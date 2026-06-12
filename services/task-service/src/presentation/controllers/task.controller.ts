@@ -73,7 +73,7 @@ function assertUploadedFile(file: unknown): asserts file is TaskUploadedFile {
 
 @ApiTags("tasks")
 @ApiBearerAuth()
-@Controller("v1/tasks")
+@Controller("tasks")
 @UseGuards(AuthGuard, WorkspaceValidationGuard)
 export class TaskController {
   constructor(

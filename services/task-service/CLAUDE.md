@@ -44,7 +44,7 @@ pnpm run test
 
 ## Conventions
 
-- Global prefix `api`; controllers `@Controller('v1/tasks')` → `/api/v1/tasks`
+- Global prefix `api/v1`; controllers `@Controller('tasks')` → `/api/v1/tasks`
 - Double-quote import style in this service
 - Handlers registered in `Handlers` array in `app.module.ts`
 - Domain entities use factories and business methods; throw domain exceptions
