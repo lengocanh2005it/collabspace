@@ -360,6 +360,12 @@ promtail:
         - source_labels: [__meta_kubernetes_namespace]
           action: keep
           regex: collabspace
+      # Avoid 0/1 Ready when many pods churn (k3s single-node); /ready still checks server.
+      extraServerConfigs: |
+        health_check_target: false
+  readinessProbe:
+    timeoutSeconds: 10
+    periodSeconds: 15
   resources:
     requests:
       memory: 64Mi
