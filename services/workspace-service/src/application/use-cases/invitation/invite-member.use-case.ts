@@ -12,6 +12,10 @@ import {
   type IInvitationRepository,
   INVITATION_REPOSITORY,
 } from '../../../domain/repositories/invitation.repository';
+import {
+  type IWorkspaceActivityRepository,
+  WORKSPACE_ACTIVITY_REPOSITORY,
+} from '../../../domain/repositories/workspace-activity.repository';
 
 @Injectable()
 export class InviteMemberUseCase {
@@ -22,6 +26,8 @@ export class InviteMemberUseCase {
     private readonly workspaceRepo: IWorkspaceRepository,
     @Inject(INVITATION_REPOSITORY)
     private readonly invitationRepo: IInvitationRepository,
+    @Inject(WORKSPACE_ACTIVITY_REPOSITORY)
+    private readonly activityRepo: IWorkspaceActivityRepository,
   ) {}
 
   async execute(userId: string, workspaceId: string, dto: InviteMemberDto) {
@@ -34,12 +40,22 @@ export class InviteMemberUseCase {
     }
 
     const workspace = await this.workspaceRepo.findById(workspaceId);
-
-    return this.invitationRepo.createAndPublishInvited({
+    const invitation = await this.invitationRepo.createAndPublishInvited({
       workspaceId,
       inviterId: userId,
       inviteeEmail: dto.email,
       workspaceName: workspace?.name,
     });
+
+    await this.activityRepo.record({
+      workspaceId,
+      actorId: userId,
+      actorName: null,
+      type: 'member_invited',
+      summary: `${dto.email} was invited to the workspace`,
+      meta: { inviteeEmail: dto.email, invitationId: invitation.id },
+    });
+
+    return invitation;
   }
 }

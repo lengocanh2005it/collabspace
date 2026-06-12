@@ -3,6 +3,7 @@ import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { DeleteProjectUseCase } from './delete-project.use-case';
 import { PROJECT_REPOSITORY } from '../../../domain/repositories/project.repository';
 import { WORKSPACE_MEMBER_REPOSITORY } from '../../../domain/repositories/workspace-member.repository';
+import { WORKSPACE_ACTIVITY_REPOSITORY } from '../../../domain/repositories/workspace-activity.repository';
 import { Project } from '../../../domain/entities/project.entity';
 import { WorkspaceMember } from '../../../domain/entities/workspace-member.entity';
 
@@ -11,6 +12,7 @@ describe('DeleteProjectUseCase', () => {
 
   const mockProjectRepo = { findById: jest.fn(), softDelete: jest.fn() };
   const mockMemberRepo = { findByWorkspaceAndUser: jest.fn() };
+  const mockActivityRepo = { record: jest.fn().mockResolvedValue(undefined) };
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -19,6 +21,7 @@ describe('DeleteProjectUseCase', () => {
         DeleteProjectUseCase,
         { provide: PROJECT_REPOSITORY, useValue: mockProjectRepo },
         { provide: WORKSPACE_MEMBER_REPOSITORY, useValue: mockMemberRepo },
+        { provide: WORKSPACE_ACTIVITY_REPOSITORY, useValue: mockActivityRepo },
       ],
     }).compile();
     useCase = module.get<DeleteProjectUseCase>(DeleteProjectUseCase);

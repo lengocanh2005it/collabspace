@@ -3,6 +3,7 @@ import { WorkspaceOrmEntity } from './infrastructure/database/entities/workspace
 import { WorkspaceMemberOrmEntity } from './infrastructure/database/entities/workspace-member.orm-entity';
 import { ProjectOrmEntity } from './infrastructure/database/entities/project.orm-entity';
 import { InvitationOrmEntity } from './infrastructure/database/entities/invitation.orm-entity';
+import { WorkspaceActivityOrmEntity } from './infrastructure/database/entities/workspace-activity.orm-entity';
 import { WorkspaceOutboxEventEntity } from './infrastructure/outbox/entities/workspace-outbox-event.entity';
 import { IdempotencyRecordOrmEntity } from './infrastructure/idempotency/entities/idempotency-record.orm-entity';
 
@@ -17,9 +18,11 @@ const dataSource = new DataSource({
     WorkspaceMemberOrmEntity,
     ProjectOrmEntity,
     InvitationOrmEntity,
+    WorkspaceActivityOrmEntity,
     WorkspaceOutboxEventEntity,
     IdempotencyRecordOrmEntity,
   ],
+  migrations: [__dirname + '/infrastructure/database/migrations/*.ts'],
   synchronize: process.env.DATABASE_SYNCHRONIZE === 'true',
 });
 

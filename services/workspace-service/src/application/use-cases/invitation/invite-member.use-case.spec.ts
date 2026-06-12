@@ -4,6 +4,7 @@ import { InviteMemberUseCase } from './invite-member.use-case';
 import { WORKSPACE_REPOSITORY } from '../../../domain/repositories/workspace.repository';
 import { WORKSPACE_MEMBER_REPOSITORY } from '../../../domain/repositories/workspace-member.repository';
 import { INVITATION_REPOSITORY } from '../../../domain/repositories/invitation.repository';
+import { WORKSPACE_ACTIVITY_REPOSITORY } from '../../../domain/repositories/workspace-activity.repository';
 import { Workspace } from '../../../domain/entities/workspace.entity';
 import { WorkspaceMember } from '../../../domain/entities/workspace-member.entity';
 import { Invitation } from '../../../domain/entities/invitation.entity';
@@ -14,6 +15,7 @@ describe('InviteMemberUseCase', () => {
   const mockMemberRepo = { findByWorkspaceAndUser: jest.fn() };
   const mockWorkspaceRepo = { findById: jest.fn() };
   const mockInvitationRepo = { createAndPublishInvited: jest.fn() };
+  const mockActivityRepo = { record: jest.fn().mockResolvedValue(undefined) };
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -23,6 +25,7 @@ describe('InviteMemberUseCase', () => {
         { provide: WORKSPACE_MEMBER_REPOSITORY, useValue: mockMemberRepo },
         { provide: WORKSPACE_REPOSITORY, useValue: mockWorkspaceRepo },
         { provide: INVITATION_REPOSITORY, useValue: mockInvitationRepo },
+        { provide: WORKSPACE_ACTIVITY_REPOSITORY, useValue: mockActivityRepo },
       ],
     }).compile();
     useCase = module.get<InviteMemberUseCase>(InviteMemberUseCase);

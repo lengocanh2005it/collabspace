@@ -20,6 +20,7 @@ import { InviteMemberUseCase } from './application/use-cases/invitation/invite-m
 import { AcceptInvitationUseCase } from './application/use-cases/invitation/accept-invitation.use-case';
 import { RejectInvitationUseCase } from './application/use-cases/invitation/reject-invitation.use-case';
 import { CheckWorkspaceMembershipUseCase } from './application/use-cases/workspace/check-workspace-membership.use-case';
+import { GetWorkspaceActivityUseCase } from './application/use-cases/workspace/get-workspace-activity.use-case';
 import { WorkspaceHealthService } from './health/workspace-health.service';
 import { MetricsModule } from './metrics/metrics.module';
 import { AuthModule } from './integrations/auth/auth.module';
@@ -29,10 +30,12 @@ import { TypeOrmWorkspaceRepository } from './infrastructure/repositories/typeor
 import { TypeOrmWorkspaceMemberRepository } from './infrastructure/repositories/typeorm-workspace-member.repository';
 import { TypeOrmProjectRepository } from './infrastructure/repositories/typeorm-project.repository';
 import { TypeOrmInvitationRepository } from './infrastructure/repositories/typeorm-invitation.repository';
+import { TypeOrmWorkspaceActivityRepository } from './infrastructure/repositories/typeorm-workspace-activity.repository';
 import { WORKSPACE_REPOSITORY } from './domain/repositories/workspace.repository';
 import { WORKSPACE_MEMBER_REPOSITORY } from './domain/repositories/workspace-member.repository';
 import { PROJECT_REPOSITORY } from './domain/repositories/project.repository';
 import { INVITATION_REPOSITORY } from './domain/repositories/invitation.repository';
+import { WORKSPACE_ACTIVITY_REPOSITORY } from './domain/repositories/workspace-activity.repository';
 
 @Module({
   imports: [
@@ -57,6 +60,7 @@ import { INVITATION_REPOSITORY } from './domain/repositories/invitation.reposito
     UpdateWorkspaceUseCase,
     ListMembersUseCase,
     CheckWorkspaceMembershipUseCase,
+    GetWorkspaceActivityUseCase,
     CreateProjectUseCase,
     ListProjectsUseCase,
     UpdateProjectUseCase,
@@ -69,6 +73,7 @@ import { INVITATION_REPOSITORY } from './domain/repositories/invitation.reposito
     TypeOrmWorkspaceMemberRepository,
     TypeOrmProjectRepository,
     TypeOrmInvitationRepository,
+    TypeOrmWorkspaceActivityRepository,
     // Port bindings
     { provide: WORKSPACE_REPOSITORY, useClass: TypeOrmWorkspaceRepository },
     {
@@ -77,6 +82,10 @@ import { INVITATION_REPOSITORY } from './domain/repositories/invitation.reposito
     },
     { provide: PROJECT_REPOSITORY, useClass: TypeOrmProjectRepository },
     { provide: INVITATION_REPOSITORY, useClass: TypeOrmInvitationRepository },
+    {
+      provide: WORKSPACE_ACTIVITY_REPOSITORY,
+      useClass: TypeOrmWorkspaceActivityRepository,
+    },
     // Other services
     WorkspaceHealthService,
     IdempotencyService,

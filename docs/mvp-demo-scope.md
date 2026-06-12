@@ -59,7 +59,7 @@ Cập nhật đầy đủ tại [features.md](./features.md). Tóm tắt **sau k
 | Xóa task | **Done** | `DELETE /tasks/:id` |
 | Notification mark-read | **Done** | `PATCH /notifications/:id/read`, `read-all` |
 | Activity feed (task) | **Done** | `GET /tasks/:id/activity` — timeline events + comments |
-| Activity feed (workspace) | **Planned** | `GET /workspaces/:id/activity` — aggregate chưa có |
+| Activity feed (workspace) | **Done** | `GET /workspaces/:id/activity` — 6 event types, `workspace_activities` table |
 | WebSocket realtime | **Out of scope** | Polling `GET /notifications` |
 | Frontend | **Out of scope** | Backend + infra trong repo |
 | Demo E2E script | **Done** | `scripts/demo-e2e.sh` + `.ps1` — 7 bước qua Traefik |

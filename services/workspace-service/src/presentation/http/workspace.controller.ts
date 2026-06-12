@@ -4,6 +4,7 @@ import {
   Get,
   Patch,
   Param,
+  Query,
   Body,
   ParseUUIDPipe,
   UseGuards,
@@ -26,6 +27,7 @@ import { GetWorkspaceUseCase } from '../../application/use-cases/workspace/get-w
 import { ListWorkspacesUseCase } from '../../application/use-cases/workspace/list-workspaces.use-case';
 import { UpdateWorkspaceUseCase } from '../../application/use-cases/workspace/update-workspace.use-case';
 import { ListMembersUseCase } from '../../application/use-cases/workspace/list-members.use-case';
+import { GetWorkspaceActivityUseCase } from '../../application/use-cases/workspace/get-workspace-activity.use-case';
 import { IdempotencyService } from '../../infrastructure/idempotency/idempotency.service';
 import { AuthGuard } from './guards/auth.guard';
 
@@ -40,6 +42,7 @@ export class WorkspaceController {
     private readonly listWorkspacesUseCase: ListWorkspacesUseCase,
     private readonly updateWorkspaceUseCase: UpdateWorkspaceUseCase,
     private readonly listMembersUseCase: ListMembersUseCase,
+    private readonly getWorkspaceActivityUseCase: GetWorkspaceActivityUseCase,
     private readonly idempotencyService: IdempotencyService,
   ) {}
 
@@ -121,5 +124,20 @@ export class WorkspaceController {
     @Param('id', ParseUUIDPipe) workspaceId: string,
   ) {
     return this.listMembersUseCase.execute(userId, workspaceId);
+  }
+
+  @Get(':id/activity')
+  @ApiOperation({ summary: 'Get workspace activity timeline' })
+  @ApiParam({ name: 'id', format: 'uuid' })
+  async getActivity(
+    @UserId() userId: string,
+    @Param('id', ParseUUIDPipe) workspaceId: string,
+    @Query('limit') limit?: string,
+    @Query('offset') offset?: string,
+  ) {
+    return this.getWorkspaceActivityUseCase.execute(userId, workspaceId, {
+      limit: limit ? Math.min(parseInt(limit, 10), 200) : 50,
+      offset: offset ? parseInt(offset, 10) : 0,
+    });
   }
 }

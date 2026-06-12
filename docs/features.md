@@ -131,9 +131,7 @@ Tài liệu này là **nguồn chính** mô tả chức năng và mức độ ho
 - Parse `@username`, resolve qua **user replica** (`username` sync từ RabbitMQ events); fallback hydrate từ user-service khi thiếu
 - Publish `comment_created` (assignee) và `comment_mentioned` (người được tag) qua outbox
 
-**Planned**
-
-- Activity timeline **workspace-level** (`GET /workspaces/:id/activity`) — task-level đã có ở §5
+- Activity timeline workspace-level — `GET /api/v1/workspaces/:id/activity` — ghi nhận workspace_created, member_invited, member_joined, invitation_rejected, project_created, project_deleted
 
 ---
 

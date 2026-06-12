@@ -5,6 +5,7 @@ import { WorkspaceOrmEntity } from './entities/workspace.orm-entity';
 import { WorkspaceMemberOrmEntity } from './entities/workspace-member.orm-entity';
 import { InvitationOrmEntity } from './entities/invitation.orm-entity';
 import { ProjectOrmEntity } from './entities/project.orm-entity';
+import { WorkspaceActivityOrmEntity } from './entities/workspace-activity.orm-entity';
 import { WorkspaceOutboxEventEntity } from '../outbox/entities/workspace-outbox-event.entity';
 import { IdempotencyRecordOrmEntity } from '../idempotency/entities/idempotency-record.orm-entity';
 
@@ -38,6 +39,7 @@ const createDatabaseOptions = (): TypeOrmModuleOptions => ({
       WorkspaceMemberOrmEntity,
       InvitationOrmEntity,
       ProjectOrmEntity,
+      WorkspaceActivityOrmEntity,
       WorkspaceOutboxEventEntity,
       IdempotencyRecordOrmEntity,
     ]),
