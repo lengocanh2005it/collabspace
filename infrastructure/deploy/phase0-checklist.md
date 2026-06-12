@@ -11,11 +11,11 @@ Lộ trình đầy đủ: [docs/deployment-k3s-phases.md](../../docs/deployment-
 - [ ] Bật backup/snapshot Droplet (khuyến nghị)
 - [ ] Firewall: inbound `22`, `80`, `443` — chặn `5432`, `27017`, `6379`, `5672`, `8200`, `6443` từ internet
 
-## 2. Domain & DNS
+## 2. Domain & DNS (tùy chọn — có thể dùng IP)
 
-- [ ] Mua / chọn domain
-- [ ] A record `api.<domain>` → IP Droplet
-- [ ] (Phase 5) Chuẩn bị cert-manager + Let's Encrypt
+- [ ] **Có domain:** A record `api.<domain>` → IP Droplet; `PROD_DOMAIN=api.<domain>`
+- [ ] **Chỉ IP:** `PROD_DOMAIN=<IP>` — xem [deployment-droplet-ip-quickstart.md](../../docs/deployment-droplet-ip-quickstart.md)
+- [ ] (Phase 5, khi có domain) cert-manager + Let's Encrypt
 
 ## 3. GHCR images
 
@@ -89,7 +89,7 @@ test -f infrastructure/helm/collabspace/values-prod.yaml && echo "values-prod.ya
 ```
 
 - [ ] SSH vào Droplet thành công
-- [ ] DNS resolve `api.<domain>` → IP Droplet
+- [ ] DNS resolve (hoặc dùng IP trực tiếp `http://<IP>/api/v1`)
 - [ ] `values-prod.yaml` có image GHCR + `externalSecrets.enabled: true`
 - [ ] Secret đã sinh và lưu an toàn (password manager / Vault draft)
 

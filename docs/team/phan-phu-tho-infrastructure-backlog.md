@@ -50,7 +50,7 @@ Tài liệu này liệt kê **công việc hạ tầng / DevOps / observability 
 P0  Lộ trình k3s Phase 0–2           →  Droplet + k3s + Vault + ESO (xem deployment-k3s-phases.md)
 P0  HashiCorp Vault + .env chuẩn hóa →  scaffold có; operationalize HA + ESO trên cluster
 P0  Secrets + môi trường staging     →  deploy an toàn, không lộ credential
-P1  CI/CD + image registry          →  GHCR build ✅; cần workflow helm upgrade deploy
+P1  CI/CD + image registry          →  GHCR build ✅; workflow Helm/k3s deploy ✅ (Phase 4)
 P1  Monitoring stack trên K8s       →  scrape metrics, alert, Grafana
 P1  MVP smoke trong CI              →  `scripts/demo-e2e` sau Compose + Traefik (phối hợp Tín)
 P2  Smoke / readiness sau deploy    →  verify-readiness + demo-e2e trong pipeline
@@ -71,6 +71,7 @@ P3  Chaos quarterly (staging)       →  chứng minh recovery
 - [x] Tạo `values-prod.example.yaml` + script `prepare-prod-values` — [phase0-checklist.md](../../infrastructure/deploy/phase0-checklist.md).
 - [x] Script Phase 1: `k3s-bootstrap.sh`, `verify-phase1.sh`, `fetch-kubeconfig` — [phase1-checklist.md](../../infrastructure/deploy/phase1-checklist.md).
 - [x] Script Phase 2: `vault-eso-phase2.sh`, `verify-phase2.sh`, `external-secrets.prod.yaml` — [phase2-checklist.md](../../infrastructure/deploy/phase2-checklist.md).
+- [x] Script Phase 3–4: `helm-deploy-phase3.sh`, `helm-deploy-ci.sh`, `helm-rollout.sh` — [phase3-checklist.md](../../infrastructure/deploy/phase3-checklist.md), [phase4-checklist.md](../../infrastructure/deploy/phase4-checklist.md).
 - [ ] Chạy Phase 2 trên Droplet; backup `.vault-k3s-init.json` off-server.
 - [ ] Điền `phase0.env` và chạy script trên máy ops; không commit `values-prod.yaml`.
 - [ ] Chạy `k3s-bootstrap.sh` trên Droplet thật; `verify-phase1.sh` pass.
@@ -243,8 +244,8 @@ Dùng bảng này khi seed Vault KV (`secret/collabspace/staging`, …).
   5. Trigger deploy staging (Helm upgrade).
 - [x] **Option B — GitHub Actions:** root CI + GHCR image build 5 service ✅.
 - [x] Docker image build fix (shared node_modules, seed.ts exclude) — 2026-06-12.
-- [ ] Workflow deploy **k3s/Helm** (thay Compose SSH trong `docker-deploy.yml`).
-- [ ] Thêm GitHub Actions secrets (`DROPLET_*`, `GHCR_*`, `KUBECONFIG` nếu cần) và chạy deploy lần đầu theo [deployment-k3s-phases.md](../deployment-k3s-phases.md).
+- [x] Workflow deploy **k3s/Helm** (`docker-deploy.yml` → `helm-deploy-ci.sh` + `verify-k8s-readiness.sh`) — [phase4-checklist.md](../../infrastructure/deploy/phase4-checklist.md).
+- [ ] Thêm GitHub Actions secrets (`DROPLET_*`, `GHCR_*`) và chạy deploy lần đầu theo [deployment-k3s-phases.md](../deployment-k3s-phases.md).
 - [ ] Cache `pnpm` / Docker layer để pipeline < 15 phút (mục tiêu ban đầu).
 - [ ] Branch protection: PR bắt buộc pass test trước merge.
 
@@ -252,8 +253,8 @@ Dùng bảng này khi seed Vault KV (`secret/collabspace/staging`, …).
 
 - [ ] Staging: `helm upgrade --install` sau CI success trên `main`.
 - [ ] Production: manual approval hoặc tag-only deploy.
-- [ ] Chạy migration job (init container hoặc Job K8s) **trước** rollout app — thứ tự: auth → user → workspace → task → notification.
-- [ ] Post-deploy: gọi `infrastructure/resilience/drills/verify-readiness.sh` (hoặc `.ps1`) — fail pipeline nếu không ready.
+- [x] Chạy migration Job K8s **trước** rollout app Postgres services — thứ tự: auth → user → workspace (`run-k8s-migrations.sh`).
+- [x] Post-deploy: `verify-k8s-readiness.sh` qua Traefik — fail pipeline nếu không ready.
 
 ### 7. Compose vs K8s — ranh giới rõ
 

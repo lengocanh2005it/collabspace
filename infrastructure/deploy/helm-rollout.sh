@@ -1,0 +1,112 @@
+#!/usr/bin/env bash
+# Helm upgrade + migration + rollout (dùng chung Phase 3 tay và Phase 4 CI).
+# Env: IMAGE_TAG (tùy chọn — nếu set sẽ override tag image qua helm --set)
+set -euo pipefail
+
+APP_DIR="${APP_DIR:-/opt/collabspace}"
+APP_NS="${APP_NS:-collabspace}"
+RELEASE="${RELEASE:-collabspace}"
+CHART_DIR="${CHART_DIR:-$APP_DIR/infrastructure/helm/collabspace}"
+VALUES_PROD="${VALUES_PROD:-$CHART_DIR/values-prod.yaml}"
+PHASE0_ENV="${PHASE0_ENV:-$APP_DIR/infrastructure/deploy/phase0.env}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+export KUBECONFIG="${KUBECONFIG:-/etc/rancher/k3s/k3s.yaml}"
+
+if ! command -v helm >/dev/null 2>&1 || ! command -v kubectl >/dev/null 2>&1; then
+  echo "helm and kubectl required (run Phase 1 first)."
+  exit 1
+fi
+
+if [[ ! -f "$VALUES_PROD" ]]; then
+  echo "Missing $VALUES_PROD — run prepare-prod-values.sh (Phase 0)."
+  exit 1
+fi
+
+cd "$APP_DIR"
+
+if [[ -f "$PHASE0_ENV" ]]; then
+  set -a
+  # shellcheck disable=SC1090
+  source "$PHASE0_ENV"
+  set +a
+fi
+
+GHCR_OWNER="${GHCR_OWNER:-}"
+
+helm_image_tag_sets() {
+  if [[ -z "${IMAGE_TAG:-}" ]]; then
+    return
+  fi
+  local svc
+  for svc in auth-service user-service workspace-service task-service notification-service; do
+    printf '%s\n' "--set" "apps.${svc}.image.tag=${IMAGE_TAG}"
+  done
+}
+
+echo "==> Helm rollout (release=${RELEASE}, namespace=${APP_NS})"
+if [[ -n "${IMAGE_TAG:-}" ]]; then
+  echo "    Image tag override: ${IMAGE_TAG}"
+fi
+
+if [[ -n "${GHCR_TOKEN:-}" ]]; then
+  echo "==> Creating/updating ghcr-credentials..."
+  kubectl create secret docker-registry ghcr-credentials \
+    -n "$APP_NS" \
+    --docker-server=ghcr.io \
+    --docker-username="${GHCR_USERNAME:-${GHCR_OWNER:-}}" \
+    --docker-password="$GHCR_TOKEN" \
+    --dry-run=client -o yaml | kubectl apply -f -
+elif kubectl get secret ghcr-credentials -n "$APP_NS" >/dev/null 2>&1; then
+  echo "Using existing ghcr-credentials secret."
+else
+  echo "WARN: No GHCR_TOKEN and no ghcr-credentials — image pull may fail if GHCR packages are private."
+fi
+
+echo "==> Helm dependency update..."
+helm dependency update "$CHART_DIR"
+
+mapfile -t tag_sets < <(helm_image_tag_sets)
+
+echo "==> helm upgrade --install..."
+helm upgrade --install "$RELEASE" "$CHART_DIR" \
+  -n "$APP_NS" \
+  --create-namespace \
+  -f "$CHART_DIR/values.yaml" \
+  -f "$VALUES_PROD" \
+  "${tag_sets[@]}" \
+  --wait --timeout 20m
+
+echo "==> Scaling down Postgres app deployments (migration window)..."
+for dep in auth-service user-service workspace-service; do
+  if kubectl get deployment "$dep" -n "$APP_NS" >/dev/null 2>&1; then
+    kubectl scale deployment "$dep" -n "$APP_NS" --replicas=0
+  fi
+done
+
+echo "==> Waiting for data stores..."
+kubectl wait --for=condition=Ready pod -l app.kubernetes.io/name=postgresql -n "$APP_NS" --timeout=300s || true
+kubectl wait --for=condition=Ready pod -l app.kubernetes.io/name=mongodb -n "$APP_NS" --timeout=300s || true
+kubectl wait --for=condition=Ready pod -l app.kubernetes.io/name=redis -n "$APP_NS" --timeout=300s || true
+kubectl wait --for=condition=Ready pod -l app.kubernetes.io/name=rabbitmq -n "$APP_NS" --timeout=300s || true
+
+echo "==> Running database migrations..."
+PHASE0_ENV="$PHASE0_ENV" VALUES_PROD="$VALUES_PROD" APP_NS="$APP_NS" IMAGE_TAG="${IMAGE_TAG:-}" \
+  bash "$SCRIPT_DIR/run-k8s-migrations.sh"
+
+echo "==> Restoring app replica counts from values-prod..."
+for dep in auth-service user-service workspace-service task-service notification-service; do
+  replicas="$(grep -A20 "^  ${dep}:" "$VALUES_PROD" | grep -m1 'replicas:' | awk '{print $2}' || echo 1)"
+  if kubectl get deployment "$dep" -n "$APP_NS" >/dev/null 2>&1; then
+    kubectl scale deployment "$dep" -n "$APP_NS" --replicas="${replicas:-1}"
+  fi
+done
+
+echo "==> Waiting for application rollouts..."
+for dep in auth-service user-service workspace-service task-service notification-service; do
+  if kubectl get deployment "$dep" -n "$APP_NS" >/dev/null 2>&1; then
+    kubectl rollout status deployment/"$dep" -n "$APP_NS" --timeout=300s
+  fi
+done
+
+echo "Helm rollout finished."
