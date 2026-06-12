@@ -6,7 +6,7 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
-    "build": "nest build && tsc-alias -p tsconfig.build.json && tsc -p tsconfig.migrate.json && tsc -p tsconfig.seed.json",
+    "build": "nest build && tsc-alias -p tsconfig.build.json && tsc -p tsconfig.migrate.json && tsc -p tsconfig.seed.json && tsc-alias -p tsconfig.seed.json",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "proto:gen": "node ./scripts/proto/generate.cjs",
     "start": "nest start",
