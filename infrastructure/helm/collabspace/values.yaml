@@ -355,18 +355,11 @@ promtail:
     clients:
       - url: http://loki:3100/loki/api/v1/push
     snippets:
-      extraScrapeConfigs: |
-        - job_name: kubernetes-pods
-          kubernetes_sd_configs:
-            - role: pod
-          relabel_configs:
-            - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
-              action: keep
-              regex: "true"
-            - source_labels: [__meta_kubernetes_namespace]
-              target_label: namespace
-            - source_labels: [__meta_kubernetes_pod_label_app]
-              target_label: app
+      # Default chart job tails /var/log/pods; keep only CollabSpace namespace.
+      extraRelabelConfigs:
+        - source_labels: [__meta_kubernetes_namespace]
+          action: keep
+          regex: collabspace
   resources:
     requests:
       memory: 64Mi
