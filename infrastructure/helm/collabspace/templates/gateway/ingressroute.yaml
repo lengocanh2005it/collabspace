@@ -19,6 +19,42 @@ spec:
       services:
         - name: internal-api-reject
           port: 80
+    - match: PathPrefix(`/api/v1/users/health`)
+      kind: Rule
+      priority: 150
+      services:
+        - name: user-service
+          port: 3000
+      middlewares:
+        - name: rate-limit
+        - name: cors-headers
+    - match: PathPrefix(`/api/v1/workspaces/health`)
+      kind: Rule
+      priority: 150
+      services:
+        - name: workspace-service
+          port: 8080
+      middlewares:
+        - name: rate-limit
+        - name: cors-headers
+    - match: PathPrefix(`/api/v1/tasks/health`)
+      kind: Rule
+      priority: 150
+      services:
+        - name: task-service
+          port: 3000
+      middlewares:
+        - name: rate-limit
+        - name: cors-headers
+    - match: PathPrefix(`/api/v1/notifications/health`)
+      kind: Rule
+      priority: 150
+      services:
+        - name: notification-service
+          port: 3000
+      middlewares:
+        - name: rate-limit
+        - name: cors-headers
     - match: Path(`/api/v1/auth/me`)
       kind: Rule
       priority: 100
