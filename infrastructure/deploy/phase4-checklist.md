@@ -9,6 +9,7 @@ Lộ trình: [docs/deployment-k3s-phases.md](../../docs/deployment-k3s-phases.md
 - [ ] Phase 1–3 đã chạy trên Droplet (`verify-phase3.sh` pass)
 - [ ] `/opt/collabspace/infrastructure/helm/collabspace/values-prod.yaml` tồn tại trên server (không commit)
 - [ ] `/opt/collabspace/infrastructure/deploy/phase0.env` tồn tại trên server (không commit)
+- [ ] **Không sửa tay** file tracked trong `/opt/collabspace` (vd. `helm-rollout.sh`) — CI `git-sync` reset về `origin/main`; chỉ giữ local `phase0.env` + `values-prod.yaml`
 - [ ] GitHub Secrets đã cấu hình (xem bảng dưới)
 - [ ] Droplet có `git`, `kubectl`, `helm`, k3s đang chạy
 
