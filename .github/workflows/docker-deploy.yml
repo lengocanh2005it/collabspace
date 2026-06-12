@@ -91,16 +91,27 @@ jobs:
           - service: notification-service
             changed: ${{ needs.detect-changes.outputs.notification-service }}
     steps:
+      # When any service changes, rebuild all five images with the same tag so
+      # helm-rollout can safely override IMAGE_TAG for every deployment/job.
       - name: Skip unchanged service
-        if: github.event_name != 'workflow_dispatch' && matrix.changed != 'true'
+        if: |
+          github.event_name != 'workflow_dispatch' &&
+          needs.detect-changes.outputs.any-service != 'true' &&
+          matrix.changed != 'true'
         run: echo "No changes in ${{ matrix.service }}, skipping build."
 
       - name: Checkout
-        if: github.event_name == 'workflow_dispatch' || matrix.changed == 'true'
+        if: |
+          github.event_name == 'workflow_dispatch' ||
+          needs.detect-changes.outputs.any-service == 'true' ||
+          matrix.changed == 'true'
         uses: actions/checkout@v4
 
       - name: Set image variables
-        if: github.event_name == 'workflow_dispatch' || matrix.changed == 'true'
+        if: |
+          github.event_name == 'workflow_dispatch' ||
+          needs.detect-changes.outputs.any-service == 'true' ||
+          matrix.changed == 'true'
         id: vars
         shell: bash
         run: |
@@ -111,11 +122,17 @@ jobs:
           echo "image=ghcr.io/$owner/collabspace-${{ matrix.service }}" >> "$GITHUB_OUTPUT"
 
       - name: Set up Docker Buildx
-        if: github.event_name == 'workflow_dispatch' || matrix.changed == 'true'
+        if: |
+          github.event_name == 'workflow_dispatch' ||
+          needs.detect-changes.outputs.any-service == 'true' ||
+          matrix.changed == 'true'
         uses: docker/setup-buildx-action@v3
 
       - name: Login to GHCR
-        if: github.event_name == 'workflow_dispatch' || matrix.changed == 'true'
+        if: |
+          github.event_name == 'workflow_dispatch' ||
+          needs.detect-changes.outputs.any-service == 'true' ||
+          matrix.changed == 'true'
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
@@ -123,7 +140,10 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push ${{ matrix.service }}
-        if: github.event_name == 'workflow_dispatch' || matrix.changed == 'true'
+        if: |
+          github.event_name == 'workflow_dispatch' ||
+          needs.detect-changes.outputs.any-service == 'true' ||
+          matrix.changed == 'true'
         uses: docker/build-push-action@v6
         with:
           context: .
