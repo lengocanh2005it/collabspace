@@ -37,7 +37,7 @@ import type { AppRequest } from "../http/request-context";
 
 @ApiTags("task-comments")
 @ApiBearerAuth()
-@Controller("v1/tasks/:taskId/comments")
+@Controller("tasks/:taskId/comments")
 @UseGuards(AuthGuard, WorkspaceValidationGuard)
 export class TaskCommentController {
   constructor(

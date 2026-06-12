@@ -6,7 +6,7 @@ import { assertMetricsAccess } from "../../metrics/metrics-access";
 import { MetricsService } from "../../metrics/metrics.service";
 
 @ApiTags("health")
-@Controller("v1/tasks")
+@Controller("tasks")
 export class HealthController {
   constructor(
     private readonly taskHealthService: TaskHealthService,

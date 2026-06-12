@@ -59,11 +59,19 @@ else
   echo "Vault release already installed."
 fi
 
-kubectl wait --for=condition=Ready pod/"$VAULT_POD" -n "$VAULT_NS" --timeout=300s
+echo "==> Waiting for Vault pod Running (Ready sau khi unseal)..."
+kubectl wait --for=jsonpath='{.status.phase}'=Running pod/"$VAULT_POD" -n "$VAULT_NS" --timeout=300s
 
 vault_exec() {
   kubectl exec -n "$VAULT_NS" "$VAULT_POD" -- "$@"
 }
+
+for _ in $(seq 1 60); do
+  if vault_exec vault status -format=json >/dev/null 2>&1; then
+    break
+  fi
+  sleep 5
+done
 
 vault_status_json="$(vault_exec vault status -format=json 2>/dev/null || true)"
 initialized="$(echo "$vault_status_json" | jq -r '.initialized // false')"
@@ -75,13 +83,20 @@ if [[ "$initialized" != "true" ]]; then
   echo "Saved init material to $INIT_FILE (gitignored — back up off-server)."
 fi
 
-unseal_key="$(jq -r '.unseal_keys_b64[0]' "$INIT_FILE")"
-root_token="$(jq -r '.root_token' "$INIT_FILE")"
+unseal_key="$(jq -r '.unseal_keys_b64[0]' "$INIT_FILE" | tr -d '\r\n')"
+root_token="$(jq -r '.root_token' "$INIT_FILE" | tr -d '\r\n')"
 
-sealed="$(vault_exec vault status -format=json | jq -r '.sealed')"
+vault_status_json="$(vault_exec vault status -format=json 2>/dev/null || true)"
+sealed="$(echo "$vault_status_json" | jq -r 'if (.sealed | type) == "boolean" then .sealed else true end')"
 if [[ "$sealed" == "true" ]]; then
   echo "==> Unsealing Vault..."
-  vault_exec vault operator unseal "$unseal_key" >/dev/null
+  vault_exec vault operator unseal "$unseal_key" >/dev/null || true
+  vault_status_json="$(vault_exec vault status -format=json 2>/dev/null || true)"
+  sealed="$(echo "$vault_status_json" | jq -r 'if (.sealed | type) == "boolean" then .sealed else true end')"
+  if [[ "$sealed" == "true" ]]; then
+    echo "Vault still sealed after unseal attempt."
+    exit 1
+  fi
 fi
 
 echo "==> Enabling KV v2 at secret/..."

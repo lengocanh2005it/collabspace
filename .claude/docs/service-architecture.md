@@ -31,10 +31,10 @@ Related docs:
 | auth-service | NestJS feature modules | Postgres / TypeORM | `api/v1` | `/api/v1/auth` | 3000 |
 | user-service | Clean / hexagonal | Postgres / TypeORM | `api/v1` | `/api/v1/users` | 3000 |
 | workspace-service | Clean Architecture | Postgres / TypeORM | `api/v1` | `/api/v1/workspaces` | **8080** |
-| task-service | Clean + CQRS | Mongo / Mongoose | `api` + `v1/...` in controller | `/api/v1/tasks` | 3000 |
-| notification-service | Clean + CQRS (event-driven) | Mongo / Mongoose | `api` + `v1/...` in controller | `/api/v1/notifications` | 3000 |
+| task-service | Clean + CQRS | Mongo / Mongoose | `api/v1` | `/api/v1/tasks` | 3000 |
+| notification-service | Clean + CQRS (event-driven) | Mongo / Mongoose | `api/v1` | `/api/v1/notifications` | 3000 |
 
-**Prefix inconsistency (intentional for now):** auth, user, and workspace set `app.setGlobalPrefix('api/v1')`. task and notification set `api` globally and put `v1/<resource>` on `@Controller()`.
+**All five services** use `app.setGlobalPrefix('api/v1')`. Controllers use the resource name directly (e.g. `@Controller('tasks')`, `@Controller('notifications')`) — no `v1/` prefix in controller decorators.
 
 ---
 
