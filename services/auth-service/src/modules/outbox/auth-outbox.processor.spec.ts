@@ -1,6 +1,6 @@
 import { ConfigurationService } from '@/configuration/configuration.service';
-import { DatabaseService } from '@/modules/database/database.service';
 import { EmailsService } from '@/modules/emails/emails.service';
+import { DataSource } from 'typeorm';
 import { AuthOutboxProcessor } from './auth-outbox.processor';
 import { AuthOutboxService } from './auth-outbox.service';
 import {
@@ -26,9 +26,9 @@ describe('AuthOutboxProcessor', () => {
       staleClaimThresholdMs: 60000,
     })),
   } as unknown as ConfigurationService;
-  const databaseServiceMock = {
+  const dataSourceMock = {
     isInitialized: true,
-  } as unknown as DatabaseService;
+  } as unknown as DataSource;
   const emailsServiceMock = {
     sendMailNow: jest.fn(),
   } as unknown as EmailsService;
@@ -43,7 +43,7 @@ describe('AuthOutboxProcessor', () => {
     processor = new AuthOutboxProcessor(
       authOutboxServiceMock,
       configurationServiceMock,
-      databaseServiceMock,
+      dataSourceMock,
       emailsServiceMock,
     );
   });

@@ -8,10 +8,12 @@ const node_path_1 = require("node:path");
 const DEMO_SEED_FILENAME = 'demo-seed-data.json';
 function loadDemoSeedData() {
     const candidates = [
+        process.env.DEMO_SEED_DATA_PATH,
         (0, node_path_1.join)(__dirname, DEMO_SEED_FILENAME),
         (0, node_path_1.join)(process.cwd(), 'scripts', DEMO_SEED_FILENAME),
         (0, node_path_1.join)(process.cwd(), '..', '..', 'scripts', DEMO_SEED_FILENAME),
-    ];
+        '/app/scripts/demo-seed-data.json',
+    ].filter((p) => Boolean(p));
     for (const candidate of candidates) {
         if ((0, node_fs_1.existsSync)(candidate)) {
             return JSON.parse((0, node_fs_1.readFileSync)(candidate, 'utf8'));

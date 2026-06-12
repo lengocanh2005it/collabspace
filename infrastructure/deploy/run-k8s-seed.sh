@@ -33,13 +33,7 @@ fi
 
 IMAGE_TAG="${IMAGE_TAG:-latest}"
 
-declare -A SEED_CMD=(
-  [auth-service]="node dist/services/auth-service/src/seed.js"
-  [user-service]="node dist/services/user-service/src/seed.js"
-  [workspace-service]="node dist/services/workspace-service/src/seed.js"
-  [task-service]="node dist/services/task-service/src/seed.js"
-  [notification-service]="node dist/services/notification-service/src/seed.js"
-)
+SEED_CMD="node dist/seed/seed.js"
 
 wait_datastores() {
   echo "==> Waiting for datastores..."
@@ -71,7 +65,7 @@ apply_seed_job() {
   local deployment="$1"
   local image
   image="$(resolve_seed_image "$deployment")"
-  local cmd="${SEED_CMD[$deployment]}"
+  local cmd="${SEED_CMD}"
   local job_name="seed-${deployment}-$(date +%s)"
   local pull_secret_block=""
 

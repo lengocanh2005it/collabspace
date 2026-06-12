@@ -5,8 +5,9 @@ import {
   OnModuleDestroy,
   OnModuleInit,
 } from '@nestjs/common';
+import { InjectDataSource } from '@nestjs/typeorm';
 import type * as amqp from 'amqplib';
-import { DatabaseService } from '../database/database.service';
+import { DataSource } from 'typeorm';
 import { WORKSPACE_INVITED_EVENT } from '../../domain/events/workspace-events';
 import { getWorkspaceOutboxConfig } from './workspace-outbox.config';
 import { WorkspaceOutboxService } from './workspace-outbox.service';
@@ -19,7 +20,8 @@ export class WorkspaceOutboxProcessor implements OnModuleInit, OnModuleDestroy {
   private timer: NodeJS.Timeout | null = null;
 
   constructor(
-    private readonly databaseService: DatabaseService,
+    @InjectDataSource()
+    private readonly dataSource: DataSource,
     private readonly workspaceOutboxService: WorkspaceOutboxService,
     @Inject('RABBITMQ_CHANNEL')
     private readonly rabbitChannel: amqp.Channel,
@@ -48,7 +50,7 @@ export class WorkspaceOutboxProcessor implements OnModuleInit, OnModuleDestroy {
   }
 
   async processPendingEvents(): Promise<void> {
-    if (this.isProcessing || !this.databaseService.isInitialized) {
+    if (this.isProcessing || !this.dataSource.isInitialized) {
       return;
     }
 

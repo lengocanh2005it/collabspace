@@ -4,7 +4,8 @@ import { DataSource } from 'typeorm';
 import { WorkspaceOrmEntity } from './infrastructure/database/entities/workspace.orm-entity';
 import { WorkspaceMemberOrmEntity } from './infrastructure/database/entities/workspace-member.orm-entity';
 import { ProjectOrmEntity } from './infrastructure/database/entities/project.orm-entity';
-import { loadDemoSeedData } from '../../../scripts/load-demo-seed-data';
+import { InvitationOrmEntity } from './infrastructure/database/entities/invitation.orm-entity';
+import { loadDemoSeedData } from './load-demo-seed';
 
 function loadEnvFile(): void {
   const envPath = join(process.cwd(), '.env');
@@ -63,7 +64,12 @@ async function main(): Promise<void> {
     type: 'postgres',
     url: requireDatabaseUrl(),
     schema: process.env.DATABASE_SCHEMA || 'public',
-    entities: [WorkspaceOrmEntity, WorkspaceMemberOrmEntity, ProjectOrmEntity],
+    entities: [
+      WorkspaceOrmEntity,
+      WorkspaceMemberOrmEntity,
+      ProjectOrmEntity,
+      InvitationOrmEntity,
+    ],
     synchronize: toBoolean(process.env.DATABASE_SYNCHRONIZE, false),
     logging: toBoolean(process.env.DATABASE_LOGGING, false),
   });

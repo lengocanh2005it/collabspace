@@ -236,9 +236,9 @@ export class AuthOutboxService {
     await this.getRepository().update(
       { id },
       {
-        availableAt: isPermanentFailure
-          ? undefined
-          : new Date(Date.now() + this.getRetryDelayMs(safeAttemptCount)),
+        ...(isPermanentFailure
+          ? {}
+          : { availableAt: this.getRetryAvailableAt(safeAttemptCount) }),
         claimedAt: null,
         failedAt: isPermanentFailure ? new Date() : null,
         lastError: error,
@@ -325,10 +325,18 @@ export class AuthOutboxService {
     );
   }
 
+  private getRetryAvailableAt(attemptCount: number): Date {
+    return new Date(Date.now() + this.getRetryDelayMs(attemptCount));
+  }
+
   private getRetryDelayMs(attemptCount: number): number {
+    const safeAttemptCount =
+      Number.isFinite(attemptCount) && attemptCount > 0 ? attemptCount : 1;
     const baseDelayMs = 5_000;
-    const cappedExponent = Math.min(Math.max(attemptCount - 1, 0), 6);
-    return baseDelayMs * 2 ** cappedExponent;
+    const cappedExponent = Math.min(Math.max(safeAttemptCount - 1, 0), 6);
+    const delayMs = baseDelayMs * 2 ** cappedExponent;
+
+    return Number.isFinite(delayMs) ? delayMs : baseDelayMs;
   }
 
   private toIsoString(value: Date | string | null): string | null {

@@ -6,4 +6,8 @@ SERVICE_DIR=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)
 
 cd "$SERVICE_DIR"
 echo "Seeding notification-service..."
-pnpm run seed
+if [ "${SEED_MODE:-dev}" = "prod" ]; then
+  pnpm run seed:prod
+else
+  pnpm run seed
+fi

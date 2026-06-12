@@ -1,4 +1,4 @@
 {
   "extends": "./tsconfig.json",
-  "exclude": ["node_modules", "test", "dist", "**/*spec.ts", "src/seed.ts", "src/migrate.ts", "migrations"]
+  "exclude": ["node_modules", "test", "dist", "**/*spec.ts", "src/seed.ts", "src/load-demo-seed.ts", "src/migrate.ts", "migrations"]
 }

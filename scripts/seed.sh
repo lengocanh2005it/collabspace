@@ -6,6 +6,7 @@ ROOT_DIR=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)
 
 echo "Running CollabSpace seed pipeline from $ROOT_DIR"
 echo "Order: auth-service -> user-service -> workspace-service -> task-service -> notification-service"
+echo "Dev (ts-node): default. Prod-style (dist/seed): SEED_MODE=prod $0"
 echo ""
 
 run_service_seed() {

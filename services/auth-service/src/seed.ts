@@ -8,10 +8,7 @@ import { RolePermissionEntity } from './modules/identity/entities/role-permissio
 import { RoleEntity } from './modules/identity/entities/role.entity';
 import { UserRoleEntity } from './modules/identity/entities/user-role.entity';
 import { UserEntity } from './modules/identity/entities/user.entity';
-import {
-  loadDemoSeedData,
-  type DemoSeedUser,
-} from '../../../scripts/load-demo-seed-data';
+import { loadDemoSeedData, type DemoSeedUser } from './load-demo-seed';
 
 type SeedPermission = {
   description: string;

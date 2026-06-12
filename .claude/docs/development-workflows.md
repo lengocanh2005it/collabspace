@@ -194,18 +194,23 @@ Rules:
 Preferred order (loads shared demo data from `scripts/demo-seed-data.json`):
 
 ```sh
+# Local dev — ts-node (fast iteration)
 sh ./scripts/seed.sh
+
+# Same entrypoint as Docker/k8s Jobs (requires pnpm run build in each service first)
+SEED_MODE=prod sh ./scripts/seed.sh
+# or
+sh ./scripts/seed-prod.sh
 ```
 
 Per service:
 
 ```sh
-cd services/auth-service && pnpm run seed
-cd ../user-service && pnpm run seed
-cd ../workspace-service && pnpm run seed
-cd ../task-service && pnpm run seed
-cd ../notification-service && pnpm run seed
+cd services/auth-service && pnpm run seed          # dev
+cd services/auth-service && pnpm run seed:prod   # compiled dist/seed/seed.js
 ```
+
+All services compile seed to **`dist/seed/seed.js`**; images copy `scripts/load-demo-seed-data.js` + `demo-seed-data.json` to `/app/scripts/`.
 
 What gets seeded:
 

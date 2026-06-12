@@ -1,11 +1,11 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "outDir": "./dist",
-    "rootDir": "../..",
+    "outDir": "./dist/seed",
+    "rootDir": "./src",
     "declaration": false,
     "types": ["node"]
   },
-  "include": ["src/seed.ts", "../../scripts/load-demo-seed-data.ts"],
-  "exclude": ["node_modules", "dist"]
+  "include": ["src/seed.ts", "src/load-demo-seed.ts"],
+  "exclude": ["node_modules", "dist", "**/*.spec.ts"]
 }

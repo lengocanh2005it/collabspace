@@ -1,5 +1,6 @@
 import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
-import { DatabaseService } from '@/modules/database/database.service';
+import { InjectDataSource } from '@nestjs/typeorm';
+import { DataSource } from 'typeorm';
 import { ConfigurationService } from '@/configuration/configuration.service';
 import { EmailsService } from '@/modules/emails/emails.service';
 import { AuthOutboxService } from './auth-outbox.service';
@@ -17,7 +18,8 @@ export class AuthOutboxProcessor implements OnModuleInit, OnModuleDestroy {
   constructor(
     private readonly authOutboxService: AuthOutboxService,
     private readonly configurationService: ConfigurationService,
-    private readonly databaseService: DatabaseService,
+    @InjectDataSource()
+    private readonly dataSource: DataSource,
     private readonly emailsService: EmailsService,
   ) {}
 
@@ -43,7 +45,7 @@ export class AuthOutboxProcessor implements OnModuleInit, OnModuleDestroy {
   }
 
   async processPendingEvents(): Promise<void> {
-    if (this.isProcessing || !this.databaseService.isInitialized) {
+    if (this.isProcessing || !this.dataSource.isInitialized) {
       return;
     }
 

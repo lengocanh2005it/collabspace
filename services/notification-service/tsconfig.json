@@ -31,6 +31,7 @@
     "dist",
     "node_modules",
     "**/*.spec.ts",
-    "src/seed.ts"
+    "src/seed.ts",
+    "src/load-demo-seed.ts"
   ]
 }

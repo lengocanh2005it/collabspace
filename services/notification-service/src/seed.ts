@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import mongoose from "mongoose";
-import { loadDemoSeedData } from "../../../scripts/load-demo-seed-data";
+import { loadDemoSeedData } from "./load-demo-seed";
 
 function loadEnvFile(): void {
   const envPath = join(process.cwd(), ".env");

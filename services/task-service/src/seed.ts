@@ -7,7 +7,7 @@ import {
   userSnapshot,
   type DemoSeedTask,
   type DemoSeedUser,
-} from "../../../scripts/load-demo-seed-data";
+} from "./load-demo-seed";
 
 function loadEnvFile(): void {
   const envPath = join(process.cwd(), ".env");

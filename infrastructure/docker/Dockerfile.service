@@ -50,7 +50,7 @@ COPY --from=builder /app/packages/shared/package.json ./packages/shared/package.
 COPY --from=builder /app/services/${SERVICE_NAME}/dist ./services/${SERVICE_NAME}/dist
 COPY --from=builder /app/services/${SERVICE_NAME}/package.json ./services/${SERVICE_NAME}/package.json
 COPY --from=builder /app/scripts/demo-seed-data.json ./scripts/demo-seed-data.json
-COPY --from=builder /app/scripts/demo-seed-data.json ./services/${SERVICE_NAME}/dist/scripts/demo-seed-data.json
+COPY --from=builder /app/scripts/load-demo-seed-data.js ./scripts/load-demo-seed-data.js
 RUN if [ ! -f "./services/${SERVICE_NAME}/dist/main.js" ] && [ -f "./services/${SERVICE_NAME}/dist/src/main.js" ]; then \
       ln -s src/main.js "./services/${SERVICE_NAME}/dist/main.js"; \
     fi
@@ -65,4 +65,4 @@ RUN --mount=from=builder,source=/app/services/${SERVICE_NAME},target=/svc,ro \
     fi
 USER appuser
 WORKDIR /app/services/${SERVICE_NAME}
-CMD ["node", "dist/main.js"]
+CMD ["sh", "-c", "if [ -f dist/main.js ]; then exec node dist/main.js; elif [ -f dist/src/main.js ]; then exec node dist/src/main.js; else echo 'ERROR: main.js not found under dist/' && ls -la dist && exit 1; fi"]

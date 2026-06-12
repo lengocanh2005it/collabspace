@@ -10,7 +10,7 @@ import {
   avatarUrlFor,
   loadDemoSeedData,
   type DemoSeedUser,
-} from '../../../scripts/load-demo-seed-data';
+} from './load-demo-seed';
 
 const USER_REGISTERED_EVENT = 'user_registered';
 const USER_PROFILE_UPDATED_EVENT = 'user_profile_updated';

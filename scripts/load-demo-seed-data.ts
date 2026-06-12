@@ -65,10 +65,12 @@ const DEMO_SEED_FILENAME = 'demo-seed-data.json';
 
 export function loadDemoSeedData(): DemoSeedData {
   const candidates = [
+    process.env.DEMO_SEED_DATA_PATH,
     join(__dirname, DEMO_SEED_FILENAME),
     join(process.cwd(), 'scripts', DEMO_SEED_FILENAME),
     join(process.cwd(), '..', '..', 'scripts', DEMO_SEED_FILENAME),
-  ];
+    '/app/scripts/demo-seed-data.json',
+  ].filter((p): p is string => Boolean(p));
 
   for (const candidate of candidates) {
     if (existsSync(candidate)) {
