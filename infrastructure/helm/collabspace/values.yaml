@@ -261,6 +261,7 @@ apps:
     health:
       readyPath: /api/v1/auth/health/ready
       livePath: /api/v1/auth/health/live
+      readyTimeoutSeconds: 10
     resources:
       requests:
         memory: 128Mi
@@ -289,6 +290,7 @@ apps:
     health:
       readyPath: /api/v1/users/health/ready
       livePath: /api/v1/users/health/live
+      readyTimeoutSeconds: 10
     resources:
       requests:
         memory: 128Mi

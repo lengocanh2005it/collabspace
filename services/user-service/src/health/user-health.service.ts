@@ -47,7 +47,7 @@ export class UserHealthService {
   async getReadiness(): Promise<ReadinessReport> {
     const hasDatabaseUrl = !!process.env.DATABASE_URL;
     const checks: Record<string, HealthCheckResult> = {
-      authGrpc: await this.runCheck(false, async () => {
+      authGrpc: await this.runBoundedCheck(false, 800, async () => {
         await this.authGrpcService.ping();
       }),
       database: hasDatabaseUrl
@@ -67,6 +67,23 @@ export class UserHealthService {
     };
 
     return this.toReadinessReport('user-service', checks);
+  }
+
+  private async runBoundedCheck(
+    required: boolean,
+    timeoutMs: number,
+    operation: () => Promise<void>,
+  ): Promise<HealthCheckResult> {
+    return this.runCheck(required, async () => {
+      await Promise.race([
+        operation(),
+        new Promise<void>((_resolve, reject) => {
+          setTimeout(() => {
+            reject(new Error(`Health check timed out after ${timeoutMs}ms`));
+          }, timeoutMs);
+        }),
+      ]);
+    });
   }
 
   private async runCheck(

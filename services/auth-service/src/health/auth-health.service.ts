@@ -81,7 +81,7 @@ export class AuthHealthService {
           throw new Error('Redis ping returned a non-PONG response');
         }
       }),
-      userProfilesGrpc: await this.runCheck(false, async () => {
+      userProfilesGrpc: await this.runBoundedCheck(false, 800, async () => {
         await this.userProfilesGrpcService.ping();
       }),
     };
@@ -100,6 +100,23 @@ export class AuthHealthService {
       `oldestPendingAt=${stats.oldestPendingAt ?? 'none'}`,
       `oldestFailedAt=${stats.oldestFailedAt ?? 'none'}`,
     ].join(' ');
+  }
+
+  private async runBoundedCheck(
+    required: boolean,
+    timeoutMs: number,
+    operation: () => Promise<void>,
+  ): Promise<HealthCheckResult> {
+    return this.runCheck(required, async () => {
+      await Promise.race([
+        operation(),
+        new Promise<void>((_resolve, reject) => {
+          setTimeout(() => {
+            reject(new Error(`Health check timed out after ${timeoutMs}ms`));
+          }, timeoutMs);
+        }),
+      ]);
+    });
   }
 
   private async runCheck(
