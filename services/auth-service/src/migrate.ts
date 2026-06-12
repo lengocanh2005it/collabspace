@@ -1,9 +1,9 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { DataSource } from 'typeorm';
-import { CreateAuthOutboxEvents001 } from '../migrations/001-create-auth-outbox-events';
-import { AddAuthOutboxRecoveryIndexes002 } from '../migrations/002-add-auth-outbox-recovery-indexes';
-import { RemoveLegacyEmailVerifiedOutboxEvents003 } from '../migrations/003-remove-legacy-email-verified-outbox-events';
+import { CreateAuthOutboxEvents1718000000001 } from '../migrations/1718000000001-CreateAuthOutboxEvents';
+import { AddAuthOutboxRecoveryIndexes1718000000002 } from '../migrations/1718000000002-AddAuthOutboxRecoveryIndexes';
+import { RemoveLegacyEmailVerifiedOutboxEvents1718000000003 } from '../migrations/1718000000003-RemoveLegacyEmailVerifiedOutboxEvents';
 
 function loadEnvFile(): void {
   const envPath = join(process.cwd(), '.env');
@@ -60,9 +60,9 @@ async function main(): Promise<void> {
   const dataSource = new DataSource({
     logging: toBoolean(process.env.DATABASE_LOGGING, false),
     migrations: [
-      CreateAuthOutboxEvents001,
-      AddAuthOutboxRecoveryIndexes002,
-      RemoveLegacyEmailVerifiedOutboxEvents003,
+      CreateAuthOutboxEvents1718000000001,
+      AddAuthOutboxRecoveryIndexes1718000000002,
+      RemoveLegacyEmailVerifiedOutboxEvents1718000000003,
     ],
     migrationsTableName: 'migrations',
     schema: process.env.DATABASE_SCHEMA ?? 'public',

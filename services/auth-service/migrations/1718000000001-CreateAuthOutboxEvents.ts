@@ -1,7 +1,7 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class CreateAuthOutboxEvents001 implements MigrationInterface {
-  name = 'CreateAuthOutboxEvents001';
+export class CreateAuthOutboxEvents1718000000001 implements MigrationInterface {
+  name = 'CreateAuthOutboxEvents1718000000001';
 
   async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`

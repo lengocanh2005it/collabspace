@@ -1,7 +1,9 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class AddAuthOutboxRecoveryIndexes002 implements MigrationInterface {
-  name = 'AddAuthOutboxRecoveryIndexes002';
+export class AddAuthOutboxRecoveryIndexes1718000000002
+  implements MigrationInterface
+{
+  name = 'AddAuthOutboxRecoveryIndexes1718000000002';
 
   async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
