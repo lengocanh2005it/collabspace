@@ -3,6 +3,10 @@
 # -----------------------------
 FROM rabbitmq:3-management
 
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends jq \
+  && rm -rf /var/lib/apt/lists/*
+
 # Copy definitions.json vào container
 COPY definitions.json /etc/rabbitmq/definitions.json
 

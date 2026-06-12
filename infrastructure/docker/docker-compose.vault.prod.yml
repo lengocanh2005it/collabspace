@@ -1,0 +1,43 @@
+# Single-node persistent Vault for a Droplet demo/staging environment.
+#
+# Usage from infrastructure/docker:
+#   docker compose -f docker-compose.vault.prod.yml up -d
+#
+# This is safer than Vault dev mode because data persists in a Docker volume
+# and Vault must be initialized/unsealed. It is not HA.
+
+services:
+  vault:
+    image: hashicorp/vault:1.17
+    container_name: collabspace-vault-prod
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8200:8200"
+    environment:
+      VAULT_ADDR: http://127.0.0.1:8200
+    cap_add:
+      - IPC_LOCK
+    command:
+      - server
+      - -config=/vault/config/vault-prod.hcl
+    volumes:
+      - ../vault/config:/vault/config:ro
+      - vault_file:/vault/file
+      - vault_logs:/vault/logs
+    healthcheck:
+      test: ["CMD", "vault", "status", "-format=json"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks:
+      - collabspace-network
+
+networks:
+  collabspace-network:
+    name: collabspace-network
+    driver: bridge
+
+volumes:
+  vault_file:
+  vault_logs:

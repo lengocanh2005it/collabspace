@@ -30,7 +30,9 @@ export class CreateTaskRequest {
   @IsOptional()
   public readonly projectId?: string;
 
-  @ApiPropertyOptional({ enum: ["LOW", "MEDIUM", "HIGH", "low", "medium", "high"] })
+  @ApiPropertyOptional({
+    enum: ["LOW", "MEDIUM", "HIGH", "low", "medium", "high"],
+  })
   @IsString()
   @IsOptional()
   @IsIn(["low", "medium", "high", "LOW", "MEDIUM", "HIGH"])

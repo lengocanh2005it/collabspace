@@ -5,6 +5,7 @@ CollabSpace NestJS services read secrets from **environment variables**. Vault i
 | Environment | Integration |
 |-------------|-------------|
 | **Local Docker** | Vault dev container + optional `sync-env-from-vault` → `services/*/.env` |
+| **Single Droplet** | Persistent single-node Vault container + `sync-env-from-vault` → `services/*/.env` |
 | **Kubernetes** | Vault + [External Secrets Operator](https://external-secrets.io/) → `Secret` → `envFrom` (Helm) |
 
 KV layout (v2 mount `secret/`):
@@ -74,6 +75,46 @@ docker compose -f docker-compose.yml -f docker-compose.db.yml -f docker-compose.
 ```
 
 You can keep using hand-edited `.env` files without Vault; Vault is optional for local dev.
+
+---
+
+## Single Droplet (persistent Vault)
+
+For DigitalOcean Droplet demos/staging, use a persistent single-node Vault instead of dev mode:
+
+```bash
+cd infrastructure/docker
+docker compose -f docker-compose.vault.prod.yml up -d
+cd ../..
+bash infrastructure/vault/scripts/init-prod-vault.sh
+```
+
+The init script:
+
+1. Initializes Vault with one unseal key.
+2. Saves init material to `infrastructure/vault/.vault-prod-init.json` (gitignored).
+3. Unseals Vault.
+4. Enables KV v2 at `secret/`.
+5. Creates read-only policy `collabspace-prod-read`.
+6. Creates a renewable read token and saves it to `infrastructure/vault/.vault-prod-read-token.json` (gitignored).
+
+Seed the production path:
+
+```bash
+root_token=$(jq -r '.root_token' infrastructure/vault/.vault-prod-init.json)
+VAULT_TOKEN="$root_token" VAULT_KV_PATH=collabspace/prod \
+  bash infrastructure/vault/scripts/seed-dev-secrets.sh
+```
+
+Deploy sync should use the read token, not the root token:
+
+```bash
+read_token=$(jq -r '.auth.client_token' infrastructure/vault/.vault-prod-read-token.json)
+```
+
+Set `VAULT_TOKEN=$read_token` and `VAULT_KV_PATH=collabspace/prod` in `infrastructure/deploy/droplet.env`.
+
+This mode persists secrets in Docker volume `vault_file`, but it is still single-node, not HA.
 
 ---
 

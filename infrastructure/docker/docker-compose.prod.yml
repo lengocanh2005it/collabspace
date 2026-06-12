@@ -1,0 +1,84 @@
+# Production/Droplet overlay.
+#
+# Use with:
+#   docker compose -f docker-compose.yml -f docker-compose.db.yml -f docker-compose.prod.yml up -d --no-build
+#
+# Images are expected to be built by GitHub Actions and pushed to GHCR.
+
+services:
+  postgres:
+    ports: !reset []
+
+  mongo:
+    ports: !reset []
+
+  redis:
+    ports: !reset []
+
+  rabbitmq:
+    ports: !reset []
+
+  traefik:
+    image: traefik:v2.10
+    container_name: traefik
+    restart: unless-stopped
+    command:
+      - "--api.insecure=false"
+      - "--providers.docker=true"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--metrics.prometheus=true"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - ../../api-gateway/traefik.yml:/etc/traefik/traefik.yml
+      - ../../api-gateway/dynamic:/etc/traefik/dynamic
+      - ../../api-gateway/acme:/acme
+      - traefik_logs:/var/log/traefik
+    networks:
+      - collabspace-network
+
+  auth-service:
+    image: ${COLLABSPACE_IMAGE_REGISTRY:-ghcr.io/your-github-owner}/collabspace-auth-service:${COLLABSPACE_IMAGE_TAG:-latest}
+    build: !reset null
+    environment:
+      NODE_ENV: production
+      DATABASE_SYNCHRONIZE: "false"
+      ALLOW_DEV_IDENTITY_HEADERS: "false"
+
+  user-service:
+    image: ${COLLABSPACE_IMAGE_REGISTRY:-ghcr.io/your-github-owner}/collabspace-user-service:${COLLABSPACE_IMAGE_TAG:-latest}
+    build: !reset null
+    environment:
+      NODE_ENV: production
+      DATABASE_SYNCHRONIZE: "false"
+      ALLOW_DEV_IDENTITY_HEADERS: "false"
+
+  workspace-service:
+    image: ${COLLABSPACE_IMAGE_REGISTRY:-ghcr.io/your-github-owner}/collabspace-workspace-service:${COLLABSPACE_IMAGE_TAG:-latest}
+    build: !reset null
+    environment:
+      NODE_ENV: production
+      DATABASE_SYNCHRONIZE: "false"
+      DATABASE_LOGGING: "false"
+      ALLOW_DEV_IDENTITY_HEADERS: "false"
+
+  task-service:
+    image: ${COLLABSPACE_IMAGE_REGISTRY:-ghcr.io/your-github-owner}/collabspace-task-service:${COLLABSPACE_IMAGE_TAG:-latest}
+    build: !reset null
+    environment:
+      NODE_ENV: production
+      WORKSPACE_CLIENT_MODE: http
+      ALLOW_DEV_IDENTITY_HEADERS: "false"
+
+  notification-service:
+    image: ${COLLABSPACE_IMAGE_REGISTRY:-ghcr.io/your-github-owner}/collabspace-notification-service:${COLLABSPACE_IMAGE_TAG:-latest}
+    build: !reset null
+    environment:
+      NODE_ENV: production
+      ALLOW_DEV_IDENTITY_HEADERS: "false"
+
+volumes:
+  traefik_logs:

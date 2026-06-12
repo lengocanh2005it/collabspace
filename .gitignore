@@ -27,6 +27,8 @@
 **/acme/
 **/*.log
 infrastructure/backup/artifacts/
+infrastructure/deploy/droplet.env
+infrastructure/vault/.vault-*.json
 
 # Kubernetes
 **/*.kube.yaml

@@ -1,0 +1,31 @@
+# syntax=docker/dockerfile:1.7
+
+ARG SERVICE_NAME
+
+FROM node:20-alpine AS app
+
+ARG SERVICE_NAME
+ENV SERVICE_NAME=${SERVICE_NAME}
+ENV NODE_ENV=production
+
+WORKDIR /app
+
+RUN apk add --no-cache wget \
+  && corepack enable \
+  && corepack prepare pnpm@9.15.0 --activate
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY packages/shared/package.json packages/shared/package.json
+COPY services/${SERVICE_NAME}/package.json services/${SERVICE_NAME}/package.json
+
+RUN pnpm install --frozen-lockfile
+
+COPY packages packages
+COPY services/${SERVICE_NAME} services/${SERVICE_NAME}
+
+RUN pnpm --filter @collabspace/shared run build \
+  && pnpm --filter ${SERVICE_NAME} run build
+
+WORKDIR /app/services/${SERVICE_NAME}
+
+CMD ["pnpm", "run", "start:prod"]

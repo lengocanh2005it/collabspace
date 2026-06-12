@@ -314,7 +314,23 @@ Rules:
 
 ## CI/CD Workflow
 
-Jenkins files exist at service level and under `infrastructure/jenkins`.
+GitHub Actions is the preferred CI/CD path for Droplet deployment:
+
+- `.github/workflows/ci.yml` runs root `pnpm install`, `pnpm run build`, and `pnpm run test`.
+- `.github/workflows/docker-deploy.yml` builds five service images using `infrastructure/docker/Dockerfile.service`, pushes them to GHCR, then deploys to the Droplet over SSH.
+- Droplet scripts live in `infrastructure/deploy/`.
+- Production Compose overlay: `infrastructure/docker/docker-compose.prod.yml`.
+- DigitalOcean runbook: `docs/deployment-digitalocean-droplet.md`.
+
+Required GitHub Actions secrets for deploy:
+
+- `DROPLET_HOST`
+- `DROPLET_USER`
+- `DROPLET_SSH_KEY`
+- `GHCR_USERNAME`
+- `GHCR_TOKEN`
+
+Jenkins files also exist at service level and under `infrastructure/jenkins`.
 
 Pipeline concept:
 
@@ -361,4 +377,3 @@ Check:
 ### Database tests behave differently locally
 
 `user-service` uses in-memory repository when `DATABASE_URL` is not set. If a persistence bug only appears with TypeORM, run with `DATABASE_URL` configured and database containers up.
-

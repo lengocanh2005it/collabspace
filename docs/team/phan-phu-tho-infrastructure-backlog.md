@@ -18,7 +18,7 @@ Tài liệu này liệt kê **công việc hạ tầng / DevOps / observability 
 | Traefik gateway + forward-auth (`api-gateway/`) | Backup tự động + restore drill |
 | Prometheus + Alertmanager + Grafana (`infrastructure/monitoring/`) | ELK/Logstash ship log từ container |
 | Jaeger / OTLP (`docker-compose.tracing.yml`, `infrastructure/tracing/`) | Tracing bật trên staging/prod |
-| Jenkins container + shell scripts (`infrastructure/jenkins/`) | Pipeline Jenkinsfile / GitHub Actions |
+| Jenkins container + shell scripts (`infrastructure/jenkins/`), GitHub Actions CI/CD (`.github/workflows/`) | Wire real repository secrets + first Droplet deploy |
 | k6 load tests (`infrastructure/load-testing/`) | Chaos drill định kỳ trên staging |
 | Backup scripts (`infrastructure/backup/scripts/`) | ESO installed + Vault reachable on cluster |
 | Drills (`verify-readiness`, `chaos-stop-service`) | Smoke job sau mỗi deploy (readiness + `demo-e2e`) |
@@ -221,7 +221,7 @@ Dùng bảng này khi seed Vault KV (`secret/collabspace/staging`, …).
 
 ### 5. Pipeline CI (chọn một hoặc cả hai)
 
-**Hiện trạng:** `infrastructure/docker/docker-compose.jenkins.yml` + scripts `build.sh`, `test.sh`, `deploy.sh` — **chưa có Jenkinsfile / GitHub Actions**.
+**Hiện trạng:** `infrastructure/docker/docker-compose.jenkins.yml` + scripts `build.sh`, `test.sh`, `deploy.sh`; GitHub Actions workflows exist for root CI and GHCR/Droplet deploy (`.github/workflows/ci.yml`, `.github/workflows/docker-deploy.yml`).
 
 - [ ] **Option A — Jenkins:** Jenkinsfile multibranch:
   1. `pnpm install` tại repo root → `pnpm run build` + `pnpm run test` (`package.json` workspace).
@@ -229,7 +229,8 @@ Dùng bảng này khi seed Vault KV (`secret/collabspace/staging`, …).
   3. Build Docker image khi merge `main` / tag release.
   4. Push registry.
   5. Trigger deploy staging (Helm upgrade).
-- [ ] **Option B — GitHub Actions:** workflow tương đương (repo đang dùng GitHub, chưa có `.github/workflows/`).
+- [x] **Option B — GitHub Actions:** root CI + GHCR image build + SSH Droplet deploy scaffold.
+- [ ] Add real GitHub Actions secrets (`DROPLET_*`, `GHCR_*`) and run first deployment.
 - [ ] Cache `pnpm` / Docker layer để pipeline < 15 phút (mục tiêu ban đầu).
 - [ ] Branch protection: PR bắt buộc pass test trước merge.
 
@@ -433,7 +434,8 @@ Infra **hỗ trợ** bằng: Compose profile Traefik, seed trong job, `demo-e2e`
 | 9 | Secret rotation runbook (JWT, INTERNAL, DB) | P0 | ⬜ |
 | 10 | `values-staging.yaml` + deploy Helm document | P0 | ⬜ |
 | 11 | Container registry + build pipeline | P1 | ⬜ |
-| 12 | Jenkinsfile hoặc GitHub Actions CI/CD (`pnpm -r` từ root) | P1 | ⬜ |
+| 12 | Jenkinsfile hoặc GitHub Actions CI/CD (`pnpm -r` từ root) | P1 | ✅ scaffold |
+| 12a | Add real GitHub Actions secrets + first successful Droplet deploy | P1 | ⬜ |
 | 12b | CI smoke: `scripts/demo-e2e` sau Traefik + seed | P1 | ⬜ |
 | 13 | CD staging + post-deploy verify-readiness | P1 | ⬜ |
 | 14 | Prometheus/Grafana/Alertmanager trên K8s | P1 | ⬜ |
