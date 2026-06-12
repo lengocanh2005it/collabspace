@@ -30,6 +30,10 @@ spec:
         prometheus.io/port: {{ $app.httpPort | quote }}
         prometheus.io/path: {{ $app.metricsPath | quote }}
     spec:
+      {{- with $root.Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       serviceAccountName: default
       securityContext:
         runAsNonRoot: true

@@ -1,23 +1,23 @@
 # HighErrorRate5xx
 
-**Alert:** 5xx rate > 5% over 5 minutes  
-**Severity:** warning
+**Cảnh báo:** tỷ lệ 5xx > 5% trong 5 phút  
+**Mức độ:** warning
 
-## Symptoms
+## Triệu chứng
 
-- Elevated `http_requests_total{status=~"5.."}` in Prometheus.
-- Users see intermittent server errors.
+- `http_requests_total{status=~"5.."}` tăng trên Prometheus.
+- User gặp lỗi server gián đoạn.
 
-## Diagnosis
+## Chẩn đoán
 
-1. Identify the job label (`auth-service`, `task-service`, etc.) in the alert.
-2. Check recent deploys and dependency outages (`/health/ready` on the affected service).
-3. Review service logs for stack traces around the alert window.
-4. For task-service, check `WORKSPACE_SERVICE_UNAVAILABLE` when workspace is down.
+1. Xác định nhãn job (`auth-service`, `task-service`, …) trong alert.
+2. Kiểm tra deploy gần đây và outage dependency (`/health/ready` trên service bị ảnh hưởng).
+3. Xem log service tìm stack trace trong cửa sổ alert.
+4. Với task-service, kiểm tra `WORKSPACE_SERVICE_UNAVAILABLE` khi workspace down.
 
-## Remediation
+## Khắc phục
 
-1. Roll back the last deployment if errors started after a release.
-2. Restore failed dependencies (see PostgresDown, MongoDown, RabbitMQ runbooks).
-3. Scale replicas if overload is suspected (K8s HPA or manual replica bump).
-4. Confirm error rate normalizes in Grafana/Prometheus within 10 minutes.
+1. Rollback deployment cuối nếu lỗi bắt đầu sau release.
+2. Khôi phục dependency (xem runbook PostgresDown, MongoDown, RabbitMQ).
+3. Scale replica nếu nghi ngờ quá tải (K8s HPA hoặc tăng replica thủ công).
+4. Xác nhận tỷ lệ lỗi về bình thường trên Grafana/Prometheus trong 10 phút.

@@ -1,4 +1,4 @@
-# CollabSpace — Design for Failure (tổng quan)
+# CollabSpace — Thiết kế chịu lỗi (tổng quan)
 
 Tài liệu chi tiết (tiếng Anh, dùng cho dev/agent): [`.claude/docs/resilience.md`](../.claude/docs/resilience.md)
 
@@ -38,6 +38,7 @@ Microservices CollabSpace phụ thuộc lẫn nhau (gRPC, RabbitMQ, DB). **Desig
 - **Trade-offs** → `docs/trade-offs.md` (quyết định kiến trúc và cái giá).
 - **Phase C — Correlation ID** → `X-Request-Id` middleware (5 services), S2S HTTP forward; structured log injection trong app chưa 100%.
 - **Infra backlog** → `docs/team/phan-phu-tho-infrastructure-backlog.md` (Vault HA + ESO operational, CI/CD, backup/restore, ELK, …). Vault scaffold: `infrastructure/vault/README.md`.
+- **Deploy production DO** → `docs/deployment-k3s-phases.md` (k3s + Helm + Vault + ESO theo phase).
 
 ## Drills
 
@@ -68,7 +69,7 @@ Xem checklist đầy đủ: [production-hardening.md](./production-hardening.md)
 | Hạng mục | Trạng thái |
 |----------|------------|
 | HashiCorp Vault + ESO (staging/prod) | **Partial** — scaffold `infrastructure/vault/` (dev Compose, seed/sync, ESO YAML); chưa deploy Vault HA + rotation operational |
-| CI/CD pipeline (GH Actions / Jenkinsfile) | Chưa |
+| CI/CD pipeline (GH Actions / Jenkinsfile) | **Partial** — CI + GHCR build ✅; deploy k3s/Helm chưa |
 | Monitoring stack trên K8s + alert routing | Manifest có, chưa deploy operational |
 | Backup tự động + restore drill | Policy + `backup-*.sh` có; chưa CronJob / restore script |
 | ELK ship log từ container | Compose có, chưa nối agent |

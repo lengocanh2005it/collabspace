@@ -155,10 +155,13 @@ kubectl apply -f infrastructure/vault/k8s/cluster-secret-store.yaml
 
 ### 4. ExternalSecrets
 
-Edit `infrastructure/vault/k8s/external-secrets.yaml` — change `remoteRef.key` from `collabspace/dev` to `collabspace/prod` when ready.
+- **Dev:** `infrastructure/vault/k8s/external-secrets.yaml` (`collabspace/dev`)
+- **Prod k3s:** `infrastructure/vault/k8s/external-secrets.prod.yaml` (`collabspace/prod`)
+
+Automated Phase 2 on Droplet: `infrastructure/deploy/vault-eso-phase2.sh` — see [phase2-checklist.md](../deploy/phase2-checklist.md).
 
 ```bash
-kubectl apply -f infrastructure/vault/k8s/external-secrets.yaml
+kubectl apply -f infrastructure/vault/k8s/external-secrets.prod.yaml
 kubectl get externalsecrets -n collabspace
 ```
 

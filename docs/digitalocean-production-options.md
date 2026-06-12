@@ -1,5 +1,9 @@
 # CollabSpace trên DigitalOcean: phương án triển khai production
 
+> **Lộ trình triển khai theo phase (k3s):** [deployment-k3s-phases.md](./deployment-k3s-phases.md)  
+> **Deploy legacy Compose:** [deployment-digitalocean-droplet.md](./deployment-digitalocean-droplet.md)  
+> **Chỉ mục tài liệu:** [README.md](./README.md)
+
 Ngày 2026-06-12, phương án được chọn cho CollabSpace là:
 
 ```text
@@ -352,6 +356,8 @@ Monitoring tối thiểu:
 
 ## Thứ Tự Triển Khai Để Tránh Vỡ Trận
 
+Chi tiết đầy đủ (Definition of Done, GitHub Secrets, CI/CD, timeline): **[deployment-k3s-phases.md](./deployment-k3s-phases.md)**.
+
 ### Phase 1: Bootstrap k3s
 
 1. SSH vào Droplet.
@@ -437,9 +443,11 @@ Droplet + k3s
 
 ## Việc Cần Sửa Trong Repo Trước Khi Deploy k3s
 
+**Trạng thái CI (2026-06-12):** build image GHCR 5 service ✅; workflow deploy Compose ❌ (chưa có secret Droplet / chưa chuyển Helm).
+
 Bắt buộc:
 
-- Tạo `values-k3s-droplet.yaml`.
+- Tạo `values-prod.yaml` (hoặc `values-k3s-droplet.yaml`).
 - Sửa Helm để không để secret URL trong ConfigMap.
 - Đổi `DATABASE_SYNCHRONIZE` của workspace-service thành `false`.
 - Thêm Kubernetes deploy workflow.

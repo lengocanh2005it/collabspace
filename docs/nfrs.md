@@ -1,4 +1,4 @@
-# CollabSpace — Non-Functional Requirements (NFRs)
+# CollabSpace — Yêu cầu phi chức năng (NFR)
 
 Tài liệu mô tả **thuộc tính chất lượng** (quality attributes) mà dự án CollabSpace **nhắm tới và đã có cơ sở trong code/infra**. Đây là nền tảng demo/học microservices — **không phải cam kết SLA production** trừ khi ghi rõ.
 
@@ -23,7 +23,7 @@ Chi tiết kỹ thuật:
 
 ---
 
-## 1. Availability & reliability (Khả dụng)
+## 1. Khả dụng (Availability & reliability)
 
 | NFR | Mục tiêu | CollabSpace |
 |-----|----------|-------------|
@@ -35,7 +35,7 @@ Chi tiết kỹ thuật:
 
 ---
 
-## 2. Resilience & fault tolerance (Chịu lỗi)
+## 2. Chịu lỗi (Resilience & fault tolerance)
 
 | NFR | Mục tiêu | CollabSpace |
 |-----|----------|-------------|
@@ -50,7 +50,7 @@ Chi tiết kỹ thuật:
 
 ---
 
-## 3. Performance & scalability (Hiệu năng)
+## 3. Hiệu năng (Performance & scalability)
 
 | NFR | Mục tiêu | CollabSpace |
 |-----|----------|-------------|
@@ -63,7 +63,7 @@ Chi tiết kỹ thuật:
 
 ---
 
-## 4. Security (Bảo mật)
+## 4. Bảo mật (Security)
 
 | NFR | Mục tiêu | CollabSpace |
 |-----|----------|-------------|
@@ -78,7 +78,7 @@ Chi tiết kỹ thuật:
 
 ---
 
-## 5. Observability (Quan sát)
+## 5. Quan sát (Observability)
 
 | NFR | Mục tiêu | CollabSpace |
 |-----|----------|-------------|
@@ -90,7 +90,7 @@ Chi tiết kỹ thuật:
 
 ---
 
-## 6. Data consistency & integrity (Nhất quán dữ liệu)
+## 6. Nhất quán dữ liệu (Data consistency & integrity)
 
 | NFR | Mục tiêu | CollabSpace |
 |-----|----------|-------------|
@@ -103,7 +103,7 @@ Chi tiết kỹ thuật:
 
 ---
 
-## 7. Recoverability & backup (Phục hồi)
+## 7. Phục hồi (Recoverability & backup)
 
 | NFR | Mục tiêu | CollabSpace |
 |-----|----------|-------------|
@@ -115,7 +115,7 @@ Chi tiết kỹ thuật:
 
 ---
 
-## 8. Operability & deployability (Vận hành)
+## 8. Vận hành (Operability & deployability)
 
 | NFR | Mục tiêu | CollabSpace |
 |-----|----------|-------------|
@@ -128,7 +128,7 @@ Chi tiết kỹ thuật:
 
 ---
 
-## 9. Maintainability & testability (Bảo trì)
+## 9. Bảo trì (Maintainability & testability)
 
 | NFR | Mục tiêu | CollabSpace |
 |-----|----------|-------------|
@@ -141,7 +141,7 @@ Chi tiết kỹ thuật:
 
 ---
 
-## 10. Usability & compatibility (Demo scope)
+## 10. Khả năng sử dụng (Demo scope)
 
 | NFR | Mục tiêu | CollabSpace |
 |-----|----------|-------------|
@@ -179,3 +179,4 @@ Dự án **có cơ sở thực tế** (code + infra + doc) cho các NFR sau — 
 | Prod gaps | `docs/production-hardening.md` |
 | Infra backlog | `docs/team/phan-phu-tho-infrastructure-backlog.md` |
 | Backup / restore | `docs/backup-policy.md`, `infrastructure/backup/scripts/` |
+| Deploy production DO | `docs/deployment-k3s-phases.md` |

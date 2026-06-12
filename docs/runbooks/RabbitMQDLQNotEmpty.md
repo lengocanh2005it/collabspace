@@ -1,19 +1,19 @@
 # RabbitMQDLQNotEmpty
 
-**Alert:** DLQ queue has messages for 1 minute  
-**Severity:** warning
+**Cảnh báo:** hàng đợi DLQ có message trong 1 phút  
+**Mức độ:** warning
 
-## Symptoms
+## Triệu chứng
 
-- Failed event processing; users may miss notifications or profile sync.
+- Xử lý event thất bại; user có thể thiếu notification hoặc sync profile.
 
-## Diagnosis
+## Chẩn đoán
 
-1. Inspect DLQ messages in RabbitMQ management UI.
-2. Correlate `eventId` with service logs (notification dedupe, schema validation errors).
+1. Inspect message DLQ trong RabbitMQ management UI.
+2. Đối chiếu `eventId` với log service (dedupe notification, lỗi validate schema).
 
-## Remediation
+## Khắc phục
 
-1. Fix the consumer bug or schema mismatch causing rejects.
-2. Replay messages from DLQ only after the fix is deployed (manual re-publish with same `eventId` for idempotent handlers).
-3. Monitor DLQ returns to zero.
+1. Sửa bug consumer hoặc lệch schema gây reject.
+2. Replay message từ DLQ **chỉ sau** khi fix đã deploy (re-publish thủ công cùng `eventId` cho handler idempotent).
+3. Theo dõi DLQ về 0.

@@ -28,6 +28,8 @@
 **/*.log
 infrastructure/backup/artifacts/
 infrastructure/deploy/droplet.env
+infrastructure/deploy/phase0.env
+infrastructure/helm/collabspace/values-prod.yaml
 infrastructure/vault/.vault-*.json
 
 # Kubernetes

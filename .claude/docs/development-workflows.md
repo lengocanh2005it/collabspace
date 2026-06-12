@@ -320,7 +320,9 @@ GitHub Actions is the preferred CI/CD path for Droplet deployment:
 - `.github/workflows/docker-deploy.yml` builds five service images using `infrastructure/docker/Dockerfile.service`, pushes them to GHCR, then deploys to the Droplet over SSH.
 - Droplet scripts live in `infrastructure/deploy/`.
 - Production Compose overlay: `infrastructure/docker/docker-compose.prod.yml`.
-- DigitalOcean runbook: `docs/deployment-digitalocean-droplet.md`.
+- DigitalOcean production (k3s + Helm): `docs/deployment-k3s-phases.md`.
+- DigitalOcean Compose legacy: `docs/deployment-digitalocean-droplet.md`.
+- So sánh phương án DO: `docs/digitalocean-production-options.md`.
 
 Required GitHub Actions secrets for deploy:
 

@@ -276,7 +276,7 @@ kubectl get pods -n collabspace
 kubectl get svc traefik -n collabspace
 ```
 
-Chart docs: [infrastructure/helm/README.md](infrastructure/helm/README.md). DigitalOcean production options: [docs/digitalocean-production-options.md](docs/digitalocean-production-options.md). Legacy plain YAML: [infrastructure/k8s/README.md](infrastructure/k8s/README.md).
+Chart docs: [infrastructure/helm/README.md](infrastructure/helm/README.md). **Production DO (k3s):** [docs/deployment-k3s-phases.md](docs/deployment-k3s-phases.md). So sánh phương án: [docs/digitalocean-production-options.md](docs/digitalocean-production-options.md). Legacy Compose Droplet: [docs/deployment-digitalocean-droplet.md](docs/deployment-digitalocean-droplet.md). Legacy plain YAML: [infrastructure/k8s/README.md](infrastructure/k8s/README.md).
 
 ### K8s Resource Summary
 
@@ -298,11 +298,11 @@ Chart docs: [infrastructure/helm/README.md](infrastructure/helm/README.md). Digi
 GitHub Actions workflows:
 
 1. `.github/workflows/ci.yml` — install, build, test on PRs and `main`.
-2. `.github/workflows/docker-deploy.yml` — build five service images, push to GHCR, deploy to a DigitalOcean Droplet over SSH.
+2. `.github/workflows/docker-deploy.yml` — build five service images, push to GHCR; deploy Compose qua SSH (legacy — chuyển sang Helm/k3s).
 
-Droplet deployment guide: [docs/deployment-digitalocean-droplet.md](docs/deployment-digitalocean-droplet.md).
+Lộ trình production: [docs/deployment-k3s-phases.md](docs/deployment-k3s-phases.md). Compose legacy: [docs/deployment-digitalocean-droplet.md](docs/deployment-digitalocean-droplet.md).
 
-Jenkins scaffolding is still available at http://localhost:8081 when running `docker-compose.jenkins.yml`, but GitHub Actions is the preferred path for Droplet deployment.
+Jenkins scaffolding vẫn có tại http://localhost:8081 khi chạy `docker-compose.jenkins.yml`; GitHub Actions là đường chính cho build image.
 
 ## Project Structure
 

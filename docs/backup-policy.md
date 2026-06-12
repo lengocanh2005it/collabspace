@@ -1,53 +1,56 @@
-# Backup & recovery policy
+# Chính sách backup & phục hồi
 
-CollabSpace demo/staging baseline for PostgreSQL (auth, user, workspace) and MongoDB (task, notification).
+Baseline demo/staging cho PostgreSQL (auth, user, workspace) và MongoDB (task, notification).
 
-## Targets
+## Mục tiêu
 
-| Store | Services | RPO (max data loss) | RTO (max downtime) | Method |
-|-------|----------|---------------------|--------------------|--------|
-| PostgreSQL | auth, user, workspace | 24h (daily backup) | 4h | Logical dump (`pg_dump`) |
-| MongoDB | task, notification | 24h (daily backup) | 4h | `mongodump` archive |
-| Redis | auth, notification | None required | Recreate empty | OTP/cache only; not backed up |
-| RabbitMQ | all publishers | None required | Re-declare from `definitions.json` | Messages are transient; outboxes replay |
+| Kho | Service | RPO (mất dữ liệu tối đa) | RTO (downtime tối đa) | Phương pháp |
+|-----|---------|---------------------------|------------------------|-------------|
+| PostgreSQL | auth, user, workspace | 24h (backup hàng ngày) | 4h | Logical dump (`pg_dump`) |
+| MongoDB | task, notification | 24h (backup hàng ngày) | 4h | Archive `mongodump` |
+| Redis | auth, notification | Không bắt buộc | Tạo lại rỗng | Chỉ OTP/cache; không backup |
+| RabbitMQ | mọi publisher | Không bắt buộc | Khai báo lại từ `definitions.json` | Message tạm; outbox replay |
 
-Production should tighten RPO to **1h** (hourly dumps + WAL archiving for Postgres) once traffic warrants it.
+Production nên siết RPO xuống **1 giờ** (dump hàng giờ + WAL archiving cho Postgres) khi traffic đủ lớn.
 
-## What to back up
+## Phạm vi backup
 
-- **PostgreSQL databases:** `collabspace_auth`, `collabspace_user`, `collabspace_workspace`
-- **MongoDB databases:** `collabspace_task`, `collabspace_notification` (names from service `.env.example`)
-- **Not in scope:** application containers, Traefik config (Git), RabbitMQ queues (rebuilt from outbox + events)
+- **PostgreSQL:** `collabspace_auth`, `collabspace_user`, `collabspace_workspace`
+- **MongoDB:** `collabspace_task`, `collabspace_notification` (tên từ `.env.example` service)
+- **Không backup:** container app, cấu hình Traefik (có trong Git), hàng đợi RabbitMQ (tái tạo từ outbox + event)
 
 ## Local / Docker Compose
 
-Example scripts: `infrastructure/backup/scripts/`.
+Script mẫu: `infrastructure/backup/scripts/`.
 
 ```sh
-# From repo root, with stack running (docker-compose.db.yml)
+# Từ repo root, stack đang chạy (docker-compose.db.yml)
 ./infrastructure/backup/scripts/backup-postgres.sh
 ./infrastructure/backup/scripts/backup-mongo.sh
 ```
 
-Artifacts land in `infrastructure/backup/artifacts/` (gitignored). Rotate locally; copy to object storage in staging/prod.
+Artifact lưu tại `infrastructure/backup/artifacts/` (gitignored). Xoay vòng local; copy lên object storage trên staging/prod.
 
 ## Kubernetes / Helm
 
-1. Use managed databases (RDS, Cloud SQL, Atlas) with provider-native automated backups and point-in-time recovery when available.
-2. Do **not** rely on pod ephemeral storage for data.
-3. Store backup credentials in **HashiCorp Vault** (sync via External Secrets Operator) — never in `values.yaml` plaintext. See `infrastructure/vault/README.md`.
-4. Schedule CronJobs or use the cloud provider backup window; document owner and on-call escalation in `docs/runbooks/`.
+1. Ưu tiên managed database (RDS, Cloud SQL, Atlas) với backup tự động và point-in-time recovery khi có.
+2. **Không** dựa vào ephemeral storage của pod cho dữ liệu.
+3. Lưu credential backup trong **HashiCorp Vault** (sync qua ESO) — không plaintext trong `values.yaml`. Xem `infrastructure/vault/README.md`.
+4. Lên lịch CronJob hoặc dùng cửa sổ backup của cloud provider; ghi owner và escalation trong `docs/runbooks/`.
 
-## Restore drill (quarterly)
+**k3s single-node:** bắt buộc CronJob backup DB + copy offsite (DO Spaces / S3) — xem [deployment-k3s-phases.md](./deployment-k3s-phases.md) Phase 5.
 
-1. Restore latest Postgres dump into a **fresh** database instance; run migrations if schema drifted.
-2. Restore Mongo archive into a test cluster; verify task/notification read APIs.
-3. Record elapsed time vs RTO; file gaps in this doc.
+## Restore drill (hàng quý)
+
+1. Restore dump Postgres mới nhất vào instance DB **mới**; chạy migration nếu schema lệch.
+2. Restore archive Mongo vào cluster test; verify API đọc task/notification.
+3. Ghi thời gian thực tế so với RTO; cập nhật gap vào tài liệu này.
 
 **Hiện trạng repo:** có `backup-postgres.sh` / `backup-mongo.sh` (chạy tay, Docker); **chưa có** `restore-*.sh`, CronJob, offsite copy, runbook restore chi tiết — xem [phan-phu-tho-infrastructure-backlog.md](./team/phan-phu-tho-infrastructure-backlog.md) mục 14–15.
 
-## Related
+## Tài liệu liên quan
 
-- Production checklist: `docs/production-hardening.md`
-- Infra backlog (backup automation): `docs/team/phan-phu-tho-infrastructure-backlog.md`
-- Resilience drills: `infrastructure/resilience/drills/README.md`
+- Checklist production: `docs/production-hardening.md`
+- Backlog backup automation: `docs/team/phan-phu-tho-infrastructure-backlog.md`
+- Drill resilience: `infrastructure/resilience/drills/README.md`
+- Lộ trình deploy: `docs/deployment-k3s-phases.md`
