@@ -39,7 +39,7 @@ export class WorkspaceOutboxService {
       WorkspaceOutboxEventEntity,
     ).tablePath;
 
-    return await this.dataSource.query(
+    const rows = (await this.dataSource.query(
       `
         WITH candidate_events AS (
           SELECT id
@@ -61,7 +61,14 @@ export class WorkspaceOutboxService {
         RETURNING outbox.id, outbox.event_type AS "eventType", outbox.payload, outbox.attempt_count AS "attemptCount"
       `,
       [limit ?? batchSize],
-    );
+    )) as Array<Record<string, unknown>>;
+
+    return rows.map((row) => ({
+      id: String(row.id),
+      eventType: String(row.eventType ?? row.event_type),
+      payload: (row.payload ?? {}) as Record<string, unknown>,
+      attemptCount: Number(row.attemptCount ?? row.attempt_count ?? 0),
+    }));
   }
 
   async markProcessed(id: string): Promise<void> {
@@ -83,14 +90,15 @@ export class WorkspaceOutboxService {
     error: string,
   ): Promise<void> {
     const { maxAttempts } = getWorkspaceOutboxConfig();
-    const isPermanentFailure = attemptCount >= maxAttempts;
+    const safeAttemptCount = Number.isFinite(attemptCount) ? attemptCount : 1;
+    const isPermanentFailure = safeAttemptCount >= maxAttempts;
 
     await this.getRepository().update(
       { id },
       {
         availableAt: isPermanentFailure
           ? undefined
-          : new Date(Date.now() + this.getRetryDelayMs(attemptCount)),
+          : new Date(Date.now() + this.getRetryDelayMs(safeAttemptCount)),
         claimedAt: null,
         failedAt: isPermanentFailure ? new Date() : null,
         lastError: error,
