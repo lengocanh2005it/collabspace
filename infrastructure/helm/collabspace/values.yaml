@@ -328,6 +328,10 @@ loki:
       limits:
         memory: 256Mi
         cpu: 250m
+  chunksCache:
+    enabled: false
+  resultsCache:
+    enabled: false
   backend:
     replicas: 0
   read:

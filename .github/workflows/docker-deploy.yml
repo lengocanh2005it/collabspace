@@ -181,10 +181,22 @@ jobs:
           source: infrastructure/helm/collabspace/charts
           target: /opt/collabspace
 
+      - name: Compute deploy image tag
+        id: deploy-tag
+        run: |
+          # Chỉ truyền IMAGE_TAG khi có images thực sự được build.
+          # Nếu chỉ có helm/infra changes, build-images bị skip → dùng tag từ values-prod.yaml.
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]] || \
+             [[ "${{ needs.detect-changes.outputs.any-service }}" == "true" ]]; then
+            echo "tag=${{ github.event.inputs.image_tag || github.sha }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Deploy Helm on k3s over SSH
         uses: appleboy/ssh-action@v1.2.0
         env:
-          IMAGE_TAG: ${{ github.event.inputs.image_tag || github.sha }}
+          IMAGE_TAG: ${{ steps.deploy-tag.outputs.tag }}
           GHCR_OWNER: ${{ github.repository_owner }}
           GHCR_USERNAME: ${{ secrets.GHCR_USERNAME }}
           GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
