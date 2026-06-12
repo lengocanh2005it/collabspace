@@ -8,11 +8,16 @@ APP_NS="${APP_NS:-collabspace}"
 PHASE0_ENV="${PHASE0_ENV:-/opt/collabspace/infrastructure/deploy/phase0.env}"
 VALUES_PROD="${VALUES_PROD:-/opt/collabspace/infrastructure/helm/collabspace/values-prod.yaml}"
 
+# helm-rollout / CI may export IMAGE_TAG before calling this script; phase0.env must not override it.
+saved_image_tag="${IMAGE_TAG:-}"
 if [[ -f "$PHASE0_ENV" ]]; then
   set -a
   # shellcheck disable=SC1090
   source "$PHASE0_ENV"
   set +a
+fi
+if [[ -n "$saved_image_tag" ]]; then
+  export IMAGE_TAG="$saved_image_tag"
 fi
 
 GHCR_OWNER="${GHCR_OWNER:-}"
