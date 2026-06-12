@@ -70,11 +70,21 @@ export class AuthOutboxProcessor implements OnModuleInit, OnModuleDestroy {
           this.logger.warn(
             `Auth outbox publish failed for ${event.id} (${event.eventType}): ${message}`,
           );
-          await this.authOutboxService.markFailed(
-            event.id,
-            event.attemptCount,
-            message,
-          );
+          try {
+            await this.authOutboxService.markFailed(
+              event.id,
+              event.attemptCount,
+              message,
+            );
+          } catch (markFailedError) {
+            const markFailedMessage =
+              markFailedError instanceof Error
+                ? markFailedError.message
+                : 'Unknown markFailed error';
+            this.logger.error(
+              `Auth outbox markFailed error for ${event.id}: ${markFailedMessage}`,
+            );
+          }
         }
       }
     } finally {

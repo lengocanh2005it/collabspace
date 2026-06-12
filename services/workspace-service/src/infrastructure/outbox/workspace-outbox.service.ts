@@ -15,6 +15,33 @@ type ClaimedOutboxEvent = {
   payload: Record<string, unknown>;
 };
 
+function normalizeClaimedOutboxRow(
+  row: Record<string, unknown>,
+): ClaimedOutboxEvent | null {
+  const id = row.id;
+  if (typeof id !== 'string' || id.length === 0) {
+    return null;
+  }
+
+  const rawEventType = row.eventType ?? row.event_type;
+  if (typeof rawEventType !== 'string' || rawEventType.length === 0) {
+    return null;
+  }
+
+  const rawAttemptCount = row.attemptCount ?? row.attempt_count;
+  const attemptCount =
+    typeof rawAttemptCount === 'number'
+      ? rawAttemptCount
+      : Number(rawAttemptCount ?? 0);
+
+  return {
+    id,
+    eventType: rawEventType,
+    payload: (row.payload ?? {}) as Record<string, unknown>,
+    attemptCount: Number.isFinite(attemptCount) ? attemptCount : 0,
+  };
+}
+
 @Injectable()
 export class WorkspaceOutboxService {
   constructor(
@@ -47,6 +74,8 @@ export class WorkspaceOutboxService {
           WHERE processed_at IS NULL
             AND failed_at IS NULL
             AND claimed_at IS NULL
+            AND event_type IS NOT NULL
+            AND event_type <> ''
             AND available_at <= NOW()
           ORDER BY created_at ASC
           LIMIT $1
@@ -64,13 +93,8 @@ export class WorkspaceOutboxService {
     )) as Array<Record<string, unknown>>;
 
     return rows
-      .filter((row) => typeof row.id === 'string' && row.id.length > 0)
-      .map((row) => ({
-        id: row.id as string,
-        eventType: String(row.eventType ?? row.event_type),
-        payload: (row.payload ?? {}) as Record<string, unknown>,
-        attemptCount: Number(row.attemptCount ?? row.attempt_count ?? 0),
-      }));
+      .map((row) => normalizeClaimedOutboxRow(row))
+      .filter((row): row is ClaimedOutboxEvent => row !== null);
   }
 
   async markProcessed(id: string): Promise<void> {
@@ -91,6 +115,10 @@ export class WorkspaceOutboxService {
     attemptCount: number,
     error: string,
   ): Promise<void> {
+    if (typeof id !== 'string' || id.length === 0) {
+      return;
+    }
+
     const { maxAttempts } = getWorkspaceOutboxConfig();
     const safeAttemptCount = Number.isFinite(attemptCount) ? attemptCount : 1;
     const isPermanentFailure = safeAttemptCount >= maxAttempts;

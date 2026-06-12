@@ -77,11 +77,21 @@ export class WorkspaceOutboxProcessor implements OnModuleInit, OnModuleDestroy {
           this.logger.warn(
             `Workspace outbox publish failed for ${event.id}: ${message}`,
           );
-          await this.workspaceOutboxService.markFailed(
-            event.id,
-            event.attemptCount,
-            message,
-          );
+          try {
+            await this.workspaceOutboxService.markFailed(
+              event.id,
+              event.attemptCount,
+              message,
+            );
+          } catch (markFailedError) {
+            const markFailedMessage =
+              markFailedError instanceof Error
+                ? markFailedError.message
+                : 'Unknown markFailed error';
+            this.logger.error(
+              `Workspace outbox markFailed error for ${event.id}: ${markFailedMessage}`,
+            );
+          }
         }
       }
     } finally {
