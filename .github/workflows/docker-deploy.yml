@@ -92,9 +92,16 @@ jobs:
           envs: IMAGE_TAG,GHCR_OWNER,GHCR_USERNAME,GHCR_TOKEN
           script: |
             set -euo pipefail
-            cd /opt/collabspace
-            git pull --ff-only
             export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+            export APP_DIR=/opt/collabspace
+            export PHASE0_ENV=/opt/collabspace/infrastructure/deploy/phase0.env
+            export GITHUB_TOKEN="${GHCR_TOKEN}"
+            if [[ -f "$PHASE0_ENV" ]]; then
+              bash /opt/collabspace/infrastructure/deploy/git-sync-private-repo.sh
+            else
+              cd /opt/collabspace && git pull --ff-only
+            fi
+            cd /opt/collabspace
             export APP_DIR=/opt/collabspace
             export IMAGE_TAG
             export GHCR_OWNER
