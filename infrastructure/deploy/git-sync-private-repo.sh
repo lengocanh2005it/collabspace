@@ -42,7 +42,8 @@ else
   cd "$APP_DIR"
   git fetch origin "$GIT_BRANCH"
   git checkout "$GIT_BRANCH"
-  git pull --ff-only origin "$GIT_BRANCH"
+  # Droplet may have hotfixed files from scp; deploy server should match origin exactly.
+  git reset --hard "origin/${GIT_BRANCH}"
 fi
 
 echo "Repo synced at $APP_DIR ($(git -C "$APP_DIR" rev-parse --short HEAD))"

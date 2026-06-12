@@ -98,13 +98,15 @@ app.kubernetes.io/version: {{ .root.Chart.AppVersion | quote }}
 
 {{- define "collabspace.rabbitmqUrl" -}}
 {{- $r := .root | default . -}}
-{{- printf "amqp://%s:%s@%s:5672/collabspace" (include "collabspace.rabbitmqUser" (dict "root" $r)) (include "collabspace.rabbitmqPassword" (dict "root" $r)) (include "collabspace.rabbitmq.host" (dict "root" $r)) }}
+{{- $user := include "collabspace.rabbitmqUser" (dict "root" $r) | urlquery -}}
+{{- $pass := include "collabspace.rabbitmqPassword" (dict "root" $r) | urlquery -}}
+{{- printf "amqp://%s:%s@%s:5672/collabspace" $user $pass (include "collabspace.rabbitmq.host" (dict "root" $r)) }}
 {{- end }}
 
 {{- define "collabspace.mongoUri" -}}
 {{- $r := .root | default . -}}
-{{- $user := $r.Values.global.secrets.mongoUsername | default "admin" -}}
-{{- $pass := $r.Values.global.secrets.mongoPassword | default $r.Values.mongodb.auth.rootPassword -}}
+{{- $user := $r.Values.global.secrets.mongoUsername | default "admin" | urlquery -}}
+{{- $pass := $r.Values.global.secrets.mongoPassword | default $r.Values.mongodb.auth.rootPassword | urlquery -}}
 {{- $db := .database | default "collabspace_task" -}}
 {{- printf "mongodb://%s:%s@%s:27017/%s?authSource=admin" $user $pass (include "collabspace.mongodb.host" (dict "root" $r)) $db }}
 {{- end }}
@@ -112,5 +114,6 @@ app.kubernetes.io/version: {{ .root.Chart.AppVersion | quote }}
 {{- define "collabspace.postgresUrl" -}}
 {{- $r := .root | default . -}}
 {{- $db := .database | required "database name required for postgresUrl" -}}
-{{- printf "postgresql://postgres:%s@%s:5432/%s?schema=public" (include "collabspace.postgresPassword" (dict "root" $r)) (include "collabspace.postgresql.host" (dict "root" $r)) $db }}
+{{- $pass := include "collabspace.postgresPassword" (dict "root" $r) | urlquery -}}
+{{- printf "postgresql://postgres:%s@%s:5432/%s?schema=public" $pass (include "collabspace.postgresql.host" (dict "root" $r)) $db }}
 {{- end }}
