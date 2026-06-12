@@ -115,5 +115,5 @@ app.kubernetes.io/version: {{ .root.Chart.AppVersion | quote }}
 {{- $r := .root | default . -}}
 {{- $db := .database | required "database name required for postgresUrl" -}}
 {{- $pass := include "collabspace.postgresPassword" (dict "root" $r) | urlquery -}}
-{{- printf "postgresql://postgres:%s@%s:5432/%s?schema=public" $pass (include "collabspace.postgresql.host" (dict "root" $r)) $db }}
+{{- printf "postgresql://postgres:%s@%s:5432/%s" $pass (include "collabspace.postgresql.host" (dict "root" $r)) $db }}
 {{- end }}
