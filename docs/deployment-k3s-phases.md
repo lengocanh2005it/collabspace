@@ -33,6 +33,30 @@ Phase 0 ──► Phase 1 ──► Phase 2 ──► Phase 3 ──► Phase 4 
 
 **Mục tiêu:** Có đủ tài nguyên và quyết định kỹ thuật trước khi cài cluster.
 
+**Checklist chi tiết:** [infrastructure/deploy/phase0-checklist.md](../infrastructure/deploy/phase0-checklist.md)
+
+### Bước nhanh
+
+```bash
+# 1. Copy biến môi trường Phase 0
+cp infrastructure/deploy/phase0.env.example infrastructure/deploy/phase0.env
+# Điền DROPLET_HOST, PROD_DOMAIN, GHCR_OWNER, IMAGE_TAG, secret mạnh
+
+# 2. Sinh values-prod.yaml (gitignored)
+chmod +x infrastructure/deploy/prepare-prod-values.sh
+./infrastructure/deploy/prepare-prod-values.sh
+# Windows: ./infrastructure/deploy/prepare-prod-values.ps1
+```
+
+### Artifact trong repo
+
+| File | Commit? | Mục đích |
+|------|---------|----------|
+| `infrastructure/helm/collabspace/values-prod.example.yaml` | ✅ | Mẫu Helm production (1 replica, GHCR, ESO) |
+| `infrastructure/deploy/phase0.env.example` | ✅ | Mẫu biến Droplet/domain/secret |
+| `infrastructure/deploy/phase0.env` | ❌ gitignore | Giá trị thật local |
+| `infrastructure/helm/collabspace/values-prod.yaml` | ❌ gitignore | Output Helm cho cluster |
+
 ### Hạ tầng
 
 | Hạng mục | Gợi ý |
@@ -45,48 +69,16 @@ Phase 0 ──► Phase 1 ──► Phase 2 ──► Phase 3 ──► Phase 4 
 ### Registry & image
 
 - GitHub Actions build 5 image và push GHCR: `ghcr.io/<owner>/collabspace-<service>`
-- Workflow hiện tại: `.github/workflows/docker-deploy.yml` (job `build-images` ✅)
-- Tag theo commit SHA hoặc git tag `v*`
+- Workflow: `.github/workflows/docker-deploy.yml` (job `build-images` ✅)
+- Tag theo commit SHA: `git rev-parse origin/main`
 
-### File cấu hình (không commit secret)
+### Vault path (chuẩn bị seed ở Phase 2)
 
-Tạo `infrastructure/helm/collabspace/values-prod.yaml` (local hoặc secret store CI):
+`secret/collabspace/prod` — cùng giá trị với `phase0.env`. Xem [infrastructure/vault/README.md](../infrastructure/vault/README.md).
 
-```yaml
-global:
-  externalSecrets:
-    enabled: true
-    vaultKvPath: collabspace/prod
+**Lưu ý RAM:** Droplet 8 GiB **bắt buộc** 1 replica mỗi service (`values-prod.example.yaml` đã cấu hình sẵn).
 
-apps:
-  auth-service:
-    replicas: 1
-    image:
-      repository: ghcr.io/<owner>/collabspace-auth-service
-      tag: "<commit-sha>"
-  # ... tương tự 4 service còn lại
-
-traefik:
-  deployment:
-    replicas: 1
-
-hpa:
-  enabled: false
-
-observability:
-  prometheus:
-    enabled: true
-    retention: 7d
-    storageSize: 3Gi
-```
-
-**Lưu ý RAM:** Droplet 8 GiB **bắt buộc** giảm replica xuống 1; `values.yaml` mặc định (2 replica mỗi service) sẽ OOM.
-
-### Vault path
-
-Seed `secret/collabspace/prod` với các key: `jwt_secret`, `internal_service_token`, `postgres_password`, `mongo_username`, `mongo_password`, `redis_password`, `rabbitmq_username`, `rabbitmq_password`, `metrics_auth_token` — xem [infrastructure/vault/README.md](../infrastructure/vault/README.md).
-
-**Definition of Done:** SSH vào Droplet được; có `values-prod.yaml` draft; domain trỏ đúng IP.
+**Definition of Done:** SSH vào Droplet được; `values-prod.yaml` đã tạo; DNS trỏ đúng IP; checklist Phase 0 tick hết.
 
 ---
 
@@ -94,26 +86,47 @@ Seed `secret/collabspace/prod` với các key: `jwt_secret`, `internal_service_t
 
 **Mục tiêu:** Kubernetes single-node chạy ổn định.
 
+**Checklist:** [infrastructure/deploy/phase1-checklist.md](../infrastructure/deploy/phase1-checklist.md)
+
+### Bước nhanh (trên Droplet)
+
 ```bash
-# Trên Droplet
-curl -sfL https://get.k3s.io | sh -s - --disable traefik
+cd /opt/collabspace   # hoặc clone repo trước
+sudo bash infrastructure/deploy/k3s-bootstrap.sh
+sudo bash infrastructure/deploy/verify-phase1.sh
+```
 
-# Máy local hoặc trên Droplet
-export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
-kubectl get nodes                    # Ready
-kubectl create namespace collabspace
+One-liner (clone + bootstrap):
 
-cd /opt/collabspace/infrastructure/helm/collabspace
-helm dependency update
+```bash
+curl -fsSL https://raw.githubusercontent.com/<owner>/collabspace/main/infrastructure/deploy/k3s-bootstrap.sh \
+  | sudo bash -s -- https://github.com/<owner>/collabspace.git
+```
+
+### Script trong repo
+
+| Script | Mục đích |
+|--------|----------|
+| `infrastructure/deploy/k3s-bootstrap.sh` | Cài k3s, UFW, Helm, namespace, `helm dependency update` |
+| `infrastructure/deploy/verify-phase1.sh` | Kiểm tra DoD Phase 1 |
+| `infrastructure/deploy/fetch-kubeconfig.sh` | Copy kubeconfig về máy local (Linux/macOS) |
+| `infrastructure/deploy/fetch-kubeconfig.ps1` | Copy kubeconfig (Windows) |
+
+### Kubeconfig local (tùy chọn)
+
+```bash
+./infrastructure/deploy/fetch-kubeconfig.sh <DROPLET_IP>
+export KUBECONFIG=~/.kube/collabspace-prod.yaml
+kubectl get nodes
 ```
 
 | Việc | Chi tiết |
 |------|----------|
-| Tắt Traefik built-in k3s | Helm chart CollabSpace đã có Traefik subchart |
-| StorageClass | k3s `local-path` mặc định — đủ cho MVP |
-| Clone repo | `/opt/collabspace` |
+| Tắt Traefik built-in k3s | `--disable traefik` — Traefik do Helm chart cài |
+| StorageClass | k3s `local-path` mặc định |
+| Repo trên Droplet | `/opt/collabspace` |
 
-**Definition of Done:** `kubectl get nodes` → Ready; `helm dependency update` thành công.
+**Definition of Done:** `verify-phase1.sh` pass; `helm dependency update` thành công.
 
 ---
 

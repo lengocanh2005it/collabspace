@@ -1,0 +1,190 @@
+# Mẫu values production cho Droplet k3s (8 GiB RAM).
+# KHÔNG commit file values-prod.yaml thật — chỉ commit file .example này.
+#
+# Tạo file deploy:
+#   cp values-prod.example.yaml values-prod.yaml
+#   # hoặc từ repo root:
+#   ./infrastructure/deploy/prepare-prod-values.sh
+#
+# Cài đặt (Phase 3):
+#   helm upgrade --install collabspace . \
+#     -n collabspace --create-namespace \
+#     -f values.yaml -f values-prod.yaml
+#
+# Lộ trình: docs/deployment-k3s-phases.md
+
+global:
+  imagePullPolicy: Always
+  # Secret K8s để pull image GHCR private (tạo thủ công hoặc Phase 2):
+  # kubectl create secret docker-registry ghcr-credentials -n collabspace \
+  #   --docker-server=ghcr.io --docker-username=GHCR_OWNER --docker-password=GHCR_TOKEN
+  imagePullSecrets:
+    - name: ghcr-credentials
+  externalSecrets:
+    enabled: true
+    vaultKvPath: collabspace/prod
+  # Bitnami subcharts + URL trong ConfigMap vẫn đọc global.secrets khi install.
+  # Giá trị PHẢI khớp Vault path secret/collabspace/prod (inject qua prepare-prod-values).
+  secrets:
+    jwtSecret: "REPLACE_ME"
+    internalServiceToken: "REPLACE_ME"
+    postgresPassword: "REPLACE_ME"
+    mongoUsername: admin
+    mongoPassword: "REPLACE_ME"
+    redisPassword: "REPLACE_ME"
+    rabbitmqUsername: collabspace
+    rabbitmqPassword: "REPLACE_ME"
+    metricsAuthToken: "REPLACE_ME"
+
+postgresql:
+  auth:
+    postgresPassword: "REPLACE_ME"
+    password: "REPLACE_ME"
+  primary:
+    persistence:
+      size: 8Gi
+    resources:
+      requests:
+        memory: 256Mi
+        cpu: 200m
+      limits:
+        memory: 512Mi
+        cpu: 500m
+
+mongodb:
+  auth:
+    rootUser: admin
+    rootPassword: "REPLACE_ME"
+  persistence:
+    size: 8Gi
+  resources:
+    requests:
+      memory: 256Mi
+      cpu: 200m
+    limits:
+      memory: 512Mi
+      cpu: 500m
+
+redis:
+  auth:
+    password: "REPLACE_ME"
+  master:
+    persistence:
+      size: 2Gi
+    resources:
+      requests:
+        memory: 128Mi
+        cpu: 100m
+      limits:
+        memory: 384Mi
+        cpu: 250m
+
+rabbitmq:
+  auth:
+    username: collabspace
+    password: "REPLACE_ME"
+    erlangCookie: "REPLACE_ME_ERLANG_COOKIE"
+  persistence:
+    size: 4Gi
+  resources:
+    requests:
+      memory: 256Mi
+      cpu: 200m
+    limits:
+      memory: 512Mi
+      cpu: 500m
+
+traefik:
+  deployment:
+    replicas: 1
+  # Droplet single-node: LoadBalancer (k3s klipper) hoặc NodePort nếu không có LB
+  service:
+    type: LoadBalancer
+
+gateway:
+  cors:
+    allowOrigins:
+      - "https://REPLACE_ME_DOMAIN"
+      - "http://REPLACE_ME_DOMAIN"
+
+networkPolicies:
+  enabled: true
+
+observability:
+  prometheus:
+    enabled: true
+    retention: 7d
+    storageSize: 3Gi
+  exporters:
+    enabled: true
+
+hpa:
+  enabled: false
+
+pdb:
+  enabled: true
+  minAvailable: 1
+
+apps:
+  auth-service:
+    replicas: 1
+    image:
+      repository: ghcr.io/REPLACE_ME_GHCR_OWNER/collabspace-auth-service
+      tag: REPLACE_ME_IMAGE_TAG
+    extraEnv:
+      GRPC_ENABLED: "true"
+      GRPC_URL: "0.0.0.0:50051"
+      RABBITMQ_ENABLED: "true"
+      RABBITMQ_QUEUE: auth-service
+      USER_SERVICE_GRPC_URL: user-service:50052
+      REDIS_HOST: redis
+      OUTBOX_ENABLED: "true"
+
+  user-service:
+    replicas: 1
+    image:
+      repository: ghcr.io/REPLACE_ME_GHCR_OWNER/collabspace-user-service
+      tag: REPLACE_ME_IMAGE_TAG
+    extraEnv:
+      GRPC_ENABLED: "true"
+      GRPC_URL: "0.0.0.0:50052"
+      AUTH_SERVICE_GRPC_URL: auth-service:50051
+      RABBITMQ_ENABLED: "true"
+      RABBITMQ_QUEUE: user-service
+
+  workspace-service:
+    replicas: 1
+    image:
+      repository: ghcr.io/REPLACE_ME_GHCR_OWNER/collabspace-workspace-service
+      tag: REPLACE_ME_IMAGE_TAG
+    extraEnv:
+      AUTH_SERVICE_GRPC_URL: auth-service:50051
+      WORKSPACE_OUTBOX_ENABLED: "true"
+      DATABASE_SYNCHRONIZE: "false"
+      ALLOW_DEV_IDENTITY_HEADERS: "false"
+
+  task-service:
+    replicas: 1
+    image:
+      repository: ghcr.io/REPLACE_ME_GHCR_OWNER/collabspace-task-service
+      tag: REPLACE_ME_IMAGE_TAG
+    extraEnv:
+      RABBITMQ_ENABLED: "true"
+      RABBITMQ_QUEUE: task-service
+      WORKSPACE_CLIENT_MODE: http
+      WORKSPACE_SERVICE_URL: http://workspace-service:8080
+      TASK_OUTBOX_ENABLED: "true"
+      ALLOW_DEV_IDENTITY_HEADERS: "false"
+
+  notification-service:
+    replicas: 1
+    image:
+      repository: ghcr.io/REPLACE_ME_GHCR_OWNER/collabspace-notification-service
+      tag: REPLACE_ME_IMAGE_TAG
+    extraEnv:
+      RABBITMQ_ENABLED: "true"
+      RABBITMQ_QUEUE: notification-service
+      REDIS_HOST: redis
+      WS_ENABLED: "true"
+      WS_PATH: /notifications/ws
+      ALLOW_DEV_IDENTITY_HEADERS: "false"

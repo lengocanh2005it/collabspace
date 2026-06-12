@@ -68,7 +68,11 @@ P3  Chaos quarterly (staging)       →  chứng minh recovery
 ### 1. Chuẩn hóa môi trường
 
 - [ ] Định nghĩa **3 tầng**: `local` (Compose), `staging` (K8s), `production` (K8s hoặc managed).
-- [ ] Tạo `values-staging.yaml` / `values-prod.yaml` **mẫu** (không commit secret) — tham chiếu [helm/README.md](../../infrastructure/helm/README.md).
+- [x] Tạo `values-prod.example.yaml` + script `prepare-prod-values` — [phase0-checklist.md](../../infrastructure/deploy/phase0-checklist.md).
+- [x] Script Phase 1: `k3s-bootstrap.sh`, `verify-phase1.sh`, `fetch-kubeconfig` — [phase1-checklist.md](../../infrastructure/deploy/phase1-checklist.md).
+- [ ] Điền `phase0.env` và chạy script trên máy ops; không commit `values-prod.yaml`.
+- [ ] Chạy `k3s-bootstrap.sh` trên Droplet thật; `verify-phase1.sh` pass.
+- [ ] Tạo `values-staging.yaml` nếu cần môi trường staging riêng.
 - [ ] Document biến bắt buộc từ [production-hardening.md](../production-hardening.md#secrets-reference-never-commit-real-values).
 - [ ] Đồng bộ `INTERNAL_SERVICE_TOKEN`, `JWT_SECRET`, DB passwords giữa các service trong cùng môi trường (Compose `.env` vs Helm `global.secrets`).
 

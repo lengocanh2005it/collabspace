@@ -5,6 +5,7 @@ global:
   namespace: collabspace
   createNamespace: true
   imagePullPolicy: Always
+  # imagePullSecrets: []  # e.g. - name: ghcr-credentials (production GHCR private)
   # When true, Helm does not render {app}-secrets — use External Secrets Operator + Vault
   # (infrastructure/vault/k8s/). Pods still mount secrets via secretRef in deployment.yaml.
   externalSecrets:
@@ -237,7 +238,6 @@ apps:
       RABBITMQ_QUEUE: auth-service
       USER_SERVICE_GRPC_URL: user-service:50052
       REDIS_HOST: redis
-      REDIS_PASSWORD: collabspace123
       OUTBOX_ENABLED: "true"
 
   user-service:
