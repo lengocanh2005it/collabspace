@@ -47,7 +47,7 @@ export class UserHealthService {
   async getReadiness(): Promise<ReadinessReport> {
     const hasDatabaseUrl = !!process.env.DATABASE_URL;
     const checks: Record<string, HealthCheckResult> = {
-      authGrpc: await this.runCheck(true, async () => {
+      authGrpc: await this.runCheck(false, async () => {
         await this.authGrpcService.ping();
       }),
       database: hasDatabaseUrl

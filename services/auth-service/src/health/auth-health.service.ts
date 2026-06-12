@@ -81,7 +81,7 @@ export class AuthHealthService {
           throw new Error('Redis ping returned a non-PONG response');
         }
       }),
-      userProfilesGrpc: await this.runCheck(true, async () => {
+      userProfilesGrpc: await this.runCheck(false, async () => {
         await this.userProfilesGrpcService.ping();
       }),
     };
