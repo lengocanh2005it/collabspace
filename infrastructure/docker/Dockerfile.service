@@ -17,6 +17,7 @@ RUN --mount=type=cache,id=pnpm-ci,target=/root/.local/share/pnpm/store \
 FROM deps AS builder
 ARG SERVICE_NAME
 COPY packages packages
+COPY scripts scripts
 COPY services/${SERVICE_NAME} services/${SERVICE_NAME}
 RUN pnpm --filter @collabspace/shared run build \
   && pnpm --filter ${SERVICE_NAME} run build
@@ -48,6 +49,7 @@ COPY --from=builder /app/packages/shared/dist ./packages/shared/dist
 COPY --from=builder /app/packages/shared/package.json ./packages/shared/package.json
 COPY --from=builder /app/services/${SERVICE_NAME}/dist ./services/${SERVICE_NAME}/dist
 COPY --from=builder /app/services/${SERVICE_NAME}/package.json ./services/${SERVICE_NAME}/package.json
+COPY --from=builder /app/scripts/demo-seed-data.json ./scripts/demo-seed-data.json
 RUN if [ ! -f "./services/${SERVICE_NAME}/dist/main.js" ] && [ -f "./services/${SERVICE_NAME}/dist/src/main.js" ]; then \
       ln -s src/main.js "./services/${SERVICE_NAME}/dist/main.js"; \
     fi

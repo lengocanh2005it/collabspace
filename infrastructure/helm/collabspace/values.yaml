@@ -277,6 +277,8 @@ apps:
       USER_SERVICE_GRPC_URL: user-service:50052
       REDIS_HOST: redis-master
       OUTBOX_ENABLED: "true"
+      # Identity tables have no TypeORM migrations yet; sync once on bootstrap (like workspace).
+      DATABASE_SYNCHRONIZE: "true"
 
   user-service:
     enabled: true

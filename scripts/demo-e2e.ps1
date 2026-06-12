@@ -133,7 +133,7 @@ if (-not $TOKEN_B) { Fail "No accessToken in login response." }
 Log "  User B logged in. Token: $($TOKEN_B.Substring(0,[Math]::Min(20,$TOKEN_B.Length)))..."
 
 Log "  User B accepting invitation $INVITATION_ID..."
-$r = Invoke-Api -Method POST -Url "$BASE/workspaces/invitations/$INVITATION_ID/accept" `
+$r = Invoke-Api -Method POST -Url "$BASE/invitations/$INVITATION_ID/accept" `
   -Headers @{ Authorization="Bearer $TOKEN_B" } -Body @{}
 Assert2xx $r "accept invitation"
 Log "  Invitation accepted."
@@ -161,7 +161,7 @@ Log "  Task created: $TASK_ID"
 Log "  Getting User B's user ID..."
 $r = Invoke-Api -Method GET -Url "$BASE/users/me" -Headers @{ Authorization="Bearer $TOKEN_B" }
 Assert2xx $r "get User B profile"
-$USER_B_ID = $r.Body.id ?? $r.Body.userId ?? $r.Body.data.id
+$USER_B_ID = $r.Body.userId ?? $r.Body.data.userId ?? $r.Body.id ?? $r.Body.data.id
 if (-not $USER_B_ID) { Fail "No user id in /users/me response." }
 Log "  User B ID: $USER_B_ID"
 

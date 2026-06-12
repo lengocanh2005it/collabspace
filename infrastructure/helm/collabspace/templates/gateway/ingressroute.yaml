@@ -84,6 +84,16 @@ spec:
         - name: forward-auth
         - name: rate-limit
         - name: cors-headers
+    - match: PathPrefix(`/api/v1/invitations`)
+      kind: Rule
+      services:
+        - name: workspace-service
+          port: 8080
+      middlewares:
+        - name: strip-identity-headers
+        - name: forward-auth
+        - name: rate-limit
+        - name: cors-headers
     - match: PathPrefix(`/api/v1/workspaces`)
       kind: Rule
       services:
