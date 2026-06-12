@@ -117,3 +117,13 @@ app.kubernetes.io/version: {{ .root.Chart.AppVersion | quote }}
 {{- $pass := include "collabspace.postgresPassword" (dict "root" $r) | urlquery -}}
 {{- printf "postgresql://postgres:%s@%s:5432/%s" $pass (include "collabspace.postgresql.host" (dict "root" $r)) $db }}
 {{- end }}
+
+{{- define "collabspace.mongoUsername" -}}
+{{- $r := .root | default . -}}
+{{- $r.Values.global.secrets.mongoUsername | default "admin" }}
+{{- end }}
+
+{{- define "collabspace.mongoPassword" -}}
+{{- $r := .root | default . -}}
+{{- $r.Values.global.secrets.mongoPassword | default $r.Values.mongodb.auth.rootPassword }}
+{{- end }}

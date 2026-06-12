@@ -145,23 +145,27 @@ jobs:
       - name: Checkout (for helm chart hash)
         uses: actions/checkout@v4
 
-      - name: Compute Helm chart lock hash
+      - name: Compute Helm chart hash
         id: helm-hash
         run: |
-          hash=$(sha256sum infrastructure/helm/collabspace/Chart.lock 2>/dev/null | cut -d' ' -f1 || echo "none")
-          echo "lock_hash=$hash" >> "$GITHUB_OUTPUT"
+          hash=$(sha256sum infrastructure/helm/collabspace/Chart.yaml | cut -d' ' -f1)
+          echo "chart_hash=$hash" >> "$GITHUB_OUTPUT"
 
       - name: Cache Helm dependencies
         id: helm-cache
         uses: actions/cache@v4
         with:
           path: infrastructure/helm/collabspace/charts
-          key: helm-deps-${{ steps.helm-hash.outputs.lock_hash }}
+          key: helm-deps-${{ steps.helm-hash.outputs.chart_hash }}
 
       - name: Package Helm deps for Droplet
         if: steps.helm-cache.outputs.cache-hit != 'true'
         run: |
           curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash -s -- --version v3.14.0
+          helm repo add grafana https://grafana.github.io/helm-charts
+          helm repo add bitnami https://charts.bitnami.com/bitnami
+          helm repo add traefik https://traefik.github.io/charts
+          helm repo update
           helm dependency update infrastructure/helm/collabspace
 
       - name: Upload Helm charts to Droplet

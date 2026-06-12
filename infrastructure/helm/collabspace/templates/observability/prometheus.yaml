@@ -49,6 +49,22 @@ data:
       - job_name: redis-exporter
         static_configs:
           - targets: ['redis-exporter:9121']
+      {{- if .Values.observability.exporters.postgres.enabled }}
+      - job_name: postgres-exporter
+        static_configs:
+          - targets: ['postgres-exporter:9187']
+      {{- end }}
+      {{- if .Values.observability.exporters.mongodb.enabled }}
+      - job_name: mongodb-exporter
+        static_configs:
+          - targets: ['mongodb-exporter:9216']
+      {{- end }}
+      {{- if .Values.observability.alertmanager.enabled }}
+    alerting:
+      alertmanagers:
+        - static_configs:
+            - targets: ['alertmanager:9093']
+      {{- end }}
 ---
 apiVersion: apps/v1
 kind: Deployment

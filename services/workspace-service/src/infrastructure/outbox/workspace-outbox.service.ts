@@ -66,7 +66,7 @@ export class WorkspaceOutboxService {
       WorkspaceOutboxEventEntity,
     ).tablePath;
 
-    const rows = (await this.dataSource.query(
+    const rows = await this.dataSource.query(
       `
         WITH candidate_events AS (
           SELECT id
@@ -90,7 +90,7 @@ export class WorkspaceOutboxService {
         RETURNING outbox.id, outbox.event_type AS "eventType", outbox.payload, outbox.attempt_count AS "attemptCount"
       `,
       [limit ?? batchSize],
-    )) as Array<Record<string, unknown>>;
+    );
 
     return rows
       .map((row) => normalizeClaimedOutboxRow(row))

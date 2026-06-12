@@ -188,4 +188,7 @@ if [[ "$rollout_failed" -gt 0 ]]; then
   exit 1
 fi
 
+echo "==> Pruning unused container images..."
+crictl rmi --prune 2>/dev/null && echo "Image prune done." || echo "WARN: crictl prune failed (non-fatal)."
+
 echo "Helm rollout finished."
