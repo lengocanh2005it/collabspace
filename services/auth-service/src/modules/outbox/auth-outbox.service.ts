@@ -99,9 +99,14 @@ export class AuthOutboxService {
         RETURNING outbox.id, outbox.event_type AS "eventType", outbox.payload, outbox.attempt_count AS "attemptCount"
       `,
       [batchSize],
-    )) as ClaimedOutboxEvent[];
+    )) as Array<Record<string, unknown>>;
 
-    return rows;
+    return rows.map((row) => ({
+      id: String(row.id),
+      eventType: String(row.eventType ?? row.event_type),
+      payload: (row.payload ?? {}) as Record<string, unknown>,
+      attemptCount: Number(row.attemptCount ?? row.attempt_count ?? 0),
+    }));
   }
 
   async getStats(): Promise<AuthOutboxStats> {
@@ -197,12 +202,14 @@ export class AuthOutboxService {
     const { maxAttempts } = this.configurationService.getOutboxConfig();
     const isPermanentFailure = attemptCount >= maxAttempts;
 
+    const safeAttemptCount = Number.isFinite(attemptCount) ? attemptCount : 1;
+
     await this.getRepository().update(
       { id },
       {
         availableAt: isPermanentFailure
           ? undefined
-          : new Date(Date.now() + this.getRetryDelayMs(attemptCount)),
+          : new Date(Date.now() + this.getRetryDelayMs(safeAttemptCount)),
         claimedAt: null,
         failedAt: isPermanentFailure ? new Date() : null,
         lastError: error,
