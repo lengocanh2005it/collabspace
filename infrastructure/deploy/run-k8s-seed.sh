@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Seed demo data on k3s (auth → user → workspace → task → notification).
-# Requires images built with seed:prod (dist/src/seed.js) and scripts/demo-seed-data.json in the image.
+# Requires images built with seed:prod and scripts/demo-seed-data.json in the image.
 set -euo pipefail
 
 export KUBECONFIG="${KUBECONFIG:-/etc/rancher/k3s/k3s.yaml}"
@@ -8,15 +8,15 @@ APP_NS="${APP_NS:-collabspace}"
 PHASE0_ENV="${PHASE0_ENV:-/opt/collabspace/infrastructure/deploy/phase0.env}"
 VALUES_PROD="${VALUES_PROD:-/opt/collabspace/infrastructure/helm/collabspace/values-prod.yaml}"
 
-saved_image_tag="${IMAGE_TAG:-}"
+external_image_tag="${IMAGE_TAG:-}"
 if [[ -f "$PHASE0_ENV" ]]; then
   set -a
   # shellcheck disable=SC1090
   source "$PHASE0_ENV"
   set +a
 fi
-if [[ -n "$saved_image_tag" ]]; then
-  export IMAGE_TAG="$saved_image_tag"
+if [[ -n "$external_image_tag" ]]; then
+  export IMAGE_TAG="$external_image_tag"
 fi
 
 GHCR_OWNER="${GHCR_OWNER:-}"
@@ -33,11 +33,6 @@ fi
 
 IMAGE_TAG="${IMAGE_TAG:-latest}"
 
-if [[ -z "$GHCR_OWNER" ]]; then
-  echo "GHCR_OWNER required (phase0.env or values-prod.yaml)."
-  exit 1
-fi
-
 declare -A SEED_CMD=(
   [auth-service]="node dist/services/auth-service/src/seed.js"
   [user-service]="node dist/services/user-service/src/seed.js"
@@ -52,9 +47,30 @@ wait_datastores() {
   kubectl wait --for=condition=Ready pod -l app.kubernetes.io/name=mongodb -n "$APP_NS" --timeout=300s
 }
 
+resolve_seed_image() {
+  local deployment="$1"
+
+  if [[ -z "$external_image_tag" ]]; then
+    local deployed_image
+    deployed_image="$(kubectl get deployment "$deployment" -n "$APP_NS" -o jsonpath='{.spec.template.spec.containers[0].image}' 2>/dev/null || true)"
+    if [[ -n "$deployed_image" ]]; then
+      printf '%s\n' "$deployed_image"
+      return
+    fi
+  fi
+
+  if [[ -z "$GHCR_OWNER" ]]; then
+    echo "GHCR_OWNER required (phase0.env, values-prod.yaml, or existing deployment image)." >&2
+    exit 1
+  fi
+
+  printf 'ghcr.io/%s/collabspace-%s:%s\n' "$GHCR_OWNER" "$deployment" "$IMAGE_TAG"
+}
+
 apply_seed_job() {
   local deployment="$1"
-  local image="ghcr.io/${GHCR_OWNER}/collabspace-${deployment}:$IMAGE_TAG"
+  local image
+  image="$(resolve_seed_image "$deployment")"
   local cmd="${SEED_CMD[$deployment]}"
   local job_name="seed-${deployment}-$(date +%s)"
   local pull_secret_block=""
