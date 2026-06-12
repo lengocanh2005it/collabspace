@@ -56,8 +56,11 @@ USER_ENV="$REPO_ROOT/services/user-service/.env"
 WS_ENV="$REPO_ROOT/services/workspace-service/.env"
 TASK_ENV="$REPO_ROOT/services/task-service/.env"
 NOTIF_ENV="$REPO_ROOT/services/notification-service/.env"
+RABBITMQ_ENV="$REPO_ROOT/infrastructure/rabbitmq/.env"
+REDIS_ENV="$REPO_ROOT/infrastructure/redis/.env"
+REDIS_CONF="$REPO_ROOT/infrastructure/redis/redis.conf"
 
-for f in "$AUTH_ENV" "$USER_ENV" "$WS_ENV" "$TASK_ENV" "$NOTIF_ENV"; do
+for f in "$AUTH_ENV" "$USER_ENV" "$WS_ENV" "$TASK_ENV" "$NOTIF_ENV" "$RABBITMQ_ENV" "$REDIS_ENV"; do
   ensure_env "$f"
 done
 
@@ -102,5 +105,14 @@ done
 
 set_env_key "$AUTH_ENV" "REDIS_PASSWORD" "$redis_pass"
 set_env_key "$NOTIF_ENV" "REDIS_PASSWORD" "$redis_pass"
+set_env_key "$REDIS_ENV" "REDIS_PASSWORD" "$redis_pass"
 
-echo "Synced Vault secrets into service .env files."
+set_env_key "$RABBITMQ_ENV" "RABBITMQ_DEFAULT_USER" "$rmq_user"
+set_env_key "$RABBITMQ_ENV" "RABBITMQ_DEFAULT_PASS" "$rmq_pass"
+set_env_key "$RABBITMQ_ENV" "RABBITMQ_DEFAULT_VHOST" "collabspace"
+
+if [[ -f "$REDIS_CONF" ]]; then
+  sed -i.bak -E "s|^requirepass .*$|requirepass ${redis_pass}|" "$REDIS_CONF" && rm -f "${REDIS_CONF}.bak"
+fi
+
+echo "Synced Vault secrets into service and infrastructure env files."

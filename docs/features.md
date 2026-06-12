@@ -21,7 +21,7 @@ Tài liệu này là **nguồn chính** mô tả chức năng và mức độ ho
 |------|------------|---------|
 | Auth & Identity | **Done** | Register, OTP, login, session, `me`, đổi mật khẩu |
 | User Directory | **Done** | Profile, tìm kiếm, bulk hydrate, `username` cho mention |
-| Workspace | **Done** | CRUD, membership, mời / accept / reject, JWT qua auth gRPC |
+| Workspace | **Done** | CRUD, membership, mời / accept / reject, JWT qua auth gRPC, activity feed |
 | Project | **Done** | CRUD trong workspace (NestJS `workspace-service`) |
 | Task & Board | **Done** | Task CRUD, assign, status, board API, priority/due date/labels, xóa task, ES |
 | Comment & Mention | **Done** | Comment CRUD, `@username` + replica sync, notification mention |
@@ -81,6 +81,7 @@ Tài liệu này là **nguồn chính** mô tả chức năng và mức độ ho
 - Role membership: `owner`, `admin`, `member`
 - Idempotency-Key trên tạo workspace và invite
 - **JWT verification** qua auth gRPC (`AuthGuard`); dev fallback `X-User-Id` khi `ALLOW_DEV_IDENTITY_HEADERS=true`
+- **Activity feed** — `GET /api/v1/workspaces/:id/activity` — timeline `workspace_created`, `member_invited`, `member_joined`, `invitation_rejected`, `project_created`, `project_deleted`; `limit`/`offset` pagination; chỉ member được xem
 
 ---
 
@@ -130,8 +131,6 @@ Tài liệu này là **nguồn chính** mô tả chức năng và mức độ ho
 - Sửa / xóa mềm comment
 - Parse `@username`, resolve qua **user replica** (`username` sync từ RabbitMQ events); fallback hydrate từ user-service khi thiếu
 - Publish `comment_created` (assignee) và `comment_mentioned` (người được tag) qua outbox
-
-- Activity timeline workspace-level — `GET /api/v1/workspaces/:id/activity` — ghi nhận workspace_created, member_invited, member_joined, invitation_rejected, project_created, project_deleted
 
 ---
 

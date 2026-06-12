@@ -276,7 +276,7 @@ kubectl get pods -n collabspace
 kubectl get svc traefik -n collabspace
 ```
 
-Chart docs: [infrastructure/helm/README.md](infrastructure/helm/README.md). Legacy plain YAML: [infrastructure/k8s/README.md](infrastructure/k8s/README.md).
+Chart docs: [infrastructure/helm/README.md](infrastructure/helm/README.md). DigitalOcean production options: [docs/digitalocean-production-options.md](docs/digitalocean-production-options.md). Legacy plain YAML: [infrastructure/k8s/README.md](infrastructure/k8s/README.md).
 
 ### K8s Resource Summary
 
@@ -295,14 +295,14 @@ Chart docs: [infrastructure/helm/README.md](infrastructure/helm/README.md). Lega
 
 ## CI/CD Pipeline
 
-Jenkins pipeline stages:
-1. **Checkout** - Clone repository
-2. **Build & Test** - Install dependencies, run tests
-3. **Build Docker Image** - Create container image
-4. **Push Docker Image** - Push to registry
-5. **Deploy** - Update running containers
+GitHub Actions workflows:
 
-Jenkins is available at http://localhost:8081 when running docker-compose.jenkins.yml.
+1. `.github/workflows/ci.yml` — install, build, test on PRs and `main`.
+2. `.github/workflows/docker-deploy.yml` — build five service images, push to GHCR, deploy to a DigitalOcean Droplet over SSH.
+
+Droplet deployment guide: [docs/deployment-digitalocean-droplet.md](docs/deployment-digitalocean-droplet.md).
+
+Jenkins scaffolding is still available at http://localhost:8081 when running `docker-compose.jenkins.yml`, but GitHub Actions is the preferred path for Droplet deployment.
 
 ## Project Structure
 
