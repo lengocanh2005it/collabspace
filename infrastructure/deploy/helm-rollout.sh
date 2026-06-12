@@ -25,11 +25,16 @@ fi
 
 cd "$APP_DIR"
 
+# CI/workflow may export IMAGE_TAG before this script; phase0.env must not override it.
+saved_image_tag="${IMAGE_TAG:-}"
 if [[ -f "$PHASE0_ENV" ]]; then
   set -a
   # shellcheck disable=SC1090
   source "$PHASE0_ENV"
   set +a
+fi
+if [[ -n "$saved_image_tag" ]]; then
+  export IMAGE_TAG="$saved_image_tag"
 fi
 
 GHCR_OWNER="${GHCR_OWNER:-}"
@@ -109,6 +114,23 @@ echo "==> Helm dependency update..."
 helm dependency update "$CHART_DIR"
 
 adopt_namespace_for_helm
+
+unlock_stuck_helm_release() {
+  if ! helm status "$RELEASE" -n "$APP_NS" >/dev/null 2>&1; then
+    return
+  fi
+  local status rev
+  status="$(helm status "$RELEASE" -n "$APP_NS" 2>/dev/null | awk '/^STATUS:/ {print $2}')"
+  case "$status" in
+    pending-install|pending-upgrade|pending-rollback)
+      rev="$(helm status "$RELEASE" -n "$APP_NS" 2>/dev/null | awk '/^REVISION:/ {print $2}')"
+      echo "WARN: Release $RELEASE stuck in $status (revision $rev) — clearing pending lock..."
+      kubectl delete secret "sh.helm.release.v1.${RELEASE}.v${rev}" -n "$APP_NS" --ignore-not-found
+      ;;
+  esac
+}
+
+unlock_stuck_helm_release
 
 mapfile -t tag_sets < <(helm_image_tag_sets)
 
