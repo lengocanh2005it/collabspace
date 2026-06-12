@@ -110,8 +110,12 @@ else
   echo "WARN: No GHCR_TOKEN and no ghcr-credentials — image pull may fail if GHCR packages are private."
 fi
 
-echo "==> Helm dependency update..."
-helm dependency update "$CHART_DIR"
+if [[ "${SKIP_HELM_DEP_UPDATE:-}" == "true" ]]; then
+  echo "==> Helm dependency update skipped (pre-uploaded by CI)."
+else
+  echo "==> Helm dependency update..."
+  helm dependency update "$CHART_DIR"
+fi
 
 adopt_namespace_for_helm
 
@@ -167,11 +171,21 @@ for dep in auth-service user-service workspace-service task-service notification
   fi
 done
 
-echo "==> Waiting for application rollouts..."
+echo "==> Waiting for application rollouts (parallel)..."
+rollout_pids=()
 for dep in auth-service user-service workspace-service task-service notification-service; do
   if kubectl get deployment "$dep" -n "$APP_NS" >/dev/null 2>&1; then
-    kubectl rollout status deployment/"$dep" -n "$APP_NS" --timeout=300s
+    kubectl rollout status deployment/"$dep" -n "$APP_NS" --timeout=300s &
+    rollout_pids+=($!)
   fi
 done
+rollout_failed=0
+for pid in "${rollout_pids[@]}"; do
+  wait "$pid" || rollout_failed=$((rollout_failed + 1))
+done
+if [[ "$rollout_failed" -gt 0 ]]; then
+  echo "ERROR: $rollout_failed deployment(s) failed to roll out."
+  exit 1
+fi
 
 echo "Helm rollout finished."
