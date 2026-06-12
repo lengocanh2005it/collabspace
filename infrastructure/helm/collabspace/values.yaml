@@ -208,6 +208,10 @@ traefik:
 # --- Gateway routes (Traefik IngressRoute CRDs) ---
 gateway:
   enabled: true
+  # Public host/IP for Grafana root_url (override in values-prod via PROD_DOMAIN).
+  publicHost: ""
+  grafana:
+    expose: true
   rateLimit:
     average: 100
     burst: 200
@@ -292,9 +296,9 @@ grafana:
           editable: true
           options:
             path: /var/lib/grafana/dashboards/default
+  # root_url set via env in values-prod when gateway.publicHost is set.
   grafana.ini:
     server:
-      root_url: "%(protocol)s://%(domain)s/grafana"
       serve_from_sub_path: true
 
 # --- Loki sub-chart config (single binary, filesystem storage) ---

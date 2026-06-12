@@ -1,0 +1,22 @@
+{{- if and .Values.gateway.enabled .Values.observability.grafana.enabled .Values.gateway.grafana.expose }}
+{{- $ns := include "collabspace.namespace" . }}
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: collabspace-grafana
+  namespace: {{ $ns }}
+  labels:
+    app.kubernetes.io/part-of: collabspace
+spec:
+  entryPoints:
+    - web
+    - websecure
+  routes:
+    - match: PathPrefix(`/grafana`)
+      kind: Rule
+      priority: 180
+      services:
+        - name: grafana
+          port: 80
+{{- end }}

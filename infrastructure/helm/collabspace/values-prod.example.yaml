@@ -101,10 +101,18 @@ traefik:
     type: LoadBalancer
 
 gateway:
+  publicHost: REPLACE_ME_DOMAIN
+  grafana:
+    expose: true
   cors:
     allowOrigins:
       - "https://REPLACE_ME_DOMAIN"
       - "http://REPLACE_ME_DOMAIN"
+
+grafana:
+  env:
+    GF_SERVER_ROOT_URL: "http://REPLACE_ME_DOMAIN/grafana/"
+    GF_SERVER_SERVE_FROM_SUB_PATH: "true"
 
 networkPolicies:
   enabled: true
