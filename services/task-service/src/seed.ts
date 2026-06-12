@@ -147,7 +147,7 @@ async function seedTask(
   }
 
   await tasks.updateOne(
-    { _id: taskSeed.id },
+    { _id: taskSeed.id as unknown as mongoose.Types.ObjectId },
     {
       $set: {
         _id: taskSeed.id,
