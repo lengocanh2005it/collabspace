@@ -1,32 +1,37 @@
-FROM node:20-alpine AS builder
+# syntax=docker/dockerfile:1.7
 
+FROM node:20-alpine AS base
+RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
+
+FROM base AS deps
 WORKDIR /app
-
-RUN corepack enable && corepack prepare pnpm@8.15.9 --activate
-
 COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile
+RUN --mount=type=cache,id=pnpm-workspace,target=/root/.local/share/pnpm/store \
+    pnpm install --frozen-lockfile
 
+FROM base AS prod-deps
+WORKDIR /app
+COPY package.json pnpm-lock.yaml ./
+RUN --mount=type=cache,id=pnpm-workspace,target=/root/.local/share/pnpm/store \
+    pnpm install --frozen-lockfile --prod
+
+FROM deps AS builder
+WORKDIR /app
 COPY . .
 RUN pnpm run build
 
-FROM node:20-alpine
-
+FROM node:20-alpine AS runner
 WORKDIR /app
-
-RUN apk add --no-cache wget
-RUN corepack enable && corepack prepare pnpm@8.15.9 --activate
-
+ENV NODE_ENV=production
+RUN apk add --no-cache wget \
+    && addgroup -S appgroup \
+    && adduser -S appuser -G appgroup
+COPY --from=prod-deps /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/proto ./proto
 COPY --from=builder /app/package.json ./
-
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 USER appuser
-
 EXPOSE 8080
-
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD wget -qO- http://localhost:8080/api/v1/workspaces/health/ready || exit 1
-
 CMD ["node", "dist/main.js"]

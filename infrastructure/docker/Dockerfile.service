@@ -2,30 +2,51 @@
 
 ARG SERVICE_NAME
 
-FROM node:20-alpine AS app
-
+# --- Stage 1: Install all deps (dev + prod) ---
+FROM node:20-alpine AS deps
 ARG SERVICE_NAME
-ENV SERVICE_NAME=${SERVICE_NAME}
-ENV NODE_ENV=production
-
+RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
 WORKDIR /app
-
-RUN apk add --no-cache wget \
-  && corepack enable \
-  && corepack prepare pnpm@9.15.0 --activate
-
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY packages/shared/package.json packages/shared/package.json
 COPY services/${SERVICE_NAME}/package.json services/${SERVICE_NAME}/package.json
+RUN --mount=type=cache,id=pnpm-ci,target=/root/.local/share/pnpm/store \
+    pnpm install --frozen-lockfile
 
-RUN pnpm install --frozen-lockfile
-
+# --- Stage 2: Build shared + service ---
+FROM deps AS builder
+ARG SERVICE_NAME
 COPY packages packages
 COPY services/${SERVICE_NAME} services/${SERVICE_NAME}
-
 RUN pnpm --filter @collabspace/shared run build \
   && pnpm --filter ${SERVICE_NAME} run build
 
-WORKDIR /app/services/${SERVICE_NAME}
+# --- Stage 3: Production deps only ---
+FROM node:20-alpine AS prod-deps
+ARG SERVICE_NAME
+RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
+WORKDIR /app
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY packages/shared/package.json packages/shared/package.json
+COPY services/${SERVICE_NAME}/package.json services/${SERVICE_NAME}/package.json
+RUN --mount=type=cache,id=pnpm-ci,target=/root/.local/share/pnpm/store \
+    pnpm install --frozen-lockfile --prod
 
-CMD ["pnpm", "run", "start:prod"]
+# --- Stage 4: Production runner ---
+FROM node:20-alpine AS runner
+ARG SERVICE_NAME
+ENV SERVICE_NAME=${SERVICE_NAME}
+ENV NODE_ENV=production
+WORKDIR /app
+RUN apk add --no-cache wget \
+    && addgroup -S appgroup \
+    && adduser -S appuser -G appgroup
+COPY --from=prod-deps /app/node_modules ./node_modules
+COPY --from=prod-deps /app/packages/shared/node_modules ./packages/shared/node_modules
+COPY --from=builder /app/packages/shared/dist ./packages/shared/dist
+COPY --from=builder /app/services/${SERVICE_NAME}/dist ./services/${SERVICE_NAME}/dist
+COPY --from=builder /app/services/${SERVICE_NAME}/proto ./services/${SERVICE_NAME}/proto
+COPY --from=builder /app/services/${SERVICE_NAME}/package.json ./services/${SERVICE_NAME}/package.json
+USER appuser
+WORKDIR /app/services/${SERVICE_NAME}
+CMD ["node", "dist/main.js"]
