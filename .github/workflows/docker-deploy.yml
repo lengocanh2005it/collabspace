@@ -140,7 +140,11 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     needs: [detect-changes, build-images]
-    if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
+    # always() cho phép deploy chạy kể cả khi build-images bị skip (helm-only changes)
+    if: |
+      always() &&
+      !failure() &&
+      (github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch')
     steps:
       - name: Checkout (for helm chart hash)
         uses: actions/checkout@v4
