@@ -63,12 +63,14 @@ export class WorkspaceOutboxService {
       [limit ?? batchSize],
     )) as Array<Record<string, unknown>>;
 
-    return rows.map((row) => ({
-      id: String(row.id),
-      eventType: String(row.eventType ?? row.event_type),
-      payload: (row.payload ?? {}) as Record<string, unknown>,
-      attemptCount: Number(row.attemptCount ?? row.attempt_count ?? 0),
-    }));
+    return rows
+      .filter((row) => typeof row.id === 'string' && row.id.length > 0)
+      .map((row) => ({
+        id: row.id as string,
+        eventType: String(row.eventType ?? row.event_type),
+        payload: (row.payload ?? {}) as Record<string, unknown>,
+        attemptCount: Number(row.attemptCount ?? row.attempt_count ?? 0),
+      }));
   }
 
   async markProcessed(id: string): Promise<void> {
