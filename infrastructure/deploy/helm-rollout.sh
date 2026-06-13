@@ -146,6 +146,33 @@ helm upgrade --install "$RELEASE" "$CHART_DIR" \
   -f "$VALUES_PROD" \
   "${tag_sets[@]}"
 
+# Persist the deployed image tag back into values-prod.yaml so that
+# subsequent helm-only deploys (no IMAGE_TAG) don't revert to an old tag.
+if [[ -n "${IMAGE_TAG:-}" ]]; then
+  echo "==> Persisting image tag ${IMAGE_TAG} into values-prod.yaml..."
+  python3 - <<PYEOF
+import re, sys
+
+tag = "${IMAGE_TAG}"
+services = ["auth-service", "user-service", "workspace-service", "task-service", "notification-service"]
+
+with open("${VALUES_PROD}", "r") as f:
+    content = f.read()
+
+for svc in services:
+    # Match the service block and replace its image.tag value.
+    # Pattern: "  <svc>:\n    ...\n      tag: <anything>"
+    pattern = r'(  ' + re.escape(svc) + r':.*?image:\s*\n\s+repository:[^\n]+\n\s+tag:\s*)\S+'
+    replacement = r'\g<1>' + tag
+    content = re.sub(pattern, replacement, content, flags=re.DOTALL)
+
+with open("${VALUES_PROD}", "w") as f:
+    f.write(content)
+
+print(f"Updated image tags to {tag}")
+PYEOF
+fi
+
 echo "==> Scaling down Postgres app deployments (migration window)..."
 for dep in auth-service user-service workspace-service; do
   if kubectl get deployment "$dep" -n "$APP_NS" >/dev/null 2>&1; then
