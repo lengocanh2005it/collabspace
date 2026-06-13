@@ -271,40 +271,57 @@ For cross-service changes:
 
 ## Load Testing
 
-Path:
+Path: `infrastructure/load-testing` — see [infrastructure/load-testing/README.md](../../infrastructure/load-testing/README.md).
 
-- `infrastructure/load-testing`
+**Scenarios (gateway):**
 
-k6 scripts exist for:
+| Script | Purpose |
+|--------|---------|
+| `k6/scenarios/smoke.js` | Health all 5 app services (low VU) |
+| `k6/scenarios/demo-flow.js` | Login seeded demo users → read workspaces/tasks/notifications |
 
-- auth-service
-- user-service
-- workspace-service
-- task-service
-- notification-service
+```bash
+BASE_URL=http://localhost/api/v1 ./infrastructure/load-testing/run-load-test.sh smoke
+BASE_URL=http://<HOST>/api/v1 GRAFANA_URL=http://<HOST>/grafana GRAFANA_PASSWORD=... \
+  ./infrastructure/load-testing/run-load-test.sh demo-flow
+```
 
-When endpoints change, update the matching k6 script and `config.json`.
+Prod smoke: `infrastructure/deploy/run-k6-smoke-prod.sh`
+
+Legacy per-service scripts under `k6/scripts/` — update when health paths change.
 
 ## Observability Workflow
 
-Monitoring:
+Canonical guide: [docs/observability.md](../../docs/observability.md).
 
-- Prometheus config: `infrastructure/monitoring/prometheus.yml`
+### Kubernetes (Helm — production path)
+
+| Component | Location |
+|-----------|----------|
+| Prometheus + scrape config | `infrastructure/helm/collabspace/templates/observability/prometheus.yaml` |
+| Grafana dashboards (provisioned) | `infrastructure/helm/collabspace/dashboards/` → ConfigMap `collabspace-grafana-dashboards` |
+| Loki + Promtail | Helm subcharts in `values.yaml` (`observability.loki`, `observability.promtail`) |
+| Network policies (scrape, Loki, Grafana) | `templates/network-policies.yaml` |
+| `metricsAuthToken` | `global.secrets.metricsAuthToken` → app secrets + `prometheus-metrics-auth` |
+
+**Grafana folder `CollabSpace`:** Service Health · App Logs (trends only) · Load Test Run.  
+**Log tail/search:** Grafana **Explore → Loki** (not embedded log panels).
+
+Datasource UIDs in dashboard JSON: `prometheus`, `loki`.
+
+### Docker Compose (local)
+
+- Prometheus: `infrastructure/monitoring/prometheus.yml`
 - Alert rules: `infrastructure/monitoring/alert-rules.yml`
 - Alertmanager: `infrastructure/monitoring/alertmanager.yml`
-- Docker overlay: `infrastructure/docker/docker-compose.monitoring.yml`
-- Infra exporters overlay: `infrastructure/docker/docker-compose.exporters.yml`
-- Grafana deployment: `infrastructure/monitoring/grafana-deployment.yaml`
-- Grafana dashboard: `infrastructure/monitoring/grafana-dashboards/service-health.json`
-- K8s Prometheus: `infrastructure/k8s/prometheus-deployment.yaml`
-- K8s exporters: `infrastructure/k8s/exporters-deployment.yaml`
-- Sync K8s alert rules: `infrastructure/k8s/scripts/sync-prometheus-alert-rules.ps1`
+- Overlays: `docker-compose.monitoring.yml`, `docker-compose.exporters.yml`, `docker-compose.logging.yml`, `docker-compose.loadtest.yml`
+- Legacy K8s YAML (reference): `infrastructure/k8s/prometheus-deployment.yaml`, `infrastructure/monitoring/grafana-deployment.yaml`
+- Sync K8s alert rules (legacy manifests): `infrastructure/k8s/scripts/sync-prometheus-alert-rules.ps1`
 
-Logging:
+### Logging stack choice
 
-- Elasticsearch: `infrastructure/logging/elasticsearch-deployment.yaml`
-- Kibana: `infrastructure/logging/kibana-deployment.yaml`
-- Logstash: `infrastructure/logging/logstash-config.conf`
+- **K8s prod:** Loki + Promtail (enabled in Helm).
+- **Docker optional:** Elasticsearch/Kibana (`docker-compose.logging.yml`) — không dùng song song với Loki trên cùng môi trường.
 
 Tracing:
 
@@ -316,8 +333,11 @@ Rules:
 
 - Health endpoints should expose enough readiness detail to debug database/message dependencies.
 - Startup logs in implemented services currently include readiness mode and check statuses.
+- Health endpoints should expose enough readiness detail to debug database/message dependencies.
 - Keep health endpoints stable because Docker, k8s, load tests, and dashboards may depend on them.
 - Prometheus scrape paths must match service routes (`/api/v1/*/metrics`).
+- Prometheus on K8s must use ServiceAccount `prometheus` and Bearer token when `metricsAuthToken` is set.
+- App log investigation: Grafana Explore → Loki; dashboard **App Logs** is trends only.
 
 ## CI/CD Workflow
 

@@ -39,7 +39,7 @@ services/
 | Projects, tasks, comments | task-service | `services/task-service` | Done |
 | Notifications, events | notification-service | `services/notification-service` | Done |
 | Routing | api-gateway | `api-gateway` | Config |
-| Docker, k8s, monitoring | infrastructure | `infrastructure` | Partial |
+| Docker, k8s, monitoring | infrastructure | `infrastructure` | Partial — K8s Grafana/Loki/k6 ✅; alert routing ⬜ |
 
 ## Doc map — đọc file nào?
 

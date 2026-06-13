@@ -35,6 +35,7 @@ Chỉ mục tài liệu dự án (tiếng Việt có dấu). Tài liệu kỹ th
 | [backup-policy.md](./backup-policy.md) | Chính sách backup & phục hồi |
 | [tracing-setup.md](./tracing-setup.md) | Cấu hình distributed tracing |
 | [resilience-overview.md](./resilience-overview.md) | Tổng quan design for failure |
+| [observability.md](./observability.md) | **Grafana, Prometheus, Loki, k6** — dashboard & vận hành |
 
 ## Vận hành
 

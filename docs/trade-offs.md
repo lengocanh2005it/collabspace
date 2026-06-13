@@ -151,7 +151,7 @@ Chi tiết: [cross-service-data.md](./cross-service-data.md)
 | **Chọn** | ✅ Middleware 5 services + S2S HTTP forward | |
 | **Gain** | Tra cứu log/response theo một ID; gateway → auth verify → downstream | |
 | **Cost** | Chưa inject `requestId` vào mọi log line; gRPC chưa carry metadata | |
-| **Infra tiếp** | ELK/Loki parse field; optional OTel trace link | |
+| **Infra tiếp** | Loki + Explore; k6 + Load Test dashboard | ELK chỉ Docker profile |
 
 Chi tiết: `.claude/docs/service-contracts.md` → Correlation ID.
 

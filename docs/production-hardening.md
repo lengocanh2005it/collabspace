@@ -35,12 +35,17 @@ Dùng trước khi expose CollabSpace ra ngoài môi trường local/demo.
 ## Quan sát (Observability)
 
 - [x] Prometheus + Alertmanager + alert rules (`infrastructure/monitoring/`).
-- [x] Infra exporters (Docker: `docker-compose.exporters.yml`; K8s: `exporters-deployment.yaml`).
-- [ ] K8s: apply monitoring stack và sync rules qua `k8s/scripts/sync-prometheus-alert-rules.ps1` trên cluster đích.
-- [ ] Grafana datasource UID `prometheus` khớp dashboard JSON trong môi trường của bạn.
+- [x] Infra exporters (Docker: `docker-compose.exporters.yml`; K8s: Helm `templates/observability/exporters.yaml`).
+- [x] K8s Helm stack: Prometheus, Grafana (`/grafana`), Loki, Promtail — [docs/observability.md](./observability.md).
+- [x] Grafana dashboards provisioned (`service-health`, `logs-errors` → **App Logs**, `load-test-run`).
+- [x] Grafana datasource UID `prometheus` / `loki` khớp dashboard JSON.
+- [x] Prometheus scrape app + Traefik; `metricsAuthToken` + SA `prometheus`.
+- [ ] Sync `alert-rules.yml` vào Prometheus ConfigMap trên cluster đích (nếu chưa).
+- [ ] Alertmanager receiver (Slack/email) test trên staging.
 - [x] Runbook liên kết từ alert (`docs/runbooks/`).
 - [ ] Drill readiness định kỳ — chạy `infrastructure/resilience/drills/verify-readiness.sh` sau deploy.
 - [ ] `TRACING_ENABLED=true` chỉ khi Jaeger/OTLP collector reachable.
+- [ ] k6 capacity baseline document (P3).
 
 ## Chaos / DR
 
@@ -65,6 +70,7 @@ Helm: `infrastructure/helm/collabspace/values.yaml` → `global.secrets` chỉ c
 ## Tài liệu liên quan
 
 - Vault + ESO: `infrastructure/vault/README.md`
+- **Observability (Grafana/Loki/k6):** `docs/observability.md`
 - Chính sách resilience: `.claude/docs/resilience.md`
 - Backup: `docs/backup-policy.md`
 - Tổng quan resilience: `docs/resilience-overview.md`

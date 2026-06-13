@@ -297,7 +297,9 @@ push main (hoặc workflow_dispatch)
 | TLS | cert-manager + Let's Encrypt trên Traefik |
 | Backup | CronJob `pg_dump` + `mongodump` → DO Spaces / S3 |
 | Restore drill | Test restore 1 lần; ghi RTO thực tế |
-| Metrics | `metricsAuthToken`; Prometheus scrape nội bộ |
+| Metrics | `metricsAuthToken`; Prometheus scrape; Grafana `/grafana` — [observability.md](./observability.md) |
+| Logs | Loki + Promtail; tail qua Grafana **Explore** (không ELK trên K8s) |
+| Load test | k6 `smoke` / `demo-flow` + dashboard **Load Test Run** |
 | NetworkPolicy | Giữ `networkPolicies.enabled: true` |
 | Firewall | Không expose Traefik dashboard `8080`, Vault `8200` |
 | Runbook | On-call biết restart / restore / rotate secret |

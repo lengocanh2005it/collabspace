@@ -17,7 +17,7 @@ infrastructure/helm/
     └── templates/
         ├── apps/           # microservice Deployments, Services, HPA, PDB
         ├── gateway/        # Traefik IngressRoute + Middleware
-        ├── observability/  # Prometheus + redis-exporter
+        ├── observability/  # Prometheus, Grafana dashboards CM, exporters, alertmanager
         └── network-policies.yaml
 ```
 
@@ -121,7 +121,7 @@ helm upgrade --install collabspace . \
 | Traefik | Official Traefik chart | LoadBalancer / NodePort gateway |
 | Apps | Custom templates | auth, user, workspace (8080), task, notification |
 | Gateway routes | IngressRoute CRDs | Forward-auth via auth-service |
-| Observability | Optional Prometheus | Disabled in `values-local.yaml` |
+| Observability | Helm subcharts + templates | Prometheus, Grafana (`/grafana`), Loki, Promtail; dashboards in `dashboards/` |
 
 ## Service hostnames (in-cluster)
 
@@ -156,4 +156,17 @@ kubectl delete pvc -n collabspace --all
 | IngressRoute not routing | `kubectl get ingressroute -n collabspace`; Traefik CRDs installed |
 | workspace 502 | Service port must be **8080**, not 3000 |
 | Mongo auth errors | Align `global.secrets.mongoPassword` with `mongodb.auth.rootPassword` |
-| Prometheus 401 on `/metrics` | Set scrape `bearer_token` or header `X-Metrics-Token` to match `metricsAuthToken` |
+## Grafana & observability (K8s)
+
+Public URL (when `gateway.grafana.expose: true`): `http://<LOAD_BALANCER_IP>/grafana/`
+
+Provisioned dashboards (folder **CollabSpace**): Service Health, App Logs, Load Test Run.  
+Full guide: [docs/observability.md](../../docs/observability.md).
+
+| Issue | Check |
+|-------|-------|
+| Grafana 404 | `kubectl get ingressroute -n collabspace`; NetworkPolicy `allow-traefik-to-grafana` |
+| Dashboard empty | Prometheus targets; `metricsAuthToken` + `prometheus-metrics-auth` secret |
+| No app targets in Prometheus | Pod must use `serviceAccountName: prometheus` (not `default`) |
+| Logs noisy (exporter/canary) | Use **App Logs** dashboard (5 apps only); disable `loki.lokiCanary` |
+| Prometheus 401 on `/metrics` | Scrape Bearer token must match `metricsAuthToken` |

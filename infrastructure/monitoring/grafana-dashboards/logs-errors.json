@@ -12,12 +12,18 @@
       }
     ]
   },
-  "description": "CollabSpace application logs — errors, volume, and live tail by service",
+  "description": "Application log trends only — use Explore for live tail and search",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
   "id": null,
   "links": [
+    {
+      "icon": "compass",
+      "title": "Explore (Loki)",
+      "type": "link",
+      "url": "/grafana/explore?orgId=1"
+    },
     {
       "icon": "dashboard",
       "title": "Service Health",
@@ -34,11 +40,22 @@
   "liveNow": false,
   "panels": [
     {
+      "gridPos": { "h": 4, "w": 24, "x": 0, "y": 0 },
+      "id": 50,
+      "options": {
+        "code": { "language": "plaintext", "showLineNumbers": false, "showMiniMap": false },
+        "content": "### Logs live tail → **Explore** (không xem ở đây)\n\nDashboard này chỉ **chart xu hướng** log app. Để search / tail chi tiết:\n\n1. Menu trái → **Explore** → datasource **Loki**\n2. Query: `{namespace=\"collabspace\", app=\"$service\"}`\n3. Thêm filter: `|~ \"(?i)(error|exception)\"`\n\nHoặc bấm **Explore Logs (Loki)** trên thanh dashboard (theo service đang chọn).\n\n_Exporter / Loki canary / infra không hiện ở đây — tránh noise._",
+        "mode": "markdown"
+      },
+      "title": "Where to read logs",
+      "type": "text"
+    },
+    {
       "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 4 },
       "id": 100,
       "panels": [],
-      "title": "Overview",
+      "title": "App Log Trends",
       "type": "row"
     },
     {
@@ -48,31 +65,18 @@
           "color": { "mode": "palette-classic" },
           "custom": {
             "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
             "drawStyle": "bars",
             "fillOpacity": 80,
-            "gradientMode": "none",
-            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
-            "lineInterpolation": "linear",
             "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": { "type": "linear" },
             "showPoints": "never",
-            "spanNulls": false,
-            "stacking": { "group": "A", "mode": "normal" },
-            "thresholdsStyle": { "mode": "off" }
+            "stacking": { "group": "A", "mode": "normal" }
           },
-          "mappings": [],
           "min": 0,
-          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
           "unit": "short"
         },
         "overrides": []
       },
-      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 1 },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 5 },
       "id": 1,
       "options": {
         "legend": { "calcs": ["sum"], "displayMode": "table", "placement": "bottom", "showLegend": true },
@@ -81,12 +85,12 @@
       "targets": [
         {
           "datasource": { "type": "loki", "uid": "loki" },
-          "expr": "sum by (app) (count_over_time({namespace=\"collabspace\", app=~\"$service\"} [1m]))",
+          "expr": "sum by (app) (count_over_time({namespace=\"collabspace\", app=\"$service\"} [1m]))",
           "legendFormat": "{{app}}",
           "refId": "A"
         }
       ],
-      "title": "Log Volume (lines/min)",
+      "title": "Log Volume — $service",
       "type": "timeseries"
     },
     {
@@ -95,32 +99,18 @@
         "defaults": {
           "color": { "mode": "palette-classic" },
           "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
             "drawStyle": "line",
             "fillOpacity": 25,
-            "gradientMode": "opacity",
-            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
             "lineInterpolation": "smooth",
             "lineWidth": 2,
-            "pointSize": 4,
-            "scaleDistribution": { "type": "linear" },
-            "showPoints": "never",
-            "spanNulls": false,
-            "stacking": { "group": "A", "mode": "none" },
-            "thresholdsStyle": { "mode": "off" }
+            "showPoints": "never"
           },
-          "mappings": [],
           "min": 0,
-          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }] },
           "unit": "short"
         },
         "overrides": []
       },
-      "gridPos": { "h": 7, "w": 12, "x": 12, "y": 1 },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 5 },
       "id": 2,
       "options": {
         "legend": { "calcs": ["sum"], "displayMode": "table", "placement": "bottom", "showLegend": true },
@@ -129,92 +119,34 @@
       "targets": [
         {
           "datasource": { "type": "loki", "uid": "loki" },
-          "expr": "sum by (app) (count_over_time({namespace=\"collabspace\", app=~\"$service\"} |~ \"(?i)(error|exception|fatal|fail|warn)\" [1m]))",
-          "legendFormat": "{{app}}",
+          "expr": "sum(count_over_time({namespace=\"collabspace\", app=\"$service\"} |~ \"(?i)(error|exception|fatal)\" [1m]))",
+          "legendFormat": "errors",
           "refId": "A"
         }
       ],
-      "title": "Error / Warn Log Lines (per min)",
+      "title": "Error Lines — $service",
       "type": "timeseries"
-    },
-    {
-      "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 8 },
-      "id": 101,
-      "panels": [],
-      "title": "Live Logs",
-      "type": "row"
-    },
-    {
-      "datasource": { "type": "loki", "uid": "loki" },
-      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 9 },
-      "id": 3,
-      "options": {
-        "dedupStrategy": "none",
-        "enableLogDetails": true,
-        "prettifyLogMessage": false,
-        "showCommonLabels": false,
-        "showLabels": true,
-        "showTime": true,
-        "sortOrder": "Descending",
-        "wrapLogMessage": true
-      },
-      "targets": [
-        {
-          "datasource": { "type": "loki", "uid": "loki" },
-          "expr": "{namespace=\"collabspace\", app=~\"$service\"} |~ \"(?i)(error|exception|fatal|fail)\"",
-          "refId": "A"
-        }
-      ],
-      "title": "Recent Errors",
-      "type": "logs"
-    },
-    {
-      "datasource": { "type": "loki", "uid": "loki" },
-      "gridPos": { "h": 12, "w": 24, "x": 0, "y": 19 },
-      "id": 4,
-      "options": {
-        "dedupStrategy": "none",
-        "enableLogDetails": true,
-        "prettifyLogMessage": false,
-        "showCommonLabels": false,
-        "showLabels": true,
-        "showTime": true,
-        "sortOrder": "Descending",
-        "wrapLogMessage": true
-      },
-      "targets": [
-        {
-          "datasource": { "type": "loki", "uid": "loki" },
-          "expr": "{namespace=\"collabspace\", app=~\"$service\"}",
-          "refId": "A"
-        }
-      ],
-      "title": "All Logs ($service)",
-      "type": "logs"
     }
   ],
-  "refresh": "10s",
+  "refresh": "30s",
   "schemaVersion": 38,
   "style": "dark",
-  "tags": ["collabspace", "logs", "loki"],
+  "tags": ["collabspace", "logs", "loki", "overview"],
   "templating": {
     "list": [
       {
-        "allValue": ".*",
-        "current": { "selected": true, "text": "All", "value": "$__all" },
+        "current": { "selected": true, "text": "auth-service", "value": "auth-service" },
         "datasource": { "type": "loki", "uid": "loki" },
-        "definition": "label_values({namespace=\"collabspace\"}, app)",
+        "definition": "label_values({namespace=\"collabspace\", app=~\"auth-service|user-service|workspace-service|task-service|notification-service\"}, app)",
         "hide": 0,
-        "includeAll": true,
-        "label": "Service",
-        "multi": true,
+        "includeAll": false,
+        "label": "App",
+        "multi": false,
         "name": "service",
         "options": [],
-        "query": "label_values({namespace=\"collabspace\"}, app)",
+        "query": "label_values({namespace=\"collabspace\", app=~\"auth-service|user-service|workspace-service|task-service|notification-service\"}, app)",
         "refresh": 2,
-        "regex": "/^(auth-service|user-service|workspace-service|task-service|notification-service|traefik|prometheus|postgres-exporter|redis-exporter|mongodb-exporter|rabbitmq)$/",
-        "skipUrlSync": false,
+        "regex": "",
         "sort": 1,
         "type": "query"
       }
@@ -223,8 +155,8 @@
   "time": { "from": "now-1h", "to": "now" },
   "timepicker": {},
   "timezone": "browser",
-  "title": "CollabSpace Logs & Errors",
+  "title": "CollabSpace App Logs",
   "uid": "collabspace-logs-errors",
-  "version": 1,
+  "version": 2,
   "weekStart": ""
 }

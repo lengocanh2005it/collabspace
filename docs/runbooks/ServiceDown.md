@@ -12,8 +12,9 @@
 ## Chẩn đoán
 
 1. Kiểm tra trạng thái container/pod: `docker ps` hoặc `kubectl -n collabspace get pods -l app=<service>`.
-2. Xem log: `docker logs <container>` hoặc `kubectl logs deploy/<service>`.
-3. Verify `/health/live` trả 200 (process sống) so với `/health/ready` (dependency OK).
+2. Xem log: `kubectl logs deploy/<service>` hoặc Grafana **Explore → Loki** — `{namespace="collabspace", app="<service>"}` ([observability.md](../observability.md)).
+3. Metric: Grafana **Service Health** hoặc `up{job="<service>"}` trên Prometheus.
+4. Verify `/health/live` trả 200 (process sống) so với `/health/ready` (dependency OK).
 
 ## Khắc phục
 

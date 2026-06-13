@@ -21,6 +21,7 @@ Khi sửa code mà **ảnh hưởng hành vi, contract, hoặc cách vận hành
 | Vault / ESO / shared secret keys | `infrastructure/vault/README.md`, `infrastructure/vault/k8s/`, `docs/production-hardening.md`, seed/sync scripts |
 | Auth, trust boundary, internal API | `docs/production-hardening.md`, `service-contracts.md`, `docs/trade-offs.md` nếu quyết định mới |
 | Health / readiness / degradation | `.claude/docs/resilience.md`, `docs/resilience-overview.md` |
+| Grafana / Prometheus / Loki / k6 / dashboards | `docs/observability.md`, `infrastructure/helm/README.md`, `infrastructure/load-testing/README.md`, `.claude/docs/development-workflows.md` |
 | Tính năng Done / Planned / Partial | `docs/features.md`, `docs/mvp-demo-scope.md`, `.claude/docs/mvp-roadmap.md` |
 | Backlog team đóng mục | `docs/team/application-backlog.md` hoặc `phan-phu-tho-infrastructure-backlog.md` |
 | Port, global prefix, gateway route | `CLAUDE.md`, `api-gateway/`, `README.md` nếu quick start đổi |

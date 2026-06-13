@@ -70,7 +70,7 @@ Xem checklist đầy đủ: [production-hardening.md](./production-hardening.md)
 |----------|------------|
 | HashiCorp Vault + ESO (staging/prod) | **Partial** — scaffold `infrastructure/vault/` (dev Compose, seed/sync, ESO YAML); chưa deploy Vault HA + rotation operational |
 | CI/CD pipeline (GH Actions / Jenkinsfile) | **Partial** — CI + GHCR build ✅; deploy k3s/Helm chưa |
-| Monitoring stack trên K8s + alert routing | Manifest có, chưa deploy operational |
+| Monitoring stack trên K8s + alert routing | **Partial** — Prometheus/Grafana/Loki deploy trên Droplet prod ✅; alert routing Slack ⬜; exporter DB scrape ⬜ |
 | Backup tự động + restore drill | Policy + `backup-*.sh` có; chưa CronJob / restore script |
 | ELK ship log từ container | Compose có, chưa nối agent |
 | Tracing prod (`TRACING_ENABLED`) | Optional compose; chưa staging default |

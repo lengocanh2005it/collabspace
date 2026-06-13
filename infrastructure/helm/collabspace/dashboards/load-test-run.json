@@ -34,7 +34,7 @@
     },
     {
       "icon": "dashboard",
-      "title": "Logs & Errors",
+      "title": "App Logs",
       "type": "link",
       "url": "/grafana/d/collabspace-logs-errors/collabspace-logs-errors"
     }

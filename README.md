@@ -235,14 +235,24 @@ Protected routes: **Authorize** → Bearer JWT. Internal S2S routes (user/worksp
 
 ### Dashboards
 
-| Tool | URL | Purpose |
-|------|-----|---------|
+| Tool | URL (local Compose) | Purpose |
+|------|---------------------|---------|
 | Grafana | http://localhost:3005 | Metrics dashboards |
 | Prometheus | http://localhost:9090 | Metrics queries |
-| Kibana | http://localhost:5601 | Log exploration |
+| Kibana | http://localhost:5601 | Log exploration (Compose profile) |
 | Jaeger | http://localhost:16686 | Trace analysis |
 | Traefik | http://localhost:8080 | API Gateway dashboard |
 | RabbitMQ | http://localhost:15672 | Message queue management |
+
+**Kubernetes (Helm):** Grafana tại `http://<HOST>/grafana/` — folder **CollabSpace** (Service Health, App Logs, Load Test Run). Log tail: **Explore → Loki**. Chi tiết: [docs/observability.md](docs/observability.md).
+
+### Load testing (k6)
+
+```bash
+BASE_URL=http://localhost/api/v1 ./infrastructure/load-testing/run-load-test.sh smoke
+```
+
+Xem [infrastructure/load-testing/README.md](infrastructure/load-testing/README.md).
 
 ### Default Credentials (Development Only)
 
@@ -380,5 +390,5 @@ All five application services run on **NestJS** (`workspace-service` listens on 
 - **MVP automation**: `scripts/demo-e2e.sh` / `.ps1` — 7-step story through Traefik.
 - **Docker Tooling**: Node 20, NestJS builds, `pnpm`. Restart policies and memory limits applied.
 - **K8s / Helm**: Health probes, HPAs, ConfigMaps, Vault ESO scaffold (`infrastructure/vault/`).
-- **Observability**: Prometheus metrics, optional Jaeger/ELK profiles, Grafana dashboards.
+- **Observability**: Prometheus + Grafana + Loki (K8s Helm); Docker profiles ELK/Jaeger tùy chọn; k6 load tests — [docs/observability.md](docs/observability.md).
 - **Dev Tooling**: `infrastructure/dev/` (`dev.bat`, `stop_all.bat`, `dev-mode.ps1`).

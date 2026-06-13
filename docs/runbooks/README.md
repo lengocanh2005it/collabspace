@@ -28,3 +28,16 @@ curl -s -o /dev/null -w "%{http_code}" http://localhost:3004/api/v1/notification
 Drill tự động: `infrastructure/resilience/drills/verify-readiness.ps1` (Windows) hoặc `verify-readiness.sh` (Linux/macOS).
 
 Chính sách backup: [backup-policy.md](../backup-policy.md). Backlog automation infra: [phan-phu-tho-infrastructure-backlog.md](../team/phan-phu-tho-infrastructure-backlog.md).
+
+## Grafana / Loki (debug nhanh)
+
+Hướng dẫn đầy đủ: [observability.md](../observability.md).
+
+| Bước | Hành động |
+|------|-----------|
+| Metric | Dashboard **Service Health** hoặc Explore → Prometheus (`up{job="..."}`) |
+| Log trend | Dashboard **App Logs** (chỉ 5 app) |
+| Log tail | **Explore → Loki** — `{namespace="collabspace", app="auth-service"}` |
+| Load test | Dashboard **Load Test Run** + chạy `infrastructure/load-testing/run-load-test.sh` |
+
+K8s prod Grafana: `http://<HOST>/grafana/` (Traefik subpath).

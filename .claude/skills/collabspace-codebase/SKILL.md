@@ -20,6 +20,7 @@ Read these files as needed:
 - `.claude/docs/mvp-roadmap.md`
 - `docs/team/phan-phu-tho-infrastructure-backlog.md` (infra/DevOps gaps)
 - `infrastructure/vault/README.md` (HashiCorp Vault — local dev + K8s ESO)
+- `docs/observability.md` (Grafana, Prometheus, Loki, k6 on K8s)
 
 ## Orientation Steps
 

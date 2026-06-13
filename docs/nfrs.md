@@ -56,7 +56,7 @@ Chi tiết kỹ thuật:
 |-----|----------|-------------|
 | Local read model | Giảm gọi chéo service khi đọc nhiều | ✅ `user_replicas` + `UserReplicaLookupService` |
 | Async event bus | Tách luồng ghi chính khỏi notification | ✅ RabbitMQ + outbox |
-| Horizontal scale stateless apps | Nhiều replica app | ⚠️ K8s HPA templates có; chưa load test baseline |
+| Horizontal scale stateless apps | Nhiều replica app | ⚠️ K8s HPA templates có; k6 scenarios `smoke`/`demo-flow` có — chưa baseline doc |
 | Connection pool / resource limits | Tránh OOM dưới tải | ⚠️ K8s requests/limits có; chưa tune theo benchmark |
 | SLO / p99 latency | Cam kết ms cụ thể | ❌ Chưa định nghĩa SLO; có metric histogram HTTP |
 | Caching | Giảm tải DB | ⚠️ Redis (auth OTP/session); chưa cache layer chung |

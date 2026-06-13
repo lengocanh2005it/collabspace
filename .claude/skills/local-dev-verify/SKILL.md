@@ -107,6 +107,12 @@ cd ../notification-service && pnpm run seed
 sh ./scripts/seed.sh
 ```
 
+K8s / production observability (after Helm deploy):
+
+- Grafana: `http://<HOST>/grafana/` — dashboards folder **CollabSpace**
+- k6 smoke: `BASE_URL=http://<HOST>/api/v1 ./infrastructure/deploy/run-k6-smoke-prod.sh`
+- Guide: [docs/observability.md](../../docs/observability.md)
+
 ## Troubleshooting Rules
 
 - If a command fails because dependencies are missing, say exactly which dependency is missing and which install command would fix it.

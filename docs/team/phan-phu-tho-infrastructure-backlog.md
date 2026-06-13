@@ -18,10 +18,10 @@ Tài liệu này liệt kê **công việc hạ tầng / DevOps / observability 
 | **Lộ trình deploy DO** — [deployment-k3s-phases.md](../deployment-k3s-phases.md) | Thực hiện Phase 0–5 trên Droplet thật |
 | K8s manifests legacy (`infrastructure/k8s/`) — tham chiếu | Load test baseline → tune resources |
 | Traefik gateway + forward-auth (`api-gateway/`) | Backup tự động + restore drill |
-| Prometheus + Alertmanager + Grafana (`infrastructure/monitoring/`) | ELK/Logstash ship log từ container |
+| Prometheus + Alertmanager + Grafana (`infrastructure/monitoring/`) | **K8s:** Helm + Loki — [observability.md](../observability.md) |
 | Jaeger / OTLP (`docker-compose.tracing.yml`, `infrastructure/tracing/`) | Tracing bật trên staging/prod |
 | Jenkins container + shell scripts (`infrastructure/jenkins/`), GitHub Actions CI/CD (`.github/workflows/`) | GitHub Secrets `DROPLET_*` + workflow `helm upgrade` |
-| k6 load tests (`infrastructure/load-testing/`) | Chaos drill định kỳ trên staging |
+| k6 load tests (`infrastructure/load-testing/`) | k6 baseline doc + tune HPA/limits |
 | Backup scripts (`infrastructure/backup/scripts/`) | ESO installed + Vault reachable on cluster |
 | Drills (`verify-readiness`, `chaos-stop-service`) | Smoke job sau mỗi deploy (readiness + `demo-e2e`) |
 
@@ -51,13 +51,13 @@ P0  Lộ trình k3s Phase 0–2           →  Droplet + k3s + Vault + ESO (xem 
 P0  HashiCorp Vault + .env chuẩn hóa →  scaffold có; operationalize HA + ESO trên cluster
 P0  Secrets + môi trường staging     →  deploy an toàn, không lộ credential
 P1  CI/CD + image registry          →  GHCR build ✅; workflow Helm/k3s deploy ✅ (Phase 4)
-P1  Monitoring stack trên K8s       →  scrape metrics, alert, Grafana
+P1  Monitoring stack trên K8s       →  Prometheus/Grafana/Loki ✅; alert routing ⬜
 P1  MVP smoke trong CI              →  `scripts/demo-e2e` sau Compose + Traefik (phối hợp Tín)
 P2  Smoke / readiness sau deploy    →  verify-readiness + demo-e2e trong pipeline
 P2  Backup tự động + restore drill  →  đáp ứng backup-policy
-P2  Logging tập trung (ELK)         →  tra cứu log theo X-Request-Id
+P2  Logging tập trung (Loki)        →  Explore + X-Request-Id (app log field)
 P3  Tracing staging                 →  Jaeger/OTLP + retention
-P3  Load test + tune HPA/limits     →  capacity baseline
+P3  Load test + tune HPA/limits     →  k6 scenarios ✅; baseline doc ⬜
 P3  Chaos quarterly (staging)       →  chứng minh recovery
 ```
 
@@ -214,12 +214,12 @@ Dùng bảng này khi seed Vault KV (`secret/collabspace/staging`, …).
 
 ### 3. Metrics endpoint lockdown (infra layer)
 
-- [ ] Set `global.secrets.metricsAuthToken` trên staging/prod.
-- [ ] Cấu hình Prometheus scrape với `bearer_token` hoặc header `X-Metrics-Token` (Helm `observability/prometheus.yaml`).
-- [ ] NetworkPolicy / ingress: **không** expose `/metrics` ra internet; chỉ Prometheus trong cluster scrape được.
-- [ ] Xác nhận alert rules vẫn fire khi service down (không bị 401 che mất signal).
+- [x] Set `global.secrets.metricsAuthToken` trên staging/prod (Droplet `values-prod.yaml`).
+- [x] Prometheus scrape Bearer token — `prometheus-metrics-auth` + `observability/prometheus.yaml`.
+- [x] NetworkPolicy: chỉ Prometheus scrape; `/metrics` không qua Traefik public.
+- [ ] Xác nhận alert rules vẫn fire khi service down (sync rules + test Alertmanager).
 
-**Definition of Done:** staging deploy bằng Helm mà không có secret trong Git; `kubectl get secret` nguồn từ operator; Prometheus scrape 5 service thành công với auth.
+**Definition of Done:** Prometheus scrape 5 service thành công với auth — ✅ prod Droplet. Còn: alert sync + receiver test.
 
 ---
 
@@ -270,11 +270,16 @@ Dùng bảng này khi seed Vault KV (`secret/collabspace/staging`, …).
 
 ### 8. Triển khai observability stack trên K8s
 
-- [ ] Bật Prometheus trong Helm (`observability` — hiện tắt ở `values-local.yaml`).
-- [ ] Apply Grafana + datasource Prometheus (`infrastructure/monitoring/grafana-deployment.yaml` hoặc subchart).
-- [ ] Chạy `infrastructure/k8s/scripts/sync-prometheus-alert-rules.sh` (hoặc `.ps1`) lên cluster đích.
-- [ ] Xác nhận Grafana datasource UID `prometheus` khớp dashboard JSON đã commit.
-- [ ] Deploy infra exporters: `exporters-deployment.yaml` / `docker-compose.exporters.yml` (Postgres, Redis, Mongo, RabbitMQ).
+- [x] Bật Prometheus trong Helm (`observability.prometheus.enabled`).
+- [x] Grafana subchart + datasource Prometheus + Loki (`uid: prometheus`, `loki`).
+- [x] Provision dashboards: `service-health.json`, `logs-errors.json` (App Logs), `load-test-run.json`.
+- [x] Grafana public qua Traefik `/grafana` + NetworkPolicy.
+- [x] Prometheus scrape 5 app + Traefik; `metricsAuthToken` + SA `prometheus`.
+- [x] Loki + Promtail; tắt `lokiCanary` (tránh noise log).
+- [ ] Chạy `infrastructure/k8s/scripts/sync-prometheus-alert-rules.sh` lên cluster (nếu dùng rules từ `monitoring/alert-rules.yml`).
+- [ ] Deploy infra exporters kết nối DB thành công (`pg_up`, `redis_up` = 1).
+
+**Doc:** [observability.md](../observability.md)
 
 ### 9. Alert routing & on-call
 
@@ -284,8 +289,10 @@ Dùng bảng này khi seed Vault KV (`secret/collabspace/staging`, …).
 
 ### 10. SLO / dashboard vận hành (infra-owned)
 
-- [ ] Dashboard tổng: uptime readiness, HTTP rate/error/latency (đã có metric từ app).
-- [ ] Dashboard infra: queue depth, DB connections, disk PVC, pod restart rate.
+- [x] Dashboard app: Service Health (UP, rate, latency, CPU/RAM).
+- [x] Dashboard log trends: App Logs (không tail — dùng Explore).
+- [x] Dashboard k6: Load Test Run + annotation tag `k6`.
+- [ ] Dashboard infra: queue depth, DB connections, disk PVC (exporter scrape chưa ổn).
 - [ ] (Tùy chọn) Recording rules cho p99 latency per service.
 
 **Definition of Done:** alert test fire trên staging; on-call nhận notification; Grafana hiển thị 5 service + datastore.
@@ -356,9 +363,9 @@ Dùng bảng này khi seed Vault KV (`secret/collabspace/staging`, …).
 - [ ] Parse JSON log hoặc prefix `[requestId]` — app đã propagate `X-Request-Id` (Phase C); infra cần **thu thập** field đó từ stdout.
 - [ ] Kibana index pattern + saved search theo `requestId`, `service`, `level`.
 - [ ] Retention index (ILM): 7–14 ngày staging, policy prod riêng.
-- [ ] (K8s) EFK/Loki thay ELK nếu team chuẩn hóa Grafana Loki — quyết định một stack.
+- [ ] (K8s) ~~EFK/Loki~~ — **đã chọn Loki** trên K8s prod; Docker vẫn có profile ELK tùy chọn.
 
-**Definition of Done:** một request qua gateway tra được log đầy đủ trên Kibana/Loki bằng `X-Request-Id`.
+**Definition of Done:** một request qua gateway tra được log đầy đủ trên **Loki Explore** bằng `X-Request-Id` (khi app log field đồng bộ).
 
 ---
 
@@ -381,9 +388,10 @@ Dùng bảng này khi seed Vault KV (`secret/collabspace/staging`, …).
 
 ### 19. Baseline load test (k6)
 
-- [ ] Chạy `infrastructure/load-testing/run-load-test.sh` với `.env` từ `k6/.env.example`.
-- [ ] Ghi lại: RPS, p95/p99 latency, error rate per service dưới 50 VU (mặc định).
-- [ ] Tăng dần VU đến breaking point; lưu báo cáo `docs/` hoặc wiki.
+- [x] Scenarios `smoke.js`, `demo-flow.js` + `run-load-test.sh` — [load-testing/README.md](../../infrastructure/load-testing/README.md).
+- [x] Grafana Load Test Run dashboard + optional annotations (`GRAFANA_URL`).
+- [ ] Ghi lại: RPS, p95/p99 latency, error rate per service dưới 50 VU (mặc định) → `docs/` capacity baseline.
+- [ ] Tăng dần VU đến breaking point; lưu báo cáo wiki.
 
 ### 20. Tune Kubernetes resources
 
@@ -445,7 +453,7 @@ Infra **hỗ trợ** bằng: Compose profile Traefik, seed trong job, `demo-e2e`
 | 5 | Doc local `.env` setup + shared JWT/INTERNAL token | P0 | ⬜ |
 | 6 | CI/pre-commit: chặn commit file `.env` | P0 | ⬜ |
 | 7 | `verify-env-parity.sh` (tên biến .env.example vs Helm) | P0 | ⬜ |
-| 8 | Metrics auth + Prometheus scrape | P0 | ⬜ |
+| 8 | Metrics auth + Prometheus scrape | P0 | ✅ Helm prod |
 | 9 | Secret rotation runbook (JWT, INTERNAL, DB) | P0 | ⬜ |
 | 10 | `values-staging.yaml` + deploy Helm document | P0 | ⬜ |
 | 11 | Container registry + build pipeline | P1 | ⬜ |
@@ -453,7 +461,7 @@ Infra **hỗ trợ** bằng: Compose profile Traefik, seed trong job, `demo-e2e`
 | 12a | Add real GitHub Actions secrets + first successful Droplet deploy | P1 | ⬜ |
 | 12b | CI smoke: `scripts/demo-e2e` sau Traefik + seed | P1 | ⬜ |
 | 13 | CD staging + post-deploy verify-readiness | P1 | ⬜ |
-| 14 | Prometheus/Grafana/Alertmanager trên K8s | P1 | ⬜ |
+| 14 | Prometheus/Grafana/Loki trên K8s | P1 | ✅ partial (alert routing ⬜) |
 | 15 | Alertmanager → Slack/email test | P1 | ⬜ |
 | 16 | NetworkPolicy + internal route verify | P2 | ⬜ |
 | 17 | TLS ingress (cert-manager) | P2 | ⬜ |
@@ -461,7 +469,7 @@ Infra **hỗ trợ** bằng: Compose profile Traefik, seed trong job, `demo-e2e`
 | 19 | Restore drill quarterly | P2 | ⬜ |
 | 20 | Filebeat/Fluent Bit → ELK | P2 | ⬜ |
 | 21 | Jaeger staging + TRACING_ENABLED | P3 | ⬜ |
-| 22 | k6 baseline + tune requests/limits | P3 | ⬜ |
+| 22 | k6 scenarios + Load Test dashboard | P3 | ✅ scripts; baseline doc ⬜ |
 | 23 | Chaos quarterly staging | P3 | ⬜ |
 | 24 | Image CVE scan trong CI | P3 | ⬜ |
 

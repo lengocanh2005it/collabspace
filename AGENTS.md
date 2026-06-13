@@ -24,6 +24,7 @@ This repository uses **Claude Code**-style agent documentation. `CLAUDE.md` is t
 | `docs/nfrs.md` | Non-functional requirements |
 | `docs/trade-offs.md` | Architecture trade-offs |
 | `docs/production-hardening.md` | Prod checklist (Phase B trust boundaries, Phase C correlation ID) |
+| `docs/observability.md` | **Grafana, Prometheus, Loki, k6** — dashboards & vận hành K8s |
 | `infrastructure/vault/README.md` | **HashiCorp Vault** — local dev, KV layout, ESO → K8s Secrets |
 | `docs/team/phan-phu-tho-infrastructure-backlog.md` | Infra/DevOps backlog (Phan Phú Thọ) |
 | `docs/team/application-backlog.md` | Application backlog (Lê Ngọc Anh, Ngô Quang Tiến, Võ Trung Tín) |
