@@ -63,6 +63,7 @@ pnpm run seed
 - Global prefix `/api/v1`; routes under `/auth/*`.
 - New auth flow → add `application/use-cases/<action>.use-case.ts`; wire in `app.module.ts`.
 - Dev OTP endpoint uses `EMAIL_OUTBOX.getDevOtp()` — not `AuthOutboxService` in controllers.
+- **TypeORM migrations** (`migrations/`): file `{timestamp}-{PascalCase}.ts`, class + `name` `{PascalCase}{timestamp}` — cùng quy ước `workspace-service` (vd. `1718000000001-CreateAuthOutboxEvents.ts` → `CreateAuthOutboxEvents1718000000001`). Không dùng prefix `001-` (TypeORM k8s sẽ reject).
 
 ## Integration
 
