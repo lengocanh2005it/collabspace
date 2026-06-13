@@ -4,7 +4,7 @@
 
 **Product features & status:** [docs/features.md](docs/features.md) · **MVP demo scope:** [docs/mvp-demo-scope.md](docs/mvp-demo-scope.md) · **API routes:** [docs/api-routes.md](docs/api-routes.md) · **App backlog:** [docs/team/application-backlog.md](docs/team/application-backlog.md) · **Infra backlog:** [docs/team/phan-phu-tho-infrastructure-backlog.md](docs/team/phan-phu-tho-infrastructure-backlog.md)
 
-**MVP backend (2026-06):** Luồng demo 7 bước **Done** (API + `scripts/demo-e2e`). Còn lại chủ yếu: frontend, e2e per service, CI smoke, workspace activity feed, OpenAPI 5/5.
+**MVP backend (2026-06):** Luồng demo 7 bước **Done** (API + `scripts/demo-e2e`). Còn lại chủ yếu: frontend, e2e per service, CI smoke, workspace activity feed.
 
 ## Architecture
 
@@ -223,10 +223,20 @@ Request/response contracts and event payloads: [`.claude/docs/service-contracts.
 
 ### OpenAPI (Swagger UI)
 
-Mỗi service expose **`/swagger`** (local dev, mapped Docker ports):
+**K8s / Traefik gateway** (`gateway.swagger.expose: true`):
 
-| Service | Swagger URL (Docker host ports) |
-|---------|----------------------------------|
+| Service | Swagger URL |
+|---------|---------------|
+| auth-service | `http://<HOST>/swagger/auth` |
+| user-service | `http://<HOST>/swagger/user` |
+| workspace-service | `http://<HOST>/swagger/workspace` |
+| task-service | `http://<HOST>/swagger/task` |
+| notification-service | `http://<HOST>/swagger/notification` |
+
+**Docker local** (trực tiếp cổng mapped):
+
+| Service | Swagger URL |
+|---------|---------------|
 | auth-service | http://localhost:3000/swagger |
 | user-service | http://localhost:3001/swagger |
 | workspace-service | http://localhost:3002/swagger |

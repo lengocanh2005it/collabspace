@@ -104,6 +104,8 @@ gateway:
   publicHost: REPLACE_ME_DOMAIN
   grafana:
     expose: true
+  swagger:
+    expose: true
   cors:
     allowOrigins:
       - "https://REPLACE_ME_DOMAIN"

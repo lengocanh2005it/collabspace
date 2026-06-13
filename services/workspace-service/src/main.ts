@@ -46,11 +46,12 @@ async function bootstrap() {
     .build();
 
   const swaggerDocument = SwaggerModule.createDocument(app, swaggerConfig);
-  SwaggerModule.setup('swagger', app, swaggerDocument);
+  const swaggerPath = process.env.SWAGGER_UI_PATH?.trim() || 'swagger';
+  SwaggerModule.setup(swaggerPath, app, swaggerDocument);
 
   const port = process.env.PORT || 8080;
   await app.listen(port);
   logger.log(`Workspace service is running on port ${port}`);
-  logger.log(`Swagger Docs: http://localhost:${port}/swagger`, 'Bootstrap');
+  logger.log(`Swagger Docs: http://localhost:${port}/${swaggerPath}`, 'Bootstrap');
 }
 void bootstrap();

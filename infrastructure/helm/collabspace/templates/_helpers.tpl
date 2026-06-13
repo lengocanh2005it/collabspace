@@ -127,3 +127,12 @@ app.kubernetes.io/version: {{ .root.Chart.AppVersion | quote }}
 {{- $r := .root | default . -}}
 {{- $r.Values.global.secrets.mongoPassword | default $r.Values.mongodb.auth.rootPassword }}
 {{- end }}
+
+{{- define "collabspace.swaggerUiPath" -}}
+{{- if .app.swaggerUiPath -}}
+{{- .app.swaggerUiPath -}}
+{{- else -}}
+{{- $short := trimSuffix "-service" .appName -}}
+{{- printf "swagger/%s" $short -}}
+{{- end -}}
+{{- end }}

@@ -212,6 +212,8 @@ gateway:
   publicHost: ""
   grafana:
     expose: true
+  swagger:
+    expose: true
   rateLimit:
     average: 100
     burst: 50

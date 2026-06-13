@@ -1,0 +1,29 @@
+{{- if and .Values.gateway.enabled .Values.gateway.swagger.expose }}
+{{- $ns := include "collabspace.namespace" . }}
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: collabspace-swagger
+  namespace: {{ $ns }}
+  labels:
+    app.kubernetes.io/part-of: collabspace
+spec:
+  entryPoints:
+    - web
+    - websecure
+  routes:
+{{- range $name, $app := .Values.apps }}
+{{- if $app.enabled }}
+    - match: PathPrefix(`/{{ include "collabspace.swaggerUiPath" (dict "appName" $name "app" $app) }}`)
+      kind: Rule
+      priority: 185
+      services:
+        - name: {{ $name }}
+          port: {{ $app.httpPort }}
+      middlewares:
+        - name: rate-limit
+        - name: cors-headers
+{{- end }}
+{{- end }}
+{{- end }}

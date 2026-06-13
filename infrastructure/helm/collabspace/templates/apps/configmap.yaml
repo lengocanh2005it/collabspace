@@ -15,6 +15,7 @@ data:
   PORT: {{ $app.httpPort | quote }}
   LOG_LEVEL: "info"
   TRACING_ENABLED: "false"
+  SWAGGER_UI_PATH: {{ include "collabspace.swaggerUiPath" (dict "appName" $name "app" $app) | quote }}
   OTEL_EXPORTER_OTLP_ENDPOINT: "http://jaeger:4318/v1/traces"
   JAEGER_AGENT_HOST: "jaeger"
   {{- if eq $name "auth-service" }}

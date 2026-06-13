@@ -160,6 +160,20 @@ kubectl delete pvc -n collabspace --all
 
 Public URL (when `gateway.grafana.expose: true`): `http://<LOAD_BALANCER_IP>/grafana/`
 
+## Swagger UI (K8s gateway)
+
+Public URLs (when `gateway.swagger.expose: true`):
+
+| Service | URL |
+|---------|-----|
+| auth-service | `http://<HOST>/swagger/auth` |
+| user-service | `http://<HOST>/swagger/user` |
+| workspace-service | `http://<HOST>/swagger/workspace` |
+| task-service | `http://<HOST>/swagger/task` |
+| notification-service | `http://<HOST>/swagger/notification` |
+
+Helm sets `SWAGGER_UI_PATH` per app ConfigMap; IngressRoute `collabspace-swagger` forwards without JWT (public docs).
+
 Provisioned dashboards (folder **CollabSpace**): Service Health, App Logs, Load Test Run.  
 Full guide: [docs/observability.md](../../docs/observability.md).
 

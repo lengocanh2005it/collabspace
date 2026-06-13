@@ -65,11 +65,12 @@ async function bootstrap() {
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup("swagger", app, document);
+  const swaggerPath = process.env.SWAGGER_UI_PATH?.trim() || "swagger";
+  SwaggerModule.setup(swaggerPath, app, document);
 
   const port = process.env.PORT || 3000;
   await app.listen(port);
   console.log(`Task Service is running on port ${port}`);
-  console.log(`Swagger Docs: http://localhost:${port}/swagger`);
+  console.log(`Swagger Docs: http://localhost:${port}/${swaggerPath}`);
 }
 void bootstrap();

@@ -44,8 +44,8 @@ async function bootstrap() {
     .build();
 
   const swaggerDocument = SwaggerModule.createDocument(app, swaggerConfig);
-
-  SwaggerModule.setup('swagger', app, swaggerDocument);
+  const swaggerPath = process.env.SWAGGER_UI_PATH?.trim() || 'swagger';
+  SwaggerModule.setup(swaggerPath, app, swaggerDocument);
 
   const dataSource = app.get(DataSource);
 
@@ -120,7 +120,7 @@ async function bootstrap() {
   await app.listen(port);
 
   Logger.log(`HTTP Server: http://localhost:${port}`, 'Bootstrap');
-  Logger.log(`Swagger Docs: http://localhost:${port}/swagger`, 'Bootstrap');
+  Logger.log(`Swagger Docs: http://localhost:${port}/${swaggerPath}`, 'Bootstrap');
 }
 
 bootstrap();
