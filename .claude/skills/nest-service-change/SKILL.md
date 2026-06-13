@@ -62,7 +62,7 @@ Read as needed:
 
 When changing PostgreSQL schema:
 
-1. Add/update migration.
+1. Add/update migration (see **TypeORM migration naming** below).
 2. Update TypeORM entity.
 3. Update domain entity if user-service.
 4. Update repository mapping.
@@ -70,6 +70,38 @@ When changing PostgreSQL schema:
 6. Update seed script if demo data depends on it.
 7. Add/update tests.
 8. Update docs if public behavior changed.
+
+### TypeORM migration naming (auth-service, workspace-service)
+
+TypeORM `runMigrations()` on k3s **rejects** class names without a 13-digit JS timestamp suffix. Follow the same pattern as existing migrations in each service.
+
+| Part | Pattern | Example |
+|------|---------|---------|
+| **File** | `{timestamp}-{PascalCase}.ts` | `1718000000001-CreateAuthOutboxEvents.ts` |
+| **Class** | `{PascalCase}{timestamp}` | `CreateAuthOutboxEvents1718000000001` |
+| **`name` property** | same as class | `name = 'CreateAuthOutboxEvents1718000000001'` |
+
+**Do**
+
+- Use a unique 13-digit millisecond timestamp (increment from the latest migration in that service).
+- Register the class in `src/migrate.ts` (auth: explicit imports; workspace: migrations glob path).
+- Run `pnpm run build` locally — compiled output must land under `dist/migrations/` or `dist/src/infrastructure/database/migrations/`.
+
+**Do not**
+
+- `001-create-foo.ts`, `create-foo.ts`, or class `CreateFoo001` — fails on Droplet with *"Migration class name should have a JavaScript timestamp appended"*.
+- Rename a migration file/class after it has run in any shared DB (add a new migration instead).
+
+**Paths**
+
+| Service | Migration folder | k8s migrate command |
+|---------|------------------|---------------------|
+| auth-service | `migrations/` | `node dist/src/migrate.js` |
+| workspace-service | `src/infrastructure/database/migrations/` | `node dist/migrate.js` |
+
+**user-service** uses ordered SQL files (`migrations/001_*.sql`, `002_*.sql`) — not TypeORM class migrations.
+
+Reference: `services/workspace-service/.../1718000000000-CreateWorkspaceActivities.ts`, `services/auth-service/migrations/1718000000001-CreateAuthOutboxEvents.ts`.
 
 ## gRPC Change Checklist
 
@@ -109,6 +141,7 @@ After code changes, update when **needed** (same PR):
 | HTTP/gRPC route or DTO contract | `.claude/docs/service-contracts.md`, `docs/api-routes.md` |
 | New/changed env / secret key | `services/*/.env.example`, `development-workflows.md`; if shared secret → `infrastructure/vault/` seed scripts + `external-secrets.yaml` |
 | Auth/verify behavior | `service-contracts.md`, `services/<service>/CLAUDE.md`, `.claude/rules/<service>.md` |
+| TypeORM migration added/renamed | This skill (Schema Change Checklist), `coding-conventions.md` |
 | Feature status | `docs/features.md`, `docs/mvp-demo-scope.md` |
 | Verify commands changed | This skill or `local-dev-verify/SKILL.md` |
 

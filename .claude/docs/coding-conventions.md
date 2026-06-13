@@ -201,6 +201,13 @@ Errors:
 - Keep ORM entities under infrastructure/module-specific `entities`.
 - Use migrations for schema changes.
 - Avoid `synchronize: true` for real environments.
+- **Migration file naming** (auth-service, workspace-service — TypeORM class migrations):
+  - File: `{timestamp}-{PascalCase}.ts` (e.g. `1718000000001-CreateAuthOutboxEvents.ts`).
+  - Class + `name`: `{PascalCase}{timestamp}` (e.g. `CreateAuthOutboxEvents1718000000001`).
+  - Timestamp must be 13-digit JS milliseconds — required for `runMigrations()` on k3s.
+  - Never use `001-foo.ts` / `CreateFoo001` (TypeORM rejects on deploy).
+  - user-service uses SQL migrations (`migrations/NNN_*.sql`) instead.
+  - Agent skill detail: `.claude/skills/nest-service-change/SKILL.md` → Schema Change Checklist.
 - When adding columns:
   - Update migration.
   - Update ORM entity.

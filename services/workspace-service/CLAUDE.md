@@ -41,11 +41,12 @@ pnpm run seed
 
 ## Conventions
 
-- Global prefix `/api/v1`; routes `/workspaces/*`, `/workspaces/:id/projects/*`
+- Global prefix `/api/v1`; routes `/workspaces/*`, `/workspaces/:id/projects/*`, `/workspaces/:id/invitations`
 - Public routes: `AuthGuard` + auth gRPC → `@UserId()`; dev fallback `X-User-Id` when `ALLOW_DEV_IDENTITY_HEADERS=true`
 - Internal S2S: `GET /workspaces/internal/:id/membership` — `X-Internal-Service-Token` (not on Traefik)
 - ORM columns snake_case; multi-step writes use transactions
 - Events: `collabspace_exchange` + routing key from `domain/events/`
+- TypeORM migrations: `src/infrastructure/database/migrations/{timestamp}-{PascalCase}.ts` — class `{PascalCase}{timestamp}` (xem `nest-service-change` skill / auth-service `migrations/` cùng quy ước)
 - Tests: `*.use-case.spec.ts` next to use case; inject in-memory stub implementing the port interface
 - Do **not** inject `@InjectRepository(OrmEntity)` in use cases — all DB access goes through port adapters
 

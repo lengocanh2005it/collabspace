@@ -36,7 +36,8 @@ Read these files as needed:
 3. Check `docs/features.md` for Done / Planned — all five app services are implemented; main gaps: workspace activity feed, per-service e2e + CI smoke, contract tests, frontend, infra ops. **OpenAPI 5/5 Done** — `/swagger` + response schemas; prod URLs: `docs/service-urls.md`. Demo E2E: `scripts/demo-e2e.sh` / `.ps1`.
 4. Read `services/<service>/CLAUDE.md` and `.claude/docs/service-architecture.md` for that service's layering rules.
 5. Read the target service's `src/app.module.ts`, controllers, use cases/handlers, entities, repositories, migrations, and tests.
-6. Summarize the current state before proposing cross-service work.
+6. For **TypeORM migrations** (auth, workspace): file `{timestamp}-{PascalCase}.ts`, class `{PascalCase}{timestamp}` — see `nest-service-change` skill. user-service uses `migrations/NNN_*.sql`.
+7. Summarize the current state before proposing cross-service work.
 
 ## Service Ownership
 
