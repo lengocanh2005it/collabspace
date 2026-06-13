@@ -1,4 +1,4 @@
-{{- if and .Values.observability.grafana.enabled .Files.Get "dashboards/service-health.json" }}
+{{- if .Values.observability.grafana.enabled }}
 {{- $ns := include "collabspace.namespace" . }}
 ---
 apiVersion: v1
