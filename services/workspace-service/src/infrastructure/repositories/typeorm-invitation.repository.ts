@@ -7,6 +7,7 @@ import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'crypto';
 import { DataSource, Repository } from 'typeorm';
 import { Invitation } from '../../domain/entities/invitation.entity';
+import { InvitationInvalidStateError } from '../../domain/exceptions/invitation.exceptions';
 import { IInvitationRepository } from '../../domain/repositories/invitation.repository';
 import { WorkspaceOutboxService } from '../outbox/workspace-outbox.service';
 import { InvitationOrmEntity } from '../database/entities/invitation.orm-entity';
@@ -68,10 +69,15 @@ export class TypeOrmInvitationRepository implements IInvitationRepository {
         where: { id: invitationId },
       });
       if (!orm) throw new NotFoundException('Invitation not found');
-      if (orm.status !== 'pending')
-        throw new BadRequestException('Invitation is not pending');
-      if (orm.expires_at < new Date())
-        throw new BadRequestException('Invitation expired');
+      const invitation = this.toDomain(orm);
+      try {
+        invitation.assertCanAccept();
+      } catch (error) {
+        if (error instanceof InvitationInvalidStateError) {
+          throw new BadRequestException(error.message);
+        }
+        throw error;
+      }
 
       orm.status = 'accepted';
       orm.invitee_user_id = userId;

@@ -8,6 +8,7 @@ Related docs:
 
 - `.claude/docs/coding-conventions.md` — DTO, errors, tests, events
 - `.claude/docs/service-contracts.md` — HTTP/gRPC/event contracts
+- `docs/design-patterns.md` — design pattern catalog (Vietnamese, file references)
 - `services/<name>/CLAUDE.md` — short service-local cheat sheet
 
 ---

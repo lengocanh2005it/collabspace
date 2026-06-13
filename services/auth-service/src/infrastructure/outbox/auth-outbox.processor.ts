@@ -1,17 +1,16 @@
 import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
+import { runOutboxPollCycle } from '@collabspace/shared';
 import { ConfigurationService } from '@/configuration/configuration.service';
 import { EmailsService } from '@/infrastructure/emails/emails.service';
 import { AuthOutboxService } from './auth-outbox.service';
-import {
-  AUTH_OUTBOX_EVENT_EMAIL_VERIFICATION_OTP,
-  AUTH_OUTBOX_EVENT_PASSWORD_RESET_EMAIL,
-} from '../database/entities/auth-outbox-event.orm-entity';
+import { AuthOutboxPublishRegistry } from './auth-outbox-publish.registry';
 
 @Injectable()
 export class AuthOutboxProcessor implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(AuthOutboxProcessor.name);
+  private readonly publishRegistry: AuthOutboxPublishRegistry;
   private isProcessing = false;
   private timer: NodeJS.Timeout | null = null;
 
@@ -20,8 +19,10 @@ export class AuthOutboxProcessor implements OnModuleInit, OnModuleDestroy {
     private readonly configurationService: ConfigurationService,
     @InjectDataSource()
     private readonly dataSource: DataSource,
-    private readonly emailsService: EmailsService,
-  ) {}
+    emailsService: EmailsService,
+  ) {
+    this.publishRegistry = new AuthOutboxPublishRegistry(emailsService);
+  }
 
   onModuleInit(): void {
     if (!this.configurationService.getOutboxConfig().enabled) {
@@ -52,75 +53,22 @@ export class AuthOutboxProcessor implements OnModuleInit, OnModuleDestroy {
     this.isProcessing = true;
 
     try {
-      const reclaimedCount = await this.authOutboxService.reclaimStaleClaims();
-
-      if (reclaimedCount > 0) {
-        this.logger.warn(
-          `Reclaimed ${reclaimedCount} stale auth outbox event(s) for retry`,
-        );
-      }
-
-      const events = await this.authOutboxService.claimPendingBatch();
-
-      for (const event of events) {
-        try {
-          await this.publishEvent(event.eventType, event.payload);
-          await this.authOutboxService.markProcessed(event.id);
-        } catch (error) {
-          const message =
-            error instanceof Error ? error.message : 'Unknown outbox processing error';
-          this.logger.warn(
-            `Auth outbox publish failed for ${event.id} (${event.eventType}): ${message}`,
-          );
-          try {
-            await this.authOutboxService.markFailed(
-              event.id,
-              event.attemptCount,
-              message,
-            );
-          } catch (markFailedError) {
-            const markFailedMessage =
-              markFailedError instanceof Error
-                ? markFailedError.message
-                : 'Unknown markFailed error';
-            this.logger.error(
-              `Auth outbox markFailed error for ${event.id}: ${markFailedMessage}`,
-            );
-          }
-        }
-      }
+      await runOutboxPollCycle(
+        {
+          reclaimStaleClaims: () => this.authOutboxService.reclaimStaleClaims(),
+          claimPendingBatch: () => this.authOutboxService.claimPendingBatch(),
+          publish: (event) =>
+            this.publishRegistry.publish(event.eventType, event.payload),
+          markProcessed: (id) => this.authOutboxService.markProcessed(id),
+          markFailed: (id, attemptCount, message) =>
+            this.authOutboxService.markFailed(id, attemptCount, message),
+          logLabel: 'auth outbox',
+          safeMarkFailed: true,
+        },
+        this.logger,
+      );
     } finally {
       this.isProcessing = false;
-    }
-  }
-
-  private async publishEvent(
-    eventType: string,
-    payload: Record<string, unknown>,
-  ): Promise<void> {
-    switch (eventType) {
-      case AUTH_OUTBOX_EVENT_EMAIL_VERIFICATION_OTP:
-        await this.emailsService.sendMailNow({
-          subject: 'Verify your CollabSpace email',
-          text: [
-            `Your CollabSpace verification code is ${String(payload.otp)}.`,
-            `This code expires in ${Number(payload.otpTtlSeconds)} seconds.`,
-          ].join(' '),
-          to: String(payload.email),
-        });
-        return;
-      case AUTH_OUTBOX_EVENT_PASSWORD_RESET_EMAIL:
-        await this.emailsService.sendMailNow({
-          subject: 'Reset your CollabSpace password',
-          text: [
-            `Use this password reset token: ${String(payload.token)}.`,
-            `It expires in ${Number(payload.ttlSeconds)} seconds.`,
-          ].join(' '),
-          to: String(payload.email),
-        });
-        return;
-      default:
-        throw new Error(`Unsupported auth outbox event type: ${eventType}`);
     }
   }
 }

@@ -16,6 +16,9 @@ importers:
 
   services/auth-service:
     dependencies:
+      '@collabspace/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
       '@golevelup/nestjs-graphile-worker':
         specifier: ^2.0.0
         version: 2.0.0(@nestjs/common@11.1.26(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.26)(graphile-worker@0.16.6(typescript@5.9.3))(zod@4.4.3)

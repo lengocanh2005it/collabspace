@@ -4,6 +4,7 @@ import {
   OnModuleDestroy,
   OnModuleInit,
 } from "@nestjs/common";
+import { runOutboxPollCycle } from "@collabspace/shared";
 import { TaskAssignedEventPayload } from "../../domain/events/task.events";
 import {
   CommentMentionedEventPayload,
@@ -62,33 +63,26 @@ export class TaskOutboxProcessor implements OnModuleInit, OnModuleDestroy {
     this.isProcessing = true;
 
     try {
-      const reclaimed = await this.taskOutboxService.reclaimStaleClaims();
-
-      if (reclaimed > 0) {
-        this.logger.warn(`Reclaimed ${reclaimed} stale task outbox event(s)`);
-      }
-
-      const events = await this.taskOutboxService.claimPendingBatch();
-
-      for (const event of events) {
-        try {
-          await this.publishEvent(event.eventType, event.payload);
-          await this.taskOutboxService.markProcessed(String(event._id));
-        } catch (error) {
-          const message =
-            error instanceof Error
-              ? error.message
-              : "Unknown task outbox error";
-          this.logger.warn(
-            `Task outbox publish failed for ${String(event._id)}: ${message}`,
-          );
-          await this.taskOutboxService.markFailed(
-            String(event._id),
-            event.attemptCount,
-            message,
-          );
-        }
-      }
+      await runOutboxPollCycle(
+        {
+          reclaimStaleClaims: () => this.taskOutboxService.reclaimStaleClaims(),
+          claimPendingBatch: async () => {
+            const events = await this.taskOutboxService.claimPendingBatch();
+            return events.map((event) => ({
+              id: String(event._id),
+              eventType: event.eventType,
+              payload: event.payload,
+              attemptCount: event.attemptCount,
+            }));
+          },
+          publish: (event) => this.publishEvent(event.eventType, event.payload),
+          markProcessed: (id) => this.taskOutboxService.markProcessed(id),
+          markFailed: (id, attemptCount, message) =>
+            this.taskOutboxService.markFailed(id, attemptCount, message),
+          logLabel: "task outbox",
+        },
+        this.logger,
+      );
     } finally {
       this.isProcessing = false;
     }
