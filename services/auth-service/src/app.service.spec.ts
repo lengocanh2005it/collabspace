@@ -1,4 +1,17 @@
 import { ConfigurationService } from '@/configuration/configuration.service';
+import { ChangePasswordUseCase } from '@/application/use-cases/change-password.use-case';
+import { GetCurrentUserUseCase } from '@/application/use-cases/get-current-user.use-case';
+import { LoginUseCase } from '@/application/use-cases/login.use-case';
+import { LogoutUseCase } from '@/application/use-cases/logout.use-case';
+import { RefreshSessionUseCase } from '@/application/use-cases/refresh-session.use-case';
+import { RegisterUseCase } from '@/application/use-cases/register.use-case';
+import { ResendEmailVerificationOtpUseCase } from '@/application/use-cases/resend-email-verification-otp.use-case';
+import { VerifyAccessTokenUseCase } from '@/application/use-cases/verify-access-token.use-case';
+import { VerifyEmailOtpUseCase } from '@/application/use-cases/verify-email-otp.use-case';
+import { EmailVerificationOtpService } from '@/application/services/email-verification-otp.service';
+import { JwtTokenService } from '@/application/services/jwt-token.service';
+import { SessionIssuanceService } from '@/application/services/session-issuance.service';
+import { UserProfileResolverService } from '@/application/services/user-profile-resolver.service';
 import { IdentityService } from '@/modules/identity/identity.service';
 import { UserProfilesGrpcService } from '@/modules/identity/user-profiles-grpc.service';
 import { AuthOutboxService } from '@/modules/outbox/auth-outbox.service';
@@ -65,6 +78,57 @@ describe('AuthService', () => {
 
   let authService: AuthService;
 
+  function buildAuthService(): AuthService {
+    const jwtTokenService = new JwtTokenService(
+      configurationServiceMock,
+      identityServiceMock,
+    );
+    const userProfileResolverService = new UserProfileResolverService(
+      userProfilesGrpcServiceMock,
+    );
+    const sessionIssuanceService = new SessionIssuanceService(
+      jwtTokenService,
+      refreshTokensServiceMock,
+    );
+    const emailVerificationOtpService = new EmailVerificationOtpService(
+      configurationServiceMock,
+      authOutboxServiceMock,
+      redisServiceMock,
+    );
+
+    return new AuthService(
+      jwtTokenService,
+      new VerifyAccessTokenUseCase(jwtTokenService, userProfileResolverService),
+      new GetCurrentUserUseCase(jwtTokenService, userProfileResolverService),
+      new LoginUseCase(identityServiceMock, sessionIssuanceService),
+      new LogoutUseCase(refreshTokensServiceMock),
+      new RefreshSessionUseCase(
+        identityServiceMock,
+        jwtTokenService,
+        refreshTokensServiceMock,
+      ),
+      new RegisterUseCase(
+        identityServiceMock,
+        userProfilesGrpcServiceMock,
+        emailVerificationOtpService,
+      ),
+      new ResendEmailVerificationOtpUseCase(
+        identityServiceMock,
+        emailVerificationOtpService,
+      ),
+      new VerifyEmailOtpUseCase(
+        identityServiceMock,
+        redisServiceMock,
+        emailVerificationOtpService,
+      ),
+      new ChangePasswordUseCase(
+        identityServiceMock,
+        jwtTokenService,
+        refreshTokensServiceMock,
+      ),
+    );
+  }
+
   beforeEach(() => {
     jest.clearAllMocks();
     jwtConfigValues.secret = 'unit-test-secret';
@@ -73,14 +137,7 @@ describe('AuthService', () => {
     jwtConfigValues.issuer = undefined;
     jest.spyOn(redisServiceMock, 'delete').mockResolvedValue(1);
     jest.spyOn(redisServiceMock, 'assertAvailable').mockResolvedValue(undefined);
-    authService = new AuthService(
-      configurationServiceMock,
-      authOutboxServiceMock,
-      identityServiceMock,
-      redisServiceMock,
-      refreshTokensServiceMock,
-      userProfilesGrpcServiceMock,
-    );
+    authService = buildAuthService();
   });
 
   it('extracts identity from a valid token', async () => {

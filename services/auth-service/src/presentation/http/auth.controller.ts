@@ -45,18 +45,34 @@ import {
   LivenessReportDto,
   ReadinessReportDto,
 } from '@/application/dto/health-response.dto';
-import { AuthHealthService } from './health/auth-health.service';
-import { assertMetricsAccess } from './metrics/metrics-access';
-import { MetricsService } from './metrics/metrics.service';
-import { AuthService } from './app.service';
-import { AuthOutboxService } from './modules/outbox/auth-outbox.service';
-import { ConfigurationService } from './configuration/configuration.service';
+import { ChangePasswordUseCase } from '@/application/use-cases/change-password.use-case';
+import { GetCurrentUserUseCase } from '@/application/use-cases/get-current-user.use-case';
+import { LoginUseCase } from '@/application/use-cases/login.use-case';
+import { LogoutUseCase } from '@/application/use-cases/logout.use-case';
+import { RefreshSessionUseCase } from '@/application/use-cases/refresh-session.use-case';
+import { RegisterUseCase } from '@/application/use-cases/register.use-case';
+import { ResendEmailVerificationOtpUseCase } from '@/application/use-cases/resend-email-verification-otp.use-case';
+import { VerifyAccessTokenUseCase } from '@/application/use-cases/verify-access-token.use-case';
+import { VerifyEmailOtpUseCase } from '@/application/use-cases/verify-email-otp.use-case';
+import { AuthHealthService } from '@/health/auth-health.service';
+import { assertMetricsAccess } from '@/metrics/metrics-access';
+import { MetricsService } from '@/metrics/metrics.service';
+import { AuthOutboxService } from '@/modules/outbox/auth-outbox.service';
+import { ConfigurationService } from '@/configuration/configuration.service';
 
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
   constructor(
-    private readonly authService: AuthService,
+    private readonly loginUseCase: LoginUseCase,
+    private readonly getCurrentUserUseCase: GetCurrentUserUseCase,
+    private readonly registerUseCase: RegisterUseCase,
+    private readonly resendEmailVerificationOtpUseCase: ResendEmailVerificationOtpUseCase,
+    private readonly verifyEmailOtpUseCase: VerifyEmailOtpUseCase,
+    private readonly changePasswordUseCase: ChangePasswordUseCase,
+    private readonly logoutUseCase: LogoutUseCase,
+    private readonly refreshSessionUseCase: RefreshSessionUseCase,
+    private readonly verifyAccessTokenUseCase: VerifyAccessTokenUseCase,
     private readonly authHealthService: AuthHealthService,
     private readonly metricsService: MetricsService,
     private readonly authOutboxService: AuthOutboxService,
@@ -106,7 +122,7 @@ export class AuthController {
   @ApiOkResponse({ type: AuthSessionResponseDto })
   @ApiUnauthorizedResponse({ description: 'Invalid credentials or email not verified' })
   async login(@Body() body: LoginRequestDto) {
-    return this.authService.login(body);
+    return this.loginUseCase.execute(body);
   }
 
   @Get('me')
@@ -116,7 +132,7 @@ export class AuthController {
   @ApiOkResponse({ type: MeResponseDto })
   @ApiUnauthorizedResponse()
   async me(@Req() request: Request) {
-    return this.authService.getCurrentUser(request.header('authorization'));
+    return this.getCurrentUserUseCase.execute(request.header('authorization'));
   }
 
   @Post('register')
@@ -128,7 +144,7 @@ export class AuthController {
   })
   @ApiCreatedResponse({ type: RegisterPendingResponseDto })
   async register(@Body() body: RegisterInput) {
-    return this.authService.register(body);
+    return this.registerUseCase.execute(body);
   }
 
   @Post('resend-verification-otp')
@@ -141,7 +157,7 @@ export class AuthController {
   @ApiOkResponse({ type: ResendEmailVerificationOtpResponseDto })
   @ApiTooManyRequestsResponse({ description: 'Resend cooldown or max attempts exceeded' })
   async resendVerificationOtp(@Body() body: ResendEmailVerificationOtpInput) {
-    return this.authService.resendEmailVerificationOtp(body);
+    return this.resendEmailVerificationOtpUseCase.execute(body);
   }
 
   @Post('verify-email')
@@ -153,7 +169,7 @@ export class AuthController {
   @ApiOkResponse({ type: VerifyEmailOtpResponseDto })
   @ApiUnauthorizedResponse({ description: 'Invalid or expired OTP' })
   async verifyEmail(@Body() body: VerifyEmailOtpRequestDto) {
-    return this.authService.verifyEmailOtp(body);
+    return this.verifyEmailOtpUseCase.execute(body);
   }
 
   @Post('change-password')
@@ -166,7 +182,7 @@ export class AuthController {
     @Req() request: Request,
     @Body() body: ChangePasswordRequestDto,
   ) {
-    return this.authService.changePassword(
+    return this.changePasswordUseCase.execute(
       request.header('authorization'),
       body,
     );
@@ -177,7 +193,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Revoke refresh token session' })
   @ApiOkResponse({ type: LogoutResponseDto })
   async logout(@Body() body: LogoutRequestDto) {
-    return this.authService.logout(body);
+    return this.logoutUseCase.execute(body);
   }
 
   @Post('refresh')
@@ -186,7 +202,7 @@ export class AuthController {
   @ApiOkResponse({ type: AuthSessionResponseDto })
   @ApiUnauthorizedResponse()
   async refresh(@Body() body: RefreshSessionRequestDto) {
-    return this.authService.refresh(body);
+    return this.refreshSessionUseCase.execute(body);
   }
 
   @Get('dev/otp')
@@ -218,7 +234,7 @@ export class AuthController {
     @Req() request: Request,
     @Res({ passthrough: true }) response: Response,
   ) {
-    const identity = await this.authService.verifyAccessToken(
+    const identity = await this.verifyAccessTokenUseCase.execute(
       request.header('authorization'),
     );
 

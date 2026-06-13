@@ -4,17 +4,21 @@ import { status } from '@grpc/grpc-js';
 import { from, Observable } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import type { auth } from '@/generated/proto/auth';
-import { AuthService } from './app.service';
+import { VerifyAccessTokenUseCase } from '@/application/use-cases/verify-access-token.use-case';
 
 @Controller()
 export class AuthGrpcController implements auth.AuthService {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly verifyAccessTokenUseCase: VerifyAccessTokenUseCase,
+  ) {}
 
   @GrpcMethod('AuthService', 'VerifyAccessToken')
   verifyAccessToken(
     request: auth.VerifyAccessTokenRequest,
   ): Observable<auth.VerifyAccessTokenResponse> {
-    return from(this.authService.verifyAccessToken(request.authorization)).pipe(
+    return from(
+      this.verifyAccessTokenUseCase.execute(request.authorization),
+    ).pipe(
       map((identity) => ({
         authenticated: true,
         emailVerified: identity.emailVerified,
