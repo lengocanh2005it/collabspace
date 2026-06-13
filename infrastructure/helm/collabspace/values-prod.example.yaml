@@ -194,6 +194,9 @@ apps:
     image:
       repository: ghcr.io/REPLACE_ME_GHCR_OWNER/collabspace-notification-service
       tag: REPLACE_ME_IMAGE_TAG
+    health:
+      preStopSleep: 5
+      terminationGracePeriodSeconds: 20
     extraEnv:
       RABBITMQ_ENABLED: "true"
       RABBITMQ_QUEUE: notification-service

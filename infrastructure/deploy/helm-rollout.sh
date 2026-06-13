@@ -198,11 +198,46 @@ for dep in auth-service user-service workspace-service task-service notification
   fi
 done
 
-echo "==> Waiting for application rollouts (parallel)..."
+prune_stuck_terminating_pods() {
+  local dep="$1"
+  local pod
+  while IFS= read -r pod; do
+    [[ -z "$pod" ]] && continue
+    echo "WARN: Force-deleting stuck terminating pod ${pod} (app=${dep})"
+    kubectl delete pod "$pod" -n "$APP_NS" --force --grace-period=0 || true
+  done < <(kubectl get pods -n "$APP_NS" -l "app=${dep}" --no-headers 2>/dev/null | awk '$3 ~ /Terminating/ {print $1}')
+}
+
+wait_deployment_rollout() {
+  local dep="$1"
+  local timeout="${2:-420}"
+  local poll=15
+  local waited=0
+
+  prune_stuck_terminating_pods "$dep"
+
+  while [[ "$waited" -lt "$timeout" ]]; do
+    if kubectl rollout status "deployment/${dep}" -n "$APP_NS" --timeout="${poll}s"; then
+      return 0
+    fi
+    prune_stuck_terminating_pods "$dep"
+    waited=$((waited + poll))
+  done
+
+  echo "ERROR: deployment/${dep} rollout timed out after ${timeout}s"
+  kubectl get pods -n "$APP_NS" -l "app=${dep}" -o wide || true
+  kubectl describe deployment "$dep" -n "$APP_NS" | tail -40 || true
+  return 1
+}
+
+echo "==> Waiting for application rollouts..."
+# Roll core services in parallel; notification-service last (RabbitMQ consumer often
+# leaves old pods stuck in Terminating on small single-node clusters).
+core_deps=(auth-service user-service workspace-service task-service)
 rollout_pids=()
-for dep in auth-service user-service workspace-service task-service notification-service; do
+for dep in "${core_deps[@]}"; do
   if kubectl get deployment "$dep" -n "$APP_NS" >/dev/null 2>&1; then
-    kubectl rollout status deployment/"$dep" -n "$APP_NS" --timeout=300s &
+    wait_deployment_rollout "$dep" 420 &
     rollout_pids+=($!)
   fi
 done
@@ -211,8 +246,15 @@ for pid in "${rollout_pids[@]}"; do
   wait "$pid" || rollout_failed=$((rollout_failed + 1))
 done
 if [[ "$rollout_failed" -gt 0 ]]; then
-  echo "ERROR: $rollout_failed deployment(s) failed to roll out."
+  echo "ERROR: $rollout_failed core deployment(s) failed to roll out."
   exit 1
+fi
+
+if kubectl get deployment notification-service -n "$APP_NS" >/dev/null 2>&1; then
+  if ! wait_deployment_rollout notification-service 600; then
+    echo "ERROR: notification-service failed to roll out."
+    exit 1
+  fi
 fi
 
 echo "==> Pruning unused container images..."

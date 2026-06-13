@@ -11,6 +11,7 @@ import { registerMetricsMiddleware } from "./metrics/register-metrics.middleware
 async function bootstrap() {
   const logger = new Logger("Bootstrap");
   const app = await NestFactory.create(AppModule);
+  app.enableShutdownHooks();
 
   const configService = app.get(ConfigurationService);
   const rmqConfig = configService.getRabbitMqConfig();

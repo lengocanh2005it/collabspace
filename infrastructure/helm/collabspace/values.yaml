@@ -526,6 +526,8 @@ apps:
     health:
       readyPath: /api/v1/notifications/health/ready
       livePath: /api/v1/notifications/health/live
+      preStopSleep: 5
+      terminationGracePeriodSeconds: 20
     headlessService: true
     resources:
       requests:
