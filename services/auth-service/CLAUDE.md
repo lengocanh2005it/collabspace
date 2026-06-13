@@ -2,17 +2,20 @@
 
 NestJS 11 + TypeORM + PostgreSQL + Redis + gRPC + Graphile Worker outbox.
 
-## Pattern (Phase 1–2 — migrating to clean/hexagonal)
+## Pattern (Phase 1–3 — migrating to clean/hexagonal)
 
-**In progress:** presentation → application/use-cases → domain/ports → infrastructure adapters.
+**In progress:** presentation → application/use-cases → domain (entities/ports) → infrastructure adapters + integrations.
 
 ```text
-presentation/http|grpc → application/use-cases → domain/repositories (ports)
-  → infrastructure/repositories (TypeORM + in-memory user repo)
-modules/* (redis, outbox, emails) — legacy until Phase 4
+presentation/http|grpc → application/use-cases → domain (entities, repositories, ports)
+  → infrastructure/repositories | redis | outbox adapters
+  → integrations/user-profiles (gRPC client)
+modules/* (redis, outbox, emails, identity entities) — legacy until Phase 4
 ```
 
-- `USER_REPOSITORY` / `REFRESH_TOKEN_REPOSITORY` — inject ports in use cases, not `IdentityService`.
+- `USER_REPOSITORY` / `REFRESH_TOKEN_REPOSITORY` — inject in use cases.
+- `OTP_STORE` / `EMAIL_OUTBOX` / `USER_PROFILE_CLIENT` — outbound ports; adapters in `infrastructure/` and `integrations/`.
+- `User` entity (`domain/entities/user.entity.ts`) — `assertCanLogin()` for email-verified + active checks.
 - `AuthService` (`app.service.ts`) — thin facade for e2e/tests; remove in Phase 4.
 
 ## Layout
@@ -23,10 +26,17 @@ src/
 ├── presentation/grpc/auth.grpc.controller.ts
 ├── application/use-cases/
 ├── application/services/
-├── domain/repositories/            # USER_REPOSITORY, REFRESH_TOKEN_REPOSITORY ports
-├── infrastructure/repositories/    # typeorm-*, in-memory-user
-├── modules/identity/               # entities + user-profiles gRPC only
-├── modules/refresh-tokens/         # ORM entity module only
+├── domain/
+│   ├── entities/user.entity.ts
+│   ├── repositories/         # USER_REPOSITORY, REFRESH_TOKEN_REPOSITORY
+│   └── ports/                # OTP_STORE, EMAIL_OUTBOX, USER_PROFILE_CLIENT
+├── infrastructure/
+│   ├── repositories/         # typeorm-*, in-memory-user
+│   ├── redis/                # RedisOtpStoreAdapter
+│   └── outbox/               # TypeOrmEmailOutboxAdapter
+├── integrations/user-profiles/   # UserProfilesGrpcService → USER_PROFILE_CLIENT
+├── modules/identity/         # TypeORM entities only
+├── modules/refresh-tokens/   # ORM entity module only
 ├── modules/redis/ | outbox/ | emails/
 └── configuration/ | health/ | metrics/
 ```
@@ -52,7 +62,7 @@ pnpm run seed
 
 ## Integration
 
-- Calls `user-service` gRPC `CreatePendingProfile` on register.
+- Calls `user-service` gRPC `CreatePendingProfile` on register via `USER_PROFILE_CLIENT`.
 - Hydrates profile via `GetProfile` for `/me` and verify flows.
 
 ## Where to add code
@@ -62,10 +72,12 @@ pnpm run seed
 | New HTTP route | `presentation/http/auth.controller.ts` |
 | New auth action | `application/use-cases/<action>.use-case.ts` |
 | Shared JWT/session/OTP | `application/services/` |
+| Domain login rules | `domain/entities/user.entity.ts` |
 | User/role/password DB | `infrastructure/repositories/typeorm-user.repository.ts` (port: `domain/repositories/user.repository.ts`) |
 | Refresh token behavior | `infrastructure/repositories/typeorm-refresh-token.repository.ts` |
-| Redis OTP | `modules/redis/` |
-| Async email | `modules/outbox/` |
+| OTP storage port | `domain/ports/otp-store.port.ts` → `infrastructure/redis/redis-otp-store.adapter.ts` |
+| Email outbox port | `domain/ports/email-outbox.port.ts` → `infrastructure/outbox/typeorm-email-outbox.adapter.ts` |
+| User-service gRPC | `integrations/user-profiles/` |
 | gRPC for downstream | `presentation/grpc/auth.grpc.controller.ts` |
 | Config | `configuration/` |
 

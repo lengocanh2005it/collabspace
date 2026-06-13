@@ -14,9 +14,9 @@ import { SessionIssuanceService } from '@/application/services/session-issuance.
 import { UserProfileResolverService } from '@/application/services/user-profile-resolver.service';
 import { UserRepository } from '@/domain/repositories/user.repository';
 import { RefreshTokenRepository } from '@/domain/repositories/refresh-token.repository';
-import { UserProfilesGrpcService } from '@/modules/identity/user-profiles-grpc.service';
-import { AuthOutboxService } from '@/modules/outbox/auth-outbox.service';
-import { RedisService } from '@/modules/redis/redis.service';
+import { UserProfileClient } from '@/domain/ports/user-profile-client.port';
+import { EmailOutbox } from '@/domain/ports/email-outbox.port';
+import { OtpStore } from '@/domain/ports/otp-store.port';
 import {
   ConflictException,
   HttpException,
@@ -42,26 +42,28 @@ describe('AuthService', () => {
       resendWindowSeconds: 3600,
     })),
   } as unknown as ConfigurationService;
-  const authOutboxServiceMock = {
+  const emailOutboxMock = {
     enqueueEmailVerificationOtp: jest.fn(),
-  } as unknown as AuthOutboxService;
+    getStats: jest.fn(),
+  } as unknown as EmailOutbox;
   const refreshTokenRepositoryMock = {
     issue: jest.fn(),
     revokeAllForUser: jest.fn(),
     revokeToken: jest.fn(),
     rotate: jest.fn(),
   } as unknown as RefreshTokenRepository;
-  const redisServiceMock = {
+  const otpStoreMock = {
     assertAvailable: jest.fn(),
     delete: jest.fn(),
     exists: jest.fn(),
     expire: jest.fn(),
     getJson: jest.fn(),
     increment: jest.fn(),
+    ping: jest.fn(),
     set: jest.fn(),
     setJson: jest.fn(),
     ttl: jest.fn(),
-  } as unknown as RedisService;
+  } as unknown as OtpStore;
   const identityServiceMock = {
     changePassword: jest.fn(),
     findUserByEmail: jest.fn(),
@@ -71,10 +73,11 @@ describe('AuthService', () => {
     rollbackNewRegistration: jest.fn(),
     validateCredentials: jest.fn(),
   } as unknown as UserRepository;
-  const userProfilesGrpcServiceMock = {
+  const userProfileClientMock = {
     createPendingProfile: jest.fn(),
     getProfile: jest.fn(),
-  } as unknown as UserProfilesGrpcService;
+    ping: jest.fn(),
+  } as unknown as UserProfileClient;
 
   let authService: AuthService;
 
@@ -84,7 +87,7 @@ describe('AuthService', () => {
       identityServiceMock,
     );
     const userProfileResolverService = new UserProfileResolverService(
-      userProfilesGrpcServiceMock,
+      userProfileClientMock,
     );
     const sessionIssuanceService = new SessionIssuanceService(
       jwtTokenService,
@@ -92,8 +95,8 @@ describe('AuthService', () => {
     );
     const emailVerificationOtpService = new EmailVerificationOtpService(
       configurationServiceMock,
-      authOutboxServiceMock,
-      redisServiceMock,
+      emailOutboxMock,
+      otpStoreMock,
     );
 
     return new AuthService(
@@ -109,7 +112,7 @@ describe('AuthService', () => {
       ),
       new RegisterUseCase(
         identityServiceMock,
-        userProfilesGrpcServiceMock,
+        userProfileClientMock,
         emailVerificationOtpService,
       ),
       new ResendEmailVerificationOtpUseCase(
@@ -118,7 +121,7 @@ describe('AuthService', () => {
       ),
       new VerifyEmailOtpUseCase(
         identityServiceMock,
-        redisServiceMock,
+        otpStoreMock,
         emailVerificationOtpService,
       ),
       new ChangePasswordUseCase(
@@ -135,8 +138,8 @@ describe('AuthService', () => {
     jwtConfigValues.expiry = '10m';
     jwtConfigValues.audience = undefined;
     jwtConfigValues.issuer = undefined;
-    jest.spyOn(redisServiceMock, 'delete').mockResolvedValue(1);
-    jest.spyOn(redisServiceMock, 'assertAvailable').mockResolvedValue(undefined);
+    jest.spyOn(otpStoreMock, 'delete').mockResolvedValue(1);
+    jest.spyOn(otpStoreMock, 'assertAvailable').mockResolvedValue(undefined);
     authService = buildAuthService();
   });
 
@@ -150,7 +153,7 @@ describe('AuthService', () => {
       roles: ['admin'],
       userId: 'user-1',
     });
-    jest.spyOn(userProfilesGrpcServiceMock, 'getProfile').mockResolvedValue({
+    jest.spyOn(userProfileClientMock, 'getProfile').mockResolvedValue({
       fullName: 'Admin User',
       userId: 'user-1',
       username: 'admin.user',
@@ -249,12 +252,12 @@ describe('AuthService', () => {
       userId: 'user-3',
     });
     jest
-      .spyOn(userProfilesGrpcServiceMock, 'createPendingProfile')
+      .spyOn(userProfileClientMock, 'createPendingProfile')
       .mockResolvedValue(undefined);
-    jest.spyOn(redisServiceMock, 'setJson').mockResolvedValue('OK');
-    jest.spyOn(redisServiceMock, 'assertAvailable').mockResolvedValue(undefined);
+    jest.spyOn(otpStoreMock, 'setJson').mockResolvedValue('OK');
+    jest.spyOn(otpStoreMock, 'assertAvailable').mockResolvedValue(undefined);
     jest
-      .spyOn(authOutboxServiceMock, 'enqueueEmailVerificationOtp')
+      .spyOn(emailOutboxMock, 'enqueueEmailVerificationOtp')
       .mockResolvedValue(undefined);
 
     const result = await authService.register({
@@ -270,11 +273,11 @@ describe('AuthService', () => {
       userId: 'user-3',
       verificationRequired: true,
     });
-    expect(userProfilesGrpcServiceMock.createPendingProfile).toHaveBeenCalledWith({
+    expect(userProfileClientMock.createPendingProfile).toHaveBeenCalledWith({
       fullName: 'New User',
       userId: 'user-3',
     });
-    expect(authOutboxServiceMock.enqueueEmailVerificationOtp).toHaveBeenCalledWith(
+    expect(emailOutboxMock.enqueueEmailVerificationOtp).toHaveBeenCalledWith(
       expect.objectContaining({
         email: 'new@collabspace.dev',
         otp: expect.any(String),
@@ -295,7 +298,7 @@ describe('AuthService', () => {
       userId: 'user-3',
     });
     jest
-      .spyOn(userProfilesGrpcServiceMock, 'createPendingProfile')
+      .spyOn(userProfileClientMock, 'createPendingProfile')
       .mockRejectedValue(
         new ServiceUnavailableException({
           code: 'USER_SERVICE_GRPC_UNAVAILABLE',
@@ -313,7 +316,7 @@ describe('AuthService', () => {
     ).rejects.toBeInstanceOf(ServiceUnavailableException);
 
     expect(identityServiceMock.rollbackNewRegistration).toHaveBeenCalledWith('user-3');
-    expect(authOutboxServiceMock.enqueueEmailVerificationOtp).not.toHaveBeenCalled();
+    expect(emailOutboxMock.enqueueEmailVerificationOtp).not.toHaveBeenCalled();
   });
 
   it('does not roll back when profile bootstrap fails for recovered pending user', async () => {
@@ -333,7 +336,7 @@ describe('AuthService', () => {
       userId: 'user-3',
     });
     jest
-      .spyOn(userProfilesGrpcServiceMock, 'createPendingProfile')
+      .spyOn(userProfileClientMock, 'createPendingProfile')
       .mockRejectedValue(
         new ServiceUnavailableException({
           code: 'USER_SERVICE_GRPC_UNAVAILABLE',
@@ -364,10 +367,10 @@ describe('AuthService', () => {
       userId: 'user-3',
     });
     jest
-      .spyOn(userProfilesGrpcServiceMock, 'createPendingProfile')
+      .spyOn(userProfileClientMock, 'createPendingProfile')
       .mockResolvedValue(undefined);
     jest
-      .spyOn(redisServiceMock, 'assertAvailable')
+      .spyOn(otpStoreMock, 'assertAvailable')
       .mockRejectedValue(
         new ServiceUnavailableException({
           code: 'REDIS_UNAVAILABLE',
@@ -387,7 +390,7 @@ describe('AuthService', () => {
     });
 
     expect(identityServiceMock.rollbackNewRegistration).toHaveBeenCalledWith('user-3');
-    expect(authOutboxServiceMock.enqueueEmailVerificationOtp).not.toHaveBeenCalled();
+    expect(emailOutboxMock.enqueueEmailVerificationOtp).not.toHaveBeenCalled();
   });
 
   it('recovers pending registration for an existing unverified user', async () => {
@@ -407,12 +410,12 @@ describe('AuthService', () => {
       userId: 'user-3',
     });
     jest
-      .spyOn(userProfilesGrpcServiceMock, 'createPendingProfile')
+      .spyOn(userProfileClientMock, 'createPendingProfile')
       .mockResolvedValue(undefined);
-    jest.spyOn(redisServiceMock, 'setJson').mockResolvedValue('OK');
-    jest.spyOn(redisServiceMock, 'assertAvailable').mockResolvedValue(undefined);
+    jest.spyOn(otpStoreMock, 'setJson').mockResolvedValue('OK');
+    jest.spyOn(otpStoreMock, 'assertAvailable').mockResolvedValue(undefined);
     jest
-      .spyOn(authOutboxServiceMock, 'enqueueEmailVerificationOtp')
+      .spyOn(emailOutboxMock, 'enqueueEmailVerificationOtp')
       .mockResolvedValue(undefined);
 
     const result = await authService.register({
@@ -437,14 +440,14 @@ describe('AuthService', () => {
       roles: ['user'],
       userId: 'user-5',
     });
-    jest.spyOn(redisServiceMock, 'exists').mockResolvedValue(false);
-    jest.spyOn(redisServiceMock, 'increment').mockResolvedValue(1);
-    jest.spyOn(redisServiceMock, 'expire').mockResolvedValue(true);
-    jest.spyOn(redisServiceMock, 'set').mockResolvedValue('OK');
-    jest.spyOn(redisServiceMock, 'setJson').mockResolvedValue('OK');
-    jest.spyOn(redisServiceMock, 'assertAvailable').mockResolvedValue(undefined);
+    jest.spyOn(otpStoreMock, 'exists').mockResolvedValue(false);
+    jest.spyOn(otpStoreMock, 'increment').mockResolvedValue(1);
+    jest.spyOn(otpStoreMock, 'expire').mockResolvedValue(true);
+    jest.spyOn(otpStoreMock, 'set').mockResolvedValue('OK');
+    jest.spyOn(otpStoreMock, 'setJson').mockResolvedValue('OK');
+    jest.spyOn(otpStoreMock, 'assertAvailable').mockResolvedValue(undefined);
     jest
-      .spyOn(authOutboxServiceMock, 'enqueueEmailVerificationOtp')
+      .spyOn(emailOutboxMock, 'enqueueEmailVerificationOtp')
       .mockResolvedValue(undefined);
 
     await expect(
@@ -470,8 +473,8 @@ describe('AuthService', () => {
       roles: ['user'],
       userId: 'user-6',
     });
-    jest.spyOn(redisServiceMock, 'exists').mockResolvedValue(true);
-    jest.spyOn(redisServiceMock, 'ttl').mockResolvedValue(42);
+    jest.spyOn(otpStoreMock, 'exists').mockResolvedValue(true);
+    jest.spyOn(otpStoreMock, 'ttl').mockResolvedValue(42);
 
     await expect(
       authService.resendEmailVerificationOtp({
@@ -490,7 +493,7 @@ describe('AuthService', () => {
       roles: ['user'],
       userId: 'user-3',
     });
-    jest.spyOn(redisServiceMock, 'getJson').mockResolvedValue({
+    jest.spyOn(otpStoreMock, 'getJson').mockResolvedValue({
       email: 'new@collabspace.dev',
       otpHash:
         '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
@@ -550,7 +553,7 @@ describe('AuthService', () => {
       roles: ['admin'],
       userId: 'user-4',
     });
-    jest.spyOn(userProfilesGrpcServiceMock, 'getProfile').mockResolvedValue({
+    jest.spyOn(userProfileClientMock, 'getProfile').mockResolvedValue({
       fullName: 'Admin User',
       userId: 'user-4',
       username: 'admin.user',
@@ -590,7 +593,7 @@ describe('AuthService', () => {
       userId: 'user-8',
     });
     jest
-      .spyOn(userProfilesGrpcServiceMock, 'getProfile')
+      .spyOn(userProfileClientMock, 'getProfile')
       .mockRejectedValue(new Error('profile service unavailable'));
     const token = await authService.signAccessToken({
       role: 'member',

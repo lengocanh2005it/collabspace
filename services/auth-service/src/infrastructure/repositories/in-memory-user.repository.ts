@@ -12,6 +12,7 @@ import type {
   LoginInput,
   RegisterInput,
 } from '@/common/types/identity.type';
+import { User } from '@/domain/entities/user.entity';
 import { UserRepository } from '@/domain/repositories/user.repository';
 
 const scryptAsync = promisify(scrypt);
@@ -115,13 +116,6 @@ export class InMemoryUserRepository implements UserRepository {
       });
     }
 
-    if (!user.isActive) {
-      throw new UnauthorizedException({
-        code: 'USER_INACTIVE',
-        message: 'User account is inactive',
-      });
-    }
-
     const isPasswordValid = await this.verifyPassword(password, user.passwordHash);
 
     if (!isPasswordValid) {
@@ -131,14 +125,10 @@ export class InMemoryUserRepository implements UserRepository {
       });
     }
 
-    if (!user.emailVerified) {
-      throw new UnauthorizedException({
-        code: 'EMAIL_NOT_VERIFIED',
-        message: 'Email address has not been verified',
-      });
-    }
+    const authUser = this.toAuthUser(user);
+    User.fromAuthUser(authUser).assertCanLogin();
 
-    return this.toAuthUser(user);
+    return authUser;
   }
 
   async changePassword(

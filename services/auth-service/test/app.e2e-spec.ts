@@ -7,9 +7,10 @@ import { AuthService } from '../src/app.service';
 import { AuthHealthService } from '../src/health/auth-health.service';
 import { USER_REPOSITORY } from '../src/domain/repositories/user.repository';
 import { REFRESH_TOKEN_REPOSITORY } from '../src/domain/repositories/refresh-token.repository';
-import { UserProfilesGrpcService } from '../src/modules/identity/user-profiles-grpc.service';
+import { OTP_STORE } from '../src/domain/ports/otp-store.port';
+import { EMAIL_OUTBOX } from '../src/domain/ports/email-outbox.port';
+import { USER_PROFILE_CLIENT } from '../src/domain/ports/user-profile-client.port';
 import { AuthOutboxService } from '../src/modules/outbox/auth-outbox.service';
-import { RedisService } from '../src/modules/redis/redis.service';
 
 describe('AuthController (e2e)', () => {
   let app: INestApplication<App>;
@@ -30,23 +31,26 @@ describe('AuthController (e2e)', () => {
     rollbackNewRegistration: jest.fn(),
     validateCredentials: jest.fn(),
   };
-  const redisServiceMock = {
+  const otpStoreMock = {
     assertAvailable: jest.fn(),
     delete: jest.fn(),
     exists: jest.fn(),
     expire: jest.fn(),
     getJson: jest.fn(),
     increment: jest.fn(),
+    ping: jest.fn(),
     set: jest.fn(),
     setJson: jest.fn(),
     ttl: jest.fn(),
   };
-  const authOutboxServiceMock = {
+  const emailOutboxMock = {
     enqueueEmailVerificationOtp: jest.fn(),
+    getStats: jest.fn(),
   };
-  const userProfilesGrpcServiceMock = {
+  const userProfileClientMock = {
     createPendingProfile: jest.fn(),
     getProfile: jest.fn(),
+    ping: jest.fn(),
   };
   const authHealthServiceMock = {
     getLiveness: jest.fn(),
@@ -120,27 +124,28 @@ describe('AuthController (e2e)', () => {
     refreshTokensServiceMock.revokeAllForUser.mockResolvedValue(2);
     refreshTokensServiceMock.revokeToken.mockResolvedValue(undefined);
 
-    redisServiceMock.setJson.mockResolvedValue('OK');
-    redisServiceMock.set.mockResolvedValue('OK');
-    redisServiceMock.getJson.mockResolvedValue({
+    otpStoreMock.setJson.mockResolvedValue('OK');
+    otpStoreMock.set.mockResolvedValue('OK');
+    otpStoreMock.getJson.mockResolvedValue({
       email: 'member@example.com',
       otpHash:
         '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
     });
-    redisServiceMock.delete.mockResolvedValue(1);
-    redisServiceMock.exists.mockResolvedValue(false);
-    redisServiceMock.increment.mockResolvedValue(1);
-    redisServiceMock.expire.mockResolvedValue(true);
+    otpStoreMock.delete.mockResolvedValue(1);
+    otpStoreMock.exists.mockResolvedValue(false);
+    otpStoreMock.increment.mockResolvedValue(1);
+    otpStoreMock.expire.mockResolvedValue(true);
+    otpStoreMock.assertAvailable.mockResolvedValue(undefined);
 
-    userProfilesGrpcServiceMock.getProfile.mockResolvedValue({
+    userProfileClientMock.getProfile.mockResolvedValue({
       fullName: 'Member Example',
       userId: 'user-123',
       username: 'member.example',
     });
-    userProfilesGrpcServiceMock.createPendingProfile.mockResolvedValue(
+    userProfileClientMock.createPendingProfile.mockResolvedValue(
       undefined,
     );
-    authOutboxServiceMock.enqueueEmailVerificationOtp.mockResolvedValue(
+    emailOutboxMock.enqueueEmailVerificationOtp.mockResolvedValue(
       undefined,
     );
 
@@ -177,14 +182,16 @@ describe('AuthController (e2e)', () => {
       .useValue(refreshTokensServiceMock)
       .overrideProvider(USER_REPOSITORY)
       .useValue(identityServiceMock)
-      .overrideProvider(RedisService)
-      .useValue(redisServiceMock)
+      .overrideProvider(OTP_STORE)
+      .useValue(otpStoreMock)
+      .overrideProvider(EMAIL_OUTBOX)
+      .useValue(emailOutboxMock)
       .overrideProvider(AuthOutboxService)
-      .useValue(authOutboxServiceMock)
+      .useValue(emailOutboxMock)
       .overrideProvider(AuthHealthService)
       .useValue(authHealthServiceMock)
-      .overrideProvider(UserProfilesGrpcService)
-      .useValue(userProfilesGrpcServiceMock)
+      .overrideProvider(USER_PROFILE_CLIENT)
+      .useValue(userProfileClientMock)
       .compile();
 
     app = moduleFixture.createNestApplication();
@@ -325,7 +332,7 @@ describe('AuthController (e2e)', () => {
       .expect(201);
 
     expect(response.body.verificationRequired).toBe(true);
-    expect(userProfilesGrpcServiceMock.createPendingProfile).toHaveBeenCalledWith({
+    expect(userProfileClientMock.createPendingProfile).toHaveBeenCalledWith({
       fullName: 'Member Example',
       userId: 'user-123',
     });

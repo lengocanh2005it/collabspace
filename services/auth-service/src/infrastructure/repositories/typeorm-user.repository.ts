@@ -14,6 +14,7 @@ import type {
   LoginInput,
   RegisterInput,
 } from '@/common/types/identity.type';
+import { User } from '@/domain/entities/user.entity';
 import { UserRepository } from '@/domain/repositories/user.repository';
 import { RoleEntity } from '@/modules/identity/entities/role.entity';
 import { UserRoleEntity } from '@/modules/identity/entities/user-role.entity';
@@ -136,13 +137,6 @@ export class TypeOrmUserRepository implements UserRepository {
     const password = this.normalizePassword(input.password);
     const user = await this.loadUserByEmail(email);
 
-    if (!user.isActive) {
-      throw new UnauthorizedException({
-        code: 'USER_INACTIVE',
-        message: 'User account is inactive',
-      });
-    }
-
     const isPasswordValid = await this.verifyPassword(
       password,
       user.passwordHash,
@@ -155,14 +149,10 @@ export class TypeOrmUserRepository implements UserRepository {
       });
     }
 
-    if (!user.emailVerifiedAt) {
-      throw new UnauthorizedException({
-        code: 'EMAIL_NOT_VERIFIED',
-        message: 'Email address has not been verified',
-      });
-    }
+    const authUser = this.toAuthUser(user);
+    User.fromAuthUser(authUser).assertCanLogin();
 
-    return this.toAuthUser(user);
+    return authUser;
   }
 
   async changePassword(

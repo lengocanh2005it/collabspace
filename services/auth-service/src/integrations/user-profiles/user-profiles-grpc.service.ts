@@ -1,4 +1,10 @@
+import { ConfigurationModule } from '@/configuration/configuration.module';
 import { ConfigurationService } from '@/configuration/configuration.service';
+import {
+  CreatePendingProfileInput,
+  UserProfileClient,
+  UserProfileSnapshot,
+} from '@/domain/ports/user-profile-client.port';
 import {
   Inject,
   Injectable,
@@ -11,11 +17,6 @@ import { TimeoutError, firstValueFrom, Observable, timeout } from 'rxjs';
 
 export const USER_PROFILES_GRPC_CLIENT = 'USER_PROFILES_GRPC_CLIENT';
 
-type CreatePendingProfileInput = {
-  fullName: string;
-  userId: string;
-};
-
 type CreatePendingProfileRequest = {
   fullName: string;
   userId: string;
@@ -23,10 +24,6 @@ type CreatePendingProfileRequest = {
 
 type CreatePendingProfileResponse = {
   success: boolean;
-  userId: string;
-};
-
-type GetProfileInput = {
   userId: string;
 };
 
@@ -55,7 +52,7 @@ type ReadyGrpcClient = {
 };
 
 @Injectable()
-export class UserProfilesGrpcService implements OnModuleInit {
+export class UserProfilesGrpcService implements OnModuleInit, UserProfileClient {
   private readonly logger = new Logger(UserProfilesGrpcService.name);
   private readonly client: ClientGrpc;
   private userProfilesClient?: ReadyGrpcClient;
@@ -164,7 +161,7 @@ export class UserProfilesGrpcService implements OnModuleInit {
     }
   }
 
-  async getProfile(input: GetProfileInput): Promise<GetProfileResponse> {
+  async getProfile(input: { userId: string }): Promise<UserProfileSnapshot> {
     if (!this.userProfilesService) {
       throw new ServiceUnavailableException({
         code: 'USER_SERVICE_GRPC_UNAVAILABLE',

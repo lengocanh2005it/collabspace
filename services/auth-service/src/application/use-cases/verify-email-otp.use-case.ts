@@ -1,22 +1,24 @@
 import { VerifyEmailOtpRequestDto } from '@/application/dto/auth-request.dto';
 import { VerifyEmailOtpResult } from '@/common/types/identity.type';
 import {
+  EmailVerificationOtpPayload,
+  OTP_STORE,
+  type OtpStore,
+} from '@/domain/ports/otp-store.port';
+import {
   USER_REPOSITORY,
   type UserRepository,
 } from '@/domain/repositories/user.repository';
-import { RedisService } from '@/modules/redis/redis.service';
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
-import {
-  EmailVerificationOtpPayload,
-  EmailVerificationOtpService,
-} from '../services/email-verification-otp.service';
+import { EmailVerificationOtpService } from '../services/email-verification-otp.service';
 
 @Injectable()
 export class VerifyEmailOtpUseCase {
   constructor(
     @Inject(USER_REPOSITORY)
     private readonly userRepository: UserRepository,
-    private readonly redisService: RedisService,
+    @Inject(OTP_STORE)
+    private readonly otpStore: OtpStore,
     private readonly emailVerificationOtpService: EmailVerificationOtpService,
   ) {}
 
@@ -40,7 +42,7 @@ export class VerifyEmailOtpUseCase {
       };
     }
 
-    const otpPayload = await this.redisService.getJson<EmailVerificationOtpPayload>(
+    const otpPayload = await this.otpStore.getJson<EmailVerificationOtpPayload>(
       this.emailVerificationOtpService.buildOtpKey(input.userId),
     );
 
@@ -59,7 +61,7 @@ export class VerifyEmailOtpUseCase {
     }
 
     const user = await this.userRepository.markEmailVerified(input.userId);
-    await this.redisService.delete(
+    await this.otpStore.delete(
       this.emailVerificationOtpService.buildOtpKey(input.userId),
     );
 

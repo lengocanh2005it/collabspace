@@ -1,5 +1,6 @@
 import { LoginRequestDto } from '@/application/dto/auth-request.dto';
 import type { AuthSessionResponseDto } from '@/application/dto/auth-session-response.dto';
+import { User } from '@/domain/entities/user.entity';
 import {
   USER_REPOSITORY,
   type UserRepository,
@@ -16,7 +17,8 @@ export class LoginUseCase {
   ) {}
 
   async execute(input: LoginRequestDto): Promise<AuthSessionResponseDto> {
-    const user = await this.userRepository.validateCredentials(input);
-    return this.sessionIssuanceService.issue(user, input.workspaceId);
+    const authUser = await this.userRepository.validateCredentials(input);
+    User.fromAuthUser(authUser).assertCanLogin();
+    return this.sessionIssuanceService.issue(authUser, input.workspaceId);
   }
 }

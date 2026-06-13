@@ -13,10 +13,15 @@ import { JwtTokenService } from '@/application/services/jwt-token.service';
 import { SessionIssuanceService } from '@/application/services/session-issuance.service';
 import { UserProfileResolverService } from '@/application/services/user-profile-resolver.service';
 import { ConfigurationModule } from '@/configuration/configuration.module';
+import { EMAIL_OUTBOX } from '@/domain/ports/email-outbox.port';
+import { OTP_STORE } from '@/domain/ports/otp-store.port';
 import {
   REFRESH_TOKEN_REPOSITORY,
 } from '@/domain/repositories/refresh-token.repository';
 import { USER_REPOSITORY } from '@/domain/repositories/user.repository';
+import { UserProfilesModule } from '@/integrations/user-profiles/user-profiles.module';
+import { TypeOrmEmailOutboxAdapter } from '@/infrastructure/outbox/typeorm-email-outbox.adapter';
+import { RedisOtpStoreAdapter } from '@/infrastructure/redis/redis-otp-store.adapter';
 import { InMemoryUserRepository } from '@/infrastructure/repositories/in-memory-user.repository';
 import { TypeOrmRefreshTokenRepository } from '@/infrastructure/repositories/typeorm-refresh-token.repository';
 import { TypeOrmUserRepository } from '@/infrastructure/repositories/typeorm-user.repository';
@@ -41,6 +46,7 @@ import { AuthService } from './app.service';
     EmailsModule,
     GraphileWorkerModule,
     IdentityModule,
+    UserProfilesModule,
     OutboxModule,
     RefreshTokensModule,
     RedisModule,
@@ -63,6 +69,8 @@ import { AuthService } from './app.service';
     TypeOrmUserRepository,
     InMemoryUserRepository,
     TypeOrmRefreshTokenRepository,
+    RedisOtpStoreAdapter,
+    TypeOrmEmailOutboxAdapter,
     {
       provide: USER_REPOSITORY,
       inject: [TypeOrmUserRepository, InMemoryUserRepository],
@@ -77,6 +85,14 @@ import { AuthService } from './app.service';
     {
       provide: REFRESH_TOKEN_REPOSITORY,
       useExisting: TypeOrmRefreshTokenRepository,
+    },
+    {
+      provide: OTP_STORE,
+      useExisting: RedisOtpStoreAdapter,
+    },
+    {
+      provide: EMAIL_OUTBOX,
+      useExisting: TypeOrmEmailOutboxAdapter,
     },
     AuthService,
     AuthHealthService,

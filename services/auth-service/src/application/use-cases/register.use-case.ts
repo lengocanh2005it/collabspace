@@ -4,10 +4,13 @@ import {
   RegisterPendingResult,
 } from '@/common/types/identity.type';
 import {
+  USER_PROFILE_CLIENT,
+  type UserProfileClient,
+} from '@/domain/ports/user-profile-client.port';
+import {
   USER_REPOSITORY,
   type UserRepository,
 } from '@/domain/repositories/user.repository';
-import { UserProfilesGrpcService } from '@/modules/identity/user-profiles-grpc.service';
 import { ConflictException, Inject, Injectable, Logger } from '@nestjs/common';
 import { EmailVerificationOtpService } from '../services/email-verification-otp.service';
 
@@ -18,7 +21,8 @@ export class RegisterUseCase {
   constructor(
     @Inject(USER_REPOSITORY)
     private readonly userRepository: UserRepository,
-    private readonly userProfilesGrpcService: UserProfilesGrpcService,
+    @Inject(USER_PROFILE_CLIENT)
+    private readonly userProfileClient: UserProfileClient,
     private readonly emailVerificationOtpService: EmailVerificationOtpService,
   ) {}
 
@@ -26,7 +30,7 @@ export class RegisterUseCase {
     const { user, newlyCreated } = await this.registerOrRecoverPendingUser(input);
 
     try {
-      await this.userProfilesGrpcService.createPendingProfile({
+      await this.userProfileClient.createPendingProfile({
         fullName: input.fullName,
         userId: user.userId,
       });

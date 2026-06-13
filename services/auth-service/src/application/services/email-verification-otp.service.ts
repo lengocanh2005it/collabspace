@@ -1,14 +1,18 @@
 import { AuthUser } from '@/common/types/identity.type';
 import { ConfigurationService } from '@/configuration/configuration.service';
-import { AuthOutboxService } from '@/modules/outbox/auth-outbox.service';
-import { RedisService } from '@/modules/redis/redis.service';
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import {
+  EMAIL_OUTBOX,
+  type EmailOutbox,
+} from '@/domain/ports/email-outbox.port';
+import {
+  EmailVerificationOtpPayload,
+  OTP_STORE,
+  type OtpStore,
+} from '@/domain/ports/otp-store.port';
+import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { createHash, randomInt } from 'crypto';
 
-export type EmailVerificationOtpPayload = {
-  email: string;
-  otpHash: string;
-};
+export type { EmailVerificationOtpPayload };
 
 export type EmailVerificationOtpDispatchResult = {
   email: string;
@@ -20,8 +24,10 @@ export type EmailVerificationOtpDispatchResult = {
 export class EmailVerificationOtpService {
   constructor(
     private readonly configurationService: ConfigurationService,
-    private readonly authOutboxService: AuthOutboxService,
-    private readonly redisService: RedisService,
+    @Inject(EMAIL_OUTBOX)
+    private readonly emailOutbox: EmailOutbox,
+    @Inject(OTP_STORE)
+    private readonly otpStore: OtpStore,
   ) {}
 
   buildOtpKey(userId: string): string {
@@ -37,8 +43,8 @@ export class EmailVerificationOtpService {
     const otpTtlSeconds =
       this.configurationService.getEmailVerificationConfig().otpTtlSeconds;
 
-    await this.redisService.assertAvailable();
-    await this.redisService.setJson(
+    await this.otpStore.assertAvailable();
+    await this.otpStore.setJson(
       this.buildOtpKey(user.userId),
       {
         email: user.email,
@@ -46,7 +52,7 @@ export class EmailVerificationOtpService {
       } satisfies EmailVerificationOtpPayload,
       otpTtlSeconds,
     );
-    await this.authOutboxService.enqueueEmailVerificationOtp({
+    await this.emailOutbox.enqueueEmailVerificationOtp({
       email: user.email,
       otp,
       otpTtlSeconds,
@@ -66,8 +72,8 @@ export class EmailVerificationOtpService {
     const cooldownKey = `email-verification:resend:cooldown:${userId}`;
     const attemptsKey = `email-verification:resend:attempts:${userId}`;
 
-    if (await this.redisService.exists(cooldownKey)) {
-      const ttl = await this.redisService.ttl(cooldownKey);
+    if (await this.otpStore.exists(cooldownKey)) {
+      const ttl = await this.otpStore.ttl(cooldownKey);
       throw new HttpException(
         {
           code: 'EMAIL_VERIFICATION_RESEND_COOLDOWN',
@@ -77,17 +83,17 @@ export class EmailVerificationOtpService {
       );
     }
 
-    const attempts = await this.redisService.increment(attemptsKey);
+    const attempts = await this.otpStore.increment(attemptsKey);
 
     if (attempts === 1) {
-      await this.redisService.expire(
+      await this.otpStore.expire(
         attemptsKey,
         emailVerificationConfig.resendWindowSeconds,
       );
     }
 
     if (attempts > emailVerificationConfig.resendMaxAttempts) {
-      const ttl = await this.redisService.ttl(attemptsKey);
+      const ttl = await this.otpStore.ttl(attemptsKey);
       throw new HttpException(
         {
           code: 'EMAIL_VERIFICATION_RESEND_LIMIT_REACHED',
@@ -97,7 +103,7 @@ export class EmailVerificationOtpService {
       );
     }
 
-    await this.redisService.set(
+    await this.otpStore.set(
       cooldownKey,
       '1',
       emailVerificationConfig.resendCooldownSeconds,
