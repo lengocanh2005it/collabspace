@@ -1,0 +1,14 @@
+{{- if and .Values.observability.grafana.enabled .Files.Get "dashboards/service-health.json" }}
+{{- $ns := include "collabspace.namespace" . }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: collabspace-grafana-dashboards
+  namespace: {{ $ns }}
+  labels:
+    app.kubernetes.io/part-of: collabspace
+data:
+  service-health.json: |-
+{{ .Files.Get "dashboards/service-health.json" | indent 4 }}
+{{- end }}

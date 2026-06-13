@@ -286,10 +286,8 @@ grafana:
           url: http://loki:3100
           jsonData:
             maxLines: 1000
-  dashboards:
-    default:
-      service-health:
-        file: dashboards/service-health.json
+  dashboardsConfigMaps:
+    default: collabspace-grafana-dashboards
   dashboardProviders:
     dashboardproviders.yaml:
       apiVersion: 1
