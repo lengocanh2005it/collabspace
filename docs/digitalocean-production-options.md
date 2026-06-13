@@ -351,8 +351,9 @@ Monitoring tối thiểu:
 
 - DigitalOcean metrics agent.
 - Kubernetes pod health/readiness.
-- Prometheus/Grafana có thể bật sau khi app chạy ổn định.
-- Alert tối thiểu: disk usage, memory, pod restart, DB down.
+- Helm observability stack: Prometheus + Grafana (`/grafana`) + Loki + Promtail — [observability.md](./observability.md).
+- k6 smoke/demo-flow từ máy dev hoặc CI (`infrastructure/load-testing/`).
+- Alert tối thiểu: disk usage, memory, pod restart, DB down; Alertmanager → Slack/email ⬜.
 
 ## Thứ Tự Triển Khai Để Tránh Vỡ Trận
 

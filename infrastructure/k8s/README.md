@@ -2,7 +2,7 @@
 
 These plain YAML files were the original CollabSpace K8s deployment (Agent BRAVO).
 
-**Preferred deployment path:** [Helm chart](../helm/README.md)
+**Preferred deployment path:** [Helm chart](../helm/README.md) — includes Prometheus, Grafana (`/grafana`), Loki, Promtail ([docs/observability.md](../../docs/observability.md)).
 
 ```bash
 ./infrastructure/helm/scripts/install.sh

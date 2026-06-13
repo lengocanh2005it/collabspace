@@ -57,6 +57,7 @@ services/
 | Product features & status | `docs/features.md` |
 | MVP build order (agent) | `.claude/docs/mvp-roadmap.md` |
 | MVP demo acceptance | `docs/mvp-demo-scope.md` |
+| Observability (Grafana/Loki/k6) | `docs/observability.md` |
 
 ## Skills
 
@@ -81,7 +82,7 @@ Invoke explicitly: *"Use the nest-reviewer agent to review my changes."*
 
 - **Scope**: Giữ thay đổi trong service sở hữu trừ khi task yêu cầu integration.
 - **Patterns**: Đọc `.claude/docs/service-architecture.md` và code lân cận; **không** copy kiến trúc service khác.
-- **Secrets**: Không commit `.env`; contract trong `*.env.example`. **HashiCorp Vault** (`infrastructure/vault/`): optional local dev; staging/prod qua ESO → K8s `Secret` → `envFrom`. App NestJS chỉ đọc env — không gọi Vault API trực tiếp.
+- **Secrets**: Không commit `.env`; contract trong `*.env.example`. **HashiCorp Vault** (`infrastructure/vault/`): stack secrets chính — local Compose dev + **K8s prod** qua ESO → K8s `Secret` → `envFrom`. App NestJS chỉ đọc env — không gọi Vault API trực tiếp.
 - **Ports**: workspace-service chạy `8080` trong container, không phải `3000`.
 - **Package manager**: `pnpm` — từ root (`pnpm run build|test`) hoặc từng `services/*`; workspace: `pnpm-workspace.yaml` + `packages/shared`.
 - **Tests**: Thêm/cập nhật test khi behavior user-visible thay đổi.

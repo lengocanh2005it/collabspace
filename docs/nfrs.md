@@ -82,10 +82,10 @@ Chi tiết kỹ thuật:
 
 | NFR | Mục tiêu | CollabSpace |
 |-----|----------|-------------|
-| Metrics | Golden signals per service | ✅ Prometheus `/metrics` (5 services); Grafana dashboard |
-| Alerting | Cảnh báo down / 5xx / queue depth | ✅ `alert-rules.yml` + runbooks |
+| Metrics | Golden signals per service | ✅ Prometheus `/metrics` (5 services); Grafana dashboards (Service Health, App Logs, Load Test) — [observability.md](./observability.md) |
+| Alerting | Cảnh báo down / 5xx / queue depth | ✅ `alert-rules.yml` + runbooks; Alertmanager → Slack/email ⬜ |
 | Distributed tracing | Trace request xuyên service | ⚠️ OpenTelemetry → Jaeger (`docker-compose.tracing.yml`); prod tắt mặc định |
-| Centralized logging | Log tập trung | ⚠️ ELK compose có; `X-Request-Id` middleware + S2S forward (Phase C); structured log injection chưa đồng nhất 100% |
+| Centralized logging | Log tập trung | ⚠️ **K8s:** Loki + Promtail + Grafana Explore ✅; tail theo `X-Request-Id` phụ thuộc app log field; Docker ELK profile tùy chọn (không dùng trên prod) |
 | Replica sync lag | Phát hiện eventual consistency trễ | ✅ `user_replica_sync_lag_seconds`, `user_replica_fallback_total` |
 
 ---

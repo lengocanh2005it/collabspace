@@ -70,8 +70,8 @@ kubectl get svc traefik -n collabspace
 
 ## Production overrides
 
-**Lộ trình deploy production (DigitalOcean k3s):** [docs/deployment-k3s-phases.md](../../docs/deployment-k3s-phases.md).  
-**Phase 0 checklist:** [infrastructure/deploy/phase0-checklist.md](../deploy/phase0-checklist.md).
+**Lộ trình deploy production (DigitalOcean k3s):** [docs/deployment-k3s-phases.md](../../docs/deployment-k3s-phases.md) (Phase 0–4 + observability).  
+**Observability (Grafana/Loki/k6):** [docs/observability.md](../../docs/observability.md).
 
 ```bash
 cp infrastructure/deploy/phase0.env.example infrastructure/deploy/phase0.env

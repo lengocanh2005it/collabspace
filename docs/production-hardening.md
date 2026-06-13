@@ -12,7 +12,7 @@ Dùng trước khi expose CollabSpace ra ngoài môi trường local/demo.
 - [x] PodDisruptionBudget cho tầng app stateless (`infrastructure/k8s/pdb.yaml`).
 - [ ] **Secrets:** thay placeholder `stringData` — dùng **HashiCorp Vault + External Secrets Operator** (`infrastructure/vault/`) hoặc Sealed Secrets / cloud secret manager. Chỉ inject `global.secrets.*` qua CI/CD, không commit values. Bật `global.externalSecrets.enabled: true` khi ESO quản lý `{app}-secrets`.
 - [x] Đường scrape Prometheus: `/api/v1/*/metrics` trên mỗi service.
-- [ ] **Xác thực metrics:** đặt `global.secrets.metricsAuthToken` trong Helm; cấu hình Prometheus `authorization.credentials` hoặc `bearer_token` / header `X-Metrics-Token`. Chỉ để trống ở local dev.
+- [x] **Xác thực metrics:** `global.secrets.metricsAuthToken` + Secret `prometheus-metrics-auth`; Prometheus scrape Bearer — Helm prod ✅.
 
 ## Ứng dụng (đã implement)
 

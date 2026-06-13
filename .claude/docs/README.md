@@ -12,7 +12,7 @@ Detailed project context for AI agents. Keep root `CLAUDE.md` concise; put long 
 | `service-architecture.md` | Per-service folder layout, layering patterns, where to add code |
 | `service-contracts.md` | HTTP routes, gRPC, events, auth headers, internal S2S |
 | `read-models.md` | User replica pattern and env |
-| `development-workflows.md` | Setup, Docker, Vault (optional), migrations, seeding, testing, troubleshooting |
+| `development-workflows.md` | Setup, Docker, Vault, migrations, seeding, testing, troubleshooting |
 | `coding-conventions.md` | NestJS, TypeORM, DTO, repository, error, test conventions |
 | `mvp-roadmap.md` | Recommended build order for agents (status → `docs/features.md`) |
 

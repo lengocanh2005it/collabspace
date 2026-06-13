@@ -33,7 +33,7 @@ Phase 0 ──► Phase 1 ──► Phase 2 ──► Phase 3 ──► Phase 4 
 
 **Mục tiêu:** Có đủ tài nguyên và quyết định kỹ thuật trước khi cài cluster.
 
-**Checklist chi tiết:** [infrastructure/deploy/phase0-checklist.md](../infrastructure/deploy/phase0-checklist.md)
+**Checklist chi tiết (Phase 0):** [infrastructure/deploy/phase0-checklist.md](../infrastructure/deploy/phase0-checklist.md)
 
 ### Bước nhanh
 
@@ -86,7 +86,7 @@ chmod +x infrastructure/deploy/prepare-prod-values.sh
 
 **Mục tiêu:** Kubernetes single-node chạy ổn định.
 
-**Checklist:** [infrastructure/deploy/phase1-checklist.md](../infrastructure/deploy/phase1-checklist.md)
+**Scripts & verify:** `k3s-bootstrap.sh`, `verify-phase1.sh` — xem mục dưới.
 
 ### Bước nhanh (trên Droplet)
 
@@ -134,7 +134,7 @@ kubectl get nodes
 
 **Mục tiêu:** Secret không nằm trong Git; app đọc env từ K8s Secret.
 
-**Checklist:** [infrastructure/deploy/phase2-checklist.md](../infrastructure/deploy/phase2-checklist.md)
+**Scripts & verify:** `vault-eso-phase2.sh`, `verify-phase2.sh` — xem mục dưới.
 
 ```text
 Vault KV secret/collabspace/prod
@@ -184,7 +184,7 @@ Password Bitnami trong `values-prod.yaml` phải **khớp** Vault (`postgres_pas
 
 **Mục tiêu:** Toàn bộ stack chạy; API truy cập được.
 
-**Checklist:** [infrastructure/deploy/phase3-checklist.md](../infrastructure/deploy/phase3-checklist.md)
+**Scripts & verify:** `helm-deploy-phase3.sh`, `verify-k8s-readiness.sh`, `run-demo-e2e-prod.sh` — xem mục dưới.
 
 ### Bước nhanh (trên Droplet)
 
@@ -236,7 +236,7 @@ BASE_URL=http://<ip>/api/v1 ./scripts/demo-e2e.sh
 
 **Mục tiêu:** Push `main` → build image → deploy Helm không cần SSH tay.
 
-**Checklist:** [infrastructure/deploy/phase4-checklist.md](../infrastructure/deploy/phase4-checklist.md)
+**Scripts & verify:** `helm-deploy-ci.sh`, workflow `docker-deploy.yml` — xem mục dưới.
 
 ### Workflow
 

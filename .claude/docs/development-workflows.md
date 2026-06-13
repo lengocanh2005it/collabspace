@@ -32,19 +32,19 @@ Environment examples exist for most services and infrastructure components:
 - `infrastructure/redis/.env.example`
 - `infrastructure/load-testing/k6/.env.example`
 - `infrastructure/docker/.env.example` — shared dev secret notes
-- `infrastructure/vault/` — HashiCorp Vault (optional local dev; K8s + ESO for staging/prod)
+- `infrastructure/vault/` — HashiCorp Vault (secrets store: local Compose + K8s prod via ESO)
 
 Rules:
 
 - Do not commit real secrets.
 - When adding required env vars, update the matching `.env.example`, config service, Docker Compose file, and README/doc references.
 - **Shared secrets (local Docker):** use the same `INTERNAL_SERVICE_TOKEN` in `user-service`, `workspace-service`, `task-service`, and `notification-service` `.env` files; align `JWT_SECRET` between `auth-service` and `notification-service`. See `infrastructure/docker/.env.example`.
-- **Optional Vault (local):** `docker compose -f docker-compose.vault.yml up -d` → `infrastructure/vault/scripts/seed-dev-secrets.ps1` → `sync-env-from-vault.ps1`. See `infrastructure/vault/README.md`.
+- **Vault (local dev):** `docker compose -f docker-compose.vault.yml up -d` → `infrastructure/vault/scripts/seed-dev-secrets.ps1` → `sync-env-from-vault.ps1`. See `infrastructure/vault/README.md`.
 - **K8s + Vault:** External Secrets Operator manifests in `infrastructure/vault/k8s/`; Helm `global.externalSecrets.enabled: true` skips chart `Secret` templates.
 - **Trust boundaries:** `ALLOW_DEV_IDENTITY_HEADERS=true` only in local `.env` for workspace/task/notification direct-port testing; production and gateway traffic require `Authorization: Bearer …`.
 - In NestJS services, prefer a configuration wrapper over scattered `process.env` reads when the service already has one. `auth-service` uses `ConfigurationService`; `user-service` currently reads more directly in `main.ts` and module factories.
 
-## HashiCorp Vault (optional local secrets)
+## HashiCorp Vault (secrets)
 
 Single source for shared dev secrets (`JWT_SECRET`, `INTERNAL_SERVICE_TOKEN`, DB/RabbitMQ/Redis passwords). Apps still read `.env` — Vault does not replace Compose `env_file` at runtime unless you sync first.
 
@@ -99,7 +99,7 @@ Important local URLs:
 - Grafana: `http://localhost:3005`
 - Prometheus: `http://localhost:9090`
 - Alertmanager: `http://localhost:9093`
-- Kibana: `http://localhost:5601`
+- Kibana: `http://localhost:5601` (chỉ khi bật profile ELK — `docker-compose.logging.yml`; prod K8s dùng Loki)
 - Jaeger: `http://localhost:16686`
 - Traefik dashboard: `http://localhost:8080`
 - RabbitMQ dashboard: `http://localhost:15672`

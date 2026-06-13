@@ -28,6 +28,7 @@ Read before broad changes:
 - Cross-service data: `docs/cross-service-data.md`, `.claude/docs/read-models.md`
 - MVP roadmap: `.claude/docs/mvp-roadmap.md`
 - MVP demo acceptance: `docs/mvp-demo-scope.md`
+- Observability (Grafana/Loki/k6): `docs/observability.md`
 
 Path-scoped rules load automatically from `.claude/rules/` when editing matching files.
 
@@ -75,7 +76,7 @@ Subagents in `.claude/agents/`: `nest-reviewer`, `mvp-implementer`, `contract-gu
 - **Docs & skills sync:** when code changes routes, events, env, auth, resilience, or MVP status, update related agent docs (`.claude/docs/`, `services/*/CLAUDE.md`, `.claude/rules/`) and skills (`.claude/skills/`) in the same change when needed — see `.claude/docs/agent-onboarding.md` and `.claude/rules/docs-and-skills-sync.md`.
 - Avoid broad rewrites, dependency churn, or formatting unrelated files.
 - Do not invent production secrets. Use `.env.example` patterns and document required variables.
-- **Secrets:** apps read env vars only. **Local:** `.env` or optional Vault dev (`docker-compose.vault.yml` → `infrastructure/vault/scripts/`). **K8s:** Vault + External Secrets Operator → `{app}-secrets`; Helm `global.externalSecrets.enabled: true`. See `infrastructure/vault/README.md`.
+- **Secrets:** apps read env vars only. **Local:** Vault dev (`docker-compose.vault.yml` → `infrastructure/vault/scripts/`) hoặc `.env` tay. **K8s prod:** Vault + External Secrets Operator → `{app}-secrets`; Helm `global.externalSecrets.enabled: true`. See `infrastructure/vault/README.md`.
 - Shared dev values (manual `.env` or Vault seed): `JWT_SECRET`, `INTERNAL_SERVICE_TOKEN` (same in user/workspace/task/notification) — `infrastructure/docker/.env.example`.
 - `ALLOW_DEV_IDENTITY_HEADERS=true` only in local `.env`, never production.
 

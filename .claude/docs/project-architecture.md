@@ -21,7 +21,7 @@ Traefik API Gateway
   +--> notification-service  NestJS + CQRS, MongoDB, RabbitMQ consumer
 
 RabbitMQ sits beside services as the async event bus.
-Observability stack includes Prometheus, Grafana, ELK, and Jaeger.
+Observability: **K8s/Helm** — Prometheus, Grafana (`/grafana`), Loki + Promtail, k6 scenarios; **Docker** — optional profiles (monitoring, ELK, Jaeger). Guide: [docs/observability.md](../../docs/observability.md).
 ```
 
 ## Service Inventory
@@ -263,12 +263,12 @@ Optional stacks:
 
 - `docker-compose.monitoring.yml`: Prometheus, Alertmanager, Grafana.
 - `docker-compose.exporters.yml`: Postgres/Redis/Mongo Prometheus exporters.
-- `docker-compose.logging.yml`: ELK.
+- `docker-compose.logging.yml`: optional ELK profile (local only — prod K8s uses Loki).
 - `docker-compose.tracing.yml`: Jaeger.
 - `docker-compose.traefik.yml`: Traefik gateway.
 - `docker-compose.jenkins.yml`: Jenkins.
 - `docker-compose.loadtest.yml`: k6/load testing.
-- `docker-compose.vault.yml`: HashiCorp Vault dev mode (optional; port `8200`).
+- `docker-compose.vault.yml`: HashiCorp Vault dev mode (local; port `8200`). **K8s prod:** Vault single-node + ESO — không dùng `-dev` mode.
 
 ### Databases
 

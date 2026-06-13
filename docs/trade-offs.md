@@ -192,12 +192,12 @@ Chi tiết: `.claude/docs/service-contracts.md` → Correlation ID.
 
 ## 14. Observability stack đầy đủ vs minimal
 
-| | Prometheus + Grafana + alerts + optional Jaeger/ELK | Chỉ logs stdout |
-|---|------------------------------------------------------|-----------------|
-| **Chọn** | ✅ Stack trong `infrastructure/` | |
-| **Gain** | Debug prod-like; drill resilience | |
-| **Cost** | RAM local Docker; cấu hình datasource/UID | |
-| **Trade-off demo** | Bật tracing/logging profile khi cần, không bắt buộc mọi lúc | |
+| | Prometheus + Grafana + Loki (K8s) + k6; Docker optional Jaeger/ELK | Chỉ logs stdout |
+|---|---------------------------------------------------------------------|-----------------|
+| **Chọn** | ✅ Helm observability + [observability.md](./observability.md) | |
+| **Gain** | Metric, log Explore, load-test markers; debug prod-like | |
+| **Cost** | RAM cluster; datasource UID; alert routing chưa xong | |
+| **Trade-off demo** | Bật tracing/ELK Docker profile khi cần local; prod K8s dùng Loki | |
 
 ---
 

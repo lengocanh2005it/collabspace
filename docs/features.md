@@ -164,12 +164,14 @@ Không phải tính năng end-user nhưng hỗ trợ demo và vận hành:
 | Event bus (RabbitMQ) + DLQ | Done |
 | Transactional outbox (auth email, workspace invite, task events) | Done |
 | Health `/live` + `/ready` | Done |
-| Prometheus metrics + Grafana dashboard | Done |
+| Prometheus metrics + Grafana dashboards | Done — K8s Helm: Service Health, App Logs, Load Test Run |
+| Loki + Promtail (K8s centralized logs) | Done — tail/search qua Grafana Explore |
+| k6 load tests (`smoke`, `demo-flow`) | Done — [infrastructure/load-testing/README.md](../infrastructure/load-testing/README.md) |
 | OpenTelemetry → Jaeger | Done — bật qua `docker-compose.tracing.yml` (`TRACING_ENABLED=true`) |
 | Runbooks & failure drills | Done |
-| HashiCorp Vault (secrets) | **Partial** — dev Compose + seed/sync + ESO manifests (`infrastructure/vault/`); Vault HA + operational rotation chưa |
+| HashiCorp Vault (secrets) | **Partial** — single-node Vault + ESO trên K8s prod ✅; Vault HA + rotation operational chưa |
 
-Chi tiết: [resilience-overview.md](./resilience-overview.md), [production-hardening.md](./production-hardening.md), [tracing-setup.md](./tracing-setup.md), [infrastructure/vault/README.md](../infrastructure/vault/README.md).
+Chi tiết: [observability.md](./observability.md), [resilience-overview.md](./resilience-overview.md), [production-hardening.md](./production-hardening.md), [tracing-setup.md](./tracing-setup.md), [infrastructure/vault/README.md](../infrastructure/vault/README.md).
 
 ---
 

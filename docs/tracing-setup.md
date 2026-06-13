@@ -25,7 +25,7 @@ Mỗi service load `src/observability/instrumentation.ts` trước khi bootstrap
 
 ## Kubernetes
 
-Đặt `TRACING_ENABLED=true` trên deployment app. Jaeger all-in-one cần expose OTLP (`COLLECTOR_OTLP_ENABLED=true`). Grafana datasource cho Jaeger được provision sẵn trong `infrastructure/monitoring/grafana-deployment.yaml`.
+Đặt `TRACING_ENABLED=true` trên deployment app. Jaeger all-in-one cần expose OTLP (`COLLECTOR_OTLP_ENABLED=true`). **Docker:** Grafana datasource Jaeger trong `infrastructure/monitoring/grafana-deployment.yaml`. **K8s:** bật Jaeger subchart/datasource trong Helm khi cần — xem [observability.md](./observability.md).
 
 Production: chỉ bật khi collector reachable — xem [production-hardening.md](./production-hardening.md).
 

@@ -124,7 +124,7 @@ BASE_URL=http://165.xxx.xxx.xxx/api/v1 ./scripts/demo-e2e.sh
 
 3. Push `main` → Actions job `deploy` chạy `helm-deploy-ci.sh`.
 
-Chi tiết: [phase4-checklist.md](../infrastructure/deploy/phase4-checklist.md).
+Chi tiết: [deployment-k3s-phases.md](./deployment-k3s-phases.md) (Phase 4 — CI/CD).
 
 ---
 

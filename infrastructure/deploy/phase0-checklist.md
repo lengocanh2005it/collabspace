@@ -93,4 +93,4 @@ test -f infrastructure/helm/collabspace/values-prod.yaml && echo "values-prod.ya
 - [ ] `values-prod.yaml` có image GHCR + `externalSecrets.enabled: true`
 - [ ] Secret đã sinh và lưu an toàn (password manager / Vault draft)
 
-**Xong Phase 0 →** [Phase 1 checklist](./phase1-checklist.md)
+**Xong Phase 0 →** [Phase 1 — Bootstrap k3s](../../docs/deployment-k3s-phases.md#phase-1--bootstrap-k3s)

@@ -4,7 +4,7 @@ CollabSpace NestJS services read secrets from **environment variables**. Vault i
 
 | Environment | Integration |
 |-------------|-------------|
-| **Local Docker** | Vault dev container + optional `sync-env-from-vault` → `services/*/.env` |
+| **Local Docker** | Vault dev container (`docker-compose.vault.yml`) + `sync-env-from-vault` → `services/*/.env` |
 | **Single Droplet** | Persistent single-node Vault container + `sync-env-from-vault` → `services/*/.env` |
 | **Kubernetes** | Vault + [External Secrets Operator](https://external-secrets.io/) → `Secret` → `envFrom` (Helm) |
 
@@ -74,7 +74,7 @@ Creates `.env` from `.env.example` if missing, then updates secret fields only.
 docker compose -f docker-compose.yml -f docker-compose.db.yml -f docker-compose.override.yml up -d
 ```
 
-You can keep using hand-edited `.env` files without Vault; Vault is optional for local dev.
+Local dev có thể dùng `.env` tay thay Vault dev container; **K8s prod bắt buộc Vault + ESO** (Phase 2 — `vault-eso-phase2.sh`).
 
 ---
 
@@ -158,7 +158,7 @@ kubectl apply -f infrastructure/vault/k8s/cluster-secret-store.yaml
 - **Dev:** `infrastructure/vault/k8s/external-secrets.yaml` (`collabspace/dev`)
 - **Prod k3s:** `infrastructure/vault/k8s/external-secrets.prod.yaml` (`collabspace/prod`)
 
-Automated Phase 2 on Droplet: `infrastructure/deploy/vault-eso-phase2.sh` — see [phase2-checklist.md](../deploy/phase2-checklist.md).
+Automated Phase 2 on Droplet: `infrastructure/deploy/vault-eso-phase2.sh` — see [deployment-k3s-phases.md](../../docs/deployment-k3s-phases.md) (Phase 2).
 
 ```bash
 kubectl apply -f infrastructure/vault/k8s/external-secrets.prod.yaml

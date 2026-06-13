@@ -60,9 +60,11 @@
 | Loki + Promtail | Helm subcharts (K8s) | 3100 | **Log aggregation (production path)** |
 | Jaeger | jaegertracing/all-in-one:1.41 | 16686 | Distributed tracing (optional profile) |
 | Jenkins | jenkins/jenkins:lts | 8081 | CI/CD (optional) |
-| HashiCorp Vault (optional) | hashicorp/vault:1.17 | 8200 | Dev secrets store — see `infrastructure/vault/` |
+| HashiCorp Vault | hashicorp/vault:1.17 | 8200 (local); in-cluster (K8s, nội bộ) | **Secrets store** — KV `secret/collabspace/<env>` + ESO → K8s `Secret` — `infrastructure/vault/` |
 
 **Logging:** K8s/Helm dùng **Loki + Promtail** (không Elasticsearch). Docker Compose có profile **ELK tùy chọn** (`docker-compose.logging.yml`) — chỉ local dev, không dùng trên prod.
+
+**Secrets:** K8s prod dùng **HashiCorp Vault + External Secrets Operator** (Phase 2 deploy). Local: `docker-compose.vault.yml` hoặc `.env` tay — xem [infrastructure/vault/README.md](infrastructure/vault/README.md).
 
 ## Quick Start
 
@@ -95,6 +97,9 @@ docker-compose -f docker-compose.yml -f docker-compose.db.yml -f docker-compose.
 # With API Gateway (Traefik)
 docker-compose -f docker-compose.yml -f docker-compose.db.yml -f docker-compose.traefik.yml up -d
 
+# With Vault (secrets — khuyến nghị; khớp luồng K8s prod)
+docker compose -f docker-compose.vault.yml up -d
+
 # Full stack (monitoring + optional ELK + tracing + gateway)
 docker-compose -f docker-compose.yml -f docker-compose.db.yml -f docker-compose.override.yml -f docker-compose.monitoring.yml -f docker-compose.logging.yml -f docker-compose.tracing.yml -f docker-compose.traefik.yml up -d
 ```
@@ -109,18 +114,17 @@ docker-compose -f docker-compose.yml -f docker-compose.db.yml -f docker-compose.
 
 2. **Set up environment files**
    ```powershell
-   # Option A — copy templates (simplest)
-   ./scripts/env-setup.sh
-   # Or: cp services/auth-service/.env.example services/auth-service/.env  (repeat per service)
-
-   # Option B — HashiCorp Vault dev (single source for shared secrets)
+   # Khuyến nghị — HashiCorp Vault dev (cùng luồng secret với K8s prod)
    cd infrastructure/docker
    docker compose -f docker-compose.vault.yml up -d
    cd ../..
    .\infrastructure\vault\scripts\seed-dev-secrets.ps1
    .\infrastructure\vault\scripts\sync-env-from-vault.ps1
+
+   # Hoặc — copy templates thủ công (nhanh, không qua Vault)
+   # ./scripts/env-setup.sh
    ```
-   See [infrastructure/vault/README.md](infrastructure/vault/README.md). Staging/prod: Vault + External Secrets Operator on K8s.
+   See [infrastructure/vault/README.md](infrastructure/vault/README.md). **K8s prod:** Vault + External Secrets Operator (Phase 2).
 
 3. **Initialize databases**
    ```powershell
@@ -268,10 +272,11 @@ Xem [infrastructure/load-testing/README.md](infrastructure/load-testing/README.m
 
 ### Default Credentials (Development Only)
 
-| Service | Username | Password |
-|---------|----------|----------|
-| Grafana | admin | collabspace-grafana |
-| RabbitMQ | guest | guest |
+| Service | Username | Password | Ghi chú |
+|---------|----------|----------|---------|
+| Grafana (Docker local) | admin | collabspace-grafana | `docker-compose.monitoring.yml` |
+| Grafana (K8s prod) | admin | từ PVC/Helm | Có thể khác chart default — [observability.md](docs/observability.md) |
+| RabbitMQ | guest | guest | |
 | Redis | - | collabspace123 |
 
 > **WARNING**: Change all credentials for production deployments!
@@ -314,6 +319,7 @@ Chart docs: [infrastructure/helm/README.md](infrastructure/helm/README.md). **Pr
 | prometheus | 1 | 256Mi | 512Mi | 100m | 500m |
 | loki | 1 | 128Mi | 256Mi | 100m | 250m |
 | promtail | 1 | 64Mi | 128Mi | 50m | 100m |
+| vault | 1 | 128Mi | 256Mi | 100m | 250m |
 | jaeger | 1 | 256Mi | 512Mi | 100m | 250m |
 
 ## CI/CD Pipeline
@@ -395,7 +401,7 @@ This project is for educational purposes.
 
 ## 🏗 Platform Foundation V2 (Convergence Hardening)
 
-All five application services run on **NestJS** (`workspace-service` listens on port **8080**). **Secrets:** HashiCorp Vault scaffolding in [infrastructure/vault/](infrastructure/vault/); operational prod (Vault HA, ESO deploy, rotation) — [docs/team/phan-phu-tho-infrastructure-backlog.md](docs/team/phan-phu-tho-infrastructure-backlog.md).
+All five application services run on **NestJS** (`workspace-service` listens on port **8080**). **Secrets:** HashiCorp Vault + ESO trên K8s prod ([infrastructure/vault/](infrastructure/vault/)); Vault HA + rotation operational — [docs/team/phan-phu-tho-infrastructure-backlog.md](docs/team/phan-phu-tho-infrastructure-backlog.md).
 
 ### Key Upgrades:
 - **API Gateway**: Routes `/api/v1/*` with `forward-auth` via `auth-service`; internal S2S paths blocked at gateway.

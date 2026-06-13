@@ -68,10 +68,10 @@ P3  Chaos quarterly (staging)       →  chứng minh recovery
 ### 1. Chuẩn hóa môi trường
 
 - [ ] Định nghĩa **3 tầng**: `local` (Compose), `staging` (K8s), `production` (K8s hoặc managed).
-- [x] Tạo `values-prod.example.yaml` + script `prepare-prod-values` — [phase0-checklist.md](../../infrastructure/deploy/phase0-checklist.md).
-- [x] Script Phase 1: `k3s-bootstrap.sh`, `verify-phase1.sh`, `fetch-kubeconfig` — [phase1-checklist.md](../../infrastructure/deploy/phase1-checklist.md).
-- [x] Script Phase 2: `vault-eso-phase2.sh`, `verify-phase2.sh`, `external-secrets.prod.yaml` — [phase2-checklist.md](../../infrastructure/deploy/phase2-checklist.md).
-- [x] Script Phase 3–4: `helm-deploy-phase3.sh`, `helm-deploy-ci.sh`, `helm-rollout.sh` — [phase3-checklist.md](../../infrastructure/deploy/phase3-checklist.md), [phase4-checklist.md](../../infrastructure/deploy/phase4-checklist.md).
+- [x] Tạo `values-prod.example.yaml` + script `prepare-prod-values` — [deployment-k3s-phases.md](../deployment-k3s-phases.md) Phase 0.
+- [x] Script Phase 1: `k3s-bootstrap.sh`, `verify-phase1.sh`, `fetch-kubeconfig` — Phase 1.
+- [x] Script Phase 2: `vault-eso-phase2.sh`, `verify-phase2.sh`, `external-secrets.prod.yaml` — Phase 2.
+- [x] Script Phase 3–4: `helm-deploy-phase3.sh`, `helm-deploy-ci.sh`, `helm-rollout.sh` — Phase 3–4.
 - [ ] Chạy Phase 2 trên Droplet; backup `.vault-k3s-init.json` off-server.
 - [ ] Điền `phase0.env` và chạy script trên máy ops; không commit `values-prod.yaml`.
 - [ ] Chạy `k3s-bootstrap.sh` trên Droplet thật; `verify-phase1.sh` pass.
@@ -113,12 +113,12 @@ P3  Chaos quarterly (staging)       →  chứng minh recovery
 **Luồng đề xuất theo môi trường**
 
 ```text
-LOCAL (developer)
+LOCAL (qua Vault dev — khuyến nghị, khớp prod)
+  docker-compose.vault.yml  →  seed-dev-secrets  →  sync-env-from-vault  →  services/*/.env
+
+LOCAL (thủ công — nhanh, không Vault)
   services/*/.env.example  ──copy──►  services/*/.env  (gitignored)
   infrastructure/docker/.env.example  ──►  shared JWT + INTERNAL_SERVICE_TOKEN đồng bộ tay
-
-LOCAL (Vault optional)
-  docker-compose.vault.yml  →  seed-dev-secrets  →  sync-env-from-vault  →  services/*/.env
 
 STAGING / PROD (Phan Phú Thọ)
   HashiCorp Vault KV secret/collabspace/<env>
@@ -244,7 +244,7 @@ Dùng bảng này khi seed Vault KV (`secret/collabspace/staging`, …).
   5. Trigger deploy staging (Helm upgrade).
 - [x] **Option B — GitHub Actions:** root CI + GHCR image build 5 service ✅.
 - [x] Docker image build fix (shared node_modules, seed.ts exclude) — 2026-06-12.
-- [x] Workflow deploy **k3s/Helm** (`docker-deploy.yml` → `helm-deploy-ci.sh` + `verify-k8s-readiness.sh`) — [phase4-checklist.md](../../infrastructure/deploy/phase4-checklist.md).
+- [x] Workflow deploy **k3s/Helm** (`docker-deploy.yml` → `helm-deploy-ci.sh` + `verify-k8s-readiness.sh`) — Phase 4.
 - [ ] Thêm GitHub Actions secrets (`DROPLET_*`, `GHCR_*`) và chạy deploy lần đầu theo [deployment-k3s-phases.md](../deployment-k3s-phases.md).
 - [ ] Cache `pnpm` / Docker layer để pipeline < 15 phút (mục tiêu ban đầu).
 - [ ] Branch protection: PR bắt buộc pass test trước merge.
@@ -353,17 +353,17 @@ Dùng bảng này khi seed Vault KV (`secret/collabspace/staging`, …).
 
 ---
 
-## P2 — Centralized logging (ELK)
+## P2 — Centralized logging (Loki)
 
 ### 17. Kích hoạt stack logging
 
-**Hiện trạng:** `docker-compose.logging.yml` (Elasticsearch, Logstash, Kibana) — chưa nối ship log từ app containers.
+**Hiện trạng:** **K8s prod** — Loki + Promtail + Grafana Explore ✅ ([observability.md](../observability.md)). **Docker** — `docker-compose.logging.yml` (ELK profile tùy chọn) chưa nối ship log từ app containers.
 
-- [ ] Chọn agent: Filebeat / Fluent Bit / Docker logging driver → Logstash `5044`.
-- [ ] Parse JSON log hoặc prefix `[requestId]` — app đã propagate `X-Request-Id` (Phase C); infra cần **thu thập** field đó từ stdout.
-- [ ] Kibana index pattern + saved search theo `requestId`, `service`, `level`.
-- [ ] Retention index (ILM): 7–14 ngày staging, policy prod riêng.
-- [ ] (K8s) ~~EFK/Loki~~ — **đã chọn Loki** trên K8s prod; Docker vẫn có profile ELK tùy chọn.
+- [x] (K8s) Loki + Promtail trong Helm; tắt Loki canary; dashboard **App Logs** (trends).
+- [ ] Parse / label log theo `requestId`, `service`, `level` — app inject field vào stdout (Phase C middleware đã có).
+- [ ] Saved Explore queries / dashboard links theo `X-Request-Id`.
+- [ ] Retention policy Loki (7–14 ngày staging, prod riêng).
+- [ ] (Docker) Filebeat / Fluent Bit → ELK — chỉ local dev nếu cần; **không** dùng ELK trên K8s prod.
 
 **Definition of Done:** một request qua gateway tra được log đầy đủ trên **Loki Explore** bằng `X-Request-Id` (khi app log field đồng bộ).
 
@@ -435,10 +435,10 @@ Xem chi tiết: [application-backlog.md](./application-backlog.md) (Lê Ngọc A
 | Activity feed workspace-level | Võ Trung Tín | Planned — không block smoke |
 | E2E `*.e2e-spec.ts` per service | Tiến / Tín | Infra cung cấp DB ephemeral trong CI |
 | Swagger/OpenAPI | Anh / Tiến / Tín | ✅ 5/5 tại `/swagger` |
-| Inject `requestId` vào Nest Logger | Application devs | Infra: ELK parse field |
+| Inject `requestId` vào Nest Logger | Application devs | Infra: Loki labels / Explore query |
 | User/auth use-case tests | Lê Ngọc Anh | ✅ đóng backlog Anh |
 
-Infra **hỗ trợ** bằng: Compose profile Traefik, seed trong job, `demo-e2e` trong pipeline, ELK/trace collector — không viết business API.
+Infra **hỗ trợ** bằng: Compose profile Traefik, seed trong job, `demo-e2e` trong pipeline, Loki/Promtail + trace collector — không viết business API.
 
 ---
 
@@ -467,7 +467,7 @@ Infra **hỗ trợ** bằng: Compose profile Traefik, seed trong job, `demo-e2e`
 | 17 | TLS ingress (cert-manager) | P2 | ⬜ |
 | 18 | Backup cron + object storage | P2 | ⬜ |
 | 19 | Restore drill quarterly | P2 | ⬜ |
-| 20 | Filebeat/Fluent Bit → ELK | P2 | ⬜ |
+| 20 | Loki labels + Explore theo `X-Request-Id` | P2 | ⬜ (stack ✅) |
 | 21 | Jaeger staging + TRACING_ENABLED | P3 | ⬜ |
 | 22 | k6 scenarios + Load Test dashboard | P3 | ✅ scripts; baseline doc ⬜ |
 | 23 | Chaos quarterly staging | P3 | ⬜ |
