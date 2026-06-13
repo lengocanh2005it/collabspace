@@ -36,21 +36,32 @@ done
 root_token="$(jq -r '.root_token' "$INIT_FILE")"
 
 echo "Seeding Vault KV secret/$KV_PATH via kubectl exec..."
-kubectl exec -n "$VAULT_NS" "$VAULT_POD" -- sh -c "
-  export VAULT_ADDR=http://127.0.0.1:8200
-  export VAULT_TOKEN='$root_token'
-  vault kv put secret/$KV_PATH \
-    jwt_secret='$JWT_SECRET' \
-    internal_service_token='$INTERNAL_SERVICE_TOKEN' \
-    postgres_password='$POSTGRES_PASSWORD' \
-    mongo_username='admin' \
-    mongo_password='$MONGO_PASSWORD' \
-    redis_password='$REDIS_PASSWORD' \
-    rabbitmq_username='$RABBITMQ_USERNAME' \
-    rabbitmq_password='$RABBITMQ_PASSWORD' \
-    metrics_auth_token='$METRICS_AUTH_TOKEN' \
-    azure_storage_connection_string='$AZURE_STORAGE_CONNECTION_STRING'
-"
+kubectl exec -n "$VAULT_NS" "$VAULT_POD" -- env \
+  VAULT_ADDR=http://127.0.0.1:8200 \
+  VAULT_TOKEN="$root_token" \
+  KV_PATH="$KV_PATH" \
+  JWT_SECRET="$JWT_SECRET" \
+  INTERNAL_SERVICE_TOKEN="$INTERNAL_SERVICE_TOKEN" \
+  POSTGRES_PASSWORD="$POSTGRES_PASSWORD" \
+  MONGO_PASSWORD="$MONGO_PASSWORD" \
+  REDIS_PASSWORD="$REDIS_PASSWORD" \
+  RABBITMQ_USERNAME="$RABBITMQ_USERNAME" \
+  RABBITMQ_PASSWORD="$RABBITMQ_PASSWORD" \
+  METRICS_AUTH_TOKEN="$METRICS_AUTH_TOKEN" \
+  AZURE_STORAGE_CONNECTION_STRING="$AZURE_STORAGE_CONNECTION_STRING" \
+  sh -ec '
+    vault kv put "secret/${KV_PATH}" \
+      jwt_secret="${JWT_SECRET}" \
+      internal_service_token="${INTERNAL_SERVICE_TOKEN}" \
+      postgres_password="${POSTGRES_PASSWORD}" \
+      mongo_username="admin" \
+      mongo_password="${MONGO_PASSWORD}" \
+      redis_password="${REDIS_PASSWORD}" \
+      rabbitmq_username="${RABBITMQ_USERNAME}" \
+      rabbitmq_password="${RABBITMQ_PASSWORD}" \
+      metrics_auth_token="${METRICS_AUTH_TOKEN}" \
+      azure_storage_connection_string="${AZURE_STORAGE_CONNECTION_STRING}"
+  '
 
 echo "Done. Verify:"
 echo "  kubectl exec -n $VAULT_NS $VAULT_POD -- vault kv get secret/$KV_PATH"
