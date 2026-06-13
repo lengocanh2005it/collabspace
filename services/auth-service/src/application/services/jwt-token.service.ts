@@ -9,6 +9,18 @@ import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { createSecretKey } from 'crypto';
 import { readFirstString } from './jwt-payload.util';
 
+type JoseModule = typeof import('jose');
+
+let joseModulePromise: Promise<JoseModule> | null = null;
+
+async function loadJose(): Promise<JoseModule> {
+  if (!joseModulePromise) {
+    joseModulePromise = import('jose');
+  }
+
+  return joseModulePromise;
+}
+
 @Injectable()
 export class JwtTokenService {
   constructor(
@@ -24,7 +36,7 @@ export class JwtTokenService {
   async signAccessToken(input: SignAccessTokenInput): Promise<string> {
     const secret = this.getJwtSecret();
     const jwtConfig = this.configurationService.getAuthJwtConfig();
-    const { SignJWT } = await import('jose');
+    const { SignJWT } = await loadJose();
     const jwt = new SignJWT({
       role: input.role ?? input.roles?.[0],
       roles: input.roles,
@@ -111,7 +123,7 @@ export class JwtTokenService {
     };
 
     try {
-      const { jwtVerify } = await import('jose');
+      const { jwtVerify } = await loadJose();
       const verified = await jwtVerify(token, secret, verificationOptions);
       return verified.payload as JwtPayload;
     } catch (error) {

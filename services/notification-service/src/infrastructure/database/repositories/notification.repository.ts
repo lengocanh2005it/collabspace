@@ -95,6 +95,10 @@ export class NotificationRepository implements INotificationRepository {
     });
   }
 
+  async countByRecipientIdAsync(recipientId: string): Promise<number> {
+    return this.notificationModel.countDocuments({ recipientId });
+  }
+
   /**
    * Cập nhật notification
    */

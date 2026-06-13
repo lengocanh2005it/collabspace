@@ -47,6 +47,11 @@ export interface INotificationRepository {
   countUnreadByRecipientIdAsync(recipientId: string): Promise<number>;
 
   /**
+   * Đếm tổng số notification của một user
+   */
+  countByRecipientIdAsync(recipientId: string): Promise<number>;
+
+  /**
    * Cập nhật notification
    * @param notification Notification entity với các thay đổi
    * @returns boolean - true nếu update thành công

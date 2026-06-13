@@ -15,6 +15,7 @@ import {
   type IWorkspaceClient,
   WORKSPACE_CLIENT_TOKEN,
 } from "../../application/ports/IWorkspaceClient";
+import { meetsWorkspaceRole } from "../../infrastructure/clients/workspace-membership.util";
 import { getHeaderValue } from "../http/request-context";
 import type { AppRequest } from "../http/request-context";
 
@@ -74,7 +75,6 @@ export class WorkspaceValidationGuard implements CanActivate {
       getHeaderValue(request.headers, "x-user-name") ??
       "User";
 
-    // Lấy workspaceId từ body (nếu POST/PUT) hoặc query params
     const workspaceId = await this.resolveWorkspaceId(request);
 
     if (!workspaceId) {
@@ -82,21 +82,29 @@ export class WorkspaceValidationGuard implements CanActivate {
       return true;
     }
 
-    let workspaceExists = false;
-    let isMember = false;
-
     try {
-      workspaceExists = await this.workspaceService.validateWorkspaceAsync(
+      const membership = await this.workspaceService.getMembershipAsync(
         workspaceId,
         userId,
       );
-      isMember = await this.workspaceService.checkUserPermissionAsync(
-        workspaceId,
-        userId,
-        "member",
-      );
+
+      if (membership === null) {
+        throw new ForbiddenException(`Workspace ${workspaceId} not found`);
+      }
+
+      if (
+        !membership.isMember ||
+        !meetsWorkspaceRole(membership.role, "member")
+      ) {
+        throw new ForbiddenException(
+          `User ${userId} does not have access to workspace ${workspaceId}`,
+        );
+      }
     } catch (error) {
-      if (error instanceof ServiceUnavailableException) {
+      if (
+        error instanceof ForbiddenException ||
+        error instanceof ServiceUnavailableException
+      ) {
         throw error;
       }
 
@@ -109,17 +117,6 @@ export class WorkspaceValidationGuard implements CanActivate {
       });
     }
 
-    if (!workspaceExists) {
-      throw new ForbiddenException(`Workspace ${workspaceId} not found`);
-    }
-
-    if (!isMember) {
-      throw new ForbiddenException(
-        `User ${userId} does not have access to workspace ${workspaceId}`,
-      );
-    }
-
-    // Attach workspace info vào request object để dùng ở handler
     request.workspace = { id: workspaceId, userId };
     request.user = { id: userId, name: userName };
 

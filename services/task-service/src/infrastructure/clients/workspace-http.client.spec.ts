@@ -34,6 +34,34 @@ describe("WorkspaceHttpClient", () => {
     return new WorkspaceHttpClient(configService);
   }
 
+  it("should call internal membership endpoint once via getMembershipAsync", async () => {
+    process.env.NODE_ENV = "production";
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        workspaceId,
+        userId,
+        isMember: true,
+        role: "member",
+      }),
+    });
+
+    const client = createClient("shared-secret");
+    const membership = await client.getMembershipAsync(workspaceId, userId);
+
+    expect(membership).toEqual({ isMember: true, role: "member" });
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+    expect(global.fetch).toHaveBeenCalledWith(
+      `http://workspace-service:8080/api/v1/workspaces/internal/${workspaceId}/membership?userId=${userId}`,
+      expect.objectContaining({
+        headers: {
+          "X-Internal-Service-Token": "shared-secret",
+        },
+      }),
+    );
+  });
+
   it("should call internal membership endpoint with service token", async () => {
     process.env.NODE_ENV = "production";
     global.fetch = jest.fn().mockResolvedValue({

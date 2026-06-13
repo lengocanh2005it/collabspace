@@ -1,6 +1,6 @@
 import { ExecutionContext } from "@nestjs/common";
 import type { ITaskRepository } from "../../application/ports/ITaskRepository";
-import type { WorkspaceMockService } from "../../infrastructure/services/workspace.mock.service";
+import type { IWorkspaceClient } from "../../application/ports/IWorkspaceClient";
 import type { AppRequest } from "../http/request-context";
 import { WorkspaceValidationGuard } from "./workspace-validation.guard";
 
@@ -11,11 +11,7 @@ type WorkspaceGuardRequest = AppRequest<
   Record<string, string | string[] | undefined> & { workspaceId?: string }
 >;
 
-type WorkspaceServiceDouble = Pick<
-  WorkspaceMockService,
-  "validateWorkspaceAsync" | "checkUserPermissionAsync"
->;
-
+type WorkspaceServiceDouble = Pick<IWorkspaceClient, "getMembershipAsync">;
 type TaskRepositoryDouble = Pick<ITaskRepository, "findByIdAsync">;
 
 describe("WorkspaceValidationGuard", () => {
@@ -29,17 +25,19 @@ describe("WorkspaceValidationGuard", () => {
     } as unknown as ExecutionContext;
   }
 
-  it("should validate membership using workspaceId from the request body", async () => {
+  it("should validate membership using a single workspace membership fetch", async () => {
     const workspaceService: jest.Mocked<WorkspaceServiceDouble> = {
-      validateWorkspaceAsync: jest.fn().mockResolvedValue(true),
-      checkUserPermissionAsync: jest.fn().mockResolvedValue(true),
+      getMembershipAsync: jest.fn().mockResolvedValue({
+        isMember: true,
+        role: "member",
+      }),
     };
     const taskRepository: jest.Mocked<TaskRepositoryDouble> = {
       findByIdAsync: jest.fn(),
     };
     const guard = new WorkspaceValidationGuard(
-      workspaceService as unknown as WorkspaceMockService,
-      taskRepository as unknown as ITaskRepository,
+      workspaceService as IWorkspaceClient,
+      taskRepository as ITaskRepository,
     );
 
     const request = {
@@ -54,14 +52,10 @@ describe("WorkspaceValidationGuard", () => {
 
     expect(result).toBe(true);
     expect(taskRepository.findByIdAsync).not.toHaveBeenCalled();
-    expect(workspaceService.validateWorkspaceAsync).toHaveBeenCalledWith(
+    expect(workspaceService.getMembershipAsync).toHaveBeenCalledTimes(1);
+    expect(workspaceService.getMembershipAsync).toHaveBeenCalledWith(
       "workspace-001",
       "user-123",
-    );
-    expect(workspaceService.checkUserPermissionAsync).toHaveBeenCalledWith(
-      "workspace-001",
-      "user-123",
-      "member",
     );
     expect(request.workspace).toEqual({
       id: "workspace-001",
@@ -75,15 +69,17 @@ describe("WorkspaceValidationGuard", () => {
     } as Awaited<ReturnType<ITaskRepository["findByIdAsync"]>>;
 
     const workspaceService: jest.Mocked<WorkspaceServiceDouble> = {
-      validateWorkspaceAsync: jest.fn().mockResolvedValue(true),
-      checkUserPermissionAsync: jest.fn().mockResolvedValue(true),
+      getMembershipAsync: jest.fn().mockResolvedValue({
+        isMember: true,
+        role: "member",
+      }),
     };
     const taskRepository: jest.Mocked<TaskRepositoryDouble> = {
       findByIdAsync: jest.fn().mockResolvedValue(taskRecord),
     };
     const guard = new WorkspaceValidationGuard(
-      workspaceService as unknown as WorkspaceMockService,
-      taskRepository as unknown as ITaskRepository,
+      workspaceService as IWorkspaceClient,
+      taskRepository as ITaskRepository,
     );
 
     const request = {
@@ -98,14 +94,10 @@ describe("WorkspaceValidationGuard", () => {
 
     expect(result).toBe(true);
     expect(taskRepository.findByIdAsync).toHaveBeenCalledTimes(1);
-    expect(workspaceService.validateWorkspaceAsync).toHaveBeenCalledWith(
+    expect(workspaceService.getMembershipAsync).toHaveBeenCalledTimes(1);
+    expect(workspaceService.getMembershipAsync).toHaveBeenCalledWith(
       "workspace-002",
       "user-123",
-    );
-    expect(workspaceService.checkUserPermissionAsync).toHaveBeenCalledWith(
-      "workspace-002",
-      "user-123",
-      "member",
     );
     expect(request.workspace).toEqual({
       id: "workspace-002",

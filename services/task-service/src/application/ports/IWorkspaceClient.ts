@@ -5,7 +5,21 @@ export type WorkspaceMember = {
   userId: string;
 };
 
+/** Single membership fetch result; `null` when workspace does not exist (HTTP 404). */
+export type WorkspaceMembershipSnapshot = {
+  isMember: boolean;
+  role: WorkspaceMember["role"] | null;
+};
+
 export interface IWorkspaceClient {
+  /**
+   * One internal membership call — prefer this in guards/hot paths.
+   */
+  getMembershipAsync(
+    workspaceId: string,
+    userId: string,
+  ): Promise<WorkspaceMembershipSnapshot | null>;
+
   validateWorkspaceAsync(workspaceId: string, userId: string): Promise<boolean>;
 
   checkUserPermissionAsync(

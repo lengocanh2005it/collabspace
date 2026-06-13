@@ -4,7 +4,9 @@ import { outboundRequestIdHeaders } from "../../common/http/request-id.context";
 import type {
   IWorkspaceClient,
   WorkspaceMember,
+  WorkspaceMembershipSnapshot,
 } from "../../application/ports/IWorkspaceClient";
+import { meetsWorkspaceRole } from "./workspace-membership.util";
 
 type WorkspaceMembershipResponse = {
   workspaceId: string;
@@ -31,11 +33,27 @@ export class WorkspaceHttpClient implements IWorkspaceClient {
       ?.trim();
   }
 
+  async getMembershipAsync(
+    workspaceId: string,
+    userId: string,
+  ): Promise<WorkspaceMembershipSnapshot | null> {
+    const membership = await this.fetchMembership(workspaceId, userId);
+
+    if (!membership) {
+      return null;
+    }
+
+    return {
+      isMember: membership.isMember,
+      role: membership.role as WorkspaceMember["role"] | null,
+    };
+  }
+
   async validateWorkspaceAsync(
     workspaceId: string,
     userId: string,
   ): Promise<boolean> {
-    const membership = await this.fetchMembership(workspaceId, userId);
+    const membership = await this.getMembershipAsync(workspaceId, userId);
     return membership?.isMember === true;
   }
 
@@ -44,34 +62,28 @@ export class WorkspaceHttpClient implements IWorkspaceClient {
     userId: string,
     requiredRole: "owner" | "admin" | "member" = "member",
   ): Promise<boolean> {
-    const member = await this.getWorkspaceMemberAsync(workspaceId, userId);
+    const membership = await this.getMembershipAsync(workspaceId, userId);
 
-    if (!member) {
+    if (!membership?.isMember) {
       return false;
     }
 
-    const roleHierarchy: Record<string, number> = {
-      owner: 3,
-      admin: 2,
-      member: 1,
-    };
-
-    return roleHierarchy[member.role] >= roleHierarchy[requiredRole];
+    return meetsWorkspaceRole(membership.role, requiredRole);
   }
 
   async getWorkspaceMemberAsync(
     workspaceId: string,
     userId: string,
   ): Promise<WorkspaceMember | null> {
-    const membership = await this.fetchMembership(workspaceId, userId);
+    const membership = await this.getMembershipAsync(workspaceId, userId);
 
     if (!membership?.isMember || !membership.role) {
       return null;
     }
 
     return {
-      role: membership.role as WorkspaceMember["role"],
-      userId: membership.userId,
+      role: membership.role,
+      userId,
     };
   }
 
