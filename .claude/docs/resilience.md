@@ -42,7 +42,7 @@ Design goals:
 
 **Existing implementations:**
 
-- `services/auth-service/src/modules/identity/user-profiles-grpc.service.ts`
+- `services/auth-service/src/integrations/user-profiles/user-profiles-grpc.service.ts`
 - `services/user-service/src/integrations/auth/auth-grpc.service.ts`
 
 ### 2.2 Asynchronous events (RabbitMQ)
@@ -117,7 +117,7 @@ Do **not** map dependency failures to generic `500` if the cause is known.
 | Traefik circuit breaker | `circuit-breaker` | `NetworkErrorRatio() > 0.3` |
 | Forward auth | `strip-identity-headers` → `forward-auth` → `/api/v1/auth/verify` | Gateway strips spoofed identity headers, then validates JWT |
 | RabbitMQ DLQ | `infrastructure/rabbitmq/definitions.json` | `collabspace_dlx`, per-queue `*.dlq` |
-| Auth email outbox | `services/auth-service/src/modules/outbox/*` | DB-backed queue, retries, degraded thresholds |
+| Auth email outbox | `services/auth-service/src/infrastructure/outbox/*` | DB-backed queue, retries, degraded thresholds |
 | K8s PDB | `infrastructure/k8s/pdb.yaml` | minAvailable per service |
 | Prometheus alerts | `infrastructure/monitoring/alert-rules.yml` + Alertmanager | ServiceDown, 5xx rate, … |
 | Infra exporters | `docker-compose.exporters.yml`, `k8s/exporters-deployment.yaml` | Postgres/Redis/Mongo/RabbitMQ metrics |

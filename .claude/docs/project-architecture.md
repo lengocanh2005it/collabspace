@@ -58,16 +58,19 @@ Responsibilities:
 Important source paths:
 
 - `src/app.module.ts`: module composition.
-- `src/app.controller.ts`: HTTP auth endpoints.
-- `src/app.service.ts`: auth orchestration.
-- `src/auth.grpc.controller.ts`: gRPC auth verification endpoint.
+- `src/presentation/http/auth.controller.ts`: HTTP auth endpoints.
+- `src/presentation/grpc/auth.grpc.controller.ts`: gRPC `VerifyAccessToken`.
+- `src/application/use-cases/*`: auth flows (register, login, OTP, refresh, …).
+- `src/application/services/*`: JWT, session issuance, email OTP, profile resolver.
+- `src/domain/entities/`, `src/domain/repositories/`, `src/domain/ports/`: domain layer.
+- `src/infrastructure/repositories/*`: TypeORM + in-memory user/refresh-token adapters.
+- `src/infrastructure/database/entities/*.orm-entity.ts`: ORM entities.
+- `src/infrastructure/redis/`, `outbox/`, `emails/`, `graphile-worker/`: infra adapters.
+- `src/integrations/user-profiles/`: user-service gRPC client.
 - `src/configuration/*`: environment/config abstraction.
-- `src/modules/identity/*`: user, role, permission, password, auth user logic.
-- `src/modules/refresh-tokens/*`: refresh token issuance/rotation/revocation.
-- `src/modules/redis/*`: Redis wrapper.
-- `src/modules/outbox/*`: auth outbox events.
-- `src/modules/graphile-worker/*`: worker integration.
 - `migrations/*` and `scripts/sql/*`: database schema.
+
+Architecture: clean/hexagonal (aligned with `user-service`). See `services/auth-service/CLAUDE.md`.
 
 ### user-service
 

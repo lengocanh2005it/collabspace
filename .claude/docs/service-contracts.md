@@ -47,7 +47,7 @@ Behavior notes:
 - Registration can recover an existing unverified pending user.
 - Email verification OTP is hashed before storing in Redis.
 - `login` requires verified email.
-- Refresh token rotation happens in `RefreshTokensService`.
+- Refresh token rotation happens in `TypeOrmRefreshTokenRepository` (port: `REFRESH_TOKEN_REPOSITORY`).
 - `change-password` revokes all refresh tokens for the user.
 - `verify` returns identity headers for downstream services and gateway-style usage.
 

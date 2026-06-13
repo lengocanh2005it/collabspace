@@ -97,7 +97,7 @@ src/
 
 - Path alias `@/*` → `src/*`
 - Avoid scattered `process.env`; use `ConfigurationService`
-- Input types in `common/types/*.type.ts`, not Nest DTO classes on controllers
+- HTTP request DTOs in `application/dto/auth-request.dto.ts` (class-validator + Swagger)
 - Passwords: scrypt; JWT: `jose` HS256; OTP hashed before Redis
 - Register saga: rollback new auth user if user-service gRPC fails after insert
 
@@ -412,7 +412,7 @@ flowchart TD
   A --> C{user-service}
   A --> D{workspace-service}
   A --> E{task / notification}
-  B --> B1[Feature module + AppService]
+  B --> B1[Use case + domain port + infra adapter]
   C --> C1[Use case + domain port + infra repo]
   D --> D1[Use case + domain port + TypeORM adapter]
   E --> E1[Command/Query + Handler + domain entity]

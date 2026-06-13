@@ -24,11 +24,14 @@
 
 Architecture style:
 
-- Feature modules under `src/modules/*`.
-- `AppService` orchestrates high-level auth use cases.
-- `IdentityService` handles auth user/role/password persistence.
-- `RefreshTokensService` owns refresh token lifecycle.
-- `RedisService` hides Redis operations.
+```text
+presentation → application/use-cases → domain (entities, ports) → infrastructure + integrations
+```
+
+- Controllers inject use cases directly — no `AppService` facade.
+- `USER_REPOSITORY` / `REFRESH_TOKEN_REPOSITORY` for persistence; `OTP_STORE`, `EMAIL_OUTBOX`, `USER_PROFILE_CLIENT` for outbound integrations.
+- HTTP request DTOs in `application/dto/auth-request.dto.ts`; use-case results in `application/dto/auth-use-case-results.ts`.
+- ORM entities in `infrastructure/database/entities/*.orm-entity.ts` (`UserOrmEntity`, …).
 - `ConfigurationService` centralizes environment/config reads.
 
 Import style:

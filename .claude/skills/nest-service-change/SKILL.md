@@ -34,10 +34,9 @@ Read as needed:
 ## auth-service Rules
 
 - Use `ConfigurationService` for config access.
-- Keep high-level orchestration in `AppService`.
-- Keep password/user persistence in `IdentityService`.
-- Keep refresh token logic in `RefreshTokensService`.
-- Keep Redis operations behind `RedisService`.
+- Add new flows as `application/use-cases/<action>.use-case.ts`; wire in `app.module.ts`.
+- Inject `USER_REPOSITORY`, `REFRESH_TOKEN_REPOSITORY`, and outbound ports — not legacy `*Service` facades.
+- HTTP DTOs in `application/dto/`; domain types in `domain/entities/` and `domain/types/`.
 - Use structured Nest exceptions with stable `code` and `message`.
 - Never log secrets, OTPs, refresh tokens, or access tokens.
 - If changing auth identity returned to downstream services, update:
