@@ -52,28 +52,22 @@
       "name": "notification-service",
       "vhost": "collabspace",
       "durable": true,
-      "arguments": {
-        "x-dead-letter-exchange": "collabspace_dlx",
-        "x-dead-letter-routing-key": "notification-service.dlq"
-      }
+      "auto_delete": false,
+      "arguments": {}
     },
     {
       "name": "task-service",
       "vhost": "collabspace",
       "durable": true,
-      "arguments": {
-        "x-dead-letter-exchange": "collabspace_dlx",
-        "x-dead-letter-routing-key": "task-service.dlq"
-      }
+      "auto_delete": false,
+      "arguments": {}
     },
     {
       "name": "user-service",
       "vhost": "collabspace",
       "durable": true,
-      "arguments": {
-        "x-dead-letter-exchange": "collabspace_dlx",
-        "x-dead-letter-routing-key": "user-service.dlq"
-      }
+      "auto_delete": false,
+      "arguments": {}
     },
     {
       "name": "task_assigned.dlq",
@@ -111,13 +105,15 @@
       "name": "collabspace_exchange",
       "vhost": "collabspace",
       "type": "topic",
-      "durable": true
+      "durable": true,
+      "auto_delete": false
     },
     {
       "name": "collabspace_dlx",
       "vhost": "collabspace",
       "type": "direct",
-      "durable": true
+      "durable": true,
+      "auto_delete": false
     }
   ],
   "bindings": [

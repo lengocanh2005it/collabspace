@@ -89,6 +89,7 @@ export class TaskMapper {
       rawDoc.description || "",
       rawDoc.status,
       rawDoc.workspaceId,
+      rawDoc.projectId || null,
       rawDoc.assigneeId || null,
       assignedTo,
       creator,

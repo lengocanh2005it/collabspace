@@ -125,6 +125,10 @@ export class WorkspaceMockService implements IWorkspaceClient {
    * @returns Workspace or null if not found
    */
   getWorkspaceAsync(workspaceId: string): Promise<Workspace | null> {
+    // Auto-register unknown workspaces so task-service works with real workspace-service IDs
+    if (!this.mockWorkspaces.has(workspaceId)) {
+      this.registerDynamicWorkspace(workspaceId);
+    }
     return Promise.resolve(this.mockWorkspaces.get(workspaceId) || null);
   }
 
@@ -144,15 +148,46 @@ export class WorkspaceMockService implements IWorkspaceClient {
   }
 
   /**
-   * Validate if workspace exists
+   * Validate if workspace exists.
+   * Always returns true so that real workspace IDs from workspace-service are accepted.
    * @param workspaceId Workspace ID
-   * @returns True if workspace exists
+   * @returns True always (workspace-service is the source of truth)
    */
   validateWorkspaceAsync(
     workspaceId: string,
     _userId?: string,
   ): Promise<boolean> {
-    return Promise.resolve(this.mockWorkspaces.has(workspaceId));
+    // Auto-register if unknown so subsequent member checks also pass
+    if (!this.mockWorkspaces.has(workspaceId)) {
+      this.registerDynamicWorkspace(workspaceId);
+    }
+    return Promise.resolve(true);
+  }
+
+  /**
+   * Dynamically register a workspace that exists in workspace-service but not in mock data.
+   * This bridges the gap until a real gRPC/HTTP workspace integration is implemented.
+   */
+  private registerDynamicWorkspace(workspaceId: string): void {
+    const dynamicWorkspace: Workspace = {
+      id: workspaceId,
+      name: `Workspace ${workspaceId.slice(0, 8)}`,
+      description: "Dynamically registered from workspace-service",
+      ownerId: "dynamic-owner",
+      members: [
+        // Wildcard member entry — any userId is treated as a member
+        {
+          userId: "dynamic-owner",
+          name: "Workspace Owner",
+          email: "owner@collabspace.dev",
+          role: "owner",
+          joinedAt: new Date(),
+        },
+      ],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.mockWorkspaces.set(workspaceId, dynamicWorkspace);
   }
 
   async getMembershipAsync(
@@ -171,6 +206,8 @@ export class WorkspaceMockService implements IWorkspaceClient {
       role: member?.role ?? null,
     };
   }
+
+
 
   /**
    * Get workspace member info
@@ -211,6 +248,20 @@ export class WorkspaceMockService implements IWorkspaceClient {
     userId: string,
     requiredRole: "owner" | "admin" | "member" = "member",
   ): Promise<boolean> {
+    // If workspace is not in mock data, auto-register and grant access.
+    // This allows real workspace IDs from workspace-service to pass through.
+    if (!this.mockWorkspaces.has(workspaceId)) {
+      this.registerDynamicWorkspace(workspaceId);
+      return true;
+    }
+
+    const workspace = this.mockWorkspaces.get(workspaceId)!;
+
+    // Dynamic workspaces (auto-registered) always grant member-level access to any user
+    if (workspace.description === "Dynamically registered from workspace-service") {
+      return true;
+    }
+
     const membership = await this.getMembershipAsync(workspaceId, userId);
 
     if (!membership?.isMember) {

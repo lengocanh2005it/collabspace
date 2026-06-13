@@ -150,7 +150,7 @@ const Handlers = [
     TaskController,
     TaskCommentController,
     TaskEventController,
-    UserEventController, // 👈 Gắn cái lỗ tai nghe Event của RabbitMQ vào đây
+    UserEventController,
   ],
   providers: [
     ...Handlers,

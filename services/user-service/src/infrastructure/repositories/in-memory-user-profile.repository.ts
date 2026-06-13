@@ -223,7 +223,7 @@ export class InMemoryUserProfileRepository implements UserProfileRepository {
       input.username === undefined ? profile.username : input.username,
       input.fullName ?? profile.fullName,
       input.displayName === undefined ? profile.displayName : input.displayName,
-      profile.avatarUrl,
+      input.avatarUrl === undefined ? profile.avatarUrl : input.avatarUrl,
       input.bio === undefined ? profile.bio : input.bio,
       profile.deletedAt,
       profile.createdAt,
