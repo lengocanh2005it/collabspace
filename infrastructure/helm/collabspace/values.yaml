@@ -275,15 +275,21 @@ grafana:
       datasources:
         - name: Prometheus
           type: prometheus
+          uid: prometheus
           url: http://prometheus:9090
           isDefault: true
           jsonData:
             timeInterval: 15s
         - name: Loki
           type: loki
+          uid: loki
           url: http://loki:3100
           jsonData:
             maxLines: 1000
+  dashboards:
+    default:
+      service-health:
+        file: dashboards/service-health.json
   dashboardProviders:
     dashboardproviders.yaml:
       apiVersion: 1
