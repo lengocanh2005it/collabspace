@@ -2,6 +2,7 @@
 import { Module } from "@nestjs/common";
 import { ClientsModule, Transport } from "@nestjs/microservices";
 import { ConfigModule, ConfigService } from "@nestjs/config";
+import { buildConsumerQueueOptionsForQueue } from "@collabspace/shared";
 import { RabbitMqEventsService } from "./rabbitmq-events.service";
 
 @Module({
@@ -23,9 +24,7 @@ import { RabbitMqEventsService } from "./rabbitmq-events.service";
             // Tên cái Queue mà Notification Service đang vểnh tai nghe
             queue: "notification-service",
 
-            queueOptions: {
-              durable: true, // Phải true để giữ tin nhắn không bị mất khi RabbitMQ restart
-            },
+            queueOptions: buildConsumerQueueOptionsForQueue("notification-service"),
           },
         }),
         inject: [ConfigService],

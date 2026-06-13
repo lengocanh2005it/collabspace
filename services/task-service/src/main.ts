@@ -5,6 +5,7 @@ import { ValidationPipe } from "@nestjs/common";
 import { AppModule } from "./app.module";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import { MicroserviceOptions, Transport } from "@nestjs/microservices";
+import { buildConsumerQueueOptions } from "@collabspace/shared";
 import { ConfigurationService } from "./configuration/configuration.service"; // Import service của bạn
 import { MetricsService } from "./metrics/metrics.service";
 import { registerRequestIdMiddleware } from "./common/http/register-request-id.middleware";
@@ -17,14 +18,21 @@ async function bootstrap() {
   const rmqConfig = configService.getRabbitMqConfig();
 
   if (rmqConfig.enabled) {
+    const dlxExchange =
+      process.env.RABBITMQ_DLX_EXCHANGE ?? "collabspace_dlx";
+    const dlxRoutingKey =
+      process.env.RABBITMQ_DLX_ROUTING_KEY ?? `${rmqConfig.queue}.dlq`;
+
     app.connectMicroservice<MicroserviceOptions>({
       transport: Transport.RMQ,
       options: {
         urls: [rmqConfig.url],
-        queue: rmqConfig.queue, // 'user-service' hoặc 'task-service' tùy config
-        queueOptions: {
+        queue: rmqConfig.queue,
+        queueOptions: buildConsumerQueueOptions({
           durable: rmqConfig.queueDurable,
-        },
+          deadLetterExchange: dlxExchange,
+          deadLetterRoutingKey: dlxRoutingKey,
+        }),
         noAck: rmqConfig.noAck,
         prefetchCount: rmqConfig.prefetchCount,
       },

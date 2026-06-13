@@ -8,6 +8,7 @@ import {
   ClientProxyFactory,
   Transport,
 } from '@nestjs/microservices';
+import { buildConsumerQueueOptionsForQueue } from '@collabspace/shared';
 import { lastValueFrom } from 'rxjs';
 import { ConfigurationService } from '../../../configuration/configuration.service';
 import {
@@ -63,7 +64,7 @@ export class RabbitMqEventsService implements OnModuleDestroy {
       options: {
         urls: [url],
         queue: 'task-service',
-        queueOptions: { durable: true },
+        queueOptions: buildConsumerQueueOptionsForQueue('task-service'),
       },
     });
     return this.taskClient;
@@ -77,7 +78,7 @@ export class RabbitMqEventsService implements OnModuleDestroy {
       options: {
         urls: [url],
         queue: 'notification-service',
-        queueOptions: { durable: true },
+        queueOptions: buildConsumerQueueOptionsForQueue('notification-service'),
       },
     });
     return this.notiClient;

@@ -50,6 +50,10 @@ data:
   REDIS_PORT: "6379"
   REDIS_DB: "0"
   {{- end }}
+  {{- if or (eq $name "auth-service") (eq $name "user-service") (eq $name "task-service") (eq $name "notification-service") }}
+  RABBITMQ_DLX_EXCHANGE: {{ $root.Values.global.rabbitmq.dlxExchange | default "collabspace_dlx" | quote }}
+  RABBITMQ_DLX_ROUTING_KEY: {{ printf "%s.dlq" $name | quote }}
+  {{- end }}
   {{- range $key, $val := $app.extraEnv }}
   {{ $key }}: {{ $val | quote }}
   {{- end }}

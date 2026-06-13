@@ -2,6 +2,7 @@ import './observability/instrumentation';
 import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
+import { buildConsumerQueueOptions } from '@collabspace/shared';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { join } from 'node:path';
 import { DataSource } from 'typeorm';
@@ -85,14 +86,21 @@ async function bootstrap() {
   const rabbitMqUrl = process.env.RABBITMQ_URL;
 
   if (rabbitMqEnabled && rabbitMqUrl) {
+    const queue = process.env.RABBITMQ_QUEUE ?? 'user-service';
+    const dlxExchange = process.env.RABBITMQ_DLX_EXCHANGE ?? 'collabspace_dlx';
+    const dlxRoutingKey =
+      process.env.RABBITMQ_DLX_ROUTING_KEY ?? `${queue}.dlq`;
+
     app.connectMicroservice<MicroserviceOptions>({
       transport: Transport.RMQ,
       options: {
         urls: [rabbitMqUrl],
-        queue: process.env.RABBITMQ_QUEUE ?? 'user-service',
-        queueOptions: {
+        queue,
+        queueOptions: buildConsumerQueueOptions({
           durable: toBoolean(process.env.RABBITMQ_QUEUE_DURABLE, true),
-        },
+          deadLetterExchange: dlxExchange,
+          deadLetterRoutingKey: dlxRoutingKey,
+        }),
         prefetchCount: Number(process.env.RABBITMQ_PREFETCH_COUNT ?? 10),
         noAck: toBoolean(process.env.RABBITMQ_NO_ACK, false),
       },

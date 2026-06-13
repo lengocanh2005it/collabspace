@@ -11,6 +11,7 @@ application/use-cases      → one class per action
 domain/entities            → plain domain models
 domain/repositories        → ports (USER_PROFILE_REPOSITORY)
 infrastructure/repositories → TypeORM + in-memory
+infrastructure/services    → AzureBlobService (avatar uploads)
 integrations/auth          → auth-service gRPC client
 ```
 
@@ -28,14 +29,21 @@ pnpm run seed
 ## Conventions
 
 - Global prefix `/api/v1`; routes under `/users/*`.
-- `me` endpoints resolve user from bearer token via auth gRPC.
+- `me` endpoints resolve user from bearer token via auth gRPC (`VerifyAccessTokenLite`).
 - Return DTOs, never ORM entities.
 - Without `DATABASE_URL`, in-memory repository is used (tests behave differently).
 
+## Avatar upload
+
+- `POST /api/v1/users/me/avatar` — multipart field `file` (`FileInterceptor`).
+- `AzureBlobService` uploads to container `user-avatars` when `AZURE_STORAGE_CONNECTION_STRING` is set.
+- Without connection string: mock mode returns `ui-avatars.com` URL (not persisted to blob).
+- Updates profile via `UpdateUserProfileUseCase` (`avatarUrl`).
+
 ## Integration
 
-- Verifies tokens through auth-service `VerifyAccessToken`.
-- Serves profiles to auth-service and future task/workspace services.
+- Verifies tokens through auth-service `VerifyAccessToken` / `VerifyAccessTokenLite`.
+- Serves profiles to auth-service and task/workspace/notification services.
 
 ## Where to add code
 
@@ -47,5 +55,6 @@ pnpm run seed
 | Domain | `domain/entities/` |
 | Repository port | `domain/repositories/` |
 | TypeORM | `infrastructure/database/entities/`, `infrastructure/repositories/` |
+| Blob / file storage | `infrastructure/services/azure-blob.service.ts` |
 
 Deep docs: `@../../.claude/docs/service-architecture.md` (user section), `@../../.claude/docs/coding-conventions.md`, `@../../.claude/docs/service-contracts.md`

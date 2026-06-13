@@ -29,6 +29,8 @@ global:
   azureStorage:
     containerName: task-attachments
     maxFileSize: "5242880"
+  rabbitmq:
+    dlxExchange: collabspace_dlx
 
 infra:
   hosts:

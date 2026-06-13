@@ -2,6 +2,7 @@ import "./observability/instrumentation";
 import { NestFactory } from "@nestjs/core";
 import { AppModule } from "./app.module";
 import { MicroserviceOptions, Transport } from "@nestjs/microservices";
+import { buildConsumerQueueOptions } from "@collabspace/shared";
 import { ConfigurationService } from "./configuration/configuration.service";
 import { Logger, ValidationPipe } from "@nestjs/common";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
@@ -23,13 +24,11 @@ async function bootstrap() {
       options: {
         urls: [rmqConfig.url],
         queue: rmqConfig.queue,
-        queueOptions: {
+        queueOptions: buildConsumerQueueOptions({
           durable: rmqConfig.queueDurable,
-          arguments: {
-            "x-dead-letter-exchange": rmqConfig.deadLetterExchange,
-            "x-dead-letter-routing-key": rmqConfig.deadLetterRoutingKey,
-          },
-        },
+          deadLetterExchange: rmqConfig.deadLetterExchange,
+          deadLetterRoutingKey: rmqConfig.deadLetterRoutingKey,
+        }),
         noAck: rmqConfig.noAck,
         prefetchCount: rmqConfig.prefetchCount,
       },

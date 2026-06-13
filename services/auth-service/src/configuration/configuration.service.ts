@@ -5,6 +5,7 @@ import {
   type GrpcOptions,
   type RmqOptions,
 } from '@nestjs/microservices';
+import { buildConsumerQueueOptions } from '@collabspace/shared';
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { RedisOptions } from 'ioredis';
 import { join } from 'node:path';
@@ -331,15 +332,23 @@ export class ConfigurationService {
 
   getRabbitMqMicroserviceOptions(): RmqOptions {
     const rabbitMqConfig = this.getRabbitMqConfig();
+    const dlxExchange =
+      this.configService.get<string>('RABBITMQ_DLX_EXCHANGE') ??
+      'collabspace_dlx';
+    const dlxRoutingKey =
+      this.configService.get<string>('RABBITMQ_DLX_ROUTING_KEY') ??
+      `${rabbitMqConfig.queue}.dlq`;
 
     return {
       options: {
         noAck: rabbitMqConfig.noAck,
         prefetchCount: rabbitMqConfig.prefetchCount,
         queue: rabbitMqConfig.queue,
-        queueOptions: {
+        queueOptions: buildConsumerQueueOptions({
           durable: rabbitMqConfig.queueDurable,
-        },
+          deadLetterExchange: dlxExchange,
+          deadLetterRoutingKey: dlxRoutingKey,
+        }),
         urls: rabbitMqConfig.url ? [rabbitMqConfig.url] : [],
       },
       transport: Transport.RMQ,

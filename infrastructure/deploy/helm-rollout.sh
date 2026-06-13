@@ -173,6 +173,9 @@ print(f"Updated image tags to {tag}")
 PYEOF
 fi
 
+echo "==> Reconciling RabbitMQ consumer queues (DLX)..."
+bash "$SCRIPT_DIR/reconcile-rabbitmq-queues.sh"
+
 echo "==> Scaling down Postgres app deployments (migration window)..."
 for dep in auth-service user-service workspace-service; do
   if kubectl get deployment "$dep" -n "$APP_NS" >/dev/null 2>&1; then

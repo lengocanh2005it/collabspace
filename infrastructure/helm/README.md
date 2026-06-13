@@ -117,7 +117,26 @@ helm upgrade --install collabspace . \
 | PostgreSQL | Bitnami subchart | DBs: `collabspace_auth`, `collabspace_user`, `collabspace_workspace` |
 | MongoDB | Bitnami subchart | DBs: `collabspace_task`, `collabspace_notification` |
 | Redis | Bitnami subchart | Auth sessions + notification cache |
-| RabbitMQ | Bitnami subchart | Vhost `collabspace` |
+| RabbitMQ | Bitnami subchart | Vhost `collabspace`; consumer queues use DLX `collabspace_dlx` |
+
+### RabbitMQ consumer queues (DLX)
+
+Microservice consumer queues (`auth-service`, `user-service`, `task-service`, `notification-service`) are declared with:
+
+- `x-dead-letter-exchange`: `collabspace_dlx`
+- `x-dead-letter-routing-key`: `<queue-name>.dlq`
+
+Canonical layout: `infrastructure/rabbitmq/definitions.json`.
+
+**Deploy:** `infrastructure/deploy/helm-rollout.sh` runs `reconcile-rabbitmq-queues.sh` before migrations. If a legacy queue exists without DLX args, the script scales the consumer deployment to 0, deletes the queue, and the app recreates it on startup.
+
+**Manual reconcile on Droplet:**
+
+```bash
+export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+bash /opt/collabspace/infrastructure/deploy/reconcile-rabbitmq-queues.sh
+```
+
 | Traefik | Official Traefik chart | LoadBalancer / NodePort gateway |
 | Apps | Custom templates | auth, user, workspace (8080), task, notification |
 | Gateway routes | IngressRoute CRDs | Forward-auth via auth-service |

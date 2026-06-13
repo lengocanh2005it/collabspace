@@ -53,21 +53,40 @@
       "vhost": "collabspace",
       "durable": true,
       "auto_delete": false,
-      "arguments": {}
+      "arguments": {
+        "x-dead-letter-exchange": "collabspace_dlx",
+        "x-dead-letter-routing-key": "notification-service.dlq"
+      }
     },
     {
       "name": "task-service",
       "vhost": "collabspace",
       "durable": true,
       "auto_delete": false,
-      "arguments": {}
+      "arguments": {
+        "x-dead-letter-exchange": "collabspace_dlx",
+        "x-dead-letter-routing-key": "task-service.dlq"
+      }
     },
     {
       "name": "user-service",
       "vhost": "collabspace",
       "durable": true,
       "auto_delete": false,
-      "arguments": {}
+      "arguments": {
+        "x-dead-letter-exchange": "collabspace_dlx",
+        "x-dead-letter-routing-key": "user-service.dlq"
+      }
+    },
+    {
+      "name": "auth-service",
+      "vhost": "collabspace",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-dead-letter-exchange": "collabspace_dlx",
+        "x-dead-letter-routing-key": "auth-service.dlq"
+      }
     },
     {
       "name": "task_assigned.dlq",
@@ -96,6 +115,11 @@
     },
     {
       "name": "user-service.dlq",
+      "vhost": "collabspace",
+      "durable": true
+    },
+    {
+      "name": "auth-service.dlq",
       "vhost": "collabspace",
       "durable": true
     }
@@ -199,6 +223,13 @@
       "destination": "user-service.dlq",
       "destination_type": "queue",
       "routing_key": "user-service.dlq",
+      "vhost": "collabspace"
+    },
+    {
+      "source": "collabspace_dlx",
+      "destination": "auth-service.dlq",
+      "destination_type": "queue",
+      "routing_key": "auth-service.dlq",
       "vhost": "collabspace"
     }
   ]
