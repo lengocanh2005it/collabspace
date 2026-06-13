@@ -13,11 +13,18 @@ import {
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
+  ApiCreatedResponse,
   ApiHeader,
+  ApiOkResponse,
   ApiOperation,
   ApiParam,
   ApiTags,
 } from '@nestjs/swagger';
+import {
+  PaginatedWorkspaceActivityResponseSchemaDto,
+  WorkspaceMemberResponseSchemaDto,
+  WorkspaceResponseSchemaDto,
+} from '../../application/dto/swagger-response.dto';
 import type { Response } from 'express';
 import { UserId } from './decorators/user-id.decorator';
 import { CreateWorkspaceDto } from '../../application/dto/create-workspace.dto';
@@ -48,6 +55,7 @@ export class WorkspaceController {
 
   @Post()
   @ApiOperation({ summary: 'Create workspace' })
+  @ApiCreatedResponse({ type: WorkspaceResponseSchemaDto })
   @ApiHeader({
     name: 'Idempotency-Key',
     required: false,
@@ -91,6 +99,7 @@ export class WorkspaceController {
 
   @Get()
   @ApiOperation({ summary: 'List workspaces for current user' })
+  @ApiOkResponse({ type: WorkspaceResponseSchemaDto, isArray: true })
   async listWorkspaces(@UserId() userId: string) {
     return this.listWorkspacesUseCase.execute(userId);
   }
@@ -98,6 +107,7 @@ export class WorkspaceController {
   @Get(':id')
   @ApiOperation({ summary: 'Get workspace by id' })
   @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiOkResponse({ type: WorkspaceResponseSchemaDto })
   async getWorkspace(
     @UserId() userId: string,
     @Param('id', ParseUUIDPipe) workspaceId: string,
@@ -108,6 +118,7 @@ export class WorkspaceController {
   @Patch(':id')
   @ApiOperation({ summary: 'Update workspace' })
   @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiOkResponse({ type: WorkspaceResponseSchemaDto })
   async updateWorkspace(
     @UserId() userId: string,
     @Param('id', ParseUUIDPipe) workspaceId: string,
@@ -119,6 +130,7 @@ export class WorkspaceController {
   @Get(':id/members')
   @ApiOperation({ summary: 'List workspace members' })
   @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiOkResponse({ type: WorkspaceMemberResponseSchemaDto, isArray: true })
   async listMembers(
     @UserId() userId: string,
     @Param('id', ParseUUIDPipe) workspaceId: string,
@@ -129,6 +141,7 @@ export class WorkspaceController {
   @Get(':id/activity')
   @ApiOperation({ summary: 'Get workspace activity timeline' })
   @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiOkResponse({ type: PaginatedWorkspaceActivityResponseSchemaDto })
   async getActivity(
     @UserId() userId: string,
     @Param('id', ParseUUIDPipe) workspaceId: string,

@@ -7,17 +7,41 @@ import {
   Req,
   Res,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import type { LogoutInput, RefreshSessionInput } from '@/common/types/auth-session.type';
-import type {
-  ChangePasswordInput,
-  LoginInput,
-  RegisterInput,
-  ResendEmailVerificationOtpInput,
-  VerifyEmailOtpInput,
-} from '@/common/types/identity.type';
+import {
+  ApiBearerAuth,
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiProduces,
+  ApiResponse,
+  ApiTags,
+  ApiUnauthorizedResponse,
+  ApiTooManyRequestsResponse,
+} from '@nestjs/swagger';
+import { RegisterInput, ResendEmailVerificationOtpInput } from '@/common/types/identity.type';
 import type { RequestWithId } from '@/common/http/request-id.middleware';
 import type { Request, Response } from 'express';
+import {
+  ChangePasswordRequestDto,
+  LoginRequestDto,
+  LogoutRequestDto,
+  RefreshSessionRequestDto,
+  VerifyEmailOtpRequestDto,
+} from '@/application/dto/auth-request.dto';
+import { AuthSessionResponseDto } from '@/application/dto/auth-session-response.dto';
+import {
+  ChangePasswordResponseDto,
+  LogoutResponseDto,
+  MeResponseDto,
+  RegisterPendingResponseDto,
+  ResendEmailVerificationOtpResponseDto,
+  VerifyAccessResponseDto,
+  VerifyEmailOtpResponseDto,
+} from '@/application/dto/auth-response.dto';
+import {
+  LivenessReportDto,
+  ReadinessReportDto,
+} from '@/application/dto/health-response.dto';
 import { AuthHealthService } from './health/auth-health.service';
 import { assertMetricsAccess } from './metrics/metrics-access';
 import { MetricsService } from './metrics/metrics.service';
@@ -33,6 +57,9 @@ export class AuthController {
   ) {}
 
   @Get('health')
+  @ApiOperation({ summary: 'Health summary (readiness)' })
+  @ApiOkResponse({ type: ReadinessReportDto })
+  @ApiResponse({ status: 503, type: ReadinessReportDto })
   async getHealth(@Res({ passthrough: true }) response: Response) {
     const report = await this.authHealthService.getReadiness();
     response.status(report.ready ? 200 : 503);
@@ -41,11 +68,16 @@ export class AuthController {
 
   @Get('health/live')
   @HttpCode(200)
+  @ApiOperation({ summary: 'Liveness probe' })
+  @ApiOkResponse({ type: LivenessReportDto })
   getLiveness() {
     return this.authHealthService.getLiveness();
   }
 
   @Get('health/ready')
+  @ApiOperation({ summary: 'Readiness probe' })
+  @ApiOkResponse({ type: ReadinessReportDto })
+  @ApiResponse({ status: 503, type: ReadinessReportDto })
   async getReadiness(@Res({ passthrough: true }) response: Response) {
     const report = await this.authHealthService.getReadiness();
     response.status(report.ready ? 200 : 503);
@@ -53,6 +85,8 @@ export class AuthController {
   }
 
   @Get('metrics')
+  @ApiProduces('text/plain')
+  @ApiOperation({ summary: 'Prometheus metrics (requires METRICS_AUTH_TOKEN)' })
   async getMetrics(@Req() request: Request, @Res() response: Response) {
     assertMetricsAccess(request);
     response.set('Content-Type', this.metricsService.contentType);
@@ -62,7 +96,9 @@ export class AuthController {
   @Post('login')
   @HttpCode(200)
   @ApiOperation({ summary: 'Login with email and password (verified email required)' })
-  async login(@Body() body: LoginInput) {
+  @ApiOkResponse({ type: AuthSessionResponseDto })
+  @ApiUnauthorizedResponse({ description: 'Invalid credentials or email not verified' })
+  async login(@Body() body: LoginRequestDto) {
     return this.authService.login(body);
   }
 
@@ -70,6 +106,8 @@ export class AuthController {
   @HttpCode(200)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Current authenticated user (profile hydrated when user-service is up)' })
+  @ApiOkResponse({ type: MeResponseDto })
+  @ApiUnauthorizedResponse()
   async me(@Req() request: Request) {
     return this.authService.getCurrentUser(request.header('authorization'));
   }
@@ -81,6 +119,7 @@ export class AuthController {
     description:
       'Creates auth user and pending user profile. Email verification OTP is sent asynchronously (outbox). Unverified accounts can recover via register with the same email.',
   })
+  @ApiCreatedResponse({ type: RegisterPendingResponseDto })
   async register(@Body() body: RegisterInput) {
     return this.authService.register(body);
   }
@@ -92,6 +131,8 @@ export class AuthController {
     description:
       'Subject to resend cooldown and max attempts per window (see EMAIL_VERIFICATION_RESEND_* env vars). Returns 429 when rate limited.',
   })
+  @ApiOkResponse({ type: ResendEmailVerificationOtpResponseDto })
+  @ApiTooManyRequestsResponse({ description: 'Resend cooldown or max attempts exceeded' })
   async resendVerificationOtp(@Body() body: ResendEmailVerificationOtpInput) {
     return this.authService.resendEmailVerificationOtp(body);
   }
@@ -102,15 +143,21 @@ export class AuthController {
     summary: 'Verify email with OTP',
     description: 'OTP is hashed at rest in Redis. Invalid or expired OTP returns 401.',
   })
-  async verifyEmail(@Body() body: VerifyEmailOtpInput) {
+  @ApiOkResponse({ type: VerifyEmailOtpResponseDto })
+  @ApiUnauthorizedResponse({ description: 'Invalid or expired OTP' })
+  async verifyEmail(@Body() body: VerifyEmailOtpRequestDto) {
     return this.authService.verifyEmailOtp(body);
   }
 
   @Post('change-password')
   @HttpCode(200)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Change password for authenticated user' })
+  @ApiOkResponse({ type: ChangePasswordResponseDto })
+  @ApiUnauthorizedResponse()
   async changePassword(
     @Req() request: Request,
-    @Body() body: ChangePasswordInput,
+    @Body() body: ChangePasswordRequestDto,
   ) {
     return this.authService.changePassword(
       request.header('authorization'),
@@ -120,18 +167,27 @@ export class AuthController {
 
   @Post('logout')
   @HttpCode(200)
-  async logout(@Body() body: LogoutInput) {
+  @ApiOperation({ summary: 'Revoke refresh token session' })
+  @ApiOkResponse({ type: LogoutResponseDto })
+  async logout(@Body() body: LogoutRequestDto) {
     return this.authService.logout(body);
   }
 
   @Post('refresh')
   @HttpCode(200)
-  async refresh(@Body() body: RefreshSessionInput) {
+  @ApiOperation({ summary: 'Rotate refresh token and issue new access token' })
+  @ApiOkResponse({ type: AuthSessionResponseDto })
+  @ApiUnauthorizedResponse()
+  async refresh(@Body() body: RefreshSessionRequestDto) {
     return this.authService.refresh(body);
   }
 
   @Get('verify')
   @HttpCode(200)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Traefik forward-auth token verification' })
+  @ApiOkResponse({ type: VerifyAccessResponseDto })
+  @ApiUnauthorizedResponse()
   async verify(
     @Req() request: Request,
     @Res({ passthrough: true }) response: Response,

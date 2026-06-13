@@ -11,10 +11,16 @@ import {
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
+  ApiCreatedResponse,
+  ApiOkResponse,
   ApiOperation,
   ApiParam,
   ApiTags,
 } from '@nestjs/swagger';
+import {
+  DeleteProjectResponseSchemaDto,
+  ProjectResponseSchemaDto,
+} from '../../application/dto/swagger-response.dto';
 import { UserId } from './decorators/user-id.decorator';
 import { CreateProjectDto } from '../../application/dto/create-project.dto';
 import { UpdateProjectDto } from '../../application/dto/update-project.dto';
@@ -39,6 +45,7 @@ export class ProjectController {
   @Post()
   @ApiOperation({ summary: 'Create project in workspace' })
   @ApiParam({ name: 'workspaceId', format: 'uuid' })
+  @ApiCreatedResponse({ type: ProjectResponseSchemaDto })
   async createProject(
     @UserId() userId: string,
     @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
@@ -50,6 +57,7 @@ export class ProjectController {
   @Get()
   @ApiOperation({ summary: 'List projects in workspace' })
   @ApiParam({ name: 'workspaceId', format: 'uuid' })
+  @ApiOkResponse({ type: ProjectResponseSchemaDto, isArray: true })
   async listProjects(
     @UserId() userId: string,
     @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
@@ -61,6 +69,7 @@ export class ProjectController {
   @ApiOperation({ summary: 'Update project' })
   @ApiParam({ name: 'workspaceId', format: 'uuid' })
   @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiOkResponse({ type: ProjectResponseSchemaDto })
   async updateProject(
     @UserId() userId: string,
     @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
@@ -79,6 +88,7 @@ export class ProjectController {
   @ApiOperation({ summary: 'Soft-delete project' })
   @ApiParam({ name: 'workspaceId', format: 'uuid' })
   @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiOkResponse({ type: DeleteProjectResponseSchemaDto })
   async deleteProject(
     @UserId() userId: string,
     @Param('workspaceId', ParseUUIDPipe) workspaceId: string,

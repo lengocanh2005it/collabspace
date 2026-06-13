@@ -21,12 +21,22 @@ import {
   ApiBearerAuth,
   ApiBody,
   ApiConsumes,
+  ApiCreatedResponse,
   ApiHeader,
+  ApiOkResponse,
   ApiOperation,
   ApiParam,
   ApiQuery,
   ApiTags,
 } from "@nestjs/swagger";
+import {
+  ApiSuccessCreateTaskResponseSchemaDto,
+  ApiSuccessGetTasksResponseSchemaDto,
+  ApiSuccessMessageResponseSchemaDto,
+  ApiSuccessTaskBoardResponseSchemaDto,
+  ApiSuccessTaskActivityResponseSchemaDto,
+  ApiSuccessTaskResponseSchemaDto,
+} from "../dtos/task-swagger-response.dto";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { CommandBus, QueryBus } from "@nestjs/cqrs";
 import type { UploadedFile as TaskUploadedFile } from "../../common/types/uploaded-file";
@@ -85,6 +95,7 @@ export class TaskController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: "Create task" })
+  @ApiCreatedResponse({ type: ApiSuccessCreateTaskResponseSchemaDto })
   @ApiHeader({
     name: "Idempotency-Key",
     required: false,
@@ -148,6 +159,7 @@ export class TaskController {
   @Get()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "List tasks in workspace" })
+  @ApiOkResponse({ type: ApiSuccessGetTasksResponseSchemaDto })
   @ApiQuery({ name: "workspaceId", required: true })
   @ApiQuery({ name: "status", required: false })
   @ApiQuery({ name: "assigneeId", required: false })
@@ -182,6 +194,7 @@ export class TaskController {
   @Get("board")
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "Kanban board grouped by status" })
+  @ApiOkResponse({ type: ApiSuccessTaskBoardResponseSchemaDto })
   @ApiQuery({ name: "workspaceId", required: true })
   @ApiQuery({ name: "projectId", required: false })
   async getTaskBoard(
@@ -205,6 +218,7 @@ export class TaskController {
   @Get(":id")
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "Get task by id" })
+  @ApiOkResponse({ type: ApiSuccessTaskResponseSchemaDto })
   @ApiParam({ name: "id" })
   async getTaskById(
     @Param("id") taskId: string,
@@ -226,6 +240,7 @@ export class TaskController {
   @Get(":id/activity")
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "Task activity timeline (events + comments)" })
+  @ApiOkResponse({ type: ApiSuccessTaskActivityResponseSchemaDto })
   @ApiParam({ name: "id" })
   @ApiQuery({ name: "limit", required: false, type: Number, example: 50 })
   @ApiQuery({ name: "offset", required: false, type: Number, example: 0 })
@@ -254,6 +269,7 @@ export class TaskController {
   @Patch(":id/details")
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "Update task details" })
+  @ApiOkResponse({ type: ApiSuccessMessageResponseSchemaDto })
   @ApiParam({ name: "id" })
   async updateTaskDetails(
     @Param("id") taskId: string,
@@ -284,6 +300,7 @@ export class TaskController {
   @Patch(":id/status")
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "Change task status" })
+  @ApiOkResponse({ type: ApiSuccessMessageResponseSchemaDto })
   @ApiParam({ name: "id" })
   async changeTaskStatus(
     @Param("id") taskId: string,
@@ -305,6 +322,7 @@ export class TaskController {
   @Patch(":id/assignee")
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "Assign or unassign task" })
+  @ApiOkResponse({ type: ApiSuccessMessageResponseSchemaDto })
   @ApiParam({ name: "id" })
   @ApiHeader({
     name: "Idempotency-Key",
@@ -367,6 +385,7 @@ export class TaskController {
   @Delete(":id")
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "Delete task" })
+  @ApiOkResponse({ type: ApiSuccessMessageResponseSchemaDto })
   @ApiParam({ name: "id" })
   async deleteTask(
     @Param("id") taskId: string,
@@ -387,6 +406,7 @@ export class TaskController {
   @HttpCode(HttpStatus.CREATED)
   @UseInterceptors(FileInterceptor("file"))
   @ApiOperation({ summary: "Upload task attachment" })
+  @ApiCreatedResponse({ type: ApiSuccessMessageResponseSchemaDto })
   @ApiParam({ name: "id" })
   @ApiConsumes("multipart/form-data")
   @ApiBody({
@@ -435,6 +455,7 @@ export class TaskController {
   @Delete(":id/attachments")
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "Remove task attachment" })
+  @ApiOkResponse({ type: ApiSuccessMessageResponseSchemaDto })
   @ApiParam({ name: "id" })
   @ApiQuery({ name: "fileUrl", required: true })
   async deleteAttachment(

@@ -11,11 +11,17 @@ import {
 } from "@nestjs/common";
 import {
   ApiBearerAuth,
+  ApiOkResponse,
   ApiOperation,
   ApiParam,
   ApiQuery,
   ApiTags,
 } from "@nestjs/swagger";
+import {
+  GetNotificationsResponseSchemaDto,
+  MarkAllNotificationsReadResponseSchemaDto,
+  MessageResponseSchemaDto,
+} from "../dtos/notification-swagger-response.dto";
 import type { Request, Response } from "express";
 import { CommandBus, QueryBus } from "@nestjs/cqrs";
 
@@ -80,6 +86,7 @@ export class NotificationsController {
   @ApiOperation({ summary: "List notifications for current user" })
   @ApiQuery({ name: "skip", required: false, type: Number, example: 0 })
   @ApiQuery({ name: "limit", required: false, type: Number, example: 20 })
+  @ApiOkResponse({ type: GetNotificationsResponseSchemaDto })
   async listNotifications(
     @Req() req: AuthenticatedRequest,
     @Query("skip") skip?: string,
@@ -99,6 +106,7 @@ export class NotificationsController {
   @UseGuards(AuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: "Mark all notifications as read" })
+  @ApiOkResponse({ type: MarkAllNotificationsReadResponseSchemaDto })
   async markAllAsRead(@Req() req: AuthenticatedRequest) {
     return this.commandBus.execute(
       new MarkAllNotificationsReadCommand(req.user.id),
@@ -111,6 +119,7 @@ export class NotificationsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: "Mark one notification as read" })
   @ApiParam({ name: "id", description: "Notification id" })
+  @ApiOkResponse({ type: MessageResponseSchemaDto })
   async markAsRead(
     @Param("id") notificationId: string,
     @Req() req: AuthenticatedRequest,

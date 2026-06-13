@@ -10,11 +10,18 @@ import {
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
+  ApiCreatedResponse,
   ApiHeader,
+  ApiOkResponse,
   ApiOperation,
   ApiParam,
   ApiTags,
 } from '@nestjs/swagger';
+import {
+  AcceptInvitationResponseSchemaDto,
+  InvitationResponseSchemaDto,
+  RejectInvitationResponseSchemaDto,
+} from '../../application/dto/swagger-response.dto';
 import type { Response } from 'express';
 import { UserId } from './decorators/user-id.decorator';
 import { InviteMemberDto } from '../../application/dto/invite-member.dto';
@@ -39,6 +46,7 @@ export class InvitationController {
   @Post('workspaces/:workspaceId/invite')
   @ApiOperation({ summary: 'Invite member by email' })
   @ApiParam({ name: 'workspaceId', format: 'uuid' })
+  @ApiCreatedResponse({ type: InvitationResponseSchemaDto })
   @ApiHeader({
     name: 'Idempotency-Key',
     required: false,
@@ -88,6 +96,7 @@ export class InvitationController {
   @Post('invitations/:id/accept')
   @ApiOperation({ summary: 'Accept workspace invitation' })
   @ApiParam({ name: 'id', format: 'uuid', description: 'Invitation id' })
+  @ApiOkResponse({ type: AcceptInvitationResponseSchemaDto })
   async acceptInvitation(
     @UserId() userId: string,
     @Param('id', ParseUUIDPipe) invitationId: string,
@@ -98,6 +107,7 @@ export class InvitationController {
   @Post('invitations/:id/reject')
   @ApiOperation({ summary: 'Reject workspace invitation' })
   @ApiParam({ name: 'id', format: 'uuid', description: 'Invitation id' })
+  @ApiOkResponse({ type: RejectInvitationResponseSchemaDto })
   async rejectInvitation(
     @UserId() userId: string,
     @Param('id', ParseUUIDPipe) invitationId: string,

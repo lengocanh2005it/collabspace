@@ -1,19 +1,19 @@
 import {
-  AuthSession,
-  LogoutInput,
-  RefreshSessionInput,
-} from '@/common/types/auth-session.type';
+  ChangePasswordRequestDto,
+  LoginRequestDto,
+  LogoutRequestDto,
+  RefreshSessionRequestDto,
+  VerifyEmailOtpRequestDto,
+} from '@/application/dto/auth-request.dto';
+import type { AuthSessionResponseDto } from '@/application/dto/auth-session-response.dto';
 import {
   AuthUser,
-  ChangePasswordInput,
-  ChangePasswordResult,
-  LoginInput,
   RegisterInput,
   RegisterPendingResult,
   ResendEmailVerificationOtpInput,
   ResendEmailVerificationOtpResult,
-  VerifyEmailOtpInput,
   VerifyEmailOtpResult,
+  ChangePasswordResult,
 } from '@/common/types/identity.type';
 import {
   AuthIdentity,
@@ -92,12 +92,12 @@ export class AuthService {
     };
   }
 
-  async login(input: LoginInput): Promise<AuthSession> {
+  async login(input: LoginRequestDto): Promise<AuthSessionResponseDto> {
     const user = await this.identityService.validateCredentials(input);
     return this.issueSession(user, input.workspaceId);
   }
 
-  async logout(input: LogoutInput): Promise<{ revoked: true }> {
+  async logout(input: LogoutRequestDto): Promise<{ revoked: true }> {
     this.assertRefreshTokenInput(input);
     await this.refreshTokensService.revokeToken(
       input.refreshToken,
@@ -107,7 +107,7 @@ export class AuthService {
     return { revoked: true };
   }
 
-  async refresh(input: RefreshSessionInput): Promise<AuthSession> {
+  async refresh(input: RefreshSessionRequestDto): Promise<AuthSessionResponseDto> {
     this.assertRefreshTokenInput(input);
     const refreshTokenPayload = await this.refreshTokensService.rotate(
       input.refreshToken,
@@ -197,7 +197,7 @@ export class AuthService {
   }
 
   async verifyEmailOtp(
-    input: VerifyEmailOtpInput,
+    input: VerifyEmailOtpRequestDto,
   ): Promise<VerifyEmailOtpResult> {
     const otp = input.otp?.trim();
 
@@ -251,7 +251,7 @@ export class AuthService {
 
   async changePassword(
     authorizationHeader: string | undefined,
-    input: ChangePasswordInput,
+    input: ChangePasswordRequestDto,
   ): Promise<ChangePasswordResult> {
     const { userId } = await this.resolveVerifiedUserContext(authorizationHeader);
     await this.identityService.changePassword(
@@ -608,7 +608,7 @@ export class AuthService {
     };
   }
 
-  private assertRefreshTokenInput(input: RefreshSessionInput): void {
+  private assertRefreshTokenInput(input: RefreshSessionRequestDto): void {
     if (!input.refreshToken || input.refreshToken.trim().length === 0) {
       throw new UnauthorizedException({
         code: 'REFRESH_TOKEN_MISSING',
@@ -620,7 +620,7 @@ export class AuthService {
   private async issueSession(
     user: AuthUser,
     workspaceId?: string,
-  ): Promise<AuthSession> {
+  ): Promise<AuthSessionResponseDto> {
     const accessToken = await this.signAccessToken({
       role: user.role,
       roles: user.roles,

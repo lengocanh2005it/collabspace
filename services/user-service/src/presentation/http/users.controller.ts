@@ -11,7 +11,14 @@ import {
   Req,
   Res,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  PaginatedUserSummaryResponseSchemaDto,
+  UserPreferencesResponseSchemaDto,
+  UserProfileResponseSchemaDto,
+  UserStatusResponseSchemaDto,
+  UserSummaryResponseSchemaDto,
+} from './dto/user-swagger-response.dto';
 import type { Request, Response } from 'express';
 import { GetUserProfileUseCase } from '../../application/use-cases/get-user-profile.use-case';
 import { GetUserSummaryUseCase } from '../../application/use-cases/get-user-summary.use-case';
@@ -81,6 +88,7 @@ export class UsersController {
   @Get('me')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Current user profile' })
+  @ApiOkResponse({ type: UserProfileResponseSchemaDto })
   async getMe(@Headers('authorization') authorizationHeader?: string) {
     const identity = await this.requireIdentity(authorizationHeader);
     return this.getUserProfileUseCase.execute(identity.userId);
@@ -89,6 +97,7 @@ export class UsersController {
   @Patch('me')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update current user profile' })
+  @ApiOkResponse({ type: UserProfileResponseSchemaDto })
   async updateMe(
     @Body() body: UpdateCurrentUserProfileDto,
     @Headers('authorization') authorizationHeader?: string,
@@ -98,6 +107,7 @@ export class UsersController {
   }
 
   @Get('me/preferences')
+  @ApiOkResponse({ type: UserPreferencesResponseSchemaDto })
   async getMyPreferences(
     @Headers('authorization') authorizationHeader?: string,
   ) {
@@ -106,6 +116,7 @@ export class UsersController {
   }
 
   @Patch('me/preferences')
+  @ApiOkResponse({ type: UserPreferencesResponseSchemaDto })
   async updateMyPreferences(
     @Body() body: UpdateCurrentUserPreferencesDto,
     @Headers('authorization') authorizationHeader?: string,
@@ -115,6 +126,7 @@ export class UsersController {
   }
 
   @Patch('me/status')
+  @ApiOkResponse({ type: UserStatusResponseSchemaDto })
   async updateMyStatus(
     @Body() body: UpdateCurrentUserStatusDto,
     @Headers('authorization') authorizationHeader?: string,
@@ -130,6 +142,7 @@ export class UsersController {
   }
 
   @Get('presence')
+  @ApiOkResponse({ type: UserStatusResponseSchemaDto, isArray: true })
   async getPresence(
     @Query() query: PresenceQueryDto,
     @Headers('authorization') authorizationHeader?: string,
@@ -141,6 +154,7 @@ export class UsersController {
   @Post('bulk')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Bulk fetch profiles by user id (max 100)' })
+  @ApiOkResponse({ type: UserProfileResponseSchemaDto, isArray: true })
   async bulkGetUsers(
     @Body() body: BulkUsersRequestDto,
     @Headers('authorization') authorizationHeader?: string,
@@ -152,6 +166,7 @@ export class UsersController {
   @Get()
   @ApiBearerAuth()
   @ApiOperation({ summary: 'List/search user directory (mentions, assignees)' })
+  @ApiOkResponse({ type: PaginatedUserSummaryResponseSchemaDto })
   async listUsers(
     @Query() query: ListUsersQueryDto,
     @Headers('authorization') authorizationHeader?: string,
@@ -165,6 +180,7 @@ export class UsersController {
   }
 
   @Get('search')
+  @ApiOkResponse({ type: PaginatedUserSummaryResponseSchemaDto })
   async searchUsers(
     @Query() query: SearchUsersQueryDto,
     @Headers('authorization') authorizationHeader?: string,
@@ -178,6 +194,7 @@ export class UsersController {
   }
 
   @Get(':id/summary')
+  @ApiOkResponse({ type: UserSummaryResponseSchemaDto })
   async getSummary(
     @Param('id') id: string,
     @Headers('authorization') authorizationHeader?: string,
@@ -189,6 +206,7 @@ export class UsersController {
   @Get(':id')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get profile by user id' })
+  @ApiOkResponse({ type: UserProfileResponseSchemaDto })
   async getById(
     @Param('id') id: string,
     @Headers('authorization') authorizationHeader?: string,
