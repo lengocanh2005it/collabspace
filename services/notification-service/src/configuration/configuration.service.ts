@@ -19,6 +19,9 @@ export type RabbitMqConfig = {
   queueDurable: boolean;
   prefetchCount: number;
   noAck: boolean;
+  maxRetries: number;
+  deadLetterExchange: string;
+  deadLetterRoutingKey: string;
 };
 
 @Injectable()
@@ -81,6 +84,17 @@ export class ConfigurationService {
         Number(this.configService.get<number>("RABBITMQ_PREFETCH_COUNT")) || 10,
 
       noAck: this.configService.get<string>("RABBITMQ_NO_ACK") === "true",
+
+      maxRetries:
+        Number(this.configService.get<number>("RABBITMQ_MAX_RETRIES")) || 5,
+
+      deadLetterExchange:
+        this.configService.get<string>("RABBITMQ_DLX_EXCHANGE") ??
+        "collabspace_dlx",
+
+      deadLetterRoutingKey:
+        this.configService.get<string>("RABBITMQ_DLX_ROUTING_KEY") ??
+        "notification-service.dlq",
     };
   }
 

@@ -55,9 +55,12 @@ Env (auth-service):
 | Activity list reads from projection with DB `offset`/`limit` + `count` | Done |
 | Seed backfill for demo data | Done |
 
-## Phase 6 — Async pipeline (planned)
+## Phase 6 — Async pipeline ✅
 
-Task outbox batch claim; RMQ DLQ.
+| Item | Status |
+|------|--------|
+| Task outbox batch claim (`find` + `bulkWrite`, `TASK_OUTBOX_BATCH_SIZE`) | Done |
+| Notification RMQ consumer retry → DLQ (`RABBITMQ_MAX_RETRIES`, `collabspace_dlx`) | Done |
 
 ## Phase 7 — Cache & scale (ongoing)
 

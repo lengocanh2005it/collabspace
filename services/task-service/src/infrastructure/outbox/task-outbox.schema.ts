@@ -38,3 +38,9 @@ export const TaskOutboxEventSchema =
   SchemaFactory.createForClass(TaskOutboxEvent);
 
 TaskOutboxEventSchema.index({ processedAt: 1, failedAt: 1, availableAt: 1 });
+TaskOutboxEventSchema.index({
+  processedAt: 1,
+  failedAt: 1,
+  claimedAt: 1,
+  availableAt: 1,
+});

@@ -9,6 +9,12 @@ import { USER_PROFILE_UPDATED_EVENT } from "../../../domain/events/user-profile-
 import type { UserRegisteredEventPayload } from "../../../domain/events/user-create.event";
 import type { UserProfileUpdatedEventPayload } from "../../../domain/events/user-profile-update.event";
 import { MetricsService } from "../../../metrics/metrics.service";
+import { handleRmqConsumerFailure } from "@collabspace/shared";
+import type { RmqChannel, RmqConsumeMessage } from "@collabspace/shared";
+
+function resolveMaxRetries(): number {
+  return Number(process.env.RABBITMQ_MAX_RETRIES ?? 5);
+}
 
 @Controller()
 export class UserEventListenerController {
@@ -45,7 +51,11 @@ export class UserEventListenerController {
         `Failed to sync user registration event for ${data.userId}`,
         error instanceof Error ? error.stack : undefined,
       );
-      channel.nack(originalMessage, false, true);
+      handleRmqConsumerFailure(
+        channel as unknown as RmqChannel,
+        originalMessage as unknown as RmqConsumeMessage,
+        resolveMaxRetries(),
+      );
     }
   }
 
@@ -76,7 +86,11 @@ export class UserEventListenerController {
         `Failed to sync user profile update event for ${data.userId}`,
         error instanceof Error ? error.stack : undefined,
       );
-      channel.nack(originalMessage, false, true);
+      handleRmqConsumerFailure(
+        channel as unknown as RmqChannel,
+        originalMessage as unknown as RmqConsumeMessage,
+        resolveMaxRetries(),
+      );
     }
   }
 

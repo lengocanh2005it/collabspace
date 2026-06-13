@@ -17,8 +17,20 @@ describe("CommentEventListenerController", () => {
     mockChannel = {
       ack: jest.fn(),
       nack: jest.fn(),
+      publish: jest.fn().mockReturnValue(true),
     };
-    mockMessage = {};
+    mockMessage = {
+      content: Buffer.from("{}"),
+      fields: {
+        deliveryTag: 1,
+        exchange: "",
+        routingKey: "notification-service",
+        redelivered: false,
+      },
+      properties: {
+        headers: {},
+      },
+    };
 
     mockRmqContext = {
       getChannelRef: jest.fn().mockReturnValue(mockChannel),
@@ -54,7 +66,8 @@ describe("CommentEventListenerController", () => {
     await expect(
       controller.handleTaskCommented(payload, mockRmqContext),
     ).resolves.not.toThrow();
-    expect(mockChannel.ack).not.toHaveBeenCalled();
-    expect(mockChannel.nack).toHaveBeenCalledWith(mockMessage, false, true);
+    expect(mockChannel.ack).toHaveBeenCalledWith(mockMessage);
+    expect(mockChannel.publish).toHaveBeenCalled();
+    expect(mockChannel.nack).not.toHaveBeenCalled();
   });
 });

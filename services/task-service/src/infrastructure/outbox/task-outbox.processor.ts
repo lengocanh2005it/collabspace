@@ -67,7 +67,9 @@ export class TaskOutboxProcessor implements OnModuleInit, OnModuleDestroy {
         {
           reclaimStaleClaims: () => this.taskOutboxService.reclaimStaleClaims(),
           claimPendingBatch: async () => {
-            const events = await this.taskOutboxService.claimPendingBatch();
+            const batchSize = Number(process.env.TASK_OUTBOX_BATCH_SIZE ?? 25);
+            const events =
+              await this.taskOutboxService.claimPendingBatch(batchSize);
             return events.map((event) => ({
               id: String(event._id),
               eventType: event.eventType,
@@ -80,6 +82,7 @@ export class TaskOutboxProcessor implements OnModuleInit, OnModuleDestroy {
           markFailed: (id, attemptCount, message) =>
             this.taskOutboxService.markFailed(id, attemptCount, message),
           logLabel: "task outbox",
+          safeMarkFailed: true,
         },
         this.logger,
       );

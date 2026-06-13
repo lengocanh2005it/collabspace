@@ -15,6 +15,7 @@ import {
 } from "./task-outbox.schema";
 
 const MAX_ATTEMPTS = Number(process.env.TASK_OUTBOX_MAX_ATTEMPTS ?? 8);
+const DEFAULT_BATCH_SIZE = Number(process.env.TASK_OUTBOX_BATCH_SIZE ?? 25);
 
 @Injectable()
 export class TaskOutboxService {
@@ -78,32 +79,53 @@ export class TaskOutboxService {
     });
   }
 
-  async claimPendingBatch(limit = 25): Promise<TaskOutboxEventDocument[]> {
-    const claimed: TaskOutboxEventDocument[] = [];
+  async claimPendingBatch(
+    limit = DEFAULT_BATCH_SIZE,
+  ): Promise<TaskOutboxEventDocument[]> {
+    const batchSize = Math.max(1, Math.floor(limit));
+    const now = new Date();
+    const pendingFilter = {
+      availableAt: { $lte: now },
+      claimedAt: null,
+      failedAt: null,
+      processedAt: null,
+    };
 
-    for (let index = 0; index < limit; index += 1) {
-      const event = await this.outboxModel.findOneAndUpdate(
-        {
-          availableAt: { $lte: new Date() },
-          claimedAt: null,
-          failedAt: null,
-          processedAt: null,
-        },
-        {
-          $set: { claimedAt: new Date() },
-          $inc: { attemptCount: 1 },
-        },
-        { new: true, sort: { availableAt: 1 } },
-      );
+    const candidates = await this.outboxModel
+      .find(pendingFilter)
+      .sort({ availableAt: 1 })
+      .limit(batchSize)
+      .select({ _id: 1 })
+      .lean()
+      .exec();
 
-      if (!event) {
-        break;
-      }
-
-      claimed.push(event);
+    if (candidates.length === 0) {
+      return [];
     }
 
-    return claimed;
+    const candidateIds = candidates.map((candidate) => candidate._id);
+    const claimTime = new Date();
+
+    await this.outboxModel.bulkWrite(
+      candidateIds.map((id) => ({
+        updateOne: {
+          filter: { _id: id, ...pendingFilter },
+          update: {
+            $set: { claimedAt: claimTime },
+            $inc: { attemptCount: 1 },
+          },
+        },
+      })),
+      { ordered: false },
+    );
+
+    return this.outboxModel
+      .find({
+        _id: { $in: candidateIds },
+        claimedAt: claimTime,
+      })
+      .sort({ availableAt: 1 })
+      .exec();
   }
 
   async markProcessed(id: string): Promise<void> {
