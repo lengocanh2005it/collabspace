@@ -14,37 +14,27 @@ data:
   NODE_ENV: "production"
   PORT: {{ $app.httpPort | quote }}
   LOG_LEVEL: "info"
-  TRACING_ENABLED: "false"
+  TRACING_ENABLED: {{ if $root.Values.observability.jaeger.enabled }}"true"{{ else }}"false"{{ end }}
   SWAGGER_UI_PATH: {{ include "collabspace.swaggerUiPath" (dict "appName" $name "app" $app) | quote }}
   OTEL_EXPORTER_OTLP_ENDPOINT: "http://jaeger:4318/v1/traces"
   JAEGER_AGENT_HOST: "jaeger"
   {{- if eq $name "auth-service" }}
-  DATABASE_URL: {{ include "collabspace.postgresUrl" (dict "database" "collabspace_auth" "root" $root) | quote }}
   DATABASE_SCHEMA: "public"
   DATABASE_SSL: "false"
   DATABASE_SYNCHRONIZE: "false"
-  RABBITMQ_URL: {{ include "collabspace.rabbitmqUrl" (dict "root" $root) | quote }}
   {{- end }}
   {{- if eq $name "user-service" }}
-  DATABASE_URL: {{ include "collabspace.postgresUrl" (dict "database" "collabspace_user" "root" $root) | quote }}
   DATABASE_SCHEMA: "public"
   DATABASE_SSL: "false"
   DATABASE_SYNCHRONIZE: "false"
-  RABBITMQ_URL: {{ include "collabspace.rabbitmqUrl" (dict "root" $root) | quote }}
   {{- end }}
   {{- if eq $name "workspace-service" }}
-  DATABASE_URL: {{ include "collabspace.postgresUrl" (dict "database" "collabspace_workspace" "root" $root) | quote }}
   DATABASE_SCHEMA: "public"
   DATABASE_LOGGING: "false"
-  RABBITMQ_URL: {{ include "collabspace.rabbitmqUrl" (dict "root" $root) | quote }}
   {{- end }}
   {{- if eq $name "task-service" }}
-  MONGO_URI: {{ include "collabspace.mongoUri" (dict "database" "collabspace_task" "root" $root) | quote }}
-  RABBITMQ_URL: {{ include "collabspace.rabbitmqUrl" (dict "root" $root) | quote }}
   {{- end }}
   {{- if eq $name "notification-service" }}
-  MONGO_URI: {{ include "collabspace.mongoUri" (dict "database" "collabspace_notification" "root" $root) | quote }}
-  RABBITMQ_URL: {{ include "collabspace.rabbitmqUrl" (dict "root" $root) | quote }}
   REDIS_PORT: "6379"
   REDIS_DB: "0"
   {{- end }}

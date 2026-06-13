@@ -56,6 +56,9 @@ $payload = @{
         rabbitmq_username          = Get-ConfigValue "COLLABSPACE_RABBITMQ_USERNAME" "guest"
         rabbitmq_password          = Get-ConfigValue "COLLABSPACE_RABBITMQ_PASSWORD" "guest"
         metrics_auth_token         = Get-ConfigValue "COLLABSPACE_METRICS_AUTH_TOKEN" ""
+        mail_user                  = Get-ConfigValue "COLLABSPACE_MAIL_USER" "admin@collabspace.dev"
+        mail_password              = Get-ConfigValue "COLLABSPACE_MAIL_PASSWORD" "mailpassword"
+        azure_storage_connection_string = Get-ConfigValue "COLLABSPACE_AZURE_STORAGE_CONNECTION_STRING" "DefaultEndpointsProtocol=https;AccountName=devaccount;AccountKey=devkey;EndpointSuffix=core.windows.net"
     }
 }
 

@@ -30,6 +30,9 @@ REDIS_PASSWORD="${COLLABSPACE_REDIS_PASSWORD:-collabspace123}"
 RABBITMQ_USERNAME="${COLLABSPACE_RABBITMQ_USERNAME:-guest}"
 RABBITMQ_PASSWORD="${COLLABSPACE_RABBITMQ_PASSWORD:-guest}"
 METRICS_AUTH_TOKEN="${COLLABSPACE_METRICS_AUTH_TOKEN:-}"
+MAIL_USER="${COLLABSPACE_MAIL_USER:-admin@collabspace.dev}"
+MAIL_PASSWORD="${COLLABSPACE_MAIL_PASSWORD:-mailpassword}"
+AZURE_STORAGE_CONNECTION_STRING="${COLLABSPACE_AZURE_STORAGE_CONNECTION_STRING:-DefaultEndpointsProtocol=https;AccountName=devaccount;AccountKey=devkey;EndpointSuffix=core.windows.net}"
 
 payload=$(cat <<EOF
 {
@@ -42,7 +45,10 @@ payload=$(cat <<EOF
     "redis_password": "$REDIS_PASSWORD",
     "rabbitmq_username": "$RABBITMQ_USERNAME",
     "rabbitmq_password": "$RABBITMQ_PASSWORD",
-    "metrics_auth_token": "$METRICS_AUTH_TOKEN"
+    "metrics_auth_token": "$METRICS_AUTH_TOKEN",
+    "mail_user": "$MAIL_USER",
+    "mail_password": "$MAIL_PASSWORD",
+    "azure_storage_connection_string": "$AZURE_STORAGE_CONNECTION_STRING"
   }
 }
 EOF

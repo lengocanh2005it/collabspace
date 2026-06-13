@@ -25,7 +25,7 @@ set -a
 source "$ENV_FILE"
 set +a
 
-required=(JWT_SECRET INTERNAL_SERVICE_TOKEN POSTGRES_PASSWORD MONGO_PASSWORD REDIS_PASSWORD RABBITMQ_PASSWORD RABBITMQ_USERNAME METRICS_AUTH_TOKEN)
+required=(JWT_SECRET INTERNAL_SERVICE_TOKEN POSTGRES_PASSWORD MONGO_PASSWORD REDIS_PASSWORD RABBITMQ_PASSWORD RABBITMQ_USERNAME METRICS_AUTH_TOKEN MAIL_USER MAIL_PASSWORD AZURE_STORAGE_CONNECTION_STRING)
 for key in "${required[@]}"; do
   if [[ -z "${!key:-}" ]]; then
     echo "Missing $key in $ENV_FILE"
@@ -48,7 +48,10 @@ kubectl exec -n "$VAULT_NS" "$VAULT_POD" -- sh -c "
     redis_password='$REDIS_PASSWORD' \
     rabbitmq_username='$RABBITMQ_USERNAME' \
     rabbitmq_password='$RABBITMQ_PASSWORD' \
-    metrics_auth_token='$METRICS_AUTH_TOKEN'
+    metrics_auth_token='$METRICS_AUTH_TOKEN' \
+    mail_user='$MAIL_USER' \
+    mail_password='$MAIL_PASSWORD' \
+    azure_storage_connection_string='$AZURE_STORAGE_CONNECTION_STRING'
 "
 
 echo "Done. Verify:"

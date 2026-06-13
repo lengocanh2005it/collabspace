@@ -58,6 +58,37 @@ spec:
                 name: {{ $name }}-config
             - secretRef:
                 name: {{ $name }}-secrets
+          env:
+            {{- if eq $name "auth-service" }}
+            - name: DATABASE_URL
+              value: {{ include "collabspace.postgresUrl" (dict "database" "collabspace_auth" "root" $root) | quote }}
+            - name: RABBITMQ_URL
+              value: {{ include "collabspace.rabbitmqUrl" (dict "root" $root) | quote }}
+            {{- end }}
+            {{- if eq $name "user-service" }}
+            - name: DATABASE_URL
+              value: {{ include "collabspace.postgresUrl" (dict "database" "collabspace_user" "root" $root) | quote }}
+            - name: RABBITMQ_URL
+              value: {{ include "collabspace.rabbitmqUrl" (dict "root" $root) | quote }}
+            {{- end }}
+            {{- if eq $name "workspace-service" }}
+            - name: DATABASE_URL
+              value: {{ include "collabspace.postgresUrl" (dict "database" "collabspace_workspace" "root" $root) | quote }}
+            - name: RABBITMQ_URL
+              value: {{ include "collabspace.rabbitmqUrl" (dict "root" $root) | quote }}
+            {{- end }}
+            {{- if eq $name "task-service" }}
+            - name: MONGO_URI
+              value: {{ include "collabspace.mongoUri" (dict "database" "collabspace_task" "root" $root) | quote }}
+            - name: RABBITMQ_URL
+              value: {{ include "collabspace.rabbitmqUrl" (dict "root" $root) | quote }}
+            {{- end }}
+            {{- if eq $name "notification-service" }}
+            - name: MONGO_URI
+              value: {{ include "collabspace.mongoUri" (dict "database" "collabspace_notification" "root" $root) | quote }}
+            - name: RABBITMQ_URL
+              value: {{ include "collabspace.rabbitmqUrl" (dict "root" $root) | quote }}
+            {{- end }}
           resources:
             {{- toYaml $app.resources | nindent 12 }}
           readinessProbe:
