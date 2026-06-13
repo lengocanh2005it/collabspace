@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEmail, IsString, MinLength } from 'class-validator';
+import { IsEmail, IsOptional, IsString, MinLength } from 'class-validator';
 
 export class LoginRequestDto {
   @ApiProperty({ example: 'member@collabspace.dev' })
@@ -12,6 +12,7 @@ export class LoginRequestDto {
   password: string;
 
   @ApiPropertyOptional({ format: 'uuid' })
+  @IsOptional()
   @IsString()
   workspaceId?: string;
 }
