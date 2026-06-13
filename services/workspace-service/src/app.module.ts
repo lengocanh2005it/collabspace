@@ -36,6 +36,7 @@ import { WORKSPACE_MEMBER_REPOSITORY } from './domain/repositories/workspace-mem
 import { PROJECT_REPOSITORY } from './domain/repositories/project.repository';
 import { INVITATION_REPOSITORY } from './domain/repositories/invitation.repository';
 import { WORKSPACE_ACTIVITY_REPOSITORY } from './domain/repositories/workspace-activity.repository';
+import { ListInvitationsUseCase } from './application/use-cases/invitation/list-invitations.use-case';
 
 @Module({
   imports: [
@@ -90,6 +91,7 @@ import { WORKSPACE_ACTIVITY_REPOSITORY } from './domain/repositories/workspace-a
     WorkspaceHealthService,
     IdempotencyService,
     AuthGuard,
+    ListInvitationsUseCase,
   ],
 })
 export class AppModule {}

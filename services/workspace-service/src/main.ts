@@ -18,6 +18,11 @@ async function bootstrap() {
   registerRequestIdMiddleware(app);
   registerMetricsMiddleware(app, app.get(MetricsService));
 
+  const dataSource = app.get(require('typeorm').DataSource);
+  if (!dataSource.isInitialized) {
+    await dataSource.initialize();
+  }
+
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,

@@ -1,6 +1,7 @@
 import {
   Controller,
   Post,
+  Get,
   Param,
   Body,
   UseGuards,
@@ -30,6 +31,7 @@ import { AcceptInvitationUseCase } from '../../application/use-cases/invitation/
 import { RejectInvitationUseCase } from '../../application/use-cases/invitation/reject-invitation.use-case';
 import { IdempotencyService } from '../../infrastructure/idempotency/idempotency.service';
 import { AuthGuard } from './guards/auth.guard';
+import { ListInvitationsUseCase } from '../../application/use-cases/invitation/list-invitations.use-case';
 
 @ApiTags('invitations')
 @ApiBearerAuth()
@@ -41,7 +43,16 @@ export class InvitationController {
     private readonly acceptInvitationUseCase: AcceptInvitationUseCase,
     private readonly rejectInvitationUseCase: RejectInvitationUseCase,
     private readonly idempotencyService: IdempotencyService,
+    private readonly listInvitationsUseCase: ListInvitationsUseCase,
   ) {}
+
+  @Get('workspaces/:workspaceId/invitations')
+  async listInvitations(
+    @UserId() userId: string,
+    @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
+  ) {
+    return this.listInvitationsUseCase.execute(userId, workspaceId);
+  }
 
   @Post('workspaces/:workspaceId/invite')
   @ApiOperation({ summary: 'Invite member by email' })

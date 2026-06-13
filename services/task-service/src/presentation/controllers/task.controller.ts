@@ -92,6 +92,12 @@ export class TaskController {
     private readonly idempotencyService: IdempotencyService,
   ) {}
 
+  @Get("health")
+  @HttpCode(200)
+  getHealth() {
+    return { service: "task-service", status: "ok" };
+  }
+
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: "Create task" })
@@ -128,7 +134,7 @@ export class TaskController {
       currentUserId,
       currentUserName,
       request.workspaceId,
-      request.projectId,
+      request.projectId || null,
       request.priority,
       request.dueDate ? new Date(request.dueDate) : null,
       request.labels,
@@ -138,7 +144,7 @@ export class TaskController {
       command,
     );
 
-    const response = created(new CreateTaskResponse(taskId), requestId);
+    const response = created({ id: taskId, taskId }, requestId);
 
     if (idempotencyKey) {
       await this.idempotencyService.store(
@@ -168,6 +174,7 @@ export class TaskController {
   async getTasks(
     @Query("workspaceId") workspaceId: string,
     @Req() req: AppRequest,
+    @Query("projectId") projectId?: string,
     @Query("status") status?: string,
     @Query("assigneeId") assigneeId?: string,
     @Query("priority") priority?: string,
@@ -175,10 +182,10 @@ export class TaskController {
   ): Promise<any> {
     const query = new GetTasksQuery(
       workspaceId,
+      projectId,
       status,
       assigneeId,
       priority,
-      projectId,
     );
     const requestId = getHeaderValue(req.headers, "x-request-id");
     const result = await this.queryBus.execute<GetTasksQuery, GetTasksResponse>(

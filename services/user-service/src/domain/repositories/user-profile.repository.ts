@@ -23,6 +23,7 @@ export type ListUserProfilesResult = {
 };
 
 export type UpdateUserProfileInput = {
+  avatarUrl?: string | null;
   bio?: string | null;
   displayName?: string | null;
   fullName?: string;

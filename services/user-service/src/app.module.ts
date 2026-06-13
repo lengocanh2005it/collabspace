@@ -24,6 +24,7 @@ import { UsersController } from './presentation/http/users.controller';
 import { InternalUsersController } from './presentation/http/internal-users.controller';
 import { UserProfilesGrpcController } from './presentation/grpc/user-profiles.grpc.controller';
 import { AuthEventsController } from './presentation/rabbitmq/auth-events.controller';
+import { AzureBlobService } from './infrastructure/services/azure-blob.service';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { AuthEventsController } from './presentation/rabbitmq/auth-events.contro
     AuthEventsController,
   ],
   providers: [
+    AzureBlobService,
     BulkGetUserProfilesUseCase,
     LookupUserReplicasUseCase,
     CreatePendingUserProfileUseCase,

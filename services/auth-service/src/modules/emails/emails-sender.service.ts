@@ -12,7 +12,12 @@ export class EmailsSenderService {
   ) {}
 
   async send(options: SendEmailJobPayload): Promise<SentMessageInfo> {
-    return this.mailerService.sendMail(this.normalizeOptions(options));
+    console.log('\n--- MOCK EMAIL SENDER ---');
+    console.log('To:', options.to);
+    console.log('Subject:', options.subject);
+    console.log('Body:', options.text || options.html);
+    console.log('-------------------------\n');
+    return {} as any;
   }
 
   normalizeOptions(options: SendEmailJobPayload): SendEmailJobPayload {

@@ -58,8 +58,12 @@ http:
           - "Authorization"
           - "X-Requested-With"
           - "X-Request-Id"
+          - "Accept"
         accessControlAllowOriginList:
-          - "*"
+          - "http://localhost:5173"
+          - "http://localhost:3000"
+          - "http://localhost"
+        accessControlAllowCredentials: true
         accessControlMaxAge: 3600
         addVaryHeader: true
 

@@ -28,7 +28,7 @@ export class CreateTaskRequest {
   @ApiPropertyOptional({ format: "uuid" })
   @IsString()
   @IsOptional()
-  public readonly projectId?: string;
+  public readonly projectId?: string | null;
 
   @ApiPropertyOptional({
     enum: ["LOW", "MEDIUM", "HIGH", "low", "medium", "high"],

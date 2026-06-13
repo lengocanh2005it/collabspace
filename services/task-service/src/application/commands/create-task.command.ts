@@ -6,7 +6,7 @@ export class CreateTaskCommand {
     public readonly creatorId: string,
     public readonly creatorName: string,
     public readonly workspaceId: string,
-    public readonly projectId?: string,
+    public readonly projectId?: string | null,
     public readonly priority?: string,
     public readonly dueDate?: Date | null,
     public readonly labels?: string[],

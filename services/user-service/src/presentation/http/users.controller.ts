@@ -10,7 +10,10 @@ import {
   Query,
   Req,
   Res,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import {
   PaginatedUserSummaryResponseSchemaDto,
@@ -30,6 +33,7 @@ import { UpdateUserProfileUseCase } from '../../application/use-cases/update-use
 import { UpdateUserStatusUseCase } from '../../application/use-cases/update-user-status.use-case';
 import { GetUserStatusesUseCase } from '../../application/use-cases/get-user-statuses.use-case';
 import { AuthGrpcService } from '../../integrations/auth/auth-grpc.service';
+import { AzureBlobService } from '../../infrastructure/services/azure-blob.service';
 import { BulkUsersRequestDto } from './dto/bulk-users-request.dto';
 import { ListUsersQueryDto } from './dto/list-users-query.dto';
 import { PresenceQueryDto } from './dto/presence-query.dto';
@@ -40,6 +44,7 @@ import { UpdateCurrentUserStatusDto } from './dto/update-current-user-status.dto
 import { UserHealthService } from '../../health/user-health.service';
 import { assertMetricsAccess } from '../../metrics/metrics-access';
 import { MetricsService } from '../../metrics/metrics.service';
+import type { UploadedFile as CustomUploadedFile } from '../../common/types/uploaded-file';
 
 @ApiTags('users')
 @Controller('users')
@@ -48,6 +53,7 @@ export class UsersController {
     private readonly authGrpcService: AuthGrpcService,
     private readonly userHealthService: UserHealthService,
     private readonly metricsService: MetricsService,
+    private readonly azureBlobService: AzureBlobService,
     private readonly getUserProfileUseCase: GetUserProfileUseCase,
     private readonly getUserSummaryUseCase: GetUserSummaryUseCase,
     private readonly listUserSummariesUseCase: ListUserSummariesUseCase,
@@ -104,6 +110,25 @@ export class UsersController {
   ) {
     const identity = await this.requireIdentity(authorizationHeader);
     return this.updateUserProfileUseCase.execute(identity.userId, body);
+  }
+
+  @Post('me/avatar')
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadAvatar(
+    @UploadedFile() file: CustomUploadedFile,
+    @Headers('authorization') authorizationHeader?: string,
+  ) {
+    const identity = await this.requireIdentity(authorizationHeader);
+    if (!file) {
+      throw new BadRequestException('No file provided');
+    }
+    
+    const avatarUrl = await this.azureBlobService.uploadAvatar(file, identity.userId);
+    
+    return this.updateUserProfileUseCase.execute(
+      identity.userId,
+      { avatarUrl },
+    );
   }
 
   @Get('me/preferences')

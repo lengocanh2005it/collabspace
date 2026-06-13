@@ -31,6 +31,11 @@ export class GetTasksHandler implements IQueryHandler<GetTasksQuery> {
       );
     }
 
+    // Filter by projectId if provided
+    if (query.projectId) {
+      tasks = tasks.filter((task) => task.getProjectId() === query.projectId);
+    }
+
     // Filter by assigneeId if provided
     if (query.assigneeId) {
       tasks = tasks.filter((task) => task.getAssigneeId() === query.assigneeId);
@@ -43,9 +48,6 @@ export class GetTasksHandler implements IQueryHandler<GetTasksQuery> {
       );
     }
 
-    if (query.projectId) {
-      tasks = tasks.filter((task) => task.getProjectId() === query.projectId);
-    }
 
     const responses = tasks.map((task) => TaskMapper.toResponse(task));
 
