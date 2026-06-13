@@ -52,6 +52,8 @@ export class GetTasksResponseSchemaDto {
   @ApiProperty({ type: [TaskResponseSchemaDto] })
   tasks!: TaskResponseSchemaDto[];
   @ApiProperty() total!: number;
+  @ApiProperty() skip!: number;
+  @ApiProperty() limit!: number;
 }
 
 export class TaskBoardColumnSchemaDto {

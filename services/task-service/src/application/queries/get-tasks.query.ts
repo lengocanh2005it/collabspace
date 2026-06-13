@@ -6,5 +6,7 @@ export class GetTasksQuery {
     public readonly assigneeId?: string,
     public readonly priority?: string,
     public readonly projectId?: string,
+    public readonly skip?: number,
+    public readonly limit?: number,
   ) {}
 }

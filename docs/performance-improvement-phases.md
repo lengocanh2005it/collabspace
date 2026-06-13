@@ -30,9 +30,14 @@ Env (auth-service):
 - `AUTH_VERIFY_LITE_CACHE_ENABLED` — default `true`
 - `AUTH_VERIFY_LITE_CACHE_MAX_TTL_SECONDS` — default `300`
 
-## Phase 3 — Task read path (planned)
+## Phase 3 — Task read path ✅
 
-Mongo indexes `workspaceId`; query-side board filters; pagination.
+| Item | Status |
+|------|--------|
+| Mongo indexes `{ workspaceId, status }`, `{ workspaceId, projectId, updatedAt }` | Done |
+| Push list/board filters to Mongo (no in-memory scan of 1000 tasks) | Done |
+| Task list pagination (`skip`/`limit`, default 50, max 200) | Done |
+| Comment list `total` via `countByTaskIdAsync` | Done |
 
 ## Phase 4 — Task write / event sourcing (planned)
 

@@ -42,24 +42,21 @@ export class GetTaskCommentsHandler implements IQueryHandler<
   ) {}
 
   async execute(query: GetTaskCommentsQuery): Promise<GetTaskCommentsResponse> {
-    // Step 1: Get all comments for the task (with pagination)
-    const comments = await this.commentRepository.findByTaskIdAsync(
-      query.taskId,
-      {
+    const [comments, total] = await Promise.all([
+      this.commentRepository.findByTaskIdAsync(query.taskId, {
         skip: query.skip,
         limit: query.limit,
-      },
-    );
+      }),
+      this.commentRepository.countByTaskIdAsync(query.taskId),
+    ]);
 
-    // Step 2: Filter out deleted comments and map to response DTO
     const responseComments = comments
       .filter((comment) => !comment.isDeleted())
       .map((comment) => this.mapToResponse(comment));
 
-    // Step 3: Return response with pagination info
     return {
       comments: responseComments,
-      total: responseComments.length,
+      total,
       skip: query.skip,
       limit: query.limit,
     };

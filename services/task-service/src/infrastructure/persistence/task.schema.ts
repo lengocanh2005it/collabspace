@@ -61,3 +61,7 @@ export class TaskPersistence {
 }
 
 export const TaskSchema = SchemaFactory.createForClass(TaskPersistence);
+
+TaskSchema.index({ workspaceId: 1, status: 1 });
+TaskSchema.index({ workspaceId: 1, projectId: 1, updatedAt: -1 });
+TaskSchema.index({ workspaceId: 1, assigneeId: 1 });

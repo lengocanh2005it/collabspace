@@ -5,6 +5,7 @@ import { createMockTaskRepository } from "../../test-utils/mock-task-repository"
 import { Task } from "../../domain/entities/Task";
 import { TaskId } from "../../domain/value-objects/TaskId";
 import { UserSnapshot } from "../../domain/value-objects/UserSnapshot";
+import { TASK_LIST_DEFAULT_LIMIT } from "../ports/task-list-filter";
 
 describe("GetTasksHandler", () => {
   let handler: GetTasksHandler;
@@ -58,41 +59,71 @@ describe("GetTasksHandler", () => {
     ];
 
     mockTaskRepo.findByWorkspaceIdAsync.mockResolvedValue(tasks);
+    mockTaskRepo.countByWorkspaceIdAsync.mockResolvedValue(2);
 
     const query = new GetTasksQuery("workspace-1");
     const result = await handler.execute(query);
 
     expect(result.total).toBe(2);
     expect(result.tasks).toHaveLength(2);
+    expect(result.skip).toBe(0);
+    expect(result.limit).toBe(TASK_LIST_DEFAULT_LIMIT);
+    expect(mockTaskRepo.findByWorkspaceIdAsync).toHaveBeenCalledWith(
+      "workspace-1",
+      undefined,
+      { skip: 0, limit: TASK_LIST_DEFAULT_LIMIT },
+    );
+    expect(mockTaskRepo.countByWorkspaceIdAsync).toHaveBeenCalledWith(
+      "workspace-1",
+      undefined,
+    );
   });
 
-  it("should filter tasks by status", async () => {
-    const tasks = [
-      createMockTask("123e4567-e89b-12d3-a456-426614174002", "TODO", null),
-      createMockTask("123e4567-e89b-12d3-a456-426614174003", "DOING", "user-1"),
-    ];
+  it("should pass status filter to the repository", async () => {
+    const task = createMockTask(
+      "123e4567-e89b-12d3-a456-426614174002",
+      "TODO",
+      null,
+    );
 
-    mockTaskRepo.findByWorkspaceIdAsync.mockResolvedValue(tasks);
+    mockTaskRepo.findByWorkspaceIdAsync.mockResolvedValue([task]);
+    mockTaskRepo.countByWorkspaceIdAsync.mockResolvedValue(1);
 
     const query = new GetTasksQuery("workspace-1", "TODO");
     const result = await handler.execute(query);
 
     expect(result.total).toBe(1);
     expect(result.tasks[0].id).toBe("123e4567-e89b-12d3-a456-426614174002");
+    expect(mockTaskRepo.findByWorkspaceIdAsync).toHaveBeenCalledWith(
+      "workspace-1",
+      { status: "TODO" },
+      { skip: 0, limit: TASK_LIST_DEFAULT_LIMIT },
+    );
+    expect(mockTaskRepo.countByWorkspaceIdAsync).toHaveBeenCalledWith(
+      "workspace-1",
+      { status: "TODO" },
+    );
   });
 
-  it("should filter tasks by assigneeId", async () => {
-    const tasks = [
-      createMockTask("123e4567-e89b-12d3-a456-426614174002", "TODO", null),
-      createMockTask("123e4567-e89b-12d3-a456-426614174003", "DOING", "user-1"),
-    ];
+  it("should pass assigneeId filter to the repository", async () => {
+    const task = createMockTask(
+      "123e4567-e89b-12d3-a456-426614174003",
+      "DOING",
+      "user-1",
+    );
 
-    mockTaskRepo.findByWorkspaceIdAsync.mockResolvedValue(tasks);
+    mockTaskRepo.findByWorkspaceIdAsync.mockResolvedValue([task]);
+    mockTaskRepo.countByWorkspaceIdAsync.mockResolvedValue(1);
 
     const query = new GetTasksQuery("workspace-1", undefined, "user-1");
     const result = await handler.execute(query);
 
     expect(result.total).toBe(1);
     expect(result.tasks[0].id).toBe("123e4567-e89b-12d3-a456-426614174003");
+    expect(mockTaskRepo.findByWorkspaceIdAsync).toHaveBeenCalledWith(
+      "workspace-1",
+      { assigneeId: "user-1" },
+      { skip: 0, limit: TASK_LIST_DEFAULT_LIMIT },
+    );
   });
 });

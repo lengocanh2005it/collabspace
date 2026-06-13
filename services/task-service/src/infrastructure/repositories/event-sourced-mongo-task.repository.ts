@@ -3,6 +3,7 @@ import { Injectable, Inject } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 import { ITaskRepository } from "../../application/ports/ITaskRepository";
+import type { TaskListFilter, TaskListOptions } from "../../application/ports/task-list-filter";
 import { ITaskEventStore as ITaskEventStoreToken } from "../../application/ports/ITaskEventStore";
 import type { ITaskEventStore } from "../../application/ports/ITaskEventStore";
 import { Task as TaskDomain } from "../../domain/entities/Task";
@@ -64,12 +65,53 @@ export class EventSourcedMongoTaskRepository implements ITaskRepository {
     return TaskMapper.toDomain(rawDoc, 0);
   }
 
-  async findByWorkspaceIdAsync(workspaceId: string): Promise<TaskDomain[]> {
-    const rawDocs = await this.taskModel
-      .find({ workspaceId })
-      .limit(1000)
-      .exec();
+  async findByWorkspaceIdAsync(
+    workspaceId: string,
+    filter?: TaskListFilter,
+    options?: TaskListOptions,
+  ): Promise<TaskDomain[]> {
+    const mongoFilter = this.buildWorkspaceFilter(workspaceId, filter);
+    let query = this.taskModel.find(mongoFilter).sort({ updatedAt: -1 });
+
+    if (options?.skip != null && options.skip > 0) {
+      query = query.skip(options.skip);
+    }
+    if (options?.limit != null && options.limit > 0) {
+      query = query.limit(options.limit);
+    }
+
+    const rawDocs = await query.exec();
     return rawDocs.map((doc) => TaskMapper.toDomain(doc));
+  }
+
+  async countByWorkspaceIdAsync(
+    workspaceId: string,
+    filter?: TaskListFilter,
+  ): Promise<number> {
+    const mongoFilter = this.buildWorkspaceFilter(workspaceId, filter);
+    return this.taskModel.countDocuments(mongoFilter).exec();
+  }
+
+  private buildWorkspaceFilter(
+    workspaceId: string,
+    filter?: TaskListFilter,
+  ): Record<string, unknown> {
+    const mongoFilter: Record<string, unknown> = { workspaceId };
+
+    if (filter?.status) {
+      mongoFilter.status = filter.status;
+    }
+    if (filter?.assigneeId) {
+      mongoFilter.assigneeId = filter.assigneeId;
+    }
+    if (filter?.priority) {
+      mongoFilter.priority = filter.priority;
+    }
+    if (filter?.projectId) {
+      mongoFilter.projectId = filter.projectId;
+    }
+
+    return mongoFilter;
   }
 
   async deleteAsync(id: TaskId): Promise<void> {

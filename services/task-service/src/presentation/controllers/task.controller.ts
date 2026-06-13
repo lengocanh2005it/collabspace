@@ -56,6 +56,7 @@ import { DeleteAttachmentCommand } from "../../application/commands/delete-attac
 import { DeleteTaskCommand } from "../../application/commands/delete-task.command";
 import { GetTaskByIdQuery } from "../../application/queries/get-task-by-id.query";
 import { GetTasksQuery } from "../../application/queries/get-tasks.query";
+import type { GetTasksResult } from "../../application/usecases/get-tasks.handler";
 import { GetTaskBoardQuery } from "../../application/queries/get-task-board.query";
 import { GetTaskBoardResponse } from "../dtos/get-task-board.response";
 import { GetTaskActivityQuery } from "../../application/queries/get-task-activity.query";
@@ -165,6 +166,8 @@ export class TaskController {
   @ApiQuery({ name: "assigneeId", required: false })
   @ApiQuery({ name: "priority", required: false })
   @ApiQuery({ name: "projectId", required: false })
+  @ApiQuery({ name: "skip", required: false, type: Number })
+  @ApiQuery({ name: "limit", required: false, type: Number })
   async getTasks(
     @Query("workspaceId") workspaceId: string,
     @Req() req: AppRequest,
@@ -172,20 +175,41 @@ export class TaskController {
     @Query("assigneeId") assigneeId?: string,
     @Query("priority") priority?: string,
     @Query("projectId") projectId?: string,
+    @Query("skip") skip?: string,
+    @Query("limit") limit?: string,
   ): Promise<any> {
+    const parsedSkip =
+      skip != null && !Number.isNaN(Number(skip))
+        ? Math.max(0, Number(skip))
+        : undefined;
+    const parsedLimit =
+      limit != null && !Number.isNaN(Number(limit))
+        ? Number(limit)
+        : undefined;
+
     const query = new GetTasksQuery(
       workspaceId,
       status,
       assigneeId,
       priority,
       projectId,
+      parsedSkip,
+      parsedLimit,
     );
     const requestId = getHeaderValue(req.headers, "x-request-id");
-    const result = await this.queryBus.execute<GetTasksQuery, GetTasksResponse>(
+    const result = await this.queryBus.execute<GetTasksQuery, GetTasksResult>(
       query,
     );
 
-    return ok(new GetTasksResponse(result.tasks, result.total), requestId);
+    return ok(
+      new GetTasksResponse(
+        result.tasks,
+        result.total,
+        result.skip,
+        result.limit,
+      ),
+      requestId,
+    );
   }
 
   /**
