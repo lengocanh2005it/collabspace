@@ -12,6 +12,5 @@
 infrastructure/backup/artifacts
 infrastructure/rabbitmq/data
 infrastructure/redis/data
-infrastructure/jenkins/jenkins_home
 infrastructure/logging/esdata
 api-gateway/acme

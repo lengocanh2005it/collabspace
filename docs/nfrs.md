@@ -124,7 +124,7 @@ Chi tiết kỹ thuật:
 | Migrations | Schema versioned | ✅ TypeORM/Flyway migrations per service |
 | Seed demo | Luồng demo 7 bước | ✅ `scripts/seed.sh` + `demo-seed-data.json` |
 | Runbooks | Alert → hướng xử lý | ✅ `docs/runbooks/` |
-| CI quality gates | Test/lint on every PR | ⚠️ Jenkins compose có; coverage không đồng đều mọi service |
+| CI quality gates | Test/lint on every PR | ⚠️ GitHub Actions `ci.yml`; coverage không đồng đều mọi service |
 
 ---
 

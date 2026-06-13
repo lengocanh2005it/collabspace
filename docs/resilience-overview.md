@@ -70,7 +70,7 @@ Xem checklist đầy đủ: [production-hardening.md](./production-hardening.md)
 | Hạng mục | Trạng thái |
 |----------|------------|
 | HashiCorp Vault + ESO (staging/prod) | **Partial** — single-node Vault + ESO deploy trên Droplet prod ✅; Vault HA + rotation operational ⬜ |
-| CI/CD pipeline (GH Actions / Jenkinsfile) | **Partial** — CI + GHCR build ✅; manual prod deploy k3s/Helm ✅ (`helm-rollout.sh`); auto-deploy main qua Actions ⬜ (secrets) |
+| CI/CD pipeline (GitHub Actions) | **Partial** — CI + GHCR build + Helm deploy on `main` ✅; post-deploy `demo-e2e` smoke ⬜ |
 | Monitoring stack trên K8s + alert routing | **Partial** — Prometheus/Grafana/Loki trên Droplet prod ✅; 5/5 app scrape UP; alert routing Slack ⬜; DB exporter scrape ⬜ |
 | Backup tự động + restore drill | Policy + `backup-*.sh` có; chưa CronJob / restore script |
 | Centralized logging (Loki) | **K8s prod** ✅ Promtail → Loki → Grafana Explore; Docker ELK profile tùy chọn chưa nối agent |

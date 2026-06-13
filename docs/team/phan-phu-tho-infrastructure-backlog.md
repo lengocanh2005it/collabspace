@@ -23,7 +23,7 @@ Tài liệu này liệt kê **công việc hạ tầng / DevOps / observability 
 | Traefik gateway + forward-auth (`api-gateway/`) | Backup tự động + restore drill |
 | Prometheus + Alertmanager + Grafana (`infrastructure/monitoring/`) | **K8s:** Helm + Loki — [observability.md](../observability.md) |
 | Jaeger / OTLP (`docker-compose.tracing.yml`, `infrastructure/tracing/`) | Tracing bật trên staging/prod |
-| Jenkins container + shell scripts (`infrastructure/jenkins/`), GitHub Actions CI/CD (`.github/workflows/`) | `DROPLET_*` secrets ✅; nightly smoke ⬜ |
+| GitHub Actions CI/CD (`.github/workflows/`) | `DROPLET_*` secrets ✅; nightly smoke ⬜ |
 | k6 load tests (`infrastructure/load-testing/`) | k6 baseline doc + tune HPA/limits |
 | Backup scripts (`infrastructure/backup/scripts/`) | Restore drill + snapshot schedule ⬜ |
 | Drills (`verify-readiness`, `chaos-stop-service`) | Smoke job sau mỗi deploy (readiness + `demo-e2e`) |
@@ -235,22 +235,16 @@ Dùng bảng này khi seed Vault KV (`secret/collabspace/staging`, …).
 - [ ] Tag strategy: `main` → `latest-staging`; git tag `v*` → `v1.2.3` prod.
 - [ ] Cập nhật Helm `apps.*.image.repository` / `tag` theo registry thật.
 
-### 5. Pipeline CI (chọn một hoặc cả hai)
+### 5. Pipeline CI (GitHub Actions)
 
-**Hiện trạng:** `infrastructure/docker/docker-compose.jenkins.yml` + scripts `build.sh`, `test.sh`, `deploy.sh`; GitHub Actions workflows exist for root CI and GHCR/Droplet deploy (`.github/workflows/ci.yml`, `.github/workflows/docker-deploy.yml`).
+**Hiện trạng:** `.github/workflows/ci.yml` (build/test) + `docker-deploy.yml` (GHCR + Helm/k3s SSH deploy qua `helm-deploy-ci.sh`, `verify-k8s-readiness.sh`).
 
-- [ ] **Option A — Jenkins:** Jenkinsfile multibranch:
-  1. `pnpm install` tại repo root → `pnpm run build` + `pnpm run test` (`package.json` workspace).
-  2. Lint per service nếu cần (`pnpm -r run lint`).
-  3. Build Docker image khi merge `main` / tag release.
-  4. Push registry.
-  5. Trigger deploy staging (Helm upgrade).
-- [x] **Option B — GitHub Actions:** root CI + GHCR image build 5 service ✅.
-- [x] Docker image build fix (shared node_modules, seed.ts exclude) — 2026-06-12.
-- [x] Workflow deploy **k3s/Helm** (`docker-deploy.yml` → `helm-deploy-ci.sh` + `verify-k8s-readiness.sh`) — Phase 4.
-- [ ] Thêm GitHub Actions secrets (`DROPLET_*`, `GHCR_*`) và chạy deploy lần đầu theo [deployment-k3s-phases.md](../deployment-k3s-phases.md).
+- [x] **GitHub Actions:** root `pnpm install` → `pnpm run build` + `pnpm run test` trên PR/`main`.
+- [x] Docker image build 5 service → GHCR.
+- [x] Workflow deploy **k3s/Helm** trên push `main` — Phase 4.
 - [ ] Cache `pnpm` / Docker layer để pipeline < 15 phút (mục tiêu ban đầu).
 - [ ] Branch protection: PR bắt buộc pass test trước merge.
+- [ ] CI smoke: `scripts/demo-e2e` sau deploy staging/nightly.
 
 ### 6. Pipeline CD (deploy)
 
@@ -411,7 +405,7 @@ Dùng bảng này khi seed Vault KV (`secret/collabspace/staging`, …).
 ### 21. Image & dependency scanning
 
 - [ ] Trivy / Grype scan image trong CI; fail trên Critical CVE (policy team).
-- [ ] Renovate/Dependabot cho base image tags (Jenkins, Bitnami subcharts).
+- [ ] Renovate/Dependabot cho base image tags (Bitnami subcharts, app images).
 
 ### 22. Cost & lifecycle
 
@@ -460,7 +454,7 @@ Infra **hỗ trợ** bằng: Compose profile Traefik, seed trong job, `demo-e2e`
 | 9 | Secret rotation runbook (JWT, INTERNAL, DB) | P0 | ⬜ |
 | 10 | `values-staging.yaml` + deploy Helm document | P0 | ⬜ |
 | 11 | Container registry + build pipeline | P1 | ⬜ |
-| 12 | Jenkinsfile hoặc GitHub Actions CI/CD (`pnpm -r` từ root) | P1 | ✅ scaffold |
+| 12 | GitHub Actions CI/CD (`pnpm -r` từ root, GHCR + Helm deploy) | P1 | ✅ |
 | 12a | Add real GitHub Actions secrets + first successful Droplet deploy | P1 | ⬜ |
 | 12b | CI smoke: `scripts/demo-e2e` sau Traefik + seed | P1 | ⬜ |
 | 13 | CD staging + post-deploy verify-readiness | P1 | ⬜ |

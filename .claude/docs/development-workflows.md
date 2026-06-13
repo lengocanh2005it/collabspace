@@ -359,21 +359,17 @@ Required GitHub Actions secrets for deploy:
 - `GHCR_USERNAME`
 - `GHCR_TOKEN`
 
-Jenkins files also exist at service level and under `infrastructure/jenkins`.
-
-Pipeline concept:
+Pipeline (GitHub Actions):
 
 1. Checkout.
-2. Install dependencies.
-3. Build and test.
-4. Build Docker image.
-5. Push image.
-6. Deploy.
+2. `pnpm install` → build + test (`ci.yml`).
+3. Build Docker images (`Dockerfile.service`) → push GHCR (`docker-deploy.yml`).
+4. SSH Droplet → `helm-deploy-ci.sh` → `verify-k8s-readiness.sh`.
 
 Rules:
 
-- If adding new service commands, update Jenkinsfile and infrastructure scripts.
-- If changing Docker build context, verify Compose and Jenkins still point to the same context.
+- If adding new service commands, update `.github/workflows/ci.yml` and `docker-deploy.yml` path filters when needed.
+- If changing Docker build context, verify Compose and `Dockerfile.service` still use the same monorepo layout.
 
 ## Troubleshooting
 

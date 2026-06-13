@@ -266,7 +266,6 @@ Optional stacks:
 - `docker-compose.logging.yml`: optional ELK profile (local only — prod K8s uses Loki).
 - `docker-compose.tracing.yml`: Jaeger.
 - `docker-compose.traefik.yml`: Traefik gateway.
-- `docker-compose.jenkins.yml`: Jenkins.
 - `docker-compose.loadtest.yml`: k6/load testing.
 - `docker-compose.vault.yml`: HashiCorp Vault dev mode (local; port `8200`). **K8s prod:** Vault single-node + ESO — không dùng `-dev` mode.
 

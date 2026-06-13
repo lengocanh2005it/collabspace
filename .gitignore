@@ -53,9 +53,6 @@ logs/
 # RabbitMQ Data
 /infrastructure/rabbitmq/data
 
-# Jenkins Data
-/infrastructure/jenkins/jenkins_home
-
 # ELK Data
 /infrastructure/logging/esdata
 
