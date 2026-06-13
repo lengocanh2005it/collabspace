@@ -16,6 +16,7 @@ describe("CommentEventListenerController", () => {
 
     mockChannel = {
       ack: jest.fn(),
+      nack: jest.fn(),
     };
     mockMessage = {};
 
@@ -54,5 +55,6 @@ describe("CommentEventListenerController", () => {
       controller.handleTaskCommented(payload, mockRmqContext),
     ).resolves.not.toThrow();
     expect(mockChannel.ack).not.toHaveBeenCalled();
+    expect(mockChannel.nack).toHaveBeenCalledWith(mockMessage, false, true);
   });
 });

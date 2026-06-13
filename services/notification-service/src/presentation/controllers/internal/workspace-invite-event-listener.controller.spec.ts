@@ -6,7 +6,7 @@ describe("WorkspaceInviteEventListenerController", () => {
   let controller: WorkspaceInviteEventListenerController;
   let mockCommandBus: jest.Mocked<CommandBus>;
   let mockRmqContext: jest.Mocked<RmqContext>;
-  let mockChannel: { ack: jest.Mock };
+  let mockChannel: { ack: jest.Mock; nack: jest.Mock };
   let mockMessage: Record<string, never>;
 
   beforeEach(() => {
@@ -16,6 +16,7 @@ describe("WorkspaceInviteEventListenerController", () => {
 
     mockChannel = {
       ack: jest.fn(),
+      nack: jest.fn(),
     };
     mockMessage = {};
 

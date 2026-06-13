@@ -16,6 +16,7 @@ describe("TaskEventController", () => {
 
     mockChannel = {
       ack: jest.fn(),
+      nack: jest.fn(),
     };
     mockMessage = {};
 
