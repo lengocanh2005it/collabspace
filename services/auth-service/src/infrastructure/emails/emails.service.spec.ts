@@ -1,5 +1,5 @@
 import { ConfigurationService } from '@/configuration/configuration.service';
-import { GraphileWorkerService } from '@/modules/graphile-worker/graphile-worker.service';
+import { GraphileWorkerService } from '@/infrastructure/graphile-worker/graphile-worker.service';
 import { EmailsSenderService } from './emails-sender.service';
 import { EmailsService } from './emails.service';
 

@@ -8,7 +8,7 @@ import {
   withTimeout,
 } from '@/common/utils/timeout.util';
 import { ConfigurationService } from '@/configuration/configuration.service';
-import { GraphileWorkerService } from '@/modules/graphile-worker/graphile-worker.service';
+import { GraphileWorkerService } from '@/infrastructure/graphile-worker/graphile-worker.service';
 import {
   Inject,
   Injectable,

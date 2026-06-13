@@ -23,9 +23,21 @@ import {
   ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { AuthService } from './app.service';
 
-describe('AuthService', () => {
+type AuthTestHarness = {
+  jwtTokenService: JwtTokenService;
+  verifyAccessTokenUseCase: VerifyAccessTokenUseCase;
+  getCurrentUserUseCase: GetCurrentUserUseCase;
+  loginUseCase: LoginUseCase;
+  logoutUseCase: LogoutUseCase;
+  refreshSessionUseCase: RefreshSessionUseCase;
+  registerUseCase: RegisterUseCase;
+  resendEmailVerificationOtpUseCase: ResendEmailVerificationOtpUseCase;
+  verifyEmailOtpUseCase: VerifyEmailOtpUseCase;
+  changePasswordUseCase: ChangePasswordUseCase;
+};
+
+describe('Auth use cases (integration)', () => {
   const jwtConfigValues = {
     audience: undefined as string | undefined,
     expiry: '10m',
@@ -79,9 +91,9 @@ describe('AuthService', () => {
     ping: jest.fn(),
   } as unknown as UserProfileClient;
 
-  let authService: AuthService;
+  let harness: AuthTestHarness;
 
-  function buildAuthService(): AuthService {
+  function buildAuthHarness(): AuthTestHarness {
     const jwtTokenService = new JwtTokenService(
       configurationServiceMock,
       identityServiceMock,
@@ -99,37 +111,43 @@ describe('AuthService', () => {
       otpStoreMock,
     );
 
-    return new AuthService(
+    return {
       jwtTokenService,
-      new VerifyAccessTokenUseCase(jwtTokenService, userProfileResolverService),
-      new GetCurrentUserUseCase(jwtTokenService, userProfileResolverService),
-      new LoginUseCase(identityServiceMock, sessionIssuanceService),
-      new LogoutUseCase(refreshTokenRepositoryMock),
-      new RefreshSessionUseCase(
+      verifyAccessTokenUseCase: new VerifyAccessTokenUseCase(
+        jwtTokenService,
+        userProfileResolverService,
+      ),
+      getCurrentUserUseCase: new GetCurrentUserUseCase(
+        jwtTokenService,
+        userProfileResolverService,
+      ),
+      loginUseCase: new LoginUseCase(identityServiceMock, sessionIssuanceService),
+      logoutUseCase: new LogoutUseCase(refreshTokenRepositoryMock),
+      refreshSessionUseCase: new RefreshSessionUseCase(
         identityServiceMock,
         jwtTokenService,
         refreshTokenRepositoryMock,
       ),
-      new RegisterUseCase(
+      registerUseCase: new RegisterUseCase(
         identityServiceMock,
         userProfileClientMock,
         emailVerificationOtpService,
       ),
-      new ResendEmailVerificationOtpUseCase(
+      resendEmailVerificationOtpUseCase: new ResendEmailVerificationOtpUseCase(
         identityServiceMock,
         emailVerificationOtpService,
       ),
-      new VerifyEmailOtpUseCase(
+      verifyEmailOtpUseCase: new VerifyEmailOtpUseCase(
         identityServiceMock,
         otpStoreMock,
         emailVerificationOtpService,
       ),
-      new ChangePasswordUseCase(
+      changePasswordUseCase: new ChangePasswordUseCase(
         identityServiceMock,
         jwtTokenService,
         refreshTokenRepositoryMock,
       ),
-    );
+    };
   }
 
   beforeEach(() => {
@@ -140,7 +158,7 @@ describe('AuthService', () => {
     jwtConfigValues.issuer = undefined;
     jest.spyOn(otpStoreMock, 'delete').mockResolvedValue(1);
     jest.spyOn(otpStoreMock, 'assertAvailable').mockResolvedValue(undefined);
-    authService = buildAuthService();
+    harness = buildAuthHarness();
   });
 
   it('extracts identity from a valid token', async () => {
@@ -159,7 +177,7 @@ describe('AuthService', () => {
       username: 'admin.user',
     });
 
-    const token = await authService.signAccessToken({
+    const token = await harness.jwtTokenService.signAccessToken({
       role: 'admin',
       roles: ['admin'],
       userId: 'user-1',
@@ -167,7 +185,7 @@ describe('AuthService', () => {
     });
 
     await expect(
-      authService.verifyAccessToken(`Bearer ${token}`),
+      harness.verifyAccessTokenUseCase.execute(`Bearer ${token}`),
     ).resolves.toEqual({
       emailVerified: true,
       fullName: 'Admin User',
@@ -182,7 +200,7 @@ describe('AuthService', () => {
   });
 
   it('rejects requests without bearer token', async () => {
-    await expect(authService.verifyAccessToken(undefined)).rejects.toThrow(
+    await expect(harness.verifyAccessTokenUseCase.execute(undefined)).rejects.toThrow(
       UnauthorizedException,
     );
   });
@@ -203,7 +221,7 @@ describe('AuthService', () => {
       workspaceId: 'workspace-1',
     });
 
-    const session = await authService.login({
+    const session = await harness.loginUseCase.execute({
       email: 'admin@collabspace.dev',
       password: 'password123',
       workspaceId: 'workspace-1',
@@ -232,7 +250,7 @@ describe('AuthService', () => {
       userId: 'user-2',
     });
 
-    const session = await authService.refresh({
+    const session = await harness.refreshSessionUseCase.execute({
       refreshToken: 'old-refresh-token',
     });
 
@@ -260,7 +278,7 @@ describe('AuthService', () => {
       .spyOn(emailOutboxMock, 'enqueueEmailVerificationOtp')
       .mockResolvedValue(undefined);
 
-    const result = await authService.register({
+    const result = await harness.registerUseCase.execute({
       email: 'new@collabspace.dev',
       fullName: 'New User',
       password: 'password123',
@@ -308,7 +326,7 @@ describe('AuthService', () => {
     jest.spyOn(identityServiceMock, 'rollbackNewRegistration').mockResolvedValue();
 
     await expect(
-      authService.register({
+      harness.registerUseCase.execute({
         email: 'new@collabspace.dev',
         fullName: 'New User',
         password: 'password123',
@@ -346,7 +364,7 @@ describe('AuthService', () => {
     jest.spyOn(identityServiceMock, 'rollbackNewRegistration').mockResolvedValue();
 
     await expect(
-      authService.register({
+      harness.registerUseCase.execute({
         email: 'new@collabspace.dev',
         fullName: 'New User',
         password: 'password123',
@@ -380,7 +398,7 @@ describe('AuthService', () => {
     jest.spyOn(identityServiceMock, 'rollbackNewRegistration').mockResolvedValue();
 
     await expect(
-      authService.register({
+      harness.registerUseCase.execute({
         email: 'new@collabspace.dev',
         fullName: 'New User',
         password: 'password123',
@@ -418,7 +436,7 @@ describe('AuthService', () => {
       .spyOn(emailOutboxMock, 'enqueueEmailVerificationOtp')
       .mockResolvedValue(undefined);
 
-    const result = await authService.register({
+    const result = await harness.registerUseCase.execute({
       email: 'new@collabspace.dev',
       fullName: 'New User',
       password: 'password123',
@@ -451,7 +469,7 @@ describe('AuthService', () => {
       .mockResolvedValue(undefined);
 
     await expect(
-      authService.resendEmailVerificationOtp({
+      harness.resendEmailVerificationOtpUseCase.execute({
         email: 'pending@collabspace.dev',
       }),
     ).resolves.toEqual({
@@ -477,7 +495,7 @@ describe('AuthService', () => {
     jest.spyOn(otpStoreMock, 'ttl').mockResolvedValue(42);
 
     await expect(
-      authService.resendEmailVerificationOtp({
+      harness.resendEmailVerificationOtpUseCase.execute({
         email: 'pending@collabspace.dev',
       }),
     ).rejects.toThrow(HttpException);
@@ -509,7 +527,7 @@ describe('AuthService', () => {
     });
 
     await expect(
-      authService.verifyEmailOtp({
+      harness.verifyEmailOtpUseCase.execute({
         otp: '123456',
         userId: 'user-3',
       }),
@@ -532,7 +550,7 @@ describe('AuthService', () => {
     });
 
     await expect(
-      authService.verifyEmailOtp({
+      harness.verifyEmailOtpUseCase.execute({
         otp: '123456',
         userId: 'user-9',
       }),
@@ -558,7 +576,7 @@ describe('AuthService', () => {
       userId: 'user-4',
       username: 'admin.user',
     });
-    const token = await authService.signAccessToken({
+    const token = await harness.jwtTokenService.signAccessToken({
       role: 'admin',
       roles: ['admin'],
       userId: 'user-4',
@@ -566,7 +584,7 @@ describe('AuthService', () => {
     });
 
     await expect(
-      authService.getCurrentUser(`Bearer ${token}`),
+      harness.getCurrentUserUseCase.execute(`Bearer ${token}`),
     ).resolves.toEqual({
       email: 'admin@collabspace.dev',
       emailVerified: true,
@@ -595,7 +613,7 @@ describe('AuthService', () => {
     jest
       .spyOn(userProfileClientMock, 'getProfile')
       .mockRejectedValue(new Error('profile service unavailable'));
-    const token = await authService.signAccessToken({
+    const token = await harness.jwtTokenService.signAccessToken({
       role: 'member',
       roles: ['member'],
       userId: 'user-8',
@@ -603,7 +621,7 @@ describe('AuthService', () => {
     });
 
     await expect(
-      authService.verifyAccessToken(`Bearer ${token}`),
+      harness.verifyAccessTokenUseCase.execute(`Bearer ${token}`),
     ).resolves.toEqual({
       emailVerified: true,
       fullName: undefined,
@@ -629,7 +647,7 @@ describe('AuthService', () => {
     });
     jest.spyOn(identityServiceMock, 'changePassword').mockResolvedValue(undefined);
     jest.spyOn(refreshTokenRepositoryMock, 'revokeAllForUser').mockResolvedValue(2);
-    const token = await authService.signAccessToken({
+    const token = await harness.jwtTokenService.signAccessToken({
       role: 'member',
       roles: ['member'],
       userId: 'user-2',
@@ -637,7 +655,7 @@ describe('AuthService', () => {
     });
 
     await expect(
-      authService.changePassword(`Bearer ${token}`, {
+      harness.changePasswordUseCase.execute(`Bearer ${token}`, {
         currentPassword: 'password123',
         newPassword: 'password456',
       }),
@@ -654,7 +672,7 @@ describe('AuthService', () => {
       .mockResolvedValue(undefined);
 
     await expect(
-      authService.logout({ refreshToken: 'refresh-token-3' }),
+      harness.logoutUseCase.execute({ refreshToken: 'refresh-token-3' }),
     ).resolves.toEqual({
       revoked: true,
     });

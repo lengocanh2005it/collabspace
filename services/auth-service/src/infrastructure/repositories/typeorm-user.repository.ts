@@ -16,9 +16,9 @@ import type {
 } from '@/common/types/identity.type';
 import { User } from '@/domain/entities/user.entity';
 import { UserRepository } from '@/domain/repositories/user.repository';
-import { RoleEntity } from '@/modules/identity/entities/role.entity';
-import { UserRoleEntity } from '@/modules/identity/entities/user-role.entity';
-import { UserEntity } from '@/modules/identity/entities/user.entity';
+import { RoleEntity } from '@/infrastructure/identity/entities/role.entity';
+import { UserRoleEntity } from '@/infrastructure/identity/entities/user-role.entity';
+import { UserEntity } from '@/infrastructure/identity/entities/user.entity';
 
 const scryptAsync = promisify(scrypt);
 

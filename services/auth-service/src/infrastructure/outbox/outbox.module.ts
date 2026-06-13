@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { DatabaseModule } from '@/modules/database/database.module';
-import { EmailsModule } from '@/modules/emails/emails.module';
+import { DatabaseModule } from '@/infrastructure/database/database.module';
+import { EmailsModule } from '@/infrastructure/emails/emails.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthOutboxProcessor } from './auth-outbox.processor';
 import { AuthOutboxService } from './auth-outbox.service';

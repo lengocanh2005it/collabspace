@@ -1,5 +1,5 @@
-import { GraphileWorkerModule } from '@/modules/graphile-worker/graphile-worker.module';
-import { GRAPHILE_WORKER_TASK_LIST } from '@/modules/graphile-worker/graphile-worker.constants';
+import { GraphileWorkerModule } from '@/infrastructure/graphile-worker/graphile-worker.module';
+import { GRAPHILE_WORKER_TASK_LIST } from '@/infrastructure/graphile-worker/graphile-worker.constants';
 import { forwardRef, Module } from '@nestjs/common';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { ConfigurationService } from '@/configuration/configuration.service';

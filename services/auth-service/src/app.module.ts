@@ -25,18 +25,17 @@ import { RedisOtpStoreAdapter } from '@/infrastructure/redis/redis-otp-store.ada
 import { InMemoryUserRepository } from '@/infrastructure/repositories/in-memory-user.repository';
 import { TypeOrmRefreshTokenRepository } from '@/infrastructure/repositories/typeorm-refresh-token.repository';
 import { TypeOrmUserRepository } from '@/infrastructure/repositories/typeorm-user.repository';
-import { DatabaseModule } from '@/modules/database/database.module';
-import { EmailsModule } from '@/modules/emails/emails.module';
-import { GraphileWorkerModule } from '@/modules/graphile-worker/graphile-worker.module';
-import { IdentityModule } from '@/modules/identity/identity.module';
-import { OutboxModule } from '@/modules/outbox/outbox.module';
-import { RefreshTokensModule } from '@/modules/refresh-tokens/refresh-tokens.module';
-import { RedisModule } from '@/modules/redis/redis.module';
+import { DatabaseModule } from '@/infrastructure/database/database.module';
+import { EmailsModule } from '@/infrastructure/emails/emails.module';
+import { GraphileWorkerModule } from '@/infrastructure/graphile-worker/graphile-worker.module';
+import { IdentityModule } from '@/infrastructure/identity/identity.module';
+import { OutboxModule } from '@/infrastructure/outbox/outbox.module';
+import { RefreshTokensModule } from '@/infrastructure/refresh-tokens/refresh-tokens.module';
+import { RedisModule } from '@/infrastructure/redis/redis.module';
 import { AuthHealthService } from '@/health/auth-health.service';
 import { MetricsModule } from '@/metrics/metrics.module';
 import { AuthGrpcController } from '@/presentation/grpc/auth.grpc.controller';
 import { AuthController } from '@/presentation/http/auth.controller';
-import { AuthService } from './app.service';
 
 @Module({
   imports: [
@@ -94,7 +93,6 @@ import { AuthService } from './app.service';
       provide: EMAIL_OUTBOX,
       useExisting: TypeOrmEmailOutboxAdapter,
     },
-    AuthService,
     AuthHealthService,
   ],
 })

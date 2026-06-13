@@ -28,7 +28,7 @@ Related docs:
 
 | Service | Pattern | DB | Global prefix | API base | Port |
 |---------|---------|-----|---------------|----------|------|
-| auth-service | NestJS feature modules | Postgres / TypeORM | `api/v1` | `/api/v1/auth` | 3000 |
+| auth-service | Clean / hexagonal | Postgres / TypeORM | `api/v1` | `/api/v1/auth` | 3000 |
 | user-service | Clean / hexagonal | Postgres / TypeORM | `api/v1` | `/api/v1/users` | 3000 |
 | workspace-service | Clean Architecture | Postgres / TypeORM | `api/v1` | `/api/v1/workspaces` | **8080** |
 | task-service | Clean + CQRS | Mongo / Mongoose | `api/v1` | `/api/v1/tasks` | 3000 |
@@ -44,45 +44,54 @@ Related docs:
 **Stack:** NestJS 11, TypeORM, PostgreSQL, Redis, gRPC, Graphile Worker outbox  
 **Local context:** `services/auth-service/CLAUDE.md`
 
-### Pattern: feature modules
+### Pattern: clean / hexagonal
 
-Not hexagonal. Logic is split across:
+Dependency direction (aligned with user-service):
 
-- `AppService` — HTTP auth orchestration (register, login, OTP, refresh, `/me`)
-- `modules/<feature>/*.service.ts` — feature-specific persistence and rules
-- `modules/<feature>/entities/*.entity.ts` — TypeORM entities co-located with the module
+```text
+presentation → application/use-cases → domain (entities, ports) → infrastructure + integrations
+```
+
+- Controllers inject use cases directly — no `AppService` facade.
+- `USER_REPOSITORY` / `REFRESH_TOKEN_REPOSITORY` + outbound ports (`OTP_STORE`, `EMAIL_OUTBOX`, `USER_PROFILE_CLIENT`).
+- TypeORM entities live under `infrastructure/identity/` and `infrastructure/refresh-tokens/`.
 
 ### Folder map
 
 ```text
 src/
-├── app.controller.ts, app.service.ts     # HTTP entry + facade
-├── auth.grpc.controller.ts               # gRPC VerifyAccessToken
-├── common/types/                         # Plain TS input/output types (not class-validator DTOs)
-├── configuration/                        # env.config.ts + ConfigurationService
+├── presentation/http/auth.controller.ts
+├── presentation/grpc/auth.grpc.controller.ts
+├── application/use-cases/ | application/services/
+├── domain/entities/ | domain/repositories/ | domain/ports/
+├── infrastructure/
+│   ├── repositories/          # typeorm-user, typeorm-refresh-token, in-memory-user
+│   ├── database/
+│   ├── identity/              # user/role ORM entities
+│   ├── refresh-tokens/
+│   ├── redis/
+│   ├── outbox/
+│   ├── emails/
+│   └── graphile-worker/
+├── integrations/user-profiles/  # user-service gRPC client
+├── common/types/
+├── configuration/
 ├── health/
-├── generated/proto/
-└── modules/
-    ├── database/
-    ├── identity/          # users, roles, permissions, passwords
-    ├── refresh-tokens/
-    ├── redis/
-    ├── outbox/            # email OTP events
-    ├── emails/
-    └── graphile-worker/
+└── generated/proto/
 ```
 
 ### Where to add code
 
 | Task | Location |
 |------|----------|
-| New HTTP route | `app.controller.ts` or new root controller in `app.module.ts` |
-| New auth flow step | `app.service.ts` (orchestration) + relevant `modules/*` service |
-| User/role/password DB | `modules/identity/` |
-| Refresh token behavior | `modules/refresh-tokens/` |
-| Redis OTP/session | `modules/redis/` |
-| Async email | `modules/outbox/` (not sync from controller) |
-| gRPC for downstream | `auth.grpc.controller.ts` |
+| New HTTP route | `presentation/http/auth.controller.ts` |
+| New auth action | `application/use-cases/<action>.use-case.ts` |
+| Shared JWT/session/OTP | `application/services/` |
+| User/role/password DB | `infrastructure/repositories/typeorm-user.repository.ts` |
+| Refresh token behavior | `infrastructure/repositories/typeorm-refresh-token.repository.ts` |
+| Redis OTP | `infrastructure/redis/` (port: `domain/ports/otp-store.port.ts`) |
+| Async email | `infrastructure/outbox/` (not sync from controller) |
+| gRPC for downstream | `presentation/grpc/auth.grpc.controller.ts` |
 | Config / env | `configuration/env.config.ts` + `ConfigurationService` |
 | Migration | `migrations/` + `scripts/sql/` |
 

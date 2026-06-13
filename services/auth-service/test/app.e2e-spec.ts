@@ -3,18 +3,18 @@ import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
-import { AuthService } from '../src/app.service';
+import { JwtTokenService } from '../src/application/services/jwt-token.service';
 import { AuthHealthService } from '../src/health/auth-health.service';
 import { USER_REPOSITORY } from '../src/domain/repositories/user.repository';
 import { REFRESH_TOKEN_REPOSITORY } from '../src/domain/repositories/refresh-token.repository';
 import { OTP_STORE } from '../src/domain/ports/otp-store.port';
 import { EMAIL_OUTBOX } from '../src/domain/ports/email-outbox.port';
 import { USER_PROFILE_CLIENT } from '../src/domain/ports/user-profile-client.port';
-import { AuthOutboxService } from '../src/modules/outbox/auth-outbox.service';
+import { AuthOutboxService } from '../src/infrastructure/outbox/auth-outbox.service';
 
 describe('AuthController (e2e)', () => {
   let app: INestApplication<App>;
-  let authService: AuthService;
+  let jwtTokenService: JwtTokenService;
 
   const refreshTokensServiceMock = {
     issue: jest.fn(),
@@ -196,7 +196,7 @@ describe('AuthController (e2e)', () => {
 
     app = moduleFixture.createNestApplication();
     app.setGlobalPrefix('api/v1');
-    authService = moduleFixture.get(AuthService);
+    jwtTokenService = moduleFixture.get(JwtTokenService);
     await app.init();
   });
 
@@ -243,7 +243,7 @@ describe('AuthController (e2e)', () => {
   });
 
   it('/api/v1/auth/verify (GET) returns identity headers for valid JWT', async () => {
-    const token = await authService.signAccessToken({
+    const token = await jwtTokenService.signAccessToken({
       role: 'member',
       roles: ['member'],
       userId: 'user-123',
@@ -279,7 +279,7 @@ describe('AuthController (e2e)', () => {
   });
 
   it('/api/v1/auth/me (GET) returns current user', async () => {
-    const token = await authService.signAccessToken({
+    const token = await jwtTokenService.signAccessToken({
       role: 'member',
       roles: ['member'],
       userId: 'user-123',
@@ -354,7 +354,7 @@ describe('AuthController (e2e)', () => {
   });
 
   it('/api/v1/auth/change-password (POST) changes password for authenticated user', async () => {
-    const token = await authService.signAccessToken({
+    const token = await jwtTokenService.signAccessToken({
       role: 'member',
       roles: ['member'],
       userId: 'user-123',

@@ -2,21 +2,18 @@
 
 NestJS 11 + TypeORM + PostgreSQL + Redis + gRPC + Graphile Worker outbox.
 
-## Pattern (Phase 1–3 — migrating to clean/hexagonal)
-
-**In progress:** presentation → application/use-cases → domain (entities/ports) → infrastructure adapters + integrations.
+## Pattern — clean / hexagonal (Phase 4 complete)
 
 ```text
 presentation/http|grpc → application/use-cases → domain (entities, repositories, ports)
-  → infrastructure/repositories | redis | outbox adapters
+  → infrastructure/repositories | database | redis | outbox | emails | graphile-worker
   → integrations/user-profiles (gRPC client)
-modules/* (redis, outbox, emails, identity entities) — legacy until Phase 4
 ```
 
 - `USER_REPOSITORY` / `REFRESH_TOKEN_REPOSITORY` — inject in use cases.
 - `OTP_STORE` / `EMAIL_OUTBOX` / `USER_PROFILE_CLIENT` — outbound ports; adapters in `infrastructure/` and `integrations/`.
 - `User` entity (`domain/entities/user.entity.ts`) — `assertCanLogin()` for email-verified + active checks.
-- `AuthService` (`app.service.ts`) — thin facade for e2e/tests; remove in Phase 4.
+- Controllers inject use cases directly — no `AppService` facade.
 
 ## Layout
 
@@ -32,12 +29,14 @@ src/
 │   └── ports/                # OTP_STORE, EMAIL_OUTBOX, USER_PROFILE_CLIENT
 ├── infrastructure/
 │   ├── repositories/         # typeorm-*, in-memory-user
-│   ├── redis/                # RedisOtpStoreAdapter
-│   └── outbox/               # TypeOrmEmailOutboxAdapter
+│   ├── database/             # TypeORM root + DatabaseService
+│   ├── identity/             # user/role ORM entities module
+│   ├── refresh-tokens/       # refresh token ORM entities
+│   ├── redis/                # RedisService + RedisOtpStoreAdapter
+│   ├── outbox/               # AuthOutboxService + TypeOrmEmailOutboxAdapter
+│   ├── emails/
+│   └── graphile-worker/
 ├── integrations/user-profiles/   # UserProfilesGrpcService → USER_PROFILE_CLIENT
-├── modules/identity/         # TypeORM entities only
-├── modules/refresh-tokens/   # ORM entity module only
-├── modules/redis/ | outbox/ | emails/
 └── configuration/ | health/ | metrics/
 ```
 

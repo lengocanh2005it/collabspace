@@ -1,7 +1,7 @@
 import { ConfigurationService } from '@/configuration/configuration.service';
 import { UnauthorizedException } from '@nestjs/common';
 import { DataSource, Repository } from 'typeorm';
-import { RefreshTokenEntity } from '@/modules/refresh-tokens/entities/refresh-token.entity';
+import { RefreshTokenEntity } from '@/infrastructure/refresh-tokens/entities/refresh-token.entity';
 import { TypeOrmRefreshTokenRepository } from './typeorm-refresh-token.repository';
 
 describe('TypeOrmRefreshTokenRepository', () => {

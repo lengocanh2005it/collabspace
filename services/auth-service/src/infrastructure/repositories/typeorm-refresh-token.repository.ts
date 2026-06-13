@@ -8,7 +8,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { createHash, randomBytes, randomUUID } from 'crypto';
 import { DataSource, IsNull, MoreThan, Repository } from 'typeorm';
 import { RefreshTokenRepository } from '@/domain/repositories/refresh-token.repository';
-import { RefreshTokenEntity } from '@/modules/refresh-tokens/entities/refresh-token.entity';
+import { RefreshTokenEntity } from '@/infrastructure/refresh-tokens/entities/refresh-token.entity';
 
 @Injectable()
 export class TypeOrmRefreshTokenRepository implements RefreshTokenRepository {

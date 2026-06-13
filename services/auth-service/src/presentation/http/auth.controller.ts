@@ -57,7 +57,7 @@ import { VerifyEmailOtpUseCase } from '@/application/use-cases/verify-email-otp.
 import { AuthHealthService } from '@/health/auth-health.service';
 import { assertMetricsAccess } from '@/metrics/metrics-access';
 import { MetricsService } from '@/metrics/metrics.service';
-import { AuthOutboxService } from '@/modules/outbox/auth-outbox.service';
+import { AuthOutboxService } from '@/infrastructure/outbox/auth-outbox.service';
 import { ConfigurationService } from '@/configuration/configuration.service';
 
 @ApiTags('auth')

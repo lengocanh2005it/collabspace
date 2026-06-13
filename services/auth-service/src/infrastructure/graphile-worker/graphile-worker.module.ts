@@ -1,5 +1,5 @@
 import { ConfigurationService } from '@/configuration/configuration.service';
-import { EmailsModule } from '@/modules/emails/emails.module';
+import { EmailsModule } from '@/infrastructure/emails/emails.module';
 import { Module, forwardRef } from '@nestjs/common';
 import { makeWorkerUtils } from 'graphile-worker';
 import {

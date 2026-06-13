@@ -3,11 +3,11 @@ import { join } from 'node:path';
 import { randomBytes, scrypt } from 'node:crypto';
 import { promisify } from 'node:util';
 import { DataSource } from 'typeorm';
-import { PermissionEntity } from './modules/identity/entities/permission.entity';
-import { RolePermissionEntity } from './modules/identity/entities/role-permission.entity';
-import { RoleEntity } from './modules/identity/entities/role.entity';
-import { UserRoleEntity } from './modules/identity/entities/user-role.entity';
-import { UserEntity } from './modules/identity/entities/user.entity';
+import { PermissionEntity } from './infrastructure/identity/entities/permission.entity';
+import { RolePermissionEntity } from './infrastructure/identity/entities/role-permission.entity';
+import { RoleEntity } from './infrastructure/identity/entities/role.entity';
+import { UserRoleEntity } from './infrastructure/identity/entities/user-role.entity';
+import { UserEntity } from './infrastructure/identity/entities/user.entity';
 import { loadDemoSeedData, type DemoSeedUser } from './load-demo-seed';
 
 type SeedPermission = {

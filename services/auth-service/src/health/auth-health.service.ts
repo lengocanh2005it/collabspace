@@ -12,7 +12,7 @@ import {
   USER_PROFILE_CLIENT,
   type UserProfileClient,
 } from '@/domain/ports/user-profile-client.port';
-import { DatabaseService } from '@/modules/database/database.service';
+import { DatabaseService } from '@/infrastructure/database/database.service';
 import { Inject, Injectable } from '@nestjs/common';
 
 type CheckStatus = 'up' | 'down' | 'disabled';

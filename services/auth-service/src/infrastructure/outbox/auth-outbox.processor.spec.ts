@@ -1,5 +1,5 @@
 import { ConfigurationService } from '@/configuration/configuration.service';
-import { EmailsService } from '@/modules/emails/emails.service';
+import { EmailsService } from '@/infrastructure/emails/emails.service';
 import { DataSource } from 'typeorm';
 import { AuthOutboxProcessor } from './auth-outbox.processor';
 import { AuthOutboxService } from './auth-outbox.service';

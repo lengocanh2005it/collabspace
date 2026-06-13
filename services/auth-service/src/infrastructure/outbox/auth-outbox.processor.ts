@@ -2,7 +2,7 @@ import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/commo
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import { ConfigurationService } from '@/configuration/configuration.service';
-import { EmailsService } from '@/modules/emails/emails.service';
+import { EmailsService } from '@/infrastructure/emails/emails.service';
 import { AuthOutboxService } from './auth-outbox.service';
 import {
   AUTH_OUTBOX_EVENT_EMAIL_VERIFICATION_OTP,

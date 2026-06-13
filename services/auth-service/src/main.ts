@@ -4,7 +4,7 @@ import { Logger, ValidationPipe } from '@nestjs/common';
 import { MicroserviceOptions } from '@nestjs/microservices';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { DatabaseService } from '@/modules/database/database.service';
+import { DatabaseService } from '@/infrastructure/database/database.service';
 import { AppModule } from './app.module';
 import { AuthHealthService } from './health/auth-health.service';
 import { MetricsService } from './metrics/metrics.service';

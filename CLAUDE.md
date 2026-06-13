@@ -68,7 +68,7 @@ Subagents in `.claude/agents/`: `nest-reviewer`, `mvp-implementer`, `contract-gu
 - Start by reading nearby code, DTOs, entities, repositories, migrations, and tests before editing.
 - Keep changes service-local unless the task explicitly crosses service boundaries.
 - Preserve existing module style (see `.claude/docs/service-architecture.md`):
-  - `auth-service`: feature modules under `src/modules/*`, `AppService` orchestration.
+  - `auth-service`: clean/hexagonal — `presentation` → `application/use-cases` → `domain` → `infrastructure/` + `integrations/`.
   - `user-service`: presentation → application/use-cases → domain ports → infrastructure.
   - `workspace-service`: presentation → use-cases → domain ports → TypeORM adapters.
   - `task-service` / `notification-service`: CQRS handlers, domain entities, Mongo repositories.

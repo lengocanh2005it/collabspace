@@ -3,7 +3,7 @@ import {
   EmailOutboxStats,
   EmailVerificationOtpEnqueuePayload,
 } from '@/domain/ports/email-outbox.port';
-import { AuthOutboxService } from '@/modules/outbox/auth-outbox.service';
+import { AuthOutboxService } from '@/infrastructure/outbox/auth-outbox.service';
 import { Injectable } from '@nestjs/common';
 
 @Injectable()
