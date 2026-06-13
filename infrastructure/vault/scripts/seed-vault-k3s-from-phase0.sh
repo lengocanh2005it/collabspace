@@ -34,6 +34,7 @@ for key in "${required[@]}"; do
 done
 
 root_token="$(jq -r '.root_token' "$INIT_FILE")"
+azure_b64="$(printf '%s' "$AZURE_STORAGE_CONNECTION_STRING" | base64 -w 0 2>/dev/null || printf '%s' "$AZURE_STORAGE_CONNECTION_STRING" | base64 | tr -d '\n')"
 
 echo "Seeding Vault KV secret/$KV_PATH via kubectl exec..."
 kubectl exec -n "$VAULT_NS" "$VAULT_POD" -- env \
@@ -48,8 +49,9 @@ kubectl exec -n "$VAULT_NS" "$VAULT_POD" -- env \
   RABBITMQ_USERNAME="$RABBITMQ_USERNAME" \
   RABBITMQ_PASSWORD="$RABBITMQ_PASSWORD" \
   METRICS_AUTH_TOKEN="$METRICS_AUTH_TOKEN" \
-  AZURE_STORAGE_CONNECTION_STRING="$AZURE_STORAGE_CONNECTION_STRING" \
+  AZURE_B64="$azure_b64" \
   sh -ec '
+    AZURE_STORAGE_CONNECTION_STRING="$(printf "%s" "$AZURE_B64" | base64 -d)"
     vault kv put "secret/${KV_PATH}" \
       jwt_secret="${JWT_SECRET}" \
       internal_service_token="${INTERNAL_SERVICE_TOKEN}" \

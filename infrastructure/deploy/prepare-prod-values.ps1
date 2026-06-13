@@ -20,7 +20,12 @@ Get-Content $EnvFile | ForEach-Object {
   if ($line -eq "" -or $line.StartsWith("#")) { return }
   $idx = $line.IndexOf("=")
   if ($idx -lt 1) { return }
-  $vars[$line.Substring(0, $idx).Trim()] = $line.Substring($idx + 1).Trim()
+  $key = $line.Substring(0, $idx).Trim()
+  $value = $line.Substring($idx + 1).Trim()
+  if ($value.Length -ge 2 -and $value.StartsWith('"') -and $value.EndsWith('"')) {
+    $value = $value.Substring(1, $value.Length - 2)
+  }
+  $vars[$key] = $value
 }
 
 $required = @(
