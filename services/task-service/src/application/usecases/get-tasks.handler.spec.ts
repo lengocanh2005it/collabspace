@@ -90,7 +90,7 @@ describe("GetTasksHandler", () => {
     mockTaskRepo.findByWorkspaceIdAsync.mockResolvedValue([task]);
     mockTaskRepo.countByWorkspaceIdAsync.mockResolvedValue(1);
 
-    const query = new GetTasksQuery("workspace-1", "TODO");
+    const query = new GetTasksQuery("workspace-1", undefined, "TODO");
     const result = await handler.execute(query);
 
     expect(result.total).toBe(1);
@@ -116,7 +116,7 @@ describe("GetTasksHandler", () => {
     mockTaskRepo.findByWorkspaceIdAsync.mockResolvedValue([task]);
     mockTaskRepo.countByWorkspaceIdAsync.mockResolvedValue(1);
 
-    const query = new GetTasksQuery("workspace-1", undefined, "user-1");
+    const query = new GetTasksQuery("workspace-1", undefined, undefined, "user-1");
     const result = await handler.execute(query);
 
     expect(result.total).toBe(1);
