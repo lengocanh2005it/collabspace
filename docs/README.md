@@ -17,6 +17,7 @@ Chỉ mục tài liệu dự án (tiếng Việt có dấu). Tài liệu kỹ th
 | [cross-service-data.md](./cross-service-data.md) | Dữ liệu xuyên service, read model |
 | [trade-offs.md](./trade-offs.md) | Quyết định kiến trúc và đánh đổi |
 | [design-patterns.md](./design-patterns.md) | **Design patterns** — catalog theo service, file tham chiếu |
+| [performance-improvement-phases.md](./performance-improvement-phases.md) | **Performance phases** — lộ trình latency (Phase 1–7) |
 | [nfrs.md](./nfrs.md) | Yêu cầu phi chức năng (NFR) |
 
 ## Triển khai & hạ tầng

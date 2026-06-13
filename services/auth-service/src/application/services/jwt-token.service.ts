@@ -8,6 +8,7 @@ import {
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { createSecretKey } from 'crypto';
 import { readFirstString } from './jwt-payload.util';
+import { readRolesFromPayload } from './jwt-payload-roles.util';
 
 type JoseModule = typeof import('jose');
 
@@ -91,6 +92,58 @@ export class JwtTokenService {
       payload,
       user,
       userId,
+    };
+  }
+
+  async resolveVerifiedLiteUserContext(authorizationHeader?: string): Promise<{
+    emailVerified: boolean;
+    expiresAt?: number;
+    payload: JwtPayload;
+    role?: string;
+    roles: string[];
+    userId: string;
+    workspaceId?: string;
+  }> {
+    const token = this.extractBearerToken(authorizationHeader);
+    const payload = await this.verifyJwt(token);
+    const userId = readFirstString(
+      payload.sub,
+      payload.userId,
+      payload.user_id,
+    );
+
+    if (!userId) {
+      throw new UnauthorizedException({
+        code: 'TOKEN_INVALID',
+        message: 'Access token payload is missing subject',
+      });
+    }
+
+    const liteUser = await this.userRepository.getAuthUserLiteById(userId);
+
+    if (!liteUser.isActive) {
+      throw new UnauthorizedException({
+        code: 'USER_INACTIVE',
+        message: 'User account is inactive',
+      });
+    }
+
+    const roles = readRolesFromPayload(payload);
+    const role = readFirstString(payload.role, roles[0]);
+
+    return {
+      emailVerified: liteUser.emailVerified,
+      expiresAt: typeof payload.exp === 'number' ? payload.exp : undefined,
+      payload,
+      role,
+      roles,
+      userId,
+      workspaceId: readFirstString(
+        payload.workspaceId,
+        payload.workspace_id,
+        payload.tenantId,
+        payload.tenant_id,
+      ),
     };
   }
 

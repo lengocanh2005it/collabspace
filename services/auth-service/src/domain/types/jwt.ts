@@ -23,6 +23,15 @@ export type AuthIdentity = {
   userId: string;
 };
 
+/** Lightweight identity for downstream guards (no profile, no permission graph). */
+export type AuthLiteIdentity = {
+  emailVerified: boolean;
+  role?: string;
+  roles: string[];
+  userId: string;
+  workspaceId?: string;
+};
+
 export type SignAccessTokenInput = {
   roles?: string[];
   role?: string;

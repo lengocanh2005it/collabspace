@@ -9,6 +9,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { randomBytes, randomUUID, scrypt, timingSafeEqual } from 'crypto';
 import { promisify } from 'util';
 import { EntityManager, Repository } from 'typeorm';
+import type { AuthLiteUser } from '@/domain/entities/auth-lite-user';
 import type { AuthUser } from '@/domain/entities/auth-user';
 import type { LoginInput } from '@/domain/types/login-input';
 import type { RegisterUserInput } from '@/domain/types/register-user-input';
@@ -30,6 +31,33 @@ export class TypeOrmUserRepository implements UserRepository {
     @InjectRepository(UserRoleOrmEntity)
     private readonly userRoleRepository: Repository<UserRoleOrmEntity>,
   ) {}
+
+  async getAuthUserLiteById(userId: string): Promise<AuthLiteUser> {
+    const user = await this.userRepository.findOne({
+      select: {
+        id: true,
+        isActive: true,
+        emailVerifiedAt: true,
+        deletedAt: true,
+      },
+      where: {
+        id: userId,
+      },
+    });
+
+    if (!user || user.deletedAt) {
+      throw new NotFoundException({
+        code: 'USER_NOT_FOUND',
+        message: `User ${userId} was not found`,
+      });
+    }
+
+    return {
+      emailVerified: Boolean(user.emailVerifiedAt),
+      isActive: user.isActive,
+      userId: user.id,
+    };
+  }
 
   async getAuthUserById(userId: string): Promise<AuthUser> {
     return this.toAuthUser(await this.loadUserById(userId));

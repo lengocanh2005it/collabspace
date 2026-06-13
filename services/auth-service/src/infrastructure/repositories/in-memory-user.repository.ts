@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { randomBytes, randomUUID, scrypt, timingSafeEqual } from 'crypto';
 import { promisify } from 'util';
+import type { AuthLiteUser } from '@/domain/entities/auth-lite-user';
 import type { AuthUser } from '@/domain/entities/auth-user';
 import type { LoginInput } from '@/domain/types/login-input';
 import type { RegisterUserInput } from '@/domain/types/register-user-input';
@@ -23,6 +24,23 @@ type StoredUser = AuthUser & {
 @Injectable()
 export class InMemoryUserRepository implements UserRepository {
   private readonly users = new Map<string, StoredUser>();
+
+  async getAuthUserLiteById(userId: string): Promise<AuthLiteUser> {
+    const user = this.users.get(userId);
+
+    if (!user || user.deletedAt) {
+      throw new NotFoundException({
+        code: 'USER_NOT_FOUND',
+        message: `User ${userId} was not found`,
+      });
+    }
+
+    return {
+      emailVerified: user.emailVerified,
+      isActive: user.isActive,
+      userId: user.userId,
+    };
+  }
 
   async getAuthUserById(userId: string): Promise<AuthUser> {
     const user = this.users.get(userId);

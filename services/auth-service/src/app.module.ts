@@ -6,6 +6,7 @@ import { LogoutUseCase } from '@/application/use-cases/logout.use-case';
 import { RefreshSessionUseCase } from '@/application/use-cases/refresh-session.use-case';
 import { RegisterUseCase } from '@/application/use-cases/register.use-case';
 import { ResendEmailVerificationOtpUseCase } from '@/application/use-cases/resend-email-verification-otp.use-case';
+import { VerifyAccessTokenLiteUseCase } from '@/application/use-cases/verify-access-token-lite.use-case';
 import { VerifyAccessTokenUseCase } from '@/application/use-cases/verify-access-token.use-case';
 import { VerifyEmailOtpUseCase } from '@/application/use-cases/verify-email-otp.use-case';
 import { EmailVerificationOtpService } from '@/application/services/email-verification-otp.service';
@@ -21,6 +22,7 @@ import {
 import { USER_REPOSITORY } from '@/domain/repositories/user.repository';
 import { UserProfilesModule } from '@/integrations/user-profiles/user-profiles.module';
 import { TypeOrmEmailOutboxAdapter } from '@/infrastructure/outbox/typeorm-email-outbox.adapter';
+import { AccessTokenVerifyLiteCacheService } from '@/infrastructure/redis/access-token-verify-lite-cache.service';
 import { RedisOtpStoreAdapter } from '@/infrastructure/redis/redis-otp-store.adapter';
 import { InMemoryUserRepository } from '@/infrastructure/repositories/in-memory-user.repository';
 import { TypeOrmRefreshTokenRepository } from '@/infrastructure/repositories/typeorm-refresh-token.repository';
@@ -57,6 +59,7 @@ import { AuthController } from '@/presentation/http/auth.controller';
     SessionIssuanceService,
     EmailVerificationOtpService,
     VerifyAccessTokenUseCase,
+    VerifyAccessTokenLiteUseCase,
     GetCurrentUserUseCase,
     LoginUseCase,
     LogoutUseCase,
@@ -69,6 +72,7 @@ import { AuthController } from '@/presentation/http/auth.controller';
     InMemoryUserRepository,
     TypeOrmRefreshTokenRepository,
     RedisOtpStoreAdapter,
+    AccessTokenVerifyLiteCacheService,
     TypeOrmEmailOutboxAdapter,
     {
       provide: USER_REPOSITORY,

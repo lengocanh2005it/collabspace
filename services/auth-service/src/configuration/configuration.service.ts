@@ -21,6 +21,11 @@ export type AuthJwtConfig = {
   secret?: string;
 };
 
+export type VerifyLiteCacheConfig = {
+  enabled: boolean;
+  maxTtlSeconds: number;
+};
+
 export type EmailVerificationConfig = {
   otpLength: number;
   otpTtlSeconds: number;
@@ -129,6 +134,18 @@ export class ConfigurationService {
       expiry: this.configService.get<string>('auth.jwt.expiry') ?? '1h',
       issuer: this.configService.get<string>('auth.jwt.issuer') || undefined,
       secret: this.configService.get<string>('auth.jwt.secret') || undefined,
+    };
+  }
+
+  getVerifyLiteCacheConfig(): VerifyLiteCacheConfig {
+    return {
+      enabled:
+        this.configService.get<boolean>('auth.verifyLiteCache.enabled') ??
+        true,
+      maxTtlSeconds:
+        this.configService.get<number>(
+          'auth.verifyLiteCache.maxTtlSeconds',
+        ) ?? 300,
     };
   }
 

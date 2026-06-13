@@ -52,6 +52,13 @@ export default () => ({
       issuer: process.env.JWT_ISSUER,
       secret: process.env.JWT_SECRET,
     },
+    verifyLiteCache: {
+      enabled: toBoolean(process.env.AUTH_VERIFY_LITE_CACHE_ENABLED, true),
+      maxTtlSeconds: toNumber(
+        process.env.AUTH_VERIFY_LITE_CACHE_MAX_TTL_SECONDS,
+        300,
+      ),
+    },
   },
   database: {
     autoLoadEntities: toBoolean(process.env.DATABASE_AUTO_LOAD_ENTITIES, true),
