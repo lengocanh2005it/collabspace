@@ -24,11 +24,25 @@ queue_arguments() {
     rabbitmqctl list_queues -p "$RABBITMQ_VHOST" name arguments --formatter json 2>/dev/null \
     | python3 -c "
 import json, sys
+
+def normalize_args(raw):
+    if isinstance(raw, dict):
+        return raw
+    if isinstance(raw, list):
+        out = {}
+        for item in raw:
+            if isinstance(item, (list, tuple)) and len(item) == 2:
+                out[str(item[0])] = str(item[1])
+        return out
+    return {}
+
 target = sys.argv[1]
 for row in json.load(sys.stdin):
     if row.get('name') == target:
-        print(json.dumps(row.get('arguments') or {}))
+        print(json.dumps(normalize_args(row.get('arguments') or {})))
         break
+else:
+    print('{}')
 " "$queue" 2>/dev/null || echo "{}"
 }
 
