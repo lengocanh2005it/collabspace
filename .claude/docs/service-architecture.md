@@ -113,7 +113,7 @@ src/
 ## user-service
 
 **Path:** `services/user-service`  
-**Stack:** NestJS 11, TypeORM, PostgreSQL, gRPC server + auth gRPC client  
+**Stack:** NestJS 11, TypeORM, PostgreSQL, gRPC server + auth gRPC client, Azure Blob (avatars)  
 **Local context:** `services/user-service/CLAUDE.md`
 
 ### Pattern: clean / hexagonal
@@ -137,6 +137,7 @@ src/
 ├── infrastructure/
 │   ├── database/entities/*.orm-entity.ts
 │   ├── repositories/              # TypeORM + in-memory implementations
+│   ├── services/azure-blob.service.ts  # Avatar upload (mock when unconfigured)
 │   └── messaging/rabbitmq/
 ├── integrations/auth/             # auth-service gRPC client
 └── presentation/
@@ -167,6 +168,7 @@ Register use cases in `app.module.ts`. Repository binding uses factory: TypeORM 
 - Use cases: `@Injectable()`, `execute(...)`, inject `@Inject(USER_PROFILE_REPOSITORY)`
 - Never return ORM entities from controllers
 - `me` routes resolve `userId` from bearer token via `AuthGrpcService`
+- `POST /users/me/avatar` — multipart `file`; `AzureBlobService` → container `user-avatars` or mock URL without `AZURE_STORAGE_CONNECTION_STRING`
 - Relative imports (no `@/` alias)
 - Update **both** TypeORM and in-memory repos when repository behavior changes
 

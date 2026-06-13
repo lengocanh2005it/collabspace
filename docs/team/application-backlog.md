@@ -115,10 +115,14 @@ Chi tiết infra: [phan-phu-tho-infrastructure-backlog.md](./phan-phu-tho-infras
 ### Đã xong
 
 - Workspace CRUD, members, invite/accept/reject, roles
+- **`GET /workspaces/:workspaceId/invitations`** — liệt kê lời mời `pending` (member-only); `ListInvitationsUseCase`
 - Project CRUD trong workspace
 - Outbox `workspace_invited`, idempotency workspace/invite
 - Internal `GET /workspaces/internal/:id/membership` + `X-Internal-Service-Token`
 - `AuthGuard` JWT gRPC; 13/13 use case workspace có `*.use-case.spec.ts`
+- **Avatar upload** (`POST /users/me/avatar`) — implement trong `user-service`: `AzureBlobService` + mock fallback khi thiếu `AZURE_STORAGE_CONNECTION_STRING` (phối hợp vùng Anh)
+- **Task ↔ workspace dev bridge** — `WorkspaceMockService` auto-register workspace ID thật khi `WORKSPACE_CLIENT_MODE` ≠ `http` (chỉ local/demo; prod/staging dùng HTTP client — xem việc còn lại bên dưới)
+- Merge **PR #19** (`feat/maintain`) — tích hợp perf phases 1–7 của Anh (VerifyAccessTokenLite, Mongo pagination, task activity read model, membership cache, k6 SLO, …)
 
 ### Việc còn lại
 
@@ -138,6 +142,7 @@ Chi tiết infra: [phan-phu-tho-infrastructure-backlog.md](./phan-phu-tho-infras
 #### P2 — OpenAPI & mở rộng (Planned)
 
 - [x] **Swagger** — `workspace-service/src/main.ts` → `/swagger` + `@ApiOkResponse` response DTOs
+- [ ] **`GET .../invitations` Swagger** — `@ApiOperation` / response DTO trên `invitation.controller.ts`
 - [ ] **Project-scoped board** (Planned trong [features.md](../features.md) §4) — tùy chọn; hiện board ở `GET /tasks/board` (task-service, owner Tín)
 
 #### P2 — API ngoài MVP (tùy product)
@@ -211,7 +216,7 @@ Chi tiết infra: [phan-phu-tho-infrastructure-backlog.md](./phan-phu-tho-infras
 |---------|-----------|-----------|--------|
 | auth-service | Done | — (repository specs + use-case integration + Swagger + e2e flow ✅) | Anh |
 | user-service | Done | — (12/12 use-case specs + internal/auth-events tests ✅) | Anh |
-| workspace-service | Done | E2E, outbox test | Tiến |
+| workspace-service | Done | E2E, outbox test, list-invitations spec + Swagger | Tiến |
 | task-service | Done | Board test, e2e, workspace mock guard, workspace activity | Tín (+ Tiến integration) |
 | notification-service | Done | mark-all test, e2e, Kafka cleanup | Tín |
 
@@ -269,4 +274,4 @@ Chi tiết infra: [phan-phu-tho-infrastructure-backlog.md](./phan-phu-tho-infras
 
 ---
 
-*Cập nhật: 2026-06-13 — sync doc: demo-e2e Done, OpenAPI 5/5 Done, **Lê Ngọc Anh** + DO Droplet deploy (k3s/Helm prod).*
+*Cập nhật: 2026-06-13 — sync Ngô Quang Tiến (PR #19): avatar upload Azure Blob, list invitations, task mock bridge; merge perf phases Anh.*

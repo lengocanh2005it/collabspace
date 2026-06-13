@@ -85,6 +85,7 @@ Base: `/api/v1/users` · Cổng **3000** (host **3001**)
 | GET | `/health/ready` | Readiness |
 | GET | `/me` | Profile user hiện tại |
 | PATCH | `/me` | Cập nhật profile |
+| POST | `/me/avatar` | Upload avatar (multipart field `file`; Azure Blob hoặc mock local) |
 | GET | `/me/preferences` | Tùy chọn user |
 | PATCH | `/me/preferences` | Cập nhật tùy chọn |
 | GET | `/me/status` | Trạng thái user |
@@ -114,7 +115,7 @@ Route protected yêu cầu `Authorization: Bearer …` (auth gRPC). Dev-only `X-
 | Workspace | `POST /`, `GET /`, `GET /{id}`, `PATCH /{id}` |
 | Thành viên | `GET /{id}/members` |
 | Activity | `GET /{id}/activity` — timeline workspace (`limit`, `offset`) |
-| Lời mời | `POST /{id}/invite`, `POST /invitations/{token}/accept`, `POST /invitations/{token}/reject` |
+| Lời mời | `GET /{id}/invitations`, `POST /{id}/invite`, `POST /invitations/{id}/accept`, `POST /invitations/{id}/reject` |
 | Project | `POST /{workspaceId}/projects`, `GET /{workspaceId}/projects`, `PATCH /projects/{id}`, `DELETE /projects/{id}` |
 | Health | `GET /health/live`, `GET /health/ready` |
 

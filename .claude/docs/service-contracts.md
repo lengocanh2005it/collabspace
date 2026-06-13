@@ -74,6 +74,7 @@ Routes:
 - `GET /api/v1/users/health/ready`
 - `GET /api/v1/users/me`
 - `PATCH /api/v1/users/me`
+- `POST /api/v1/users/me/avatar` — multipart field `file`; updates `avatarUrl` via profile use case
 - `POST /api/v1/users/bulk`
 - `GET /api/v1/users?limit=&offset=&q=`
 - `GET /api/v1/users/search?q=&limit=&offset=` if implemented/kept in docs
@@ -86,6 +87,7 @@ Behavior notes:
 - `me` always resolves from token identity, not from a user id in the request body.
 - Search/list supports user directory and mention flows.
 - Bulk fetch exists to hydrate assignees/comment authors efficiently.
+- Avatar upload: `AZURE_STORAGE_CONNECTION_STRING` optional — without it, service returns a mock avatar URL (`ui-avatars.com`) for local UI; container `user-avatars` when configured.
 
 ## Internal gRPC Contracts
 
@@ -326,7 +328,9 @@ Minimum HTTP routes to close MVP:
 - `GET /workspaces/{id}`
 - `PATCH /workspaces/{id}`
 - `POST /workspaces/{id}/invite`
-- `POST /workspaces/invitations/{invitationId}/accept`
+- `GET /workspaces/{id}/invitations` — pending invitations; caller must be workspace member
+- `POST /invitations/{invitationId}/accept`
+- `POST /invitations/{invitationId}/reject`
 - `GET /workspaces/{id}/members`
 
 Minimum domain concepts:

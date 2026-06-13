@@ -56,6 +56,7 @@ Tài liệu này là **nguồn chính** mô tả chức năng và mức độ ho
 **Done**
 
 - Xem / cập nhật profile (`fullName`, `username`, `displayName`, `avatarUrl`, `bio`, …)
+- **Upload avatar** — `POST /users/me/avatar` (multipart field `file`); Azure Blob khi có `AZURE_STORAGE_CONNECTION_STRING`, mock URL (`ui-avatars.com`) khi chưa cấu hình
 - Lấy profile theo `userId`, user summary nhẹ cho UI
 - Danh sách / tìm kiếm user (phục vụ mention và chọn assignee)
 - Bulk lấy profile theo danh sách `userIds`
@@ -77,7 +78,8 @@ Tài liệu này là **nguồn chính** mô tả chức năng và mức độ ho
 - Danh sách workspace của user hiện tại
 - Danh sách thành viên workspace
 - Mời thành viên (`POST .../invite`) — transactional outbox + event `workspace_invited`
-- Chấp nhận / từ chối lời mời
+- **Liệt kê lời mời đang chờ** — `GET /workspaces/:workspaceId/invitations` (chỉ member workspace)
+- Chấp nhận / từ chối lời mời (`POST /invitations/:id/accept|reject`)
 - Role membership: `owner`, `admin`, `member`
 - Idempotency-Key trên tạo workspace và invite
 - **JWT verification** qua auth gRPC (`AuthGuard`); dev fallback `X-User-Id` khi `ALLOW_DEV_IDENTITY_HEADERS=true`
