@@ -66,8 +66,7 @@ export class CommentEventListenerController {
         "❌ Lỗi khi xử lý event comment_created",
         error instanceof Error ? error.stack : undefined,
       );
-      // Nếu có lỗi liên quan tới kết nối DB, có thể mở nack ra để RabbitMQ tự gửi lại sau
-      // channel.nack(originalMsg, false, true);
+      channel.nack(originalMsg, false, true);
     }
   }
 }

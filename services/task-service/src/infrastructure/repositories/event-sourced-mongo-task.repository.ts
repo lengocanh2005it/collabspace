@@ -65,7 +65,7 @@ export class EventSourcedMongoTaskRepository implements ITaskRepository {
   }
 
   async findByWorkspaceIdAsync(workspaceId: string): Promise<TaskDomain[]> {
-    const rawDocs = await this.taskModel.find({ workspaceId }).exec();
+    const rawDocs = await this.taskModel.find({ workspaceId }).limit(1000).exec();
     return rawDocs.map((doc) => TaskMapper.toDomain(doc));
   }
 

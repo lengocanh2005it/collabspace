@@ -8,8 +8,9 @@ export class CreateProjectDto {
   @MaxLength(100)
   name: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ maxLength: 500 })
   @IsString()
   @IsOptional()
+  @MaxLength(500)
   description?: string;
 }

@@ -139,19 +139,28 @@ export class TypeOrmUserProfileRepository implements UserProfileRepository {
     const statusMap = new Map(
       statuses.map((status) => [status.userId, status]),
     );
-    const results: UserStatus[] = [];
+    const missingUserIds = userIds.filter((id) => !statusMap.has(id));
 
-    for (const userId of userIds) {
-      const existingStatus = statusMap.get(userId);
-      if (existingStatus) {
-        results.push(this.toDomainStatus(existingStatus));
-        continue;
+    if (missingUserIds.length > 0) {
+      const newStatuses = await this.statusRepository.save(
+        missingUserIds.map((uid) =>
+          this.statusRepository.create({
+            clearAt: null,
+            emoji: null,
+            id: randomUUID(),
+            lastSeenAt: null,
+            status: 'offline',
+            statusText: null,
+            userId: uid,
+          }),
+        ),
+      );
+      for (const s of newStatuses) {
+        statusMap.set(s.userId, s);
       }
-
-      results.push(await this.getStatus(userId));
     }
 
-    return results;
+    return userIds.map((uid) => this.toDomainStatus(statusMap.get(uid)!));
   }
 
   async list(input: ListUserProfilesInput): Promise<ListUserProfilesResult> {

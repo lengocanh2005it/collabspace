@@ -1,6 +1,6 @@
 import './observability/instrumentation';
 import { ConfigurationService } from '@/configuration/configuration.service';
-import { Logger } from '@nestjs/common';
+import { Logger, ValidationPipe } from '@nestjs/common';
 import { MicroserviceOptions } from '@nestjs/microservices';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -14,6 +14,7 @@ import { registerMetricsMiddleware } from './metrics/register-metrics.middleware
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.setGlobalPrefix('api/v1');
+  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
   registerRequestIdMiddleware(app);
   registerMetricsMiddleware(app, app.get(MetricsService));
 

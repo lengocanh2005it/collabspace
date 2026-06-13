@@ -8,8 +8,9 @@ export class CreateWorkspaceDto {
   @MaxLength(100)
   name: string;
 
-  @ApiPropertyOptional({ example: 'Team workspace for MVP sprint' })
+  @ApiPropertyOptional({ maxLength: 500, example: 'Team workspace for MVP sprint' })
   @IsString()
   @IsOptional()
+  @MaxLength(500)
   description?: string;
 }

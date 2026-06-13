@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { CreateWorkspaceDto } from '../../dto/create-workspace.dto';
 import {
   type IWorkspaceRepository,
@@ -11,6 +11,8 @@ import {
 
 @Injectable()
 export class CreateWorkspaceUseCase {
+  private readonly logger = new Logger(CreateWorkspaceUseCase.name);
+
   constructor(
     @Inject(WORKSPACE_REPOSITORY)
     private readonly workspaceRepo: IWorkspaceRepository,
@@ -26,14 +28,21 @@ export class CreateWorkspaceUseCase {
       userId,
     });
 
-    await this.activityRepo.record({
-      workspaceId: workspace.id,
-      actorId: userId,
-      actorName: null,
-      type: 'workspace_created',
-      summary: `Workspace "${workspace.name}" was created`,
-      meta: { workspaceName: workspace.name },
-    });
+    try {
+      await this.activityRepo.record({
+        workspaceId: workspace.id,
+        actorId: userId,
+        actorName: null,
+        type: 'workspace_created',
+        summary: `Workspace "${workspace.name}" was created`,
+        meta: { workspaceName: workspace.name },
+      });
+    } catch (error) {
+      this.logger.warn(
+        `Failed to record activity for workspace ${workspace.id}`,
+        error instanceof Error ? error.stack : undefined,
+      );
+    }
 
     return workspace;
   }

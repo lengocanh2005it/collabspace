@@ -20,6 +20,9 @@ export class WorkspaceInviteEventListenerController {
     @Payload() data: WorkspaceInvitedEventPayload,
     @Ctx() context: RmqContext,
   ) {
+    const channel = context.getChannelRef() as Channel;
+    const originalMessage = context.getMessage() as ConsumeMessage;
+
     try {
       const eventId =
         data.eventId ??
@@ -45,14 +48,13 @@ export class WorkspaceInviteEventListenerController {
         ),
       );
 
-      const channel = context.getChannelRef() as Channel;
-      const originalMessage = context.getMessage() as ConsumeMessage;
       channel.ack(originalMessage);
     } catch (error) {
       this.logger.error(
         "❌ Lỗi khi xử lý event workspace_invited",
         error instanceof Error ? error.stack : undefined,
       );
+      channel.nack(originalMessage, false, true);
     }
   }
 }

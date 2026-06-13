@@ -19,12 +19,14 @@ export class TaskEventController {
     @Payload() data: TaskAssignedEventPayload,
     @Ctx() context: RmqContext,
   ) {
+    const channel = context.getChannelRef() as Channel;
+    const originalMsg = context.getMessage() as ConsumeMessage;
+
     try {
       this.logger.log(
         `📥 Nhận được event giao task cho User: ${data.recipientId}`,
       );
 
-      // 1. Gọi Use Case để lưu vào MongoDB
       const eventId =
         data.eventId ??
         `task_assigned:${data.taskId}:${data.recipientId}:${data.assignedAt}`;
@@ -49,16 +51,13 @@ export class TaskEventController {
         ),
       );
 
-      // 2. Xác nhận (Ack) đã xử lý thành công để RabbitMQ xóa message khỏi queue
-      const channel = context.getChannelRef() as Channel;
-      const originalMsg = context.getMessage() as ConsumeMessage;
       channel.ack(originalMsg);
     } catch (error) {
       this.logger.error(
         "❌ Lỗi khi xử lý event task_assigned",
         error instanceof Error ? error.stack : undefined,
       );
-      // Logic xử lý lỗi (ví dụ đẩy sang Dead Letter Queue)
+      channel.nack(originalMsg, false, true);
     }
   }
 }

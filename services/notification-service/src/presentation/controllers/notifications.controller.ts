@@ -92,12 +92,10 @@ export class NotificationsController {
     @Query("skip") skip?: string,
     @Query("limit") limit?: string,
   ) {
+    const parsedSkip = Math.max(0, parseInt(skip ?? "0", 10) || 0);
+    const parsedLimit = Math.min(100, Math.max(1, parseInt(limit ?? "20", 10) || 20));
     return this.queryBus.execute(
-      new GetNotificationsQuery(
-        req.user.id,
-        Number(skip ?? 0),
-        Number(limit ?? 20),
-      ),
+      new GetNotificationsQuery(req.user.id, parsedSkip, parsedLimit),
     );
   }
 

@@ -45,6 +45,7 @@ export class UserEventListenerController {
         `Failed to sync user registration event for ${data.userId}`,
         error instanceof Error ? error.stack : undefined,
       );
+      channel.nack(originalMessage, false, true);
     }
   }
 
@@ -75,6 +76,7 @@ export class UserEventListenerController {
         `Failed to sync user profile update event for ${data.userId}`,
         error instanceof Error ? error.stack : undefined,
       );
+      channel.nack(originalMessage, false, true);
     }
   }
 

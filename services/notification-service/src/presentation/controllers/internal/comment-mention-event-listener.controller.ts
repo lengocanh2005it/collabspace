@@ -53,6 +53,7 @@ export class CommentMentionEventListenerController {
         "Failed to process comment_mentioned event",
         error instanceof Error ? error.stack : undefined,
       );
+      channel.nack(originalMsg, false, true);
     }
   }
 }

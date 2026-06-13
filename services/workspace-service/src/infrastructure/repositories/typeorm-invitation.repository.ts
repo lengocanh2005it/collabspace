@@ -77,12 +77,18 @@ export class TypeOrmInvitationRepository implements IInvitationRepository {
       orm.invitee_user_id = userId;
       await manager.save(orm);
 
-      const member = manager.create(WorkspaceMemberOrmEntity, {
-        workspace_id: orm.workspace_id,
-        user_id: userId,
-        role: 'member',
+      const existingMember = await manager.findOne(WorkspaceMemberOrmEntity, {
+        where: { workspace_id: orm.workspace_id, user_id: userId },
       });
-      await manager.save(member);
+
+      if (!existingMember) {
+        const member = manager.create(WorkspaceMemberOrmEntity, {
+          workspace_id: orm.workspace_id,
+          user_id: userId,
+          role: 'member',
+        });
+        await manager.save(member);
+      }
 
       return { status: 'accepted', workspaceId: orm.workspace_id };
     });
