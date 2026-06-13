@@ -11,20 +11,6 @@ fi
 : "${RABBITMQ_DEFAULT_PASS:=guest}"
 : "${RABBITMQ_DEFAULT_VHOST:=/}"
 
-if command -v jq >/dev/null 2>&1; then
-  jq \
-    --arg user "$RABBITMQ_DEFAULT_USER" \
-    --arg pass "$RABBITMQ_DEFAULT_PASS" \
-    --arg vhost "$RABBITMQ_DEFAULT_VHOST" \
-    '(.users[0].name = $user)
-     | (.users[0].password = $pass)
-     | (.vhosts[0].name = $vhost)
-     | (.permissions[0].user = $user)
-     | (.permissions[0].vhost = $vhost)' \
-    /etc/rabbitmq/definitions.json > /tmp/definitions.json
-  mv /tmp/definitions.json /etc/rabbitmq/definitions.json
-fi
-
 # Start RabbitMQ server in background
 rabbitmq-server -detached
 
@@ -49,4 +35,4 @@ rabbitmqctl start_app
 rabbitmqctl import_definitions /etc/rabbitmq/definitions.json
 
 # Keep container running
-rabbitmq-server
+tail -f /dev/null

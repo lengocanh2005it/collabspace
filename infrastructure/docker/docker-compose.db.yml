@@ -61,3 +61,7 @@ services:
 volumes:
   pgdata:
   mongodata:
+
+networks:
+  collabspace-network:
+    driver: bridge

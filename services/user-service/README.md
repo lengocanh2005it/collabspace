@@ -1,98 +1,61 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# User Service
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+The User Service manages user profiles, preferences, and presence for CollabSpace. It is strictly separated from the Auth Service (which handles credentials) and resolves identities via logical references (`user_id`).
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Tech Stack
+- **Framework:** NestJS
+- **Database:** PostgreSQL (`collabspace_user`) via TypeORM
+- **Messaging:** RabbitMQ (via amqplib)
+- **Containerization:** Docker (Alpine Node.js 20)
 
-## Description
-
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
-
-## Project setup
+## Quick Start
 
 ```bash
-$ pnpm install
+# Install dependencies
+pnpm install
+
+# Run database migrations
+pnpm run typeorm migration:run
+
+# Seed initial data (Demo Profiles)
+pnpm run seed
+
+# Run in development mode
+pnpm run start:dev
+
+# Run tests
+pnpm test
 ```
 
-## Compile and run the project
+## Core Responsibilities
 
-```bash
-# development
-$ pnpm run start
+1. **Profile Management:** Stores `full_name`, `avatar_url`, and `bio`.
+2. **User Preferences:** Stores user-specific settings.
+3. **Presence:** Tracks user status (`online`, `offline`, `away`) and custom status texts.
+4. **Hydration Engine:** Serves bulk profile requests via HTTP and gRPC to hydrate UUIDs across other services (e.g., resolving `assigned_to` in the Task Service).
 
-# watch mode
-$ pnpm run start:dev
+## API Endpoints
 
-# production mode
-$ pnpm run start:prod
-```
+All endpoints are prefixed with `/api/v1/users`.
 
-## Run tests
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/v1/users/health` | GET | Health check (no auth required) |
+| `/api/v1/users/me` | GET | Get current user's profile |
+| `/api/v1/users/me` | PATCH | Update current user's profile |
+| `/api/v1/users/me/preferences` | GET | Get current user's preferences |
+| `/api/v1/users/me/status` | PATCH | Update user presence/status |
+| `/api/v1/users/bulk` | POST | Fetch multiple profiles by `userIds` |
+| `/api/v1/users/search` | GET | Search user profiles |
+| `/api/v1/users/:id` | GET | Get full profile by ID |
 
-```bash
-# unit tests
-$ pnpm run test
+## Internal Contracts
+- **gRPC Server:** Exposes `UserProfilesService.CreatePendingProfile`, `GetProfile`, and `GetProfiles` for inter-service communication (primarily consumed by `auth-service`).
+- **RabbitMQ Consumer:** Listens for `AUTH_EMAIL_VERIFIED_EVENT` to automatically update the profile's verified status.
 
-# e2e tests
-$ pnpm run test:e2e
+## Environment Variables
 
-# test coverage
-$ pnpm run test:cov
-```
-
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ pnpm install -g @nestjs/mau
-$ mau deploy
-```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+- `NODE_ENV`: Application environment (e.g., `production`, `development`)
+- `PORT`: Service port (default: 3000)
+- `DATABASE_URL`: PostgreSQL connection string
+- `RABBITMQ_URL`: RabbitMQ connection string
