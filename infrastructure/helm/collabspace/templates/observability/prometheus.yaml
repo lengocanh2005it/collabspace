@@ -1,5 +1,6 @@
 {{- if .Values.observability.prometheus.enabled }}
 {{- $ns := include "collabspace.namespace" . }}
+{{- $metricsAuthToken := .Values.global.secrets.metricsAuthToken | default "" | trim }}
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -39,6 +40,19 @@ subjects:
   - kind: ServiceAccount
     name: prometheus
     namespace: {{ $ns }}
+{{- if $metricsAuthToken }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: prometheus-metrics-auth
+  namespace: {{ $ns }}
+  labels:
+    app: prometheus
+type: Opaque
+stringData:
+  metrics_auth_token: {{ $metricsAuthToken | quote }}
+{{- end }}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -66,6 +80,10 @@ data:
           - role: pod
             namespaces:
               names: [{{ $ns }}]
+        {{- if $metricsAuthToken }}
+        authorization:
+          credentials_file: /etc/prometheus/secrets/metrics_auth_token
+        {{- end }}
         relabel_configs:
           - source_labels: [__meta_kubernetes_pod_label_app]
             regex: {{ $name }}
@@ -81,6 +99,27 @@ data:
             replacement: $1:$2
             target_label: __address__
       {{- end }}
+      {{- end }}
+      {{- if .Values.traefik.enabled }}
+      - job_name: traefik
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names: [{{ $ns }}]
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_name]
+            regex: '^traefik.*'
+            action: keep
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+            regex: "true"
+            action: keep
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+            action: replace
+            target_label: __metrics_path__
+          - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+            regex: ([^:]+)(?::\d+)?;(\d+)
+            replacement: $1:$2
+            target_label: __address__
       {{- end }}
       - job_name: rabbitmq
         static_configs:
@@ -122,9 +161,10 @@ spec:
       labels:
         app: prometheus
       annotations:
-        checksum/config: {{ toJson .Values.observability | sha256sum }}
+        checksum/config: {{ printf "%s|%s" (toJson .Values.observability) $metricsAuthToken | sha256sum }}
     spec:
       serviceAccountName: prometheus
+      automountServiceAccountToken: true
       containers:
         - name: prometheus
           image: prom/prometheus:v2.54.1
@@ -140,6 +180,11 @@ spec:
               mountPath: /etc/prometheus
             - name: data
               mountPath: /prometheus
+            {{- if $metricsAuthToken }}
+            - name: metrics-auth
+              mountPath: /etc/prometheus/secrets
+              readOnly: true
+            {{- end }}
           resources:
             requests:
               memory: 256Mi
@@ -153,6 +198,11 @@ spec:
             name: prometheus-config
         - name: data
           emptyDir: {}
+        {{- if $metricsAuthToken }}
+        - name: metrics-auth
+          secret:
+            secretName: prometheus-metrics-auth
+        {{- end }}
 ---
 apiVersion: v1
 kind: Service

@@ -11,4 +11,8 @@ metadata:
 data:
   service-health.json: |-
 {{ .Files.Get "dashboards/service-health.json" | indent 4 }}
+  logs-errors.json: |-
+{{ .Files.Get "dashboards/logs-errors.json" | indent 4 }}
+  load-test-run.json: |-
+{{ .Files.Get "dashboards/load-test-run.json" | indent 4 }}
 {{- end }}

@@ -1,0 +1,292 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      },
+      {
+        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+        "enable": true,
+        "hide": false,
+        "iconColor": "rgba(255, 152, 0, 1)",
+        "name": "k6 Load Test",
+        "target": { "limit": 100, "matchAny": false, "tags": ["k6"], "type": "tags" }
+      }
+    ]
+  },
+  "description": "Watch metrics during k6 load tests — pair with Logs & Errors dashboard",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [
+    {
+      "icon": "dashboard",
+      "title": "Service Health",
+      "type": "link",
+      "url": "/grafana/d/collabspace-service-health/collabspace-service-health"
+    },
+    {
+      "icon": "dashboard",
+      "title": "Logs & Errors",
+      "type": "link",
+      "url": "/grafana/d/collabspace-logs-errors/collabspace-logs-errors"
+    }
+  ],
+  "liveNow": true,
+  "panels": [
+    {
+      "gridPos": { "h": 3, "w": 24, "x": 0, "y": 0 },
+      "id": 50,
+      "options": {
+        "code": { "language": "plaintext", "showLineNumbers": false, "showMiniMap": false },
+        "content": "Open **Logs & Errors** in another tab while k6 runs. Orange **k6** annotations mark test start/end.\n\n```bash\nBASE_URL=http://HOST/api/v1 ./infrastructure/load-testing/run-load-test.sh smoke\nBASE_URL=http://HOST/api/v1 ./infrastructure/load-testing/run-load-test.sh demo-flow\n```",
+        "mode": "markdown"
+      },
+      "title": "How to use",
+      "type": "text"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 3 },
+      "id": 100,
+      "panels": [],
+      "title": "Gateway & Traffic",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false,
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "gradientMode": "opacity",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 4,
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" }
+          },
+          "decimals": 2,
+          "min": 0,
+          "unit": "reqps"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+      "id": 1,
+      "options": {
+        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(traefik_entrypoint_requests_total{entrypoint=\"web\"}[1m]))",
+          "legendFormat": "Traefik web",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(rate(http_requests_total{job=~\"auth-service|user-service|workspace-service|task-service|notification-service\"}[1m]))",
+          "legendFormat": "All apps",
+          "refId": "B"
+        }
+      ],
+      "title": "Request Rate (gateway vs apps)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 4,
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" }
+          },
+          "decimals": 0,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 500 },
+              { "color": "red", "value": 1000 }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+      "id": 2,
+      "options": {
+        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket{job=~\"auth-service|user-service|workspace-service|task-service|notification-service\"}[1m])) by (le, job)) * 1000",
+          "legendFormat": "{{job}} p50",
+          "refId": "A"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job=~\"auth-service|user-service|workspace-service|task-service|notification-service\"}[1m])) by (le, job)) * 1000",
+          "legendFormat": "{{job}} p95",
+          "refId": "B"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{job=~\"auth-service|user-service|workspace-service|task-service|notification-service\"}[1m])) by (le, job)) * 1000",
+          "legendFormat": "{{job}} p99",
+          "refId": "C"
+        }
+      ],
+      "title": "Latency by Service",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 12 },
+      "id": 101,
+      "panels": [],
+      "title": "Errors & Saturation",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "showPoints": "never"
+          },
+          "decimals": 2,
+          "max": 10,
+          "min": 0,
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 13 },
+      "id": 3,
+      "options": {
+        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "expr": "100 * sum by (job) (rate(http_requests_total{job=~\"auth-service|user-service|workspace-service|task-service|notification-service\",status=~\"5..\"}[1m])) / clamp_min(sum by (job) (rate(http_requests_total{job=~\"auth-service|user-service|workspace-service|task-service|notification-service\"}[1m])), 0.001)",
+          "legendFormat": "{{job}} 5xx",
+          "refId": "A"
+        },
+        {
+          "expr": "100 * sum by (job) (rate(http_requests_total{job=~\"auth-service|user-service|workspace-service|task-service|notification-service\",status=~\"4..\"}[1m])) / clamp_min(sum by (job) (rate(http_requests_total{job=~\"auth-service|user-service|workspace-service|task-service|notification-service\"}[1m])), 0.001)",
+          "legendFormat": "{{job}} 4xx",
+          "refId": "B"
+        }
+      ],
+      "title": "HTTP Error Rate",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "showPoints": "never"
+          },
+          "decimals": 3,
+          "min": 0,
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 7, "w": 12, "x": 12, "y": 13 },
+      "id": 4,
+      "options": {
+        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "expr": "sum by (job) (rate(collabspace_process_cpu_seconds_total{job=~\"auth-service|user-service|workspace-service|task-service|notification-service\"}[1m]))",
+          "legendFormat": "{{job}} CPU",
+          "refId": "A"
+        }
+      ],
+      "title": "CPU (cores)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "showPoints": "never"
+          },
+          "decimals": 1,
+          "min": 0,
+          "unit": "decbytes"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 7, "w": 24, "x": 0, "y": 20 },
+      "id": 5,
+      "options": {
+        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "right", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "expr": "sum by (job) (collabspace_process_resident_memory_bytes{job=~\"auth-service|user-service|workspace-service|task-service|notification-service\"})",
+          "legendFormat": "{{job}} RSS",
+          "refId": "A"
+        }
+      ],
+      "title": "Memory (RSS)",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "5s",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["collabspace", "load-test", "k6"],
+  "templating": { "list": [] },
+  "time": { "from": "now-15m", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "CollabSpace Load Test Run",
+  "uid": "collabspace-load-test",
+  "version": 1,
+  "weekStart": ""
+}

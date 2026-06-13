@@ -3,10 +3,7 @@
     "list": [
       {
         "builtIn": 1,
-        "datasource": {
-          "type": "grafana",
-          "uid": "-- Grafana --"
-        },
+        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
         "enable": true,
         "hide": true,
         "iconColor": "rgba(0, 211, 255, 1)",
@@ -15,37 +12,46 @@
       }
     ]
   },
-  "description": "CollabSpace Microservices Health Dashboard - Infrastructure Engineer: Phan Phu Tho",
+  "description": "CollabSpace microservices health, traffic, and resource usage",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
   "id": null,
-  "links": [],
+  "links": [
+    {
+      "icon": "dashboard",
+      "title": "Logs & Errors",
+      "type": "link",
+      "url": "/grafana/d/collabspace-logs-errors/collabspace-logs-errors"
+    },
+    {
+      "icon": "dashboard",
+      "title": "Load Test Run",
+      "type": "link",
+      "url": "/grafana/d/collabspace-load-test/collabspace-load-test"
+    }
+  ],
   "liveNow": false,
   "panels": [
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 100,
+      "panels": [],
+      "title": "Availability",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "Authentication & identity",
       "fieldConfig": {
         "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
+          "color": { "mode": "thresholds" },
           "mappings": [
             {
               "options": {
-                "0": {
-                  "color": "red",
-                  "index": 1,
-                  "text": "DOWN"
-                },
-                "1": {
-                  "color": "green",
-                  "index": 0,
-                  "text": "UP"
-                }
+                "0": { "color": "red", "index": 1, "text": "DOWN" },
+                "1": { "color": "green", "index": 0, "text": "UP" }
               },
               "type": "value"
             }
@@ -53,75 +59,41 @@
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "green",
-                "value": 1
-              }
+              { "color": "red", "value": null },
+              { "color": "green", "value": 1 }
             ]
           }
         },
         "overrides": []
       },
-      "gridPos": {
-        "h": 4,
-        "w": 4,
-        "x": 0,
-        "y": 0
-      },
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 1 },
       "id": 1,
       "options": {
         "colorMode": "background",
         "graphMode": "none",
-        "justifyMode": "auto",
+        "justifyMode": "center",
         "orientation": "auto",
-        "reduceOptions": {
-          "calcs": ["lastNotNull"],
-          "fields": "",
-          "values": false
-        },
-        "textMode": "auto"
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "value"
       },
       "pluginVersion": "10.0.0",
       "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "up{job=\"auth-service\"}",
-          "refId": "A"
-        }
+        { "expr": "min(up{job=\"auth-service\"})", "refId": "A" }
       ],
-      "title": "Auth Service",
+      "title": "Auth",
       "type": "stat"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "User profiles & directory",
       "fieldConfig": {
         "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
+          "color": { "mode": "thresholds" },
           "mappings": [
             {
               "options": {
-                "0": {
-                  "color": "red",
-                  "index": 1,
-                  "text": "DOWN"
-                },
-                "1": {
-                  "color": "green",
-                  "index": 0,
-                  "text": "UP"
-                }
+                "0": { "color": "red", "index": 1, "text": "DOWN" },
+                "1": { "color": "green", "index": 0, "text": "UP" }
               },
               "type": "value"
             }
@@ -129,75 +101,41 @@
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "green",
-                "value": 1
-              }
+              { "color": "red", "value": null },
+              { "color": "green", "value": 1 }
             ]
           }
         },
         "overrides": []
       },
-      "gridPos": {
-        "h": 4,
-        "w": 4,
-        "x": 4,
-        "y": 0
-      },
+      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 1 },
       "id": 2,
       "options": {
         "colorMode": "background",
         "graphMode": "none",
-        "justifyMode": "auto",
+        "justifyMode": "center",
         "orientation": "auto",
-        "reduceOptions": {
-          "calcs": ["lastNotNull"],
-          "fields": "",
-          "values": false
-        },
-        "textMode": "auto"
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "value"
       },
       "pluginVersion": "10.0.0",
       "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "up{job=\"user-service\"}",
-          "refId": "A"
-        }
+        { "expr": "min(up{job=\"user-service\"})", "refId": "A" }
       ],
-      "title": "User Service",
+      "title": "User",
       "type": "stat"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "Workspaces, projects & invites",
       "fieldConfig": {
         "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
+          "color": { "mode": "thresholds" },
           "mappings": [
             {
               "options": {
-                "0": {
-                  "color": "red",
-                  "index": 1,
-                  "text": "DOWN"
-                },
-                "1": {
-                  "color": "green",
-                  "index": 0,
-                  "text": "UP"
-                }
+                "0": { "color": "red", "index": 1, "text": "DOWN" },
+                "1": { "color": "green", "index": 0, "text": "UP" }
               },
               "type": "value"
             }
@@ -205,75 +143,41 @@
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "green",
-                "value": 1
-              }
+              { "color": "red", "value": null },
+              { "color": "green", "value": 1 }
             ]
           }
         },
         "overrides": []
       },
-      "gridPos": {
-        "h": 4,
-        "w": 4,
-        "x": 8,
-        "y": 0
-      },
+      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 1 },
       "id": 3,
       "options": {
         "colorMode": "background",
         "graphMode": "none",
-        "justifyMode": "auto",
+        "justifyMode": "center",
         "orientation": "auto",
-        "reduceOptions": {
-          "calcs": ["lastNotNull"],
-          "fields": "",
-          "values": false
-        },
-        "textMode": "auto"
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "value"
       },
       "pluginVersion": "10.0.0",
       "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "up{job=\"workspace-service\"}",
-          "refId": "A"
-        }
+        { "expr": "min(up{job=\"workspace-service\"})", "refId": "A" }
       ],
-      "title": "Workspace Service",
+      "title": "Workspace",
       "type": "stat"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "Tasks, comments & board",
       "fieldConfig": {
         "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
+          "color": { "mode": "thresholds" },
           "mappings": [
             {
               "options": {
-                "0": {
-                  "color": "red",
-                  "index": 1,
-                  "text": "DOWN"
-                },
-                "1": {
-                  "color": "green",
-                  "index": 0,
-                  "text": "UP"
-                }
+                "0": { "color": "red", "index": 1, "text": "DOWN" },
+                "1": { "color": "green", "index": 0, "text": "UP" }
               },
               "type": "value"
             }
@@ -281,75 +185,41 @@
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "green",
-                "value": 1
-              }
+              { "color": "red", "value": null },
+              { "color": "green", "value": 1 }
             ]
           }
         },
         "overrides": []
       },
-      "gridPos": {
-        "h": 4,
-        "w": 4,
-        "x": 12,
-        "y": 0
-      },
+      "gridPos": { "h": 4, "w": 4, "x": 12, "y": 1 },
       "id": 4,
       "options": {
         "colorMode": "background",
         "graphMode": "none",
-        "justifyMode": "auto",
+        "justifyMode": "center",
         "orientation": "auto",
-        "reduceOptions": {
-          "calcs": ["lastNotNull"],
-          "fields": "",
-          "values": false
-        },
-        "textMode": "auto"
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "value"
       },
       "pluginVersion": "10.0.0",
       "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "up{job=\"task-service\"}",
-          "refId": "A"
-        }
+        { "expr": "min(up{job=\"task-service\"})", "refId": "A" }
       ],
-      "title": "Task Service",
+      "title": "Task",
       "type": "stat"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "In-app notifications",
       "fieldConfig": {
         "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
+          "color": { "mode": "thresholds" },
           "mappings": [
             {
               "options": {
-                "0": {
-                  "color": "red",
-                  "index": 1,
-                  "text": "DOWN"
-                },
-                "1": {
-                  "color": "green",
-                  "index": 0,
-                  "text": "UP"
-                }
+                "0": { "color": "red", "index": 1, "text": "DOWN" },
+                "1": { "color": "green", "index": 0, "text": "UP" }
               },
               "type": "value"
             }
@@ -357,75 +227,41 @@
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "green",
-                "value": 1
-              }
+              { "color": "red", "value": null },
+              { "color": "green", "value": 1 }
             ]
           }
         },
         "overrides": []
       },
-      "gridPos": {
-        "h": 4,
-        "w": 4,
-        "x": 16,
-        "y": 0
-      },
+      "gridPos": { "h": 4, "w": 4, "x": 16, "y": 1 },
       "id": 5,
       "options": {
         "colorMode": "background",
         "graphMode": "none",
-        "justifyMode": "auto",
+        "justifyMode": "center",
         "orientation": "auto",
-        "reduceOptions": {
-          "calcs": ["lastNotNull"],
-          "fields": "",
-          "values": false
-        },
-        "textMode": "auto"
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "value"
       },
       "pluginVersion": "10.0.0",
       "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "up{job=\"notification-service\"}",
-          "refId": "A"
-        }
+        { "expr": "min(up{job=\"notification-service\"})", "refId": "A" }
       ],
-      "title": "Notification Service",
+      "title": "Notification",
       "type": "stat"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "Traefik API gateway",
       "fieldConfig": {
         "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
+          "color": { "mode": "thresholds" },
           "mappings": [
             {
               "options": {
-                "0": {
-                  "color": "red",
-                  "index": 1,
-                  "text": "DOWN"
-                },
-                "1": {
-                  "color": "green",
-                  "index": 0,
-                  "text": "UP"
-                }
+                "0": { "color": "red", "index": 1, "text": "DOWN" },
+                "1": { "color": "green", "index": 0, "text": "UP" }
               },
               "type": "value"
             }
@@ -433,187 +269,94 @@
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "green",
-                "value": 1
-              }
+              { "color": "red", "value": null },
+              { "color": "green", "value": 1 }
             ]
           }
         },
         "overrides": []
       },
-      "gridPos": {
-        "h": 4,
-        "w": 4,
-        "x": 20,
-        "y": 0
-      },
+      "gridPos": { "h": 4, "w": 4, "x": 20, "y": 1 },
       "id": 6,
       "options": {
         "colorMode": "background",
         "graphMode": "none",
-        "justifyMode": "auto",
+        "justifyMode": "center",
         "orientation": "auto",
-        "reduceOptions": {
-          "calcs": ["lastNotNull"],
-          "fields": "",
-          "values": false
-        },
-        "textMode": "auto"
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "value"
       },
       "pluginVersion": "10.0.0",
       "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "up{job=\"traefik\"}",
-          "refId": "A"
-        }
+        { "expr": "min(up{job=\"traefik\"})", "refId": "A" }
       ],
-      "title": "Traefik Gateway",
+      "title": "Gateway",
       "type": "stat"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 },
+      "id": 101,
+      "panels": [],
+      "title": "Traffic",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
       "fieldConfig": {
         "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
+          "color": { "mode": "palette-classic" },
           "custom": {
+            "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
+            "fillOpacity": 20,
+            "gradientMode": "opacity",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
             "lineInterpolation": "smooth",
             "lineWidth": 2,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
+            "pointSize": 4,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
             "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
           },
+          "decimals": 2,
           "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          },
+          "min": 0,
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
           "unit": "reqps"
         },
         "overrides": []
       },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 4
-      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
       "id": 7,
       "options": {
-        "legend": {
-          "calcs": ["mean", "max"],
-          "displayMode": "table",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
+        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
       },
-      "pluginVersion": "10.0.0",
       "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "sum(rate(http_requests_total{job=\"auth-service\"}[5m]))",
-          "legendFormat": "Auth Service",
-          "refId": "A"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "sum(rate(http_requests_total{job=\"user-service\"}[5m]))",
-          "legendFormat": "User Service",
-          "refId": "B"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "sum(rate(http_requests_total{job=\"workspace-service\"}[5m]))",
-          "legendFormat": "Workspace Service",
-          "refId": "C"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "sum(rate(http_requests_total{job=\"task-service\"}[5m]))",
-          "legendFormat": "Task Service",
-          "refId": "D"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "sum(rate(http_requests_total{job=\"notification-service\"}[5m]))",
-          "legendFormat": "Notification Service",
-          "refId": "E"
-        }
+        { "expr": "sum(rate(http_requests_total{job=\"auth-service\"}[5m]))", "legendFormat": "Auth", "refId": "A" },
+        { "expr": "sum(rate(http_requests_total{job=\"user-service\"}[5m]))", "legendFormat": "User", "refId": "B" },
+        { "expr": "sum(rate(http_requests_total{job=\"workspace-service\"}[5m]))", "legendFormat": "Workspace", "refId": "C" },
+        { "expr": "sum(rate(http_requests_total{job=\"task-service\"}[5m]))", "legendFormat": "Task", "refId": "D" },
+        { "expr": "sum(rate(http_requests_total{job=\"notification-service\"}[5m]))", "legendFormat": "Notification", "refId": "E" }
       ],
-      "title": "Request Rate (req/s)",
+      "title": "Request Rate",
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
       "fieldConfig": {
         "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
+          "color": { "mode": "palette-classic" },
           "custom": {
+            "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "",
@@ -622,219 +365,139 @@
             "drawStyle": "line",
             "fillOpacity": 10,
             "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
             "lineInterpolation": "smooth",
             "lineWidth": 2,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
+            "pointSize": 4,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
             "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "line+area" }
           },
+          "decimals": 0,
           "mappings": [],
+          "min": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 500
-              },
-              {
-                "color": "red",
-                "value": 1000
-              }
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 300 },
+              { "color": "red", "value": 800 }
             ]
           },
           "unit": "ms"
         },
         "overrides": []
       },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 4
-      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
       "id": 8,
       "options": {
-        "legend": {
-          "calcs": ["mean", "max", "p99"],
-          "displayMode": "table",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
+        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
       },
-      "pluginVersion": "10.0.0",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket{job=\"auth-service\"}[5m])) by (le)) * 1000",
-          "legendFormat": "Auth p50",
+          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job=\"auth-service\"}[5m])) by (le)) * 1000",
+          "legendFormat": "Auth p95",
           "refId": "A"
         },
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job=\"auth-service\"}[5m])) by (le)) * 1000",
-          "legendFormat": "Auth p95",
+          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job=\"user-service\"}[5m])) by (le)) * 1000",
+          "legendFormat": "User p95",
           "refId": "B"
         },
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{job=\"auth-service\"}[5m])) by (le)) * 1000",
-          "legendFormat": "Auth p99",
+          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job=\"workspace-service\"}[5m])) by (le)) * 1000",
+          "legendFormat": "Workspace p95",
           "refId": "C"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job=\"task-service\"}[5m])) by (le)) * 1000",
+          "legendFormat": "Task p95",
+          "refId": "D"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job=\"notification-service\"}[5m])) by (le)) * 1000",
+          "legendFormat": "Notification p95",
+          "refId": "E"
         }
       ],
-      "title": "Request Latency (ms) - Auth Service",
+      "title": "Latency p95",
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 14 },
+      "id": 102,
+      "panels": [],
+      "title": "Errors & Resources",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
       "fieldConfig": {
         "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
+          "color": { "mode": "palette-classic" },
           "custom": {
+            "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
+            "fillOpacity": 15,
+            "gradientMode": "opacity",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
             "lineInterpolation": "smooth",
             "lineWidth": 2,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
+            "pointSize": 4,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
             "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
           },
+          "decimals": 2,
           "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          },
-          "unit": "percentunit"
+          "max": 5,
+          "min": 0,
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "percent"
         },
         "overrides": []
       },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 12
-      },
+      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 15 },
       "id": 9,
       "options": {
-        "legend": {
-          "calcs": ["mean", "max"],
-          "displayMode": "table",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
+        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
       },
-      "pluginVersion": "10.0.0",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "sum(rate(http_requests_total{job=\"auth-service\", status=~\"4..|5..\"}[5m])) / sum(rate(http_requests_total{job=\"auth-service\"}[5m]))",
-          "legendFormat": "Auth Service",
+          "expr": "100 * sum(rate(http_requests_total{job=\"auth-service\",status=~\"4..|5..\"}[5m])) / clamp_min(sum(rate(http_requests_total{job=\"auth-service\"}[5m])), 0.001)",
+          "legendFormat": "Auth",
           "refId": "A"
         },
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "sum(rate(http_requests_total{job=\"user-service\", status=~\"4..|5..\"}[5m])) / sum(rate(http_requests_total{job=\"user-service\"}[5m]))",
-          "legendFormat": "User Service",
+          "expr": "100 * sum(rate(http_requests_total{job=\"user-service\",status=~\"4..|5..\"}[5m])) / clamp_min(sum(rate(http_requests_total{job=\"user-service\"}[5m])), 0.001)",
+          "legendFormat": "User",
           "refId": "B"
         },
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "sum(rate(http_requests_total{job=\"workspace-service\", status=~\"4..|5..\"}[5m])) / sum(rate(http_requests_total{job=\"workspace-service\"}[5m]))",
-          "legendFormat": "Workspace Service",
+          "expr": "100 * sum(rate(http_requests_total{job=\"workspace-service\",status=~\"4..|5..\"}[5m])) / clamp_min(sum(rate(http_requests_total{job=\"workspace-service\"}[5m])), 0.001)",
+          "legendFormat": "Workspace",
           "refId": "C"
         },
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "sum(rate(http_requests_total{job=\"task-service\", status=~\"4..|5..\"}[5m])) / sum(rate(http_requests_total{job=\"task-service\"}[5m]))",
-          "legendFormat": "Task Service",
+          "expr": "100 * sum(rate(http_requests_total{job=\"task-service\",status=~\"4..|5..\"}[5m])) / clamp_min(sum(rate(http_requests_total{job=\"task-service\"}[5m])), 0.001)",
+          "legendFormat": "Task",
           "refId": "D"
         },
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "sum(rate(http_requests_total{job=\"notification-service\", status=~\"4..|5..\"}[5m])) / sum(rate(http_requests_total{job=\"notification-service\"}[5m]))",
-          "legendFormat": "Notification Service",
+          "expr": "100 * sum(rate(http_requests_total{job=\"notification-service\",status=~\"4..|5..\"}[5m])) / clamp_min(sum(rate(http_requests_total{job=\"notification-service\"}[5m])), 0.001)",
+          "legendFormat": "Notification",
           "refId": "E"
         }
       ],
@@ -842,269 +505,114 @@
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
       "fieldConfig": {
         "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
+          "color": { "mode": "palette-classic" },
           "custom": {
+            "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
+            "fillOpacity": 20,
+            "gradientMode": "opacity",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
             "lineInterpolation": "smooth",
             "lineWidth": 2,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
+            "pointSize": 4,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
             "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
           },
+          "decimals": 1,
           "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          },
-          "unit": "bytes"
+          "min": 0,
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "decbytes"
         },
         "overrides": []
       },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 12
-      },
+      "gridPos": { "h": 7, "w": 12, "x": 12, "y": 15 },
       "id": 10,
       "options": {
-        "legend": {
-          "calcs": ["mean", "max"],
-          "displayMode": "table",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
+        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
       },
-      "pluginVersion": "10.0.0",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "process_resident_memory_bytes{job=\"auth-service\"}",
-          "legendFormat": "Auth Service",
+          "expr": "sum by (job) (collabspace_process_resident_memory_bytes{job=~\"auth-service|user-service|workspace-service|task-service|notification-service\"})",
+          "legendFormat": "{{job}}",
           "refId": "A"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "process_resident_memory_bytes{job=\"user-service\"}",
-          "legendFormat": "User Service",
-          "refId": "B"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "process_resident_memory_bytes{job=\"workspace-service\"}",
-          "legendFormat": "Workspace Service",
-          "refId": "C"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "process_resident_memory_bytes{job=\"task-service\"}",
-          "legendFormat": "Task Service",
-          "refId": "D"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "process_resident_memory_bytes{job=\"notification-service\"}",
-          "legendFormat": "Notification Service",
-          "refId": "E"
         }
       ],
-      "title": "Memory Usage (RSS)",
+      "title": "Memory (RSS)",
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
       "fieldConfig": {
         "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
+          "color": { "mode": "palette-classic" },
           "custom": {
+            "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
+            "fillOpacity": 15,
+            "gradientMode": "opacity",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
             "lineInterpolation": "smooth",
             "lineWidth": 2,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
+            "pointSize": 4,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
             "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
           },
+          "decimals": 3,
           "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          },
-          "unit": "percentunit"
+          "min": 0,
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "short"
         },
         "overrides": []
       },
-      "gridPos": {
-        "h": 8,
-        "w": 24,
-        "x": 0,
-        "y": 20
-      },
+      "gridPos": { "h": 7, "w": 24, "x": 0, "y": 22 },
       "id": 11,
       "options": {
-        "legend": {
-          "calcs": ["mean", "max"],
-          "displayMode": "table",
-          "placement": "right",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
+        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "right", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
       },
-      "pluginVersion": "10.0.0",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "rate(process_cpu_seconds_total{job=\"auth-service\"}[5m])",
-          "legendFormat": "Auth Service",
+          "expr": "sum by (job) (rate(collabspace_process_cpu_seconds_total{job=~\"auth-service|user-service|workspace-service|task-service|notification-service\"}[5m]))",
+          "legendFormat": "{{job}}",
           "refId": "A"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "rate(process_cpu_seconds_total{job=\"user-service\"}[5m])",
-          "legendFormat": "User Service",
-          "refId": "B"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "rate(process_cpu_seconds_total{job=\"workspace-service\"}[5m])",
-          "legendFormat": "Workspace Service",
-          "refId": "C"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "rate(process_cpu_seconds_total{job=\"task-service\"}[5m])",
-          "legendFormat": "Task Service",
-          "refId": "D"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "rate(process_cpu_seconds_total{job=\"notification-service\"}[5m])",
-          "legendFormat": "Notification Service",
-          "refId": "E"
         }
       ],
-      "title": "CPU Usage",
+      "title": "CPU Usage (cores)",
       "type": "timeseries"
     }
   ],
-  "refresh": "10s",
+  "refresh": "30s",
   "schemaVersion": 38,
   "style": "dark",
   "tags": ["collabspace", "microservices", "health"],
-  "templating": {
-    "list": []
-  },
-  "time": {
-    "from": "now-1h",
-    "to": "now"
-  },
+  "templating": { "list": [] },
+  "time": { "from": "now-6h", "to": "now" },
   "timepicker": {},
   "timezone": "browser",
   "title": "CollabSpace Service Health",
   "uid": "collabspace-service-health",
-  "version": 1,
+  "version": 3,
   "weekStart": ""
 }

@@ -1,21 +1,22 @@
 services:
   k6:
-    image: loadimpact/k6:latest
+    image: grafana/k6:latest
     container_name: k6-loadtest
     networks:
       - collabspace-network
     env_file:
       - ../load-testing/k6/.env
+    environment:
+      - BASE_URL=${BASE_URL:-http://traefik/api/v1}
+      - K6_VUS=${K6_VUS:-10}
+      - K6_DURATION=${K6_DURATION:-1m}
     volumes:
-      - ../load-testing/k6/scripts:/scripts
+      - ../load-testing/k6:/k6:ro
+    working_dir: /k6
     command: >
-      sh -c "k6 run /scripts/$K6_SCRIPT --vus $K6_VUS --duration $K6_DURATION"
+      run /k6/${K6_SCRIPT:-scenarios/smoke.js}
     depends_on:
-      - auth-service
-      - user-service
-      - workspace-service
-      - task-service
-      - notification-service
+      - traefik
 
 networks:
   collabspace-network:
