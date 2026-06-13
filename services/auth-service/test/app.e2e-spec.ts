@@ -3,17 +3,17 @@ import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
-import { AuthService } from '../src/app.service';
+import { JwtTokenService } from '../src/application/services/jwt-token.service';
 import { AuthHealthService } from '../src/health/auth-health.service';
-import { IdentityService } from '../src/modules/identity/identity.service';
-import { UserProfilesGrpcService } from '../src/modules/identity/user-profiles-grpc.service';
-import { AuthOutboxService } from '../src/modules/outbox/auth-outbox.service';
-import { RedisService } from '../src/modules/redis/redis.service';
-import { RefreshTokensService } from '../src/modules/refresh-tokens/refresh-tokens.service';
+import { USER_REPOSITORY } from '../src/domain/repositories/user.repository';
+import { REFRESH_TOKEN_REPOSITORY } from '../src/domain/repositories/refresh-token.repository';
+import { OTP_STORE } from '../src/domain/ports/otp-store.port';
+import { EMAIL_OUTBOX } from '../src/domain/ports/email-outbox.port';
+import { USER_PROFILE_CLIENT } from '../src/domain/ports/user-profile-client.port';
 
 describe('AuthController (e2e)', () => {
   let app: INestApplication<App>;
-  let authService: AuthService;
+  let jwtTokenService: JwtTokenService;
 
   const refreshTokensServiceMock = {
     issue: jest.fn(),
@@ -30,23 +30,27 @@ describe('AuthController (e2e)', () => {
     rollbackNewRegistration: jest.fn(),
     validateCredentials: jest.fn(),
   };
-  const redisServiceMock = {
+  const otpStoreMock = {
     assertAvailable: jest.fn(),
     delete: jest.fn(),
     exists: jest.fn(),
     expire: jest.fn(),
     getJson: jest.fn(),
     increment: jest.fn(),
+    ping: jest.fn(),
     set: jest.fn(),
     setJson: jest.fn(),
     ttl: jest.fn(),
   };
-  const authOutboxServiceMock = {
+  const emailOutboxMock = {
     enqueueEmailVerificationOtp: jest.fn(),
+    getDevOtp: jest.fn(),
+    getStats: jest.fn(),
   };
-  const userProfilesGrpcServiceMock = {
+  const userProfileClientMock = {
     createPendingProfile: jest.fn(),
     getProfile: jest.fn(),
+    ping: jest.fn(),
   };
   const authHealthServiceMock = {
     getLiveness: jest.fn(),
@@ -120,27 +124,28 @@ describe('AuthController (e2e)', () => {
     refreshTokensServiceMock.revokeAllForUser.mockResolvedValue(2);
     refreshTokensServiceMock.revokeToken.mockResolvedValue(undefined);
 
-    redisServiceMock.setJson.mockResolvedValue('OK');
-    redisServiceMock.set.mockResolvedValue('OK');
-    redisServiceMock.getJson.mockResolvedValue({
+    otpStoreMock.setJson.mockResolvedValue('OK');
+    otpStoreMock.set.mockResolvedValue('OK');
+    otpStoreMock.getJson.mockResolvedValue({
       email: 'member@example.com',
       otpHash:
         '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
     });
-    redisServiceMock.delete.mockResolvedValue(1);
-    redisServiceMock.exists.mockResolvedValue(false);
-    redisServiceMock.increment.mockResolvedValue(1);
-    redisServiceMock.expire.mockResolvedValue(true);
+    otpStoreMock.delete.mockResolvedValue(1);
+    otpStoreMock.exists.mockResolvedValue(false);
+    otpStoreMock.increment.mockResolvedValue(1);
+    otpStoreMock.expire.mockResolvedValue(true);
+    otpStoreMock.assertAvailable.mockResolvedValue(undefined);
 
-    userProfilesGrpcServiceMock.getProfile.mockResolvedValue({
+    userProfileClientMock.getProfile.mockResolvedValue({
       fullName: 'Member Example',
       userId: 'user-123',
       username: 'member.example',
     });
-    userProfilesGrpcServiceMock.createPendingProfile.mockResolvedValue(
+    userProfileClientMock.createPendingProfile.mockResolvedValue(
       undefined,
     );
-    authOutboxServiceMock.enqueueEmailVerificationOtp.mockResolvedValue(
+    emailOutboxMock.enqueueEmailVerificationOtp.mockResolvedValue(
       undefined,
     );
 
@@ -173,23 +178,23 @@ describe('AuthController (e2e)', () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     })
-      .overrideProvider(RefreshTokensService)
+      .overrideProvider(REFRESH_TOKEN_REPOSITORY)
       .useValue(refreshTokensServiceMock)
-      .overrideProvider(IdentityService)
+      .overrideProvider(USER_REPOSITORY)
       .useValue(identityServiceMock)
-      .overrideProvider(RedisService)
-      .useValue(redisServiceMock)
-      .overrideProvider(AuthOutboxService)
-      .useValue(authOutboxServiceMock)
+      .overrideProvider(OTP_STORE)
+      .useValue(otpStoreMock)
+      .overrideProvider(EMAIL_OUTBOX)
+      .useValue(emailOutboxMock)
       .overrideProvider(AuthHealthService)
       .useValue(authHealthServiceMock)
-      .overrideProvider(UserProfilesGrpcService)
-      .useValue(userProfilesGrpcServiceMock)
+      .overrideProvider(USER_PROFILE_CLIENT)
+      .useValue(userProfileClientMock)
       .compile();
 
     app = moduleFixture.createNestApplication();
     app.setGlobalPrefix('api/v1');
-    authService = moduleFixture.get(AuthService);
+    jwtTokenService = moduleFixture.get(JwtTokenService);
     await app.init();
   });
 
@@ -236,7 +241,7 @@ describe('AuthController (e2e)', () => {
   });
 
   it('/api/v1/auth/verify (GET) returns identity headers for valid JWT', async () => {
-    const token = await authService.signAccessToken({
+    const token = await jwtTokenService.signAccessToken({
       role: 'member',
       roles: ['member'],
       userId: 'user-123',
@@ -272,7 +277,7 @@ describe('AuthController (e2e)', () => {
   });
 
   it('/api/v1/auth/me (GET) returns current user', async () => {
-    const token = await authService.signAccessToken({
+    const token = await jwtTokenService.signAccessToken({
       role: 'member',
       roles: ['member'],
       userId: 'user-123',
@@ -325,7 +330,7 @@ describe('AuthController (e2e)', () => {
       .expect(201);
 
     expect(response.body.verificationRequired).toBe(true);
-    expect(userProfilesGrpcServiceMock.createPendingProfile).toHaveBeenCalledWith({
+    expect(userProfileClientMock.createPendingProfile).toHaveBeenCalledWith({
       fullName: 'Member Example',
       userId: 'user-123',
     });
@@ -347,7 +352,7 @@ describe('AuthController (e2e)', () => {
   });
 
   it('/api/v1/auth/change-password (POST) changes password for authenticated user', async () => {
-    const token = await authService.signAccessToken({
+    const token = await jwtTokenService.signAccessToken({
       role: 'member',
       roles: ['member'],
       userId: 'user-123',

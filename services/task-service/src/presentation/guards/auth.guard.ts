@@ -18,7 +18,7 @@ export class AuthGuard implements CanActivate {
 
     if (authorization?.trim()) {
       const identity =
-        await this.authGrpcService.verifyAccessToken(authorization);
+        await this.authGrpcService.verifyAccessTokenLite(authorization);
       request.user = {
         id: identity.userId,
         name: getHeaderValue(request.headers, "x-user-name") ?? "User",

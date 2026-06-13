@@ -5,7 +5,8 @@ import { ITaskRepository } from "../../../ports/ITaskRepository";
 import { createMockTaskRepository } from "../../../../test-utils/mock-task-repository";
 import { UserReplicaLookupService } from "../../../services/user-replica-lookup.service";
 import { ICommentRepository } from "../../../../domain/repositories/comment.repository.interface";
-import { TaskOutboxService } from "../../../../infrastructure/outbox/task-outbox.service";
+import { TaskCommentNotificationPublisher } from "../../../services/task-comment-notification.publisher";
+import type { ITaskActivityRepository } from "../../../ports/ITaskActivityRepository";
 import { Task } from "../../../../domain/entities/Task";
 import { TaskId } from "../../../../domain/value-objects/TaskId";
 import { UserSnapshot } from "../../../../domain/value-objects/UserSnapshot";
@@ -22,7 +23,8 @@ describe("CreateCommentHandler", () => {
       "findActiveByIdAsync" | "findActiveByUsernameAsync"
     >
   >;
-  let mockTaskOutboxService: jest.Mocked<TaskOutboxService>;
+  let mockCommentNotificationPublisher: jest.Mocked<TaskCommentNotificationPublisher>;
+  let mockTaskActivityRepository: jest.Mocked<ITaskActivityRepository>;
 
   beforeEach(() => {
     mockCommentRepo = {
@@ -40,17 +42,23 @@ describe("CreateCommentHandler", () => {
       findActiveByUsernameAsync: jest.fn(),
     };
 
-    mockTaskOutboxService = {
-      enqueueTaskAssigned: jest.fn(),
-      enqueueTaskCommented: jest.fn(),
-      enqueueCommentMentioned: jest.fn(),
+    mockCommentNotificationPublisher = {
+      publishForNewComment: jest.fn(),
     } as any;
+
+    mockTaskActivityRepository = {
+      appendFromEventsAsync: jest.fn(),
+      appendFromCommentAsync: jest.fn().mockResolvedValue(undefined),
+      findByTaskIdAsync: jest.fn(),
+      countByTaskIdAsync: jest.fn(),
+    };
 
     handler = new CreateCommentHandler(
       mockCommentRepo,
       mockTaskRepo,
       mockUserReplicaLookup as UserReplicaLookupService,
-      mockTaskOutboxService,
+      mockCommentNotificationPublisher,
+      mockTaskActivityRepository,
     );
   });
 
@@ -114,12 +122,13 @@ describe("CreateCommentHandler", () => {
 
     expect(result.commentId).toBe("123e4567-e89b-12d3-a456-426614174001");
     expect(mockCommentRepo.createAsync).toHaveBeenCalledTimes(1);
-    expect(mockTaskOutboxService.enqueueTaskCommented).toHaveBeenCalledTimes(1);
-    expect(mockTaskOutboxService.enqueueTaskCommented).toHaveBeenCalledWith(
+    expect(mockTaskActivityRepository.appendFromCommentAsync).toHaveBeenCalledTimes(1);
+    expect(mockCommentNotificationPublisher.publishForNewComment).toHaveBeenCalledTimes(1);
+    expect(mockCommentNotificationPublisher.publishForNewComment).toHaveBeenCalledWith(
       expect.objectContaining({
         taskId: "123e4567-e89b-12d3-a456-426614174000",
-        recipientId: "assignee-1",
-        actorId: "author-1",
+        assigneeId: "assignee-1",
+        authorId: "author-1",
       }),
     );
   });
@@ -142,7 +151,8 @@ describe("CreateCommentHandler", () => {
     await handler.execute(command);
 
     expect(mockCommentRepo.createAsync).toHaveBeenCalledTimes(1);
-    expect(mockTaskOutboxService.enqueueTaskCommented).not.toHaveBeenCalled();
+    expect(mockTaskActivityRepository.appendFromCommentAsync).toHaveBeenCalledTimes(1);
+    expect(mockCommentNotificationPublisher.publishForNewComment).toHaveBeenCalledTimes(1);
   });
 
   it("should create comment but NOT emit event if author IS the assignee", async () => {
@@ -163,7 +173,8 @@ describe("CreateCommentHandler", () => {
     await handler.execute(command);
 
     expect(mockCommentRepo.createAsync).toHaveBeenCalledTimes(1);
-    expect(mockTaskOutboxService.enqueueTaskCommented).not.toHaveBeenCalled();
+    expect(mockTaskActivityRepository.appendFromCommentAsync).toHaveBeenCalledTimes(1);
+    expect(mockCommentNotificationPublisher.publishForNewComment).toHaveBeenCalledTimes(1);
   });
 
   it("should throw BadRequestException if task does not exist", async () => {

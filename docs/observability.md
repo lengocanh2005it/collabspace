@@ -89,6 +89,11 @@ GRAFANA_PASSWORD=<admin-password> \
 # Demo flow — login user seed → workspaces / tasks / notifications
 BASE_URL=http://<HOST>/api/v1 K6_VUS=10 \
 ./infrastructure/load-testing/run-load-test.sh demo-flow
+
+# SLO baseline — hot read paths with per-route p95 thresholds
+BASE_URL=http://<HOST>/api/v1 K6_VUS=10 K6_DURATION=2m \
+./infrastructure/load-testing/run-load-test.sh slo-baseline
+# hoặc: ./scripts/k6-slo-baseline.sh
 ```
 
 Script prod: `infrastructure/deploy/run-k6-smoke-prod.sh`

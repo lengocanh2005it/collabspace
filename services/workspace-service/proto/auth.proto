@@ -4,6 +4,7 @@ package auth;
 
 service AuthService {
   rpc VerifyAccessToken(VerifyAccessTokenRequest) returns (VerifyAccessTokenResponse);
+  rpc VerifyAccessTokenLite(VerifyAccessTokenLiteRequest) returns (VerifyAccessTokenLiteResponse);
 }
 
 message VerifyAccessTokenRequest {
@@ -18,4 +19,17 @@ message VerifyAccessTokenResponse {
   repeated string roles = 5;
   repeated string permissions = 6;
   bool email_verified = 7;
+}
+
+message VerifyAccessTokenLiteRequest {
+  string authorization = 1;
+}
+
+message VerifyAccessTokenLiteResponse {
+  bool authenticated = 1;
+  string user_id = 2;
+  string role = 3;
+  string workspace_id = 4;
+  repeated string roles = 5;
+  bool email_verified = 6;
 }

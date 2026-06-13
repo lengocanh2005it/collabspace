@@ -3,11 +3,11 @@ import { join } from 'node:path';
 import { randomBytes, scrypt } from 'node:crypto';
 import { promisify } from 'node:util';
 import { DataSource } from 'typeorm';
-import { PermissionEntity } from './modules/identity/entities/permission.entity';
-import { RolePermissionEntity } from './modules/identity/entities/role-permission.entity';
-import { RoleEntity } from './modules/identity/entities/role.entity';
-import { UserRoleEntity } from './modules/identity/entities/user-role.entity';
-import { UserEntity } from './modules/identity/entities/user.entity';
+import { PermissionOrmEntity } from './infrastructure/database/entities/permission.orm-entity';
+import { RolePermissionOrmEntity } from './infrastructure/database/entities/role-permission.orm-entity';
+import { RoleOrmEntity } from './infrastructure/database/entities/role.orm-entity';
+import { UserRoleOrmEntity } from './infrastructure/database/entities/user-role.orm-entity';
+import { UserOrmEntity } from './infrastructure/database/entities/user.orm-entity';
 import { loadDemoSeedData, type DemoSeedUser } from './load-demo-seed';
 
 type SeedPermission = {
@@ -188,9 +188,9 @@ function toBoolean(value: string | undefined, fallback: boolean): boolean {
 
 async function seedRoles(
   dataSource: DataSource,
-): Promise<Map<string, RoleEntity>> {
-  const roleRepository = dataSource.getRepository(RoleEntity);
-  const rolesByName = new Map<string, RoleEntity>();
+): Promise<Map<string, RoleOrmEntity>> {
+  const roleRepository = dataSource.getRepository(RoleOrmEntity);
+  const rolesByName = new Map<string, RoleOrmEntity>();
 
   for (const seedRole of SEED_ROLES) {
     const existingRole = await roleRepository.findOne({
@@ -215,9 +215,9 @@ async function seedRoles(
 
 async function seedPermissions(
   dataSource: DataSource,
-): Promise<Map<string, PermissionEntity>> {
-  const permissionRepository = dataSource.getRepository(PermissionEntity);
-  const permissionsByName = new Map<string, PermissionEntity>();
+): Promise<Map<string, PermissionOrmEntity>> {
+  const permissionRepository = dataSource.getRepository(PermissionOrmEntity);
+  const permissionsByName = new Map<string, PermissionOrmEntity>();
 
   for (const seedPermission of SEED_PERMISSIONS) {
     const existingPermission = await permissionRepository.findOne({
@@ -242,11 +242,11 @@ async function seedPermissions(
 
 async function seedRolePermissions(
   dataSource: DataSource,
-  rolesByName: Map<string, RoleEntity>,
-  permissionsByName: Map<string, PermissionEntity>,
+  rolesByName: Map<string, RoleOrmEntity>,
+  permissionsByName: Map<string, PermissionOrmEntity>,
 ): Promise<void> {
   const rolePermissionRepository =
-    dataSource.getRepository(RolePermissionEntity);
+    dataSource.getRepository(RolePermissionOrmEntity);
 
   for (const seedRole of SEED_ROLES) {
     const role = rolesByName.get(seedRole.name);
@@ -285,10 +285,10 @@ async function seedRolePermissions(
 
 async function seedUsers(
   dataSource: DataSource,
-  rolesByName: Map<string, RoleEntity>,
+  rolesByName: Map<string, RoleOrmEntity>,
 ): Promise<void> {
-  const userRepository = dataSource.getRepository(UserEntity);
-  const userRoleRepository = dataSource.getRepository(UserRoleEntity);
+  const userRepository = dataSource.getRepository(UserOrmEntity);
+  const userRoleRepository = dataSource.getRepository(UserRoleOrmEntity);
 
   for (const seedUser of SEED_USERS) {
     const existingByEmail = await userRepository.findOne({
@@ -346,11 +346,11 @@ async function main(): Promise<void> {
 
   const dataSource = new DataSource({
     entities: [
-      UserEntity,
-      RoleEntity,
-      PermissionEntity,
-      UserRoleEntity,
-      RolePermissionEntity,
+      UserOrmEntity,
+      RoleOrmEntity,
+      PermissionOrmEntity,
+      UserRoleOrmEntity,
+      RolePermissionOrmEntity,
     ],
     logging: toBoolean(process.env.DATABASE_LOGGING, false),
     schema: process.env.DATABASE_SCHEMA ?? 'public',

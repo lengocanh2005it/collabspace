@@ -8,6 +8,7 @@ export function createMockTaskRepository(): jest.Mocked<ITaskRepository> {
     loadAggregateByIdAsync: jest.fn(),
     deleteAsync: jest.fn(),
     findByWorkspaceIdAsync: jest.fn(),
+    countByWorkspaceIdAsync: jest.fn(),
     addAttachmentAsync: jest.fn(),
     removeAttachmentAsync: jest.fn(),
   };

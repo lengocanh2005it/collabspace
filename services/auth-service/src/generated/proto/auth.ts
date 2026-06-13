@@ -12,6 +12,11 @@ export namespace auth {
             metadata?: Metadata,
             ...rest: any[]
         ): Observable<VerifyAccessTokenResponse>;
+        verifyAccessTokenLite(
+            data: VerifyAccessTokenLiteRequest,
+            metadata?: Metadata,
+            ...rest: any[]
+        ): Observable<VerifyAccessTokenLiteResponse>;
     }
     export interface VerifyAccessTokenRequest {
         authorization?: string;
@@ -25,4 +30,16 @@ export namespace auth {
         permissions?: string[];
         emailVerified?: boolean;
     }
+    export interface VerifyAccessTokenLiteRequest {
+        authorization?: string;
+    }
+    export interface VerifyAccessTokenLiteResponse {
+        authenticated?: boolean;
+        userId?: string;
+        role?: string;
+        workspaceId?: string;
+        roles?: string[];
+        emailVerified?: boolean;
+    }
 }
+

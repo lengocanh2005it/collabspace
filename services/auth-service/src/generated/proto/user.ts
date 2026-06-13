@@ -43,7 +43,7 @@ export namespace user {
         userIds?: string[];
     }
     export interface GetProfilesResponse {
-        profiles?: UserProfileSummary[];
+        profiles?: user.UserProfileSummary[];
     }
     export interface UserProfileSummary {
         userId?: string;
@@ -51,3 +51,4 @@ export namespace user {
         avatarUrl?: string;
     }
 }
+

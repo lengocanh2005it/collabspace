@@ -262,6 +262,6 @@ export class UsersController {
   }
 
   private async requireIdentity(authorizationHeader?: string) {
-    return this.authGrpcService.verifyAccessToken(authorizationHeader);
+    return this.authGrpcService.verifyAccessTokenLite(authorizationHeader);
   }
 }

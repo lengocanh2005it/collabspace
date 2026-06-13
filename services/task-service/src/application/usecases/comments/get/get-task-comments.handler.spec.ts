@@ -15,6 +15,7 @@ describe("GetTaskCommentsHandler", () => {
       deleteAsync: jest.fn(),
       updateAsync: jest.fn(),
       findByTaskIdAsync: jest.fn(),
+      countByTaskIdAsync: jest.fn(),
     } as any;
 
     handler = new GetTaskCommentsHandler(mockCommentRepo);
@@ -48,6 +49,7 @@ describe("GetTaskCommentsHandler", () => {
     ];
 
     mockCommentRepo.findByTaskIdAsync.mockResolvedValue(comments);
+    mockCommentRepo.countByTaskIdAsync.mockResolvedValue(2);
 
     const result = await handler.execute(query);
 
@@ -68,6 +70,7 @@ describe("GetTaskCommentsHandler", () => {
       10,
     );
     mockCommentRepo.findByTaskIdAsync.mockResolvedValue([]);
+    mockCommentRepo.countByTaskIdAsync.mockResolvedValue(0);
 
     const result = await handler.execute(query);
 

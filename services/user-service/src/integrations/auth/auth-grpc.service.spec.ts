@@ -4,6 +4,7 @@ import { AuthGrpcService } from './auth-grpc.service';
 
 describe('AuthGrpcService', () => {
   const verifyAccessTokenMock = jest.fn();
+  const verifyAccessTokenLiteMock = jest.fn();
   const waitForReadyMock = jest.fn(
     (_: number, callback: (error?: Error | null) => void) => callback(null),
   );
@@ -13,6 +14,7 @@ describe('AuthGrpcService', () => {
     })),
     getService: jest.fn(() => ({
       verifyAccessToken: verifyAccessTokenMock,
+      verifyAccessTokenLite: verifyAccessTokenLiteMock,
     })),
   };
 
@@ -28,6 +30,29 @@ describe('AuthGrpcService', () => {
 
   afterAll(() => {
     process.env.AUTH_SERVICE_GRPC_TIMEOUT_MS = previousTimeoutMs;
+  });
+
+  it('returns lite identity when auth-service verifies the token', async () => {
+    verifyAccessTokenLiteMock.mockReturnValue(
+      of({
+        authenticated: true,
+        emailVerified: true,
+        role: 'member',
+        roles: ['member'],
+        userId: 'user-1',
+        workspaceId: 'workspace-1',
+      }),
+    );
+
+    await expect(
+      service.verifyAccessTokenLite('Bearer token-1'),
+    ).resolves.toEqual({
+      emailVerified: true,
+      role: 'member',
+      roles: ['member'],
+      userId: 'user-1',
+      workspaceId: 'workspace-1',
+    });
   });
 
   it('returns identity when auth-service verifies the token', async () => {

@@ -2,10 +2,10 @@ import { Controller, Logger } from "@nestjs/common";
 import { Ctx, EventPattern, Payload, RmqContext } from "@nestjs/microservices";
 import { CommandBus } from "@nestjs/cqrs";
 import type { Channel, ConsumeMessage } from "amqplib";
-import { CreateNotificationCommand } from "../../../application/usecases/create-notification/create-notification.command";
-import { NotificationType } from "../../../domain/value-objects/NotificationType";
 import { WORKSPACE_INVITED_EVENT } from "../../../domain/events/workspace-events";
 import type { WorkspaceInvitedEventPayload } from "../../../domain/events/workspace-events";
+import { InboundNotificationEventMapper } from "../../../application/mappers/inbound-notification-event.mapper";
+import { consumeNotificationEvent } from "../../helpers/rmq-notification-consumer.helper";
 
 @Controller()
 export class WorkspaceInviteEventListenerController {
@@ -23,38 +23,15 @@ export class WorkspaceInviteEventListenerController {
     const channel = context.getChannelRef() as Channel;
     const originalMessage = context.getMessage() as ConsumeMessage;
 
-    try {
-      const eventId =
-        data.eventId ??
-        `workspace_invited:${data.workspaceId}:${data.invitedUserId}:${data.inviteEmail ?? "unknown"}`;
-
-      await this.commandBus.execute(
-        new CreateNotificationCommand(
-          data.invitedUserId,
-          data.invitedById,
-          NotificationType.WORKSPACE_INVITED,
-          "Lời mời vào workspace",
-          `${data.invitedByName} đã mời bạn vào workspace "${data.workspaceName}"`,
-          data.workspaceId,
-          "WORKSPACE",
-          {
-            workspaceName: data.workspaceName,
-            invitedByName: data.invitedByName,
-            invitedByAvatarUrl: data.invitedByAvatarUrl,
-            role: data.role,
-            inviteEmail: data.inviteEmail,
-          },
-          eventId,
-        ),
-      );
-
-      channel.ack(originalMessage);
-    } catch (error) {
-      this.logger.error(
-        "❌ Lỗi khi xử lý event workspace_invited",
-        error instanceof Error ? error.stack : undefined,
-      );
-      channel.nack(originalMessage, false, true);
-    }
+    await consumeNotificationEvent(
+      {
+        commandBus: this.commandBus,
+        channel,
+        message: originalMessage,
+        logger: this.logger,
+        eventLabel: "workspace_invited",
+      },
+      InboundNotificationEventMapper.toWorkspaceInvitedCommand(data),
+    );
   }
 }

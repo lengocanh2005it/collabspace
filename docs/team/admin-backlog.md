@@ -105,7 +105,7 @@ Có thể slip sau CN      Phase 3 — Broadcast + last_login migration + audit 
 ### Quy tắc nghiệp vụ
 
 - Không xóa role seed `admin`, `member`, `viewer` khi còn `user_roles` tham chiếu
-- `active-status: false` → chặn login (logic `USER_INACTIVE` đã có trong `IdentityService`)
+- `active-status: false` → chặn login (logic `USER_INACTIVE` trong `User.assertCanLogin()` / `TypeOrmUserRepository`)
 - Đổi role / ban → revoke refresh token (A6)
 
 ---

@@ -1,9 +1,19 @@
 import { ConfigurationService } from '@/configuration/configuration.service';
-import { UserProfilesGrpcService } from '@/modules/identity/user-profiles-grpc.service';
-import { DatabaseService } from '@/modules/database/database.service';
-import { AuthOutboxService } from '@/modules/outbox/auth-outbox.service';
-import { RedisService } from '@/modules/redis/redis.service';
-import { Injectable } from '@nestjs/common';
+import { EmailOutboxStats } from '@/domain/ports/email-outbox.port';
+import {
+  EMAIL_OUTBOX,
+  type EmailOutbox,
+} from '@/domain/ports/email-outbox.port';
+import {
+  OTP_STORE,
+  type OtpStore,
+} from '@/domain/ports/otp-store.port';
+import {
+  USER_PROFILE_CLIENT,
+  type UserProfileClient,
+} from '@/domain/ports/user-profile-client.port';
+import { DatabaseService } from '@/infrastructure/database/database.service';
+import { Inject, Injectable } from '@nestjs/common';
 
 type CheckStatus = 'up' | 'down' | 'disabled';
 type OverallStatus = 'ok' | 'degraded' | 'error';
@@ -36,9 +46,12 @@ export class AuthHealthService {
   constructor(
     private readonly configurationService: ConfigurationService,
     private readonly databaseService: DatabaseService,
-    private readonly authOutboxService: AuthOutboxService,
-    private readonly redisService: RedisService,
-    private readonly userProfilesGrpcService: UserProfilesGrpcService,
+    @Inject(EMAIL_OUTBOX)
+    private readonly emailOutbox: EmailOutbox,
+    @Inject(OTP_STORE)
+    private readonly otpStore: OtpStore,
+    @Inject(USER_PROFILE_CLIENT)
+    private readonly userProfileClient: UserProfileClient,
   ) {}
 
   getLiveness(): LivenessReport {
@@ -59,7 +72,7 @@ export class AuthHealthService {
       outbox:
         outboxConfig.enabled
           ? await this.runCheck(false, async () => {
-              const stats = await this.authOutboxService.getStats();
+              const stats = await this.emailOutbox.getStats();
 
               if (
                 stats.failedCount >= outboxConfig.degradedFailedThreshold ||
@@ -75,23 +88,21 @@ export class AuthHealthService {
               status: 'disabled',
             },
       redis: await this.runCheck(true, async () => {
-        const isAlive = await this.redisService.ping();
+        const isAlive = await this.otpStore.ping();
 
         if (!isAlive) {
           throw new Error('Redis ping returned a non-PONG response');
         }
       }),
       userProfilesGrpc: await this.runBoundedCheck(false, 800, async () => {
-        await this.userProfilesGrpcService.ping();
+        await this.userProfileClient.ping();
       }),
     };
 
     return this.toReadinessReport('auth-service', checks);
   }
 
-  private buildOutboxHealthDetail(
-    stats: Awaited<ReturnType<AuthOutboxService['getStats']>>,
-  ): string {
+  private buildOutboxHealthDetail(stats: EmailOutboxStats): string {
     return [
       `failed=${stats.failedCount}`,
       `pending=${stats.pendingCount}`,

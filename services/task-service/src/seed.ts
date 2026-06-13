@@ -8,6 +8,8 @@ import {
   type DemoSeedTask,
   type DemoSeedUser,
 } from "./load-demo-seed";
+import { TaskActivityItemMapper } from "./application/mappers/task-activity-item.mapper";
+import type { StoredTaskDomainEvent } from "./domain/events/task-domain.events";
 
 function loadEnvFile(): void {
   const envPath = join(process.cwd(), ".env");
@@ -204,6 +206,84 @@ async function seedSampleComment(
   );
 }
 
+async function backfillTaskActivity(
+  taskEvents: mongoose.mongo.Collection,
+  comments: mongoose.mongo.Collection,
+  taskActivity: mongoose.mongo.Collection,
+): Promise<void> {
+  const writes: mongoose.mongo.AnyBulkWriteOperation<mongoose.mongo.BSON.Document>[] =
+    [];
+
+  const eventDocs = await taskEvents.find({}).toArray();
+  for (const doc of eventDocs) {
+    const storedEvent: StoredTaskDomainEvent = {
+      streamId: String(doc.streamId),
+      version: Number(doc.version),
+      eventId: String(doc.eventId),
+      eventType: doc.eventType as StoredTaskDomainEvent["eventType"],
+      occurredAt:
+        doc.occurredAt instanceof Date
+          ? doc.occurredAt.toISOString()
+          : String(doc.occurredAt),
+      payload: doc.payload as StoredTaskDomainEvent["payload"],
+    };
+    const item = TaskActivityItemMapper.fromStoredEvent(storedEvent);
+    if (!item) {
+      continue;
+    }
+
+    writes.push({
+      updateOne: {
+        filter: { _id: item.id },
+        update: {
+          $set: {
+            taskId: storedEvent.streamId,
+            type: item.type,
+            actorId: item.actorId,
+            actorName: item.actorName,
+            actorAvatarUrl: item.actorAvatarUrl,
+            summary: item.summary,
+            meta: item.meta,
+            occurredAt: new Date(item.occurredAt),
+          },
+        },
+        upsert: true,
+      },
+    } as unknown as mongoose.mongo.AnyBulkWriteOperation<mongoose.mongo.BSON.Document>);
+  }
+
+  const commentDocs = await comments.find({ deletedAt: null }).toArray();
+  for (const doc of commentDocs) {
+    const content = String(doc.content ?? "");
+    writes.push({
+      updateOne: {
+        filter: { _id: doc._id.toString() },
+        update: {
+          $set: {
+            taskId: String(doc.taskId),
+            type: "comment_added",
+            actorId: String(doc.authorId),
+            actorName: String(doc.authorName),
+            actorAvatarUrl: doc.authorAvatarUrl ?? null,
+            summary:
+              content.length > 120 ? `${content.slice(0, 120)}…` : content,
+            meta: { commentId: doc._id.toString() },
+            occurredAt:
+              doc.createdAt instanceof Date
+                ? doc.createdAt
+                : new Date(String(doc.createdAt)),
+          },
+        },
+        upsert: true,
+      },
+    } as unknown as mongoose.mongo.AnyBulkWriteOperation<mongoose.mongo.BSON.Document>);
+  }
+
+  if (writes.length > 0) {
+    await taskActivity.bulkWrite(writes, { ordered: false });
+  }
+}
+
 async function main(): Promise<void> {
   loadEnvFile();
 
@@ -221,6 +301,7 @@ async function main(): Promise<void> {
     const taskEvents = db.collection("task_events");
     const tasks = db.collection("tasks");
     const comments = db.collection("task_comments");
+    const taskActivity = db.collection("task_activity");
 
     await seedUserReplicas(demoData.users, userReplicas);
 
@@ -235,6 +316,7 @@ async function main(): Promise<void> {
     }
 
     await seedSampleComment(demoData.demo, demoData.users, comments);
+    await backfillTaskActivity(taskEvents, comments, taskActivity);
 
     console.log("task-service seed completed");
     console.table(

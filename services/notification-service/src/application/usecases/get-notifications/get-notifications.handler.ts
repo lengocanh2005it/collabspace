@@ -58,19 +58,16 @@ export class GetNotificationsHandler implements IQueryHandler<
   async execute(
     query: GetNotificationsQuery,
   ): Promise<GetNotificationsResponse> {
-    const notifications =
-      await this.notificationRepository.findByRecipientIdAsync(
+    const [notifications, total, unreadCount] = await Promise.all([
+      this.notificationRepository.findByRecipientIdAsync(query.recipientId, {
+        skip: query.skip,
+        limit: query.limit,
+      }),
+      this.notificationRepository.countByRecipientIdAsync(query.recipientId),
+      this.notificationRepository.countUnreadByRecipientIdAsync(
         query.recipientId,
-        {
-          skip: query.skip,
-          limit: query.limit,
-        },
-      );
-
-    const unreadCount =
-      await this.notificationRepository.countUnreadByRecipientIdAsync(
-        query.recipientId,
-      );
+      ),
+    ]);
 
     const actorIds = notifications.map((notification) =>
       notification.getActorId(),
@@ -108,7 +105,7 @@ export class GetNotificationsHandler implements IQueryHandler<
 
     return {
       notifications: mappedNotifications,
-      total: mappedNotifications.length,
+      total,
       skip: query.skip,
       limit: query.limit,
       unreadCount,

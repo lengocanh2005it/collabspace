@@ -50,3 +50,28 @@ export class ChangePasswordRequestDto {
   @MinLength(6)
   newPassword: string;
 }
+
+export class RegisterRequestDto {
+  @ApiProperty({ example: 'tin@example.com' })
+  @IsEmail()
+  email: string;
+
+  @ApiProperty({ example: 'Tin Vo' })
+  @IsString()
+  fullName: string;
+
+  @ApiProperty({ example: '123456' })
+  @IsString()
+  @MinLength(6)
+  password: string;
+
+  @ApiProperty({ example: 'workspace-id', required: false })
+  @IsOptional()
+  workspaceId?: string;
+}
+
+export class ResendEmailVerificationOtpRequestDto {
+  @ApiProperty({ example: 'tin@example.com' })
+  @IsEmail()
+  email: string;
+}

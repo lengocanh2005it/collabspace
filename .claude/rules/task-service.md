@@ -16,6 +16,6 @@ paths:
 - Protected routes: `AuthGuard` before `WorkspaceValidationGuard`; S2S workspace check uses `INTERNAL_SERVICE_TOKEN`.
 - Do **not** trust client `X-User-Id`; do **not** use mock `user-123` in guards.
 - Do **not** put Mongoose calls in controllers.
-- Do **not** copy auth-service module layout or user-service use-case-only naming (`*.use-case.ts` → use `*.handler.ts` here).
+- Do **not** copy legacy auth `modules/*` layout; auth-service uses clean/hexagonal use cases + ports (see `services/auth-service/CLAUDE.md`). Do not copy user-service use-case-only naming (`*.use-case.ts` → use `*.handler.ts` here).
 - Deep guide: `.claude/docs/service-architecture.md` (task section).
 - Verify: `cd services/task-service && pnpm run build && pnpm run test`.

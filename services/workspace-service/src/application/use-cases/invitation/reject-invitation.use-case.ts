@@ -12,6 +12,7 @@ import {
   type IWorkspaceActivityRepository,
   WORKSPACE_ACTIVITY_REPOSITORY,
 } from '../../../domain/repositories/workspace-activity.repository';
+import { InvitationInvalidStateError } from '../../../domain/exceptions/invitation.exceptions';
 
 @Injectable()
 export class RejectInvitationUseCase {
@@ -25,8 +26,15 @@ export class RejectInvitationUseCase {
   async execute(userId: string, invitationId: string) {
     const invitation = await this.invitationRepo.findById(invitationId);
     if (!invitation) throw new NotFoundException('Invitation not found');
-    if (invitation.status !== 'pending')
-      throw new BadRequestException('Invitation is not pending');
+
+    try {
+      invitation.assertCanReject();
+    } catch (error) {
+      if (error instanceof InvitationInvalidStateError) {
+        throw new BadRequestException(error.message);
+      }
+      throw error;
+    }
 
     await this.invitationRepo.updateStatus(invitationId, 'rejected', userId);
 

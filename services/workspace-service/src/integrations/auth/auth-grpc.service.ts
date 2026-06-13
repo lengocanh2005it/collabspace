@@ -25,10 +25,22 @@ type VerifyAccessTokenResponse = {
   workspaceId?: string;
 };
 
+type VerifyAccessTokenLiteResponse = {
+  authenticated?: boolean;
+  emailVerified?: boolean;
+  role?: string;
+  roles?: string[];
+  userId?: string;
+  workspaceId?: string;
+};
+
 type AuthGrpcClient = {
   verifyAccessToken(
     request: VerifyAccessTokenRequest,
   ): Observable<VerifyAccessTokenResponse>;
+  verifyAccessTokenLite(
+    request: VerifyAccessTokenRequest,
+  ): Observable<VerifyAccessTokenLiteResponse>;
 };
 
 type ReadyGrpcClient = {
@@ -41,6 +53,14 @@ type ReadyGrpcClient = {
 export type AuthIdentity = {
   emailVerified?: boolean;
   permissions?: string[];
+  role?: string;
+  roles?: string[];
+  userId: string;
+  workspaceId?: string;
+};
+
+export type AuthLiteIdentity = {
+  emailVerified?: boolean;
   role?: string;
   roles?: string[];
   userId: string;
@@ -105,7 +125,48 @@ export class AuthGrpcService implements OnModuleInit {
     }
   }
 
+  async verifyAccessTokenLite(
+    authorizationHeader?: string,
+  ): Promise<AuthLiteIdentity> {
+    const response = await this.invokeVerify(
+      (authorization) =>
+        this.authService!.verifyAccessTokenLite({ authorization }),
+      authorizationHeader,
+      'VerifyAccessTokenLite',
+    );
+
+    return {
+      emailVerified: response.emailVerified,
+      role: response.role,
+      roles: response.roles ?? [],
+      userId: response.userId!,
+      workspaceId: response.workspaceId,
+    };
+  }
+
   async verifyAccessToken(authorizationHeader?: string): Promise<AuthIdentity> {
+    const response = await this.invokeVerify(
+      (authorization) =>
+        this.authService!.verifyAccessToken({ authorization }),
+      authorizationHeader,
+      'VerifyAccessToken',
+    );
+
+    return {
+      emailVerified: response.emailVerified,
+      permissions: response.permissions ?? [],
+      role: response.role,
+      roles: response.roles ?? [],
+      userId: response.userId!,
+      workspaceId: response.workspaceId,
+    };
+  }
+
+  private async invokeVerify<T extends VerifyAccessTokenResponse>(
+    call: (authorization: string) => Observable<T>,
+    authorizationHeader: string | undefined,
+    rpcLabel: string,
+  ): Promise<T> {
     const authorization = authorizationHeader?.trim();
 
     if (!authorization) {
@@ -126,9 +187,7 @@ export class AuthGrpcService implements OnModuleInit {
 
     try {
       const response = await firstValueFrom(
-        this.authService
-          .verifyAccessToken({ authorization })
-          .pipe(timeout({ first: timeoutMs })),
+        call(authorization).pipe(timeout({ first: timeoutMs })),
       );
 
       if (!response.authenticated || !response.userId) {
@@ -138,14 +197,7 @@ export class AuthGrpcService implements OnModuleInit {
         });
       }
 
-      return {
-        emailVerified: response.emailVerified,
-        permissions: response.permissions ?? [],
-        role: response.role,
-        roles: response.roles ?? [],
-        userId: response.userId,
-        workspaceId: response.workspaceId,
-      };
+      return response;
     } catch (error) {
       if (error instanceof UnauthorizedException) {
         throw error;
@@ -153,7 +205,7 @@ export class AuthGrpcService implements OnModuleInit {
 
       if (this.isTimeoutError(error)) {
         this.logger.warn(
-          `AuthService.VerifyAccessToken timed out after ${timeoutMs}ms`,
+          `AuthService.${rpcLabel} timed out after ${timeoutMs}ms`,
         );
         throw new ServiceUnavailableException({
           code: 'AUTH_SERVICE_GRPC_TIMEOUT',
@@ -176,7 +228,7 @@ export class AuthGrpcService implements OnModuleInit {
         error,
         'Auth gRPC verification request failed',
       );
-      this.logger.warn(`AuthService.VerifyAccessToken failed: ${message}`);
+      this.logger.warn(`AuthService.${rpcLabel} failed: ${message}`);
       throw new ServiceUnavailableException({
         code: 'AUTH_SERVICE_GRPC_REQUEST_FAILED',
         message,

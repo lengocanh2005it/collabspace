@@ -88,7 +88,7 @@ Chi tiết infra: [phan-phu-tho-infrastructure-backlog.md](./phan-phu-tho-infras
 #### P1 — Chất lượng & test
 
 - [x] **Unit test use-case user-service** — **12/12** use case có spec (`services/user-service/src/application/use-cases/*.use-case.spec.ts` + `testing/user-profile-repository.mock.ts`)
-- [x] **auth `IdentityService`** — `services/auth-service/src/modules/identity/identity.service.spec.ts`
+- [x] **auth user repository spec** — `services/auth-service/src/infrastructure/repositories/typeorm-user.repository.spec.ts` + `auth-use-cases.integration.spec.ts`
 - [x] **E2E** — `register → login → me` flow trong `auth-service/test/app.e2e-spec.ts`; user e2e ổn định in-memory (`delete DATABASE_URL` trong test); internal replicas e2e
 - [x] **Internal replica API** — `internal-users.controller.spec.ts` + e2e `POST /api/v1/users/internal/replicas`
 - [x] **RabbitMQ consumer** `auth-events` — `auth-events.controller.spec.ts`
@@ -97,14 +97,14 @@ Chi tiết infra: [phan-phu-tho-infrastructure-backlog.md](./phan-phu-tho-infras
 
 - [x] Swagger **decorator** — `@ApiTags` / `@ApiOperation` / `@ApiBearerAuth` trên auth + user controllers; `@ApiProperty` trên DTO chính; internal API + `X-Internal-Service-Token` trong user Swagger
 - [x] **Response schemas** — `@ApiOkResponse` / `@ApiCreatedResponse` + swagger response DTOs
-- [x] Document flow OTP / resend cooldown — mô tả trong `auth-service` Swagger (`app.controller.ts` + `main.ts`)
+- [x] Document flow OTP / resend cooldown — mô tả trong `auth-service` Swagger (`presentation/http/auth.controller.ts` + `main.ts`)
 
 #### Out of scope MVP (ghi nhận, không ưu tiên)
 
 - Quên mật khẩu / reset password public API
 - Quản trị role/permission qua HTTP
 
-**DoD giai đoạn Anh:** ✅ 12/12 user use cases có unit test; auth identity có spec riêng; e2e auth register→login→me pass; user e2e + internal replicas pass (in-memory).
+**DoD giai đoạn Anh:** ✅ 12/12 user use cases có unit test; auth repository + use-case integration specs; e2e auth register→login→me pass; user e2e + internal replicas pass (in-memory).
 
 ---
 
@@ -209,7 +209,7 @@ Chi tiết infra: [phan-phu-tho-infrastructure-backlog.md](./phan-phu-tho-infras
 
 | Service | Logic MVP | Gap chính | Owner |
 |---------|-----------|-----------|--------|
-| auth-service | Done | — (identity spec + Swagger + e2e flow ✅) | Anh |
+| auth-service | Done | — (repository specs + use-case integration + Swagger + e2e flow ✅) | Anh |
 | user-service | Done | — (12/12 use-case specs + internal/auth-events tests ✅) | Anh |
 | workspace-service | Done | E2E, outbox test | Tiến |
 | task-service | Done | Board test, e2e, workspace mock guard, workspace activity | Tín (+ Tiến integration) |
@@ -242,7 +242,7 @@ Chi tiết infra: [phan-phu-tho-infrastructure-backlog.md](./phan-phu-tho-infras
 | 3b | Workspace activity `GET .../workspaces/:id/activity` | Tín | P1 |
 | 4 | User use-case tests (batch 1: create/update/bulk) | Anh | P1 ✅ |
 | 5 | User use-case tests (batch 2: preferences/status) | Anh | P1 ✅ |
-| 6 | auth IdentityService spec | Anh | P1 ✅ |
+| 6 | auth user repository + use-case integration specs | Anh | P1 ✅ |
 | 7 | workspace e2e spec | Tiến | P1 |
 | 8 | workspace Swagger + response schemas | Tiến | P2 ✅ |
 | 9 | WORKSPACE_CLIENT_MODE=http enforce prod | Tiến | P1 |

@@ -13,7 +13,7 @@ SCRIPT="$ROOT_DIR/k6/scenarios/${SCENARIO}.js"
 
 if [[ ! -f "$SCRIPT" ]]; then
   echo "Unknown scenario: $SCENARIO" >&2
-  echo "Available: smoke, demo-flow" >&2
+  echo "Available: smoke, demo-flow, slo-baseline" >&2
   exit 1
 fi
 

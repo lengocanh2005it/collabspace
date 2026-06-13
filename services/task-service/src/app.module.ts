@@ -40,6 +40,8 @@ import {
   UserReplicaLookupService,
 } from "./application/services/user-replica-lookup.service";
 import { WorkspaceMockService } from "./infrastructure/services/workspace.mock.service";
+import { WorkspaceMembershipCacheService } from "./infrastructure/cache/workspace-membership-cache.service";
+import { TaskCommentNotificationPublisher } from "./application/services/task-comment-notification.publisher";
 import { TaskOutboxService } from "./infrastructure/outbox/task-outbox.service";
 import { TaskOutboxProcessor } from "./infrastructure/outbox/task-outbox.processor";
 import {
@@ -69,6 +71,12 @@ import {
   TaskEventPersistence,
   TaskEventSchema,
 } from "./infrastructure/persistence/task-event.schema";
+import {
+  TaskActivityPersistence,
+  TaskActivitySchema,
+} from "./infrastructure/persistence/task-activity.schema";
+import { ITaskActivityRepository } from "./application/ports/ITaskActivityRepository";
+import { MongoTaskActivityRepository } from "./infrastructure/repositories/mongo-task-activity.repository";
 import { COMMENT_REPOSITORY_TOKEN } from "./domain/repositories/comment.repository.interface";
 import { CommentRepository } from "./infrastructure/repositories/comment.repository";
 import {
@@ -130,6 +138,7 @@ const Handlers = [
     MongooseModule.forFeature([
       { name: TaskPersistence.name, schema: TaskSchema },
       { name: TaskEventPersistence.name, schema: TaskEventSchema },
+      { name: TaskActivityPersistence.name, schema: TaskActivitySchema },
       { name: TaskComment.name, schema: TaskCommentSchema },
       { name: UserReplica.name, schema: UserReplicaSchema },
       { name: TaskOutboxEvent.name, schema: TaskOutboxEventSchema },
@@ -149,10 +158,12 @@ const Handlers = [
     AzureBlobService,
     WorkspaceMockService,
     WorkspaceHttpClient,
+    WorkspaceMembershipCacheService,
     UserProfileHttpClient,
     UserReplicaLookupService,
     TaskOutboxService,
     TaskOutboxProcessor,
+    TaskCommentNotificationPublisher,
     IdempotencyService,
     AuthGuard,
     WorkspaceValidationGuard,
@@ -179,6 +190,10 @@ const Handlers = [
     {
       provide: ITaskRepository,
       useClass: EventSourcedMongoTaskRepository,
+    },
+    {
+      provide: ITaskActivityRepository,
+      useClass: MongoTaskActivityRepository,
     },
     {
       provide: COMMENT_REPOSITORY_TOKEN,

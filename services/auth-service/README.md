@@ -36,6 +36,18 @@ pnpm test
 4. **Token Validation:** Exposes a `/verify` endpoint used by Traefik's `ForwardAuth` middleware to authenticate all inbound requests.
 5. **Event Publisher:** Publishes `AUTH_EMAIL_VERIFIED_EVENT` to RabbitMQ upon successful email verification to trigger downstream hydration in `user-service`.
 
+## Architecture
+
+Clean/hexagonal (aligned with `user-service`):
+
+```text
+presentation → application/use-cases → domain → infrastructure + integrations
+```
+
+Key paths: `presentation/http/auth.controller.ts`, `application/use-cases/`, `domain/repositories/`, `infrastructure/database/entities/*.orm-entity.ts`, `integrations/user-profiles/`.
+
+See `CLAUDE.md` and `.claude/docs/service-architecture.md` for agent conventions.
+
 ## API Endpoints
 
 All endpoints are prefixed with `/api/v1/auth`.

@@ -3,8 +3,11 @@ import { Injectable, Inject } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 import { ITaskRepository } from "../../application/ports/ITaskRepository";
+import type { TaskListFilter, TaskListOptions } from "../../application/ports/task-list-filter";
 import { ITaskEventStore as ITaskEventStoreToken } from "../../application/ports/ITaskEventStore";
 import type { ITaskEventStore } from "../../application/ports/ITaskEventStore";
+import { ITaskActivityRepository as ITaskActivityRepositoryToken } from "../../application/ports/ITaskActivityRepository";
+import type { ITaskActivityRepository } from "../../application/ports/ITaskActivityRepository";
 import { Task as TaskDomain } from "../../domain/entities/Task";
 import { TaskDomainEventType } from "../../domain/events/task-domain.events";
 import { TaskId } from "../../domain/value-objects/TaskId";
@@ -19,6 +22,8 @@ export class EventSourcedMongoTaskRepository implements ITaskRepository {
     private readonly taskModel: Model<TaskPersistence>,
     @Inject(ITaskEventStoreToken)
     private readonly eventStore: ITaskEventStore,
+    @Inject(ITaskActivityRepositoryToken)
+    private readonly taskActivityRepository: ITaskActivityRepository,
   ) {}
 
   async saveAsync(domainTask: TaskDomain): Promise<void> {
@@ -36,7 +41,8 @@ export class EventSourcedMongoTaskRepository implements ITaskRepository {
     domainTask.clearUncommittedEvents();
     domainTask.setVersion(appended[appended.length - 1].version);
 
-    await this.syncProjection(streamId);
+    await this.taskActivityRepository.appendFromEventsAsync(streamId, appended);
+    await this.syncProjectionFromAggregate(domainTask);
   }
 
   async findByIdAsync(id: TaskId): Promise<TaskDomain | null> {
@@ -64,9 +70,53 @@ export class EventSourcedMongoTaskRepository implements ITaskRepository {
     return TaskMapper.toDomain(rawDoc, 0);
   }
 
-  async findByWorkspaceIdAsync(workspaceId: string): Promise<TaskDomain[]> {
-    const rawDocs = await this.taskModel.find({ workspaceId }).limit(1000).exec();
+  async findByWorkspaceIdAsync(
+    workspaceId: string,
+    filter?: TaskListFilter,
+    options?: TaskListOptions,
+  ): Promise<TaskDomain[]> {
+    const mongoFilter = this.buildWorkspaceFilter(workspaceId, filter);
+    let query = this.taskModel.find(mongoFilter).sort({ updatedAt: -1 });
+
+    if (options?.skip != null && options.skip > 0) {
+      query = query.skip(options.skip);
+    }
+    if (options?.limit != null && options.limit > 0) {
+      query = query.limit(options.limit);
+    }
+
+    const rawDocs = await query.exec();
     return rawDocs.map((doc) => TaskMapper.toDomain(doc));
+  }
+
+  async countByWorkspaceIdAsync(
+    workspaceId: string,
+    filter?: TaskListFilter,
+  ): Promise<number> {
+    const mongoFilter = this.buildWorkspaceFilter(workspaceId, filter);
+    return this.taskModel.countDocuments(mongoFilter).exec();
+  }
+
+  private buildWorkspaceFilter(
+    workspaceId: string,
+    filter?: TaskListFilter,
+  ): Record<string, unknown> {
+    const mongoFilter: Record<string, unknown> = { workspaceId };
+
+    if (filter?.status) {
+      mongoFilter.status = filter.status;
+    }
+    if (filter?.assigneeId) {
+      mongoFilter.assigneeId = filter.assigneeId;
+    }
+    if (filter?.priority) {
+      mongoFilter.priority = filter.priority;
+    }
+    if (filter?.projectId) {
+      mongoFilter.projectId = filter.projectId;
+    }
+
+    return mongoFilter;
   }
 
   async deleteAsync(id: TaskId): Promise<void> {
@@ -111,17 +161,17 @@ export class EventSourcedMongoTaskRepository implements ITaskRepository {
     }
   }
 
-  private async syncProjection(streamId: string): Promise<void> {
-    const events = await this.eventStore.loadStream(streamId);
-    const lastEvent = events[events.length - 1];
+  private async syncProjectionFromAggregate(
+    domainTask: TaskDomain,
+  ): Promise<void> {
+    const streamId = domainTask.getId().getValue();
 
-    if (lastEvent?.eventType === TaskDomainEventType.TaskDeleted) {
+    if (domainTask.isDeleted()) {
       await this.taskModel.deleteOne({ _id: streamId }).exec();
       return;
     }
 
-    const aggregate = TaskDomain.fromHistory(events);
-    const persistenceData = TaskMapper.toPersistence(aggregate);
+    const persistenceData = TaskMapper.toPersistence(domainTask);
     await this.taskModel
       .findByIdAndUpdate(streamId, persistenceData, {
         upsert: true,

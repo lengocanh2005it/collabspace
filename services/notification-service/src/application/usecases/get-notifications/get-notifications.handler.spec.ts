@@ -18,6 +18,7 @@ describe("GetNotificationsHandler", () => {
       createAsync: jest.fn(),
       findByIdAsync: jest.fn(),
       findByRecipientIdAsync: jest.fn(),
+      countByRecipientIdAsync: jest.fn(),
       countUnreadByRecipientIdAsync: jest.fn(),
       updateAsync: jest.fn(),
       deleteAsync: jest.fn(),
@@ -73,11 +74,12 @@ describe("GetNotificationsHandler", () => {
     ];
 
     mockRepository.findByRecipientIdAsync.mockResolvedValue(mockNotifications);
+    mockRepository.countByRecipientIdAsync.mockResolvedValue(42);
     mockRepository.countUnreadByRecipientIdAsync.mockResolvedValue(5);
 
     const result = await handler.execute(query);
 
-    expect(result.total).toBe(2);
+    expect(result.total).toBe(42);
     expect(result.unreadCount).toBe(5);
     expect(result.notifications[0].actor.name).toBe("Actor");
     expect(result.notifications[0].actor.avatarUrl).toBe(

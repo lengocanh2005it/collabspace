@@ -22,7 +22,13 @@ async function bootstrap() {
       options: {
         urls: [rmqConfig.url],
         queue: rmqConfig.queue,
-        queueOptions: { durable: rmqConfig.queueDurable },
+        queueOptions: {
+          durable: rmqConfig.queueDurable,
+          arguments: {
+            "x-dead-letter-exchange": rmqConfig.deadLetterExchange,
+            "x-dead-letter-routing-key": rmqConfig.deadLetterRoutingKey,
+          },
+        },
         noAck: rmqConfig.noAck,
         prefetchCount: rmqConfig.prefetchCount,
       },

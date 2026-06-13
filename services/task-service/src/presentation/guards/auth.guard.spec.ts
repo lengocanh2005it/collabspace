@@ -24,7 +24,8 @@ describe("AuthGuard", () => {
 
   it("should verify JWT and attach user from auth gRPC", async () => {
     const authGrpcService = {
-      verifyAccessToken: jest.fn().mockResolvedValue({ userId: "user-abc" }),
+      verifyAccessTokenLite: jest.fn().mockResolvedValue({ userId: "user-abc" }),
+      verifyAccessToken: jest.fn(),
     } as unknown as AuthGrpcService;
     const guard = new AuthGuard(authGrpcService);
 
@@ -38,15 +39,17 @@ describe("AuthGuard", () => {
     const result = await guard.canActivate(createContext(request));
 
     expect(result).toBe(true);
-    expect(authGrpcService.verifyAccessToken).toHaveBeenCalledWith(
+    expect(authGrpcService.verifyAccessTokenLite).toHaveBeenCalledWith(
       "Bearer token",
     );
+    expect(authGrpcService.verifyAccessToken).not.toHaveBeenCalled();
     expect(request.user).toEqual({ id: "user-abc", name: "Alice" });
   });
 
   it("should allow dev identity headers when explicitly enabled", async () => {
     process.env.ALLOW_DEV_IDENTITY_HEADERS = "true";
     const authGrpcService = {
+      verifyAccessTokenLite: jest.fn(),
       verifyAccessToken: jest.fn(),
     } as unknown as AuthGrpcService;
     const guard = new AuthGuard(authGrpcService);
@@ -61,12 +64,13 @@ describe("AuthGuard", () => {
     const result = await guard.canActivate(createContext(request));
 
     expect(result).toBe(true);
-    expect(authGrpcService.verifyAccessToken).not.toHaveBeenCalled();
+    expect(authGrpcService.verifyAccessTokenLite).not.toHaveBeenCalled();
     expect(request.user).toEqual({ id: "dev-user", name: "Dev" });
   });
 
   it("should reject requests without authorization or dev headers", async () => {
     const authGrpcService = {
+      verifyAccessTokenLite: jest.fn(),
       verifyAccessToken: jest.fn(),
     } as unknown as AuthGrpcService;
     const guard = new AuthGuard(authGrpcService);

@@ -47,7 +47,7 @@ Behavior notes:
 - Registration can recover an existing unverified pending user.
 - Email verification OTP is hashed before storing in Redis.
 - `login` requires verified email.
-- Refresh token rotation happens in `RefreshTokensService`.
+- Refresh token rotation happens in `TypeOrmRefreshTokenRepository` (port: `REFRESH_TOKEN_REPOSITORY`).
 - `change-password` revokes all refresh tokens for the user.
 - `verify` returns identity headers for downstream services and gateway-style usage.
 
@@ -97,19 +97,33 @@ Provider:
 
 Consumer:
 
-- `user-service`
-- future workspace/task/notification services
+- Traefik forward-auth (`GET /api/v1/auth/verify`) — **full** verify (profile + permissions)
 
 Purpose:
 
-- Validate bearer token.
+- Validate bearer token for gateway identity headers.
 - Return canonical user identity, roles, permissions, and optional workspace context.
+
+### AuthService.VerifyAccessTokenLite
+
+Provider:
+
+- `auth-service`
+
+Consumer:
+
+- `user-service`, `workspace-service`, `task-service`, `notification-service` — **AuthGuard** hot path
+
+Purpose:
+
+- Lightweight JWT verification for downstream guards: crypto verify + `isActive` check + roles from JWT claims.
+- **No** user-service profile gRPC; **no** RBAC permission graph SQL join.
+- Optional Redis cache (`AUTH_VERIFY_LITE_CACHE_ENABLED`, default `true`).
 
 Rules:
 
-- Callers should pass the original `Authorization` header if available.
-- Downstream services should not parse or trust JWT payloads directly when auth-service verification is available.
-- If a downstream service needs workspace authorization, it must combine auth identity with workspace membership checks.
+- Downstream guards should call **Lite**, not full `VerifyAccessToken`.
+- Use full verify only when permissions/profile are required (gateway `/auth/verify`, future admin routes).
 
 ### UserProfilesService.CreatePendingProfile
 

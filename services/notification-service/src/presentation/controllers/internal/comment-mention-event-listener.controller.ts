@@ -4,8 +4,8 @@ import { CommandBus } from "@nestjs/cqrs";
 import type { Channel, ConsumeMessage } from "amqplib";
 import { COMMENT_MENTIONED_EVENT } from "../../../domain/events/comment-events";
 import type { CommentMentionedNotificationPayload } from "../../../domain/events/comment-events";
-import { CreateNotificationCommand } from "../../../application/usecases/create-notification/create-notification.command";
-import { NotificationType } from "../../../domain/value-objects/NotificationType";
+import { InboundNotificationEventMapper } from "../../../application/mappers/inbound-notification-event.mapper";
+import { consumeNotificationEvent } from "../../helpers/rmq-notification-consumer.helper";
 
 @Controller()
 export class CommentMentionEventListenerController {
@@ -23,37 +23,15 @@ export class CommentMentionEventListenerController {
     const channel = context.getChannelRef() as Channel;
     const originalMsg = context.getMessage() as ConsumeMessage;
 
-    try {
-      const eventId =
-        data.eventId ??
-        `comment_mentioned:${data.commentId}:${data.recipientId}`;
-
-      const command = new CreateNotificationCommand(
-        data.recipientId,
-        data.actorId,
-        NotificationType.COMMENT_MENTIONED,
-        "Bạn được nhắc trong bình luận",
-        `${data.actorName} đã nhắc bạn: "${data.commentPreview}"`,
-        data.taskId,
-        "TASK",
-        {
-          actorName: data.actorName,
-          actorAvatarUrl: data.actorAvatarUrl,
-          taskTitle: data.taskTitle,
-          commentId: data.commentId,
-          timestamp: data.createdAt,
-        },
-        eventId,
-      );
-
-      await this.commandBus.execute(command);
-      channel.ack(originalMsg);
-    } catch (error) {
-      this.logger.error(
-        "Failed to process comment_mentioned event",
-        error instanceof Error ? error.stack : undefined,
-      );
-      channel.nack(originalMsg, false, true);
-    }
+    await consumeNotificationEvent(
+      {
+        commandBus: this.commandBus,
+        channel,
+        message: originalMsg,
+        logger: this.logger,
+        eventLabel: "comment_mentioned",
+      },
+      InboundNotificationEventMapper.toCommentMentionedCommand(data),
+    );
   }
 }

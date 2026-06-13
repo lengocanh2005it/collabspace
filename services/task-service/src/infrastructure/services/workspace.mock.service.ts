@@ -1,6 +1,10 @@
 // src/infrastructure/services/workspace.mock.service.ts
 import { Injectable } from "@nestjs/common";
-import type { IWorkspaceClient } from "../../application/ports/IWorkspaceClient";
+import type {
+  IWorkspaceClient,
+  WorkspaceMembershipSnapshot,
+} from "../../application/ports/IWorkspaceClient";
+import { meetsWorkspaceRole } from "../clients/workspace-membership.util";
 
 export interface Workspace {
   id: string;
@@ -149,7 +153,10 @@ export class WorkspaceMockService implements IWorkspaceClient {
    * @param workspaceId Workspace ID
    * @returns True always (workspace-service is the source of truth)
    */
-  validateWorkspaceAsync(workspaceId: string): Promise<boolean> {
+  validateWorkspaceAsync(
+    workspaceId: string,
+    _userId?: string,
+  ): Promise<boolean> {
     // Auto-register if unknown so subsequent member checks also pass
     if (!this.mockWorkspaces.has(workspaceId)) {
       this.registerDynamicWorkspace(workspaceId);
@@ -182,6 +189,25 @@ export class WorkspaceMockService implements IWorkspaceClient {
     };
     this.mockWorkspaces.set(workspaceId, dynamicWorkspace);
   }
+
+  async getMembershipAsync(
+    workspaceId: string,
+    userId: string,
+  ): Promise<WorkspaceMembershipSnapshot | null> {
+    const workspace = this.mockWorkspaces.get(workspaceId);
+    if (!workspace) {
+      return null;
+    }
+
+    const member = workspace.members.find((m) => m.userId === userId);
+
+    return {
+      isMember: Boolean(member),
+      role: member?.role ?? null,
+    };
+  }
+
+
 
   /**
    * Get workspace member info
@@ -236,16 +262,13 @@ export class WorkspaceMockService implements IWorkspaceClient {
       return true;
     }
 
-    const member = await this.getWorkspaceMemberAsync(workspaceId, userId);
-    if (!member) return false;
+    const membership = await this.getMembershipAsync(workspaceId, userId);
 
-    const roleHierarchy: Record<string, number> = {
-      owner: 3,
-      admin: 2,
-      member: 1,
-    };
+    if (!membership?.isMember) {
+      return false;
+    }
 
-    return roleHierarchy[member.role] >= roleHierarchy[requiredRole];
+    return meetsWorkspaceRole(membership.role, requiredRole);
   }
 
   /**
