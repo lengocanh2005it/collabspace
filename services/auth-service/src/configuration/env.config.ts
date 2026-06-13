@@ -96,6 +96,9 @@ export default () => ({
       60000,
     ),
   },
+  dev: {
+    exposeOtpEndpoint: toBoolean(process.env.ALLOW_DEV_OTP_ENDPOINT, false),
+  },
   grpc: {
     enabled: toBoolean(process.env.GRPC_ENABLED, true),
     url: process.env.GRPC_URL ?? '0.0.0.0:50051',

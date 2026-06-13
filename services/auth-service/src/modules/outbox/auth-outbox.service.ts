@@ -339,6 +339,19 @@ export class AuthOutboxService {
     return Number.isFinite(delayMs) ? delayMs : baseDelayMs;
   }
 
+  async getDevOtp(email: string): Promise<string | null> {
+    const rows = await this.dataSource.query<Array<{ otp: string }>>(
+      `SELECT payload->>'otp' AS otp
+       FROM auth_outbox_events
+       WHERE event_type = $1
+         AND payload->>'email' = $2
+       ORDER BY created_at DESC
+       LIMIT 1`,
+      [AUTH_OUTBOX_EVENT_EMAIL_VERIFICATION_OTP, email],
+    );
+    return rows[0]?.otp ?? null;
+  }
+
   private toIsoString(value: Date | string | null): string | null {
     if (!value) {
       return null;

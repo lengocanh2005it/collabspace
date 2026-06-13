@@ -257,6 +257,10 @@ export class ConfigurationService {
     };
   }
 
+  isDevOtpEndpointEnabled(): boolean {
+    return this.configService.get<boolean>('dev.exposeOtpEndpoint') ?? false;
+  }
+
   getGrpcConfig(): GrpcConfig {
     const protoDir = join(process.cwd(), 'proto');
 

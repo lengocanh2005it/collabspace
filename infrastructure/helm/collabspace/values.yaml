@@ -429,6 +429,7 @@ apps:
       REDIS_HOST: redis-master
       OUTBOX_ENABLED: "true"
       DATABASE_SYNCHRONIZE: "false"
+      ALLOW_DEV_OTP_ENDPOINT: "false"
 
   user-service:
     enabled: true

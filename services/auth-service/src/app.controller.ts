@@ -1,9 +1,12 @@
 import {
   Body,
   Controller,
+  ForbiddenException,
   Get,
   HttpCode,
+  NotFoundException,
   Post,
+  Query,
   Req,
   Res,
 } from '@nestjs/common';
@@ -46,6 +49,8 @@ import { AuthHealthService } from './health/auth-health.service';
 import { assertMetricsAccess } from './metrics/metrics-access';
 import { MetricsService } from './metrics/metrics.service';
 import { AuthService } from './app.service';
+import { AuthOutboxService } from './modules/outbox/auth-outbox.service';
+import { ConfigurationService } from './configuration/configuration.service';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -54,6 +59,8 @@ export class AuthController {
     private readonly authService: AuthService,
     private readonly authHealthService: AuthHealthService,
     private readonly metricsService: MetricsService,
+    private readonly authOutboxService: AuthOutboxService,
+    private readonly configurationService: ConfigurationService,
   ) {}
 
   @Get('health')
@@ -180,6 +187,25 @@ export class AuthController {
   @ApiUnauthorizedResponse()
   async refresh(@Body() body: RefreshSessionRequestDto) {
     return this.authService.refresh(body);
+  }
+
+  @Get('dev/otp')
+  @HttpCode(200)
+  @ApiOperation({
+    summary: '[DEV ONLY] Get latest OTP for email — requires ALLOW_DEV_OTP_ENDPOINT=true',
+  })
+  async getDevOtp(@Query('email') email: string) {
+    if (!this.configurationService.isDevOtpEndpointEnabled()) {
+      throw new ForbiddenException('Dev OTP endpoint is disabled');
+    }
+    if (!email) {
+      throw new NotFoundException('email query param required');
+    }
+    const otp = await this.authOutboxService.getDevOtp(email);
+    if (!otp) {
+      throw new NotFoundException(`No OTP found for ${email}`);
+    }
+    return { otp };
   }
 
   @Get('verify')
