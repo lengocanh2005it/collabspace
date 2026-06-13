@@ -39,9 +39,12 @@ Env (auth-service):
 | Task list pagination (`skip`/`limit`, default 50, max 200) | Done |
 | Comment list `total` via `countByTaskIdAsync` | Done |
 
-## Phase 4 — Task write / event sourcing (planned)
+## Phase 4 — Task write / event sourcing ✅
 
-Bỏ double event replay; batch outbox mentions.
+| Item | Status |
+|------|--------|
+| Incremental projection sync (no full stream replay on save) | Done |
+| Batch `enqueueCommentMentioned` via `insertMany` | Done |
 
 ## Phase 5 — Activity read model (planned)
 

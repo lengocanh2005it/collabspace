@@ -39,16 +39,28 @@ export class TaskOutboxService {
   async enqueueCommentMentioned(
     payload: CommentMentionedEventPayload,
   ): Promise<void> {
-    await this.outboxModel.create({
-      attemptCount: 0,
-      availableAt: new Date(),
-      claimedAt: null,
-      eventType: TASK_OUTBOX_EVENT_COMMENT_MENTIONED,
-      failedAt: null,
-      lastError: null,
-      payload: payload as unknown as Record<string, unknown>,
-      processedAt: null,
-    });
+    await this.enqueueCommentMentionedBatch([payload]);
+  }
+
+  async enqueueCommentMentionedBatch(
+    payloads: CommentMentionedEventPayload[],
+  ): Promise<void> {
+    if (payloads.length === 0) {
+      return;
+    }
+
+    await this.outboxModel.insertMany(
+      payloads.map((payload) => ({
+        attemptCount: 0,
+        availableAt: new Date(),
+        claimedAt: null,
+        eventType: TASK_OUTBOX_EVENT_COMMENT_MENTIONED,
+        failedAt: null,
+        lastError: null,
+        payload: payload as unknown as Record<string, unknown>,
+        processedAt: null,
+      })),
+    );
   }
 
   async enqueueTaskCommented(

@@ -50,23 +50,27 @@ export class TaskCommentNotificationPublisher {
       });
     }
 
-    for (const recipientId of CommentNotificationPolicy.mentionRecipients(
+    const mentionRecipients = CommentNotificationPolicy.mentionRecipients(
       input.mentionedUserIds,
       input.assigneeId,
-    )) {
-      await this.taskOutboxService.enqueueCommentMentioned({
-        eventId: randomUUID(),
-        occurredAt: now,
-        taskId: input.taskId,
-        taskTitle: input.taskTitle,
-        recipientId,
-        actorId: input.authorId,
-        actorName: input.authorName,
-        actorAvatarUrl: input.authorAvatarUrl,
-        commentId: input.commentId,
-        commentPreview: commentPreview.toString(),
-        createdAt: now,
-      });
+    );
+
+    if (mentionRecipients.length > 0) {
+      await this.taskOutboxService.enqueueCommentMentionedBatch(
+        mentionRecipients.map((recipientId) => ({
+          eventId: randomUUID(),
+          occurredAt: now,
+          taskId: input.taskId,
+          taskTitle: input.taskTitle,
+          recipientId,
+          actorId: input.authorId,
+          actorName: input.authorName,
+          actorAvatarUrl: input.authorAvatarUrl,
+          commentId: input.commentId,
+          commentPreview: commentPreview.toString(),
+          createdAt: now,
+        })),
+      );
     }
   }
 }

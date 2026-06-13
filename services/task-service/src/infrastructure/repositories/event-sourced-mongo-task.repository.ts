@@ -37,7 +37,7 @@ export class EventSourcedMongoTaskRepository implements ITaskRepository {
     domainTask.clearUncommittedEvents();
     domainTask.setVersion(appended[appended.length - 1].version);
 
-    await this.syncProjection(streamId);
+    await this.syncProjectionFromAggregate(domainTask);
   }
 
   async findByIdAsync(id: TaskId): Promise<TaskDomain | null> {
@@ -156,17 +156,17 @@ export class EventSourcedMongoTaskRepository implements ITaskRepository {
     }
   }
 
-  private async syncProjection(streamId: string): Promise<void> {
-    const events = await this.eventStore.loadStream(streamId);
-    const lastEvent = events[events.length - 1];
+  private async syncProjectionFromAggregate(
+    domainTask: TaskDomain,
+  ): Promise<void> {
+    const streamId = domainTask.getId().getValue();
 
-    if (lastEvent?.eventType === TaskDomainEventType.TaskDeleted) {
+    if (domainTask.isDeleted()) {
       await this.taskModel.deleteOne({ _id: streamId }).exec();
       return;
     }
 
-    const aggregate = TaskDomain.fromHistory(events);
-    const persistenceData = TaskMapper.toPersistence(aggregate);
+    const persistenceData = TaskMapper.toPersistence(domainTask);
     await this.taskModel
       .findByIdAndUpdate(streamId, persistenceData, {
         upsert: true,
