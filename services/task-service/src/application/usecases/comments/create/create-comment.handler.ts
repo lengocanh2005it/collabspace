@@ -15,6 +15,8 @@ import type { ITaskRepository } from "../../../ports/ITaskRepository";
 import { Comment } from "../../../../domain/entities/comment.entity";
 import { TaskId } from "../../../../domain/value-objects/TaskId";
 import { TaskCommentNotificationPublisher } from "../../../services/task-comment-notification.publisher";
+import { ITaskActivityRepository as ITaskActivityRepositoryToken } from "../../../ports/ITaskActivityRepository";
+import type { ITaskActivityRepository } from "../../../ports/ITaskActivityRepository";
 import { parseMentionUsernames } from "../../../../domain/utils/mention-parser";
 import { v4 as uuid } from "uuid";
 
@@ -39,6 +41,9 @@ export class CreateCommentHandler implements ICommandHandler<
     private readonly userReplicaLookup: UserReplicaLookupService,
 
     private readonly commentNotificationPublisher: TaskCommentNotificationPublisher,
+
+    @Inject(ITaskActivityRepositoryToken)
+    private readonly taskActivityRepository: ITaskActivityRepository,
   ) {}
 
   async execute(command: CreateCommentCommand): Promise<CreateCommentResponse> {
@@ -91,6 +96,24 @@ export class CreateCommentHandler implements ICommandHandler<
     }
 
     const savedCommentId = await this.commentRepository.createAsync(comment);
+
+    await this.taskActivityRepository.appendFromCommentAsync(
+      Comment.restore(
+        savedCommentId,
+        comment.getTaskId(),
+        comment.getAuthorId(),
+        comment.getAuthorName(),
+        comment.getAuthorAvatarUrl(),
+        comment.getContent(),
+        comment.getParentId(),
+        comment.getMentions(),
+        comment.getIsEdited(),
+        comment.getDeletedAt(),
+        comment.getReactionCount(),
+        comment.getCreatedAt(),
+        comment.getUpdatedAt(),
+      ),
+    );
 
     await this.commentNotificationPublisher.publishForNewComment({
       taskId: command.taskId,

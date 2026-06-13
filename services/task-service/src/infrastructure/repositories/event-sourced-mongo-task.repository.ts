@@ -6,6 +6,8 @@ import { ITaskRepository } from "../../application/ports/ITaskRepository";
 import type { TaskListFilter, TaskListOptions } from "../../application/ports/task-list-filter";
 import { ITaskEventStore as ITaskEventStoreToken } from "../../application/ports/ITaskEventStore";
 import type { ITaskEventStore } from "../../application/ports/ITaskEventStore";
+import { ITaskActivityRepository as ITaskActivityRepositoryToken } from "../../application/ports/ITaskActivityRepository";
+import type { ITaskActivityRepository } from "../../application/ports/ITaskActivityRepository";
 import { Task as TaskDomain } from "../../domain/entities/Task";
 import { TaskDomainEventType } from "../../domain/events/task-domain.events";
 import { TaskId } from "../../domain/value-objects/TaskId";
@@ -20,6 +22,8 @@ export class EventSourcedMongoTaskRepository implements ITaskRepository {
     private readonly taskModel: Model<TaskPersistence>,
     @Inject(ITaskEventStoreToken)
     private readonly eventStore: ITaskEventStore,
+    @Inject(ITaskActivityRepositoryToken)
+    private readonly taskActivityRepository: ITaskActivityRepository,
   ) {}
 
   async saveAsync(domainTask: TaskDomain): Promise<void> {
@@ -37,6 +41,7 @@ export class EventSourcedMongoTaskRepository implements ITaskRepository {
     domainTask.clearUncommittedEvents();
     domainTask.setVersion(appended[appended.length - 1].version);
 
+    await this.taskActivityRepository.appendFromEventsAsync(streamId, appended);
     await this.syncProjectionFromAggregate(domainTask);
   }
 

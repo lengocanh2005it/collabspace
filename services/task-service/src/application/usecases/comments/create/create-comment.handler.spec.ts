@@ -6,6 +6,7 @@ import { createMockTaskRepository } from "../../../../test-utils/mock-task-repos
 import { UserReplicaLookupService } from "../../../services/user-replica-lookup.service";
 import { ICommentRepository } from "../../../../domain/repositories/comment.repository.interface";
 import { TaskCommentNotificationPublisher } from "../../../services/task-comment-notification.publisher";
+import type { ITaskActivityRepository } from "../../../ports/ITaskActivityRepository";
 import { Task } from "../../../../domain/entities/Task";
 import { TaskId } from "../../../../domain/value-objects/TaskId";
 import { UserSnapshot } from "../../../../domain/value-objects/UserSnapshot";
@@ -23,6 +24,7 @@ describe("CreateCommentHandler", () => {
     >
   >;
   let mockCommentNotificationPublisher: jest.Mocked<TaskCommentNotificationPublisher>;
+  let mockTaskActivityRepository: jest.Mocked<ITaskActivityRepository>;
 
   beforeEach(() => {
     mockCommentRepo = {
@@ -44,11 +46,19 @@ describe("CreateCommentHandler", () => {
       publishForNewComment: jest.fn(),
     } as any;
 
+    mockTaskActivityRepository = {
+      appendFromEventsAsync: jest.fn(),
+      appendFromCommentAsync: jest.fn().mockResolvedValue(undefined),
+      findByTaskIdAsync: jest.fn(),
+      countByTaskIdAsync: jest.fn(),
+    };
+
     handler = new CreateCommentHandler(
       mockCommentRepo,
       mockTaskRepo,
       mockUserReplicaLookup as UserReplicaLookupService,
       mockCommentNotificationPublisher,
+      mockTaskActivityRepository,
     );
   });
 
@@ -112,6 +122,7 @@ describe("CreateCommentHandler", () => {
 
     expect(result.commentId).toBe("123e4567-e89b-12d3-a456-426614174001");
     expect(mockCommentRepo.createAsync).toHaveBeenCalledTimes(1);
+    expect(mockTaskActivityRepository.appendFromCommentAsync).toHaveBeenCalledTimes(1);
     expect(mockCommentNotificationPublisher.publishForNewComment).toHaveBeenCalledTimes(1);
     expect(mockCommentNotificationPublisher.publishForNewComment).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -140,6 +151,7 @@ describe("CreateCommentHandler", () => {
     await handler.execute(command);
 
     expect(mockCommentRepo.createAsync).toHaveBeenCalledTimes(1);
+    expect(mockTaskActivityRepository.appendFromCommentAsync).toHaveBeenCalledTimes(1);
     expect(mockCommentNotificationPublisher.publishForNewComment).toHaveBeenCalledTimes(1);
   });
 
@@ -161,6 +173,7 @@ describe("CreateCommentHandler", () => {
     await handler.execute(command);
 
     expect(mockCommentRepo.createAsync).toHaveBeenCalledTimes(1);
+    expect(mockTaskActivityRepository.appendFromCommentAsync).toHaveBeenCalledTimes(1);
     expect(mockCommentNotificationPublisher.publishForNewComment).toHaveBeenCalledTimes(1);
   });
 

@@ -4,6 +4,7 @@ import { TaskId } from "../../domain/value-objects/TaskId";
 import { UserSnapshot } from "../../domain/value-objects/UserSnapshot";
 import { TaskDomainEventType } from "../../domain/events/task-domain.events";
 import type { ITaskEventStore } from "../../application/ports/ITaskEventStore";
+import type { ITaskActivityRepository } from "../../application/ports/ITaskActivityRepository";
 import type { Model } from "mongoose";
 import type { TaskPersistence } from "../persistence/task.schema";
 
@@ -19,6 +20,7 @@ describe("EventSourcedMongoTaskRepository", () => {
 
   let repository: EventSourcedMongoTaskRepository;
   let mockEventStore: jest.Mocked<ITaskEventStore>;
+  let mockTaskActivityRepository: jest.Mocked<ITaskActivityRepository>;
   let mockTaskModel: jest.Mocked<Model<TaskPersistence>>;
 
   beforeEach(() => {
@@ -26,6 +28,13 @@ describe("EventSourcedMongoTaskRepository", () => {
       loadStream: jest.fn(),
       getStreamVersion: jest.fn(),
       append: jest.fn(),
+    };
+
+    mockTaskActivityRepository = {
+      appendFromEventsAsync: jest.fn().mockResolvedValue(undefined),
+      appendFromCommentAsync: jest.fn(),
+      findByTaskIdAsync: jest.fn(),
+      countByTaskIdAsync: jest.fn(),
     };
 
     mockTaskModel = {
@@ -36,6 +45,7 @@ describe("EventSourcedMongoTaskRepository", () => {
     repository = new EventSourcedMongoTaskRepository(
       mockTaskModel,
       mockEventStore,
+      mockTaskActivityRepository,
     );
   });
 
@@ -69,6 +79,12 @@ describe("EventSourcedMongoTaskRepository", () => {
       { upsert: true, new: true },
     );
     expect(mockTaskModel.deleteOne).not.toHaveBeenCalled();
+    expect(mockTaskActivityRepository.appendFromEventsAsync).toHaveBeenCalledWith(
+      taskId.getValue(),
+      expect.arrayContaining([
+        expect.objectContaining({ eventType: TaskDomainEventType.TaskCreated }),
+      ]),
+    );
   });
 
   it("deletes projection when aggregate is deleted without reloading the stream", async () => {

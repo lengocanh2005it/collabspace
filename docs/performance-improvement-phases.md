@@ -46,9 +46,14 @@ Env (auth-service):
 | Incremental projection sync (no full stream replay on save) | Done |
 | Batch `enqueueCommentMentioned` via `insertMany` | Done |
 
-## Phase 5 — Activity read model (planned)
+## Phase 5 — Activity read model ✅
 
-DB pagination / `task_activity` projection.
+| Item | Status |
+|------|--------|
+| `task_activity` Mongo projection collection | Done |
+| Write projection on task events + new comments | Done |
+| Activity list reads from projection with DB `offset`/`limit` + `count` | Done |
+| Seed backfill for demo data | Done |
 
 ## Phase 6 — Async pipeline (planned)
 
