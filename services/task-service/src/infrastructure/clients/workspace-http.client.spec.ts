@@ -2,6 +2,7 @@ import { ServiceUnavailableException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { requestIdStorage } from "../../common/http/request-id.context";
 import { WorkspaceHttpClient } from "./workspace-http.client";
+import { WorkspaceMembershipCacheService } from "../cache/workspace-membership-cache.service";
 
 describe("WorkspaceHttpClient", () => {
   const workspaceId = "550e8400-e29b-41d4-a716-446655440000";
@@ -31,7 +32,9 @@ describe("WorkspaceHttpClient", () => {
       }),
     } as unknown as ConfigService;
 
-    return new WorkspaceHttpClient(configService);
+    const membershipCache = new WorkspaceMembershipCacheService(configService);
+
+    return new WorkspaceHttpClient(configService, membershipCache);
   }
 
   it("should call internal membership endpoint once via getMembershipAsync", async () => {
@@ -52,14 +55,27 @@ describe("WorkspaceHttpClient", () => {
 
     expect(membership).toEqual({ isMember: true, role: "member" });
     expect(global.fetch).toHaveBeenCalledTimes(1);
-    expect(global.fetch).toHaveBeenCalledWith(
-      `http://workspace-service:8080/api/v1/workspaces/internal/${workspaceId}/membership?userId=${userId}`,
-      expect.objectContaining({
-        headers: {
-          "X-Internal-Service-Token": "shared-secret",
-        },
+  });
+
+  it("should serve repeated membership checks from cache", async () => {
+    process.env.NODE_ENV = "production";
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        workspaceId,
+        userId,
+        isMember: true,
+        role: "member",
       }),
-    );
+    });
+
+    const client = createClient("shared-secret");
+
+    await client.getMembershipAsync(workspaceId, userId);
+    await client.getMembershipAsync(workspaceId, userId);
+
+    expect(global.fetch).toHaveBeenCalledTimes(1);
   });
 
   it("should call internal membership endpoint with service token", async () => {

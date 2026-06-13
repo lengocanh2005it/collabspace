@@ -8,6 +8,7 @@ k6 chạy qua **API gateway** (`BASE_URL=.../api/v1`), không gọi thẳng từ
 |------|----------|----------|
 | `k6/scenarios/smoke.js` | Health 5 app services | 5 VU, 1 phút |
 | `k6/scenarios/demo-flow.js` | Login demo users → workspaces, board, notifications | stages 10 VU |
+| `k6/scenarios/slo-baseline.js` | Hot read paths + per-route p95 SLO thresholds | 10 VU, 2 phút |
 
 Legacy per-service scripts: `k6/scripts/*.js` (health cũ — giữ tham chiếu).
 
@@ -18,7 +19,8 @@ Legacy per-service scripts: `k6/scripts/*.js` (health cũ — giữ tham chiếu
 cp k6/.env.example k6/.env   # chỉnh BASE_URL
 
 BASE_URL=http://localhost/api/v1 ./run-load-test.sh smoke
-BASE_URL=http://167.172.77.110/api/v1 ./run-load-test.sh demo-flow
+BASE_URL=http://localhost/api/v1 ./run-load-test.sh demo-flow
+BASE_URL=http://localhost/api/v1 ./run-load-test.sh slo-baseline
 ```
 
 **Prod smoke (script):** `../deploy/run-k6-smoke-prod.sh`

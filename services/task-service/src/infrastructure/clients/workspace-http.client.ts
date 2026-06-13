@@ -7,6 +7,7 @@ import type {
   WorkspaceMembershipSnapshot,
 } from "../../application/ports/IWorkspaceClient";
 import { meetsWorkspaceRole } from "./workspace-membership.util";
+import { WorkspaceMembershipCacheService } from "../cache/workspace-membership-cache.service";
 
 type WorkspaceMembershipResponse = {
   workspaceId: string;
@@ -21,7 +22,10 @@ export class WorkspaceHttpClient implements IWorkspaceClient {
   private readonly timeoutMs: number;
   private readonly internalToken: string | undefined;
 
-  constructor(private readonly configService: ConfigService) {
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly membershipCache: WorkspaceMembershipCacheService,
+  ) {
     this.baseUrl =
       this.configService.get<string>("WORKSPACE_SERVICE_URL") ??
       "http://workspace-service:8080";
@@ -37,16 +41,24 @@ export class WorkspaceHttpClient implements IWorkspaceClient {
     workspaceId: string,
     userId: string,
   ): Promise<WorkspaceMembershipSnapshot | null> {
+    const cached = this.membershipCache.read(workspaceId, userId);
+    if (cached !== undefined) {
+      return cached;
+    }
+
     const membership = await this.fetchMembership(workspaceId, userId);
 
     if (!membership) {
+      this.membershipCache.write(workspaceId, userId, null);
       return null;
     }
 
-    return {
+    const snapshot = {
       isMember: membership.isMember,
       role: membership.role as WorkspaceMember["role"] | null,
     };
+    this.membershipCache.write(workspaceId, userId, snapshot);
+    return snapshot;
   }
 
   async validateWorkspaceAsync(

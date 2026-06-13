@@ -40,6 +40,7 @@ import {
   UserReplicaLookupService,
 } from "./application/services/user-replica-lookup.service";
 import { WorkspaceMockService } from "./infrastructure/services/workspace.mock.service";
+import { WorkspaceMembershipCacheService } from "./infrastructure/cache/workspace-membership-cache.service";
 import { TaskCommentNotificationPublisher } from "./application/services/task-comment-notification.publisher";
 import { TaskOutboxService } from "./infrastructure/outbox/task-outbox.service";
 import { TaskOutboxProcessor } from "./infrastructure/outbox/task-outbox.processor";
@@ -157,6 +158,7 @@ const Handlers = [
     AzureBlobService,
     WorkspaceMockService,
     WorkspaceHttpClient,
+    WorkspaceMembershipCacheService,
     UserProfileHttpClient,
     UserReplicaLookupService,
     TaskOutboxService,

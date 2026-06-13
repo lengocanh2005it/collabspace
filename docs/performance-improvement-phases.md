@@ -2,9 +2,14 @@
 
 Lộ trình cải thiện latency/performance CollabSpace. Chi tiết pattern: [design-patterns.md](./design-patterns.md).
 
-## Phase 0 — Baseline (pending)
+## Phase 0 — Baseline (partial)
 
 Đo p50/p95 cho hot endpoints; k6 smoke; Grafana HTTP duration.
+
+| Item | Status |
+|------|--------|
+| k6 `slo-baseline` hot-path scenario | Done (Phase 7) |
+| Grafana dashboard review / prod cadence | Pending |
 
 ## Phase 1 — Quick wins ✅
 
@@ -62,6 +67,16 @@ Env (auth-service):
 | Task outbox batch claim (`find` + `bulkWrite`, `TASK_OUTBOX_BATCH_SIZE`) | Done |
 | Notification RMQ consumer retry → DLQ (`RABBITMQ_MAX_RETRIES`, `collabspace_dlx`) | Done |
 
-## Phase 7 — Cache & scale (ongoing)
+## Phase 7 — Cache & scale ✅
 
-Membership cache; k6 SLO baseline.
+| Item | Status |
+|------|--------|
+| Workspace membership TTL cache in task-service (`WORKSPACE_MEMBERSHIP_CACHE_*`) | Done |
+| k6 `slo-baseline` scenario with per-route p95 thresholds | Done |
+| Helper scripts `scripts/k6-slo-baseline.sh` / `.ps1` | Done |
+
+Env (task-service):
+
+- `WORKSPACE_MEMBERSHIP_CACHE_ENABLED` — default `true`
+- `WORKSPACE_MEMBERSHIP_CACHE_TTL_SECONDS` — default `60`
+- `WORKSPACE_MEMBERSHIP_CACHE_MAX_ENTRIES` — default `2000`
