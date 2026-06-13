@@ -97,7 +97,6 @@ export class TaskMapper {
       new Date(rawDoc.updatedAt),
       rawDoc.attachments || [],
       streamVersion,
-      rawDoc.projectId ?? null,
       rawDoc.priority ?? "MEDIUM",
       rawDoc.dueDate ? new Date(rawDoc.dueDate) : null,
       rawDoc.labels ?? [],

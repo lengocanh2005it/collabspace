@@ -109,6 +109,7 @@ describe("Task (event-sourced aggregate)", () => {
       "ws",
       null,
       null,
+      null,
       creator,
       new Date(),
       new Date(),

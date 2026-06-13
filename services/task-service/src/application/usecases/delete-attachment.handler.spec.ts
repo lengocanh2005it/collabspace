@@ -40,6 +40,7 @@ describe("DeleteAttachmentHandler", () => {
       "workspace-1",
       null,
       null,
+      null,
       creatorSnapshot,
       new Date(),
       new Date(),

@@ -35,6 +35,7 @@ describe("GetTasksHandler", () => {
       "Desc",
       status,
       "workspace-1",
+      null,
       assigneeId,
       assigneeId
         ? UserSnapshot.create(

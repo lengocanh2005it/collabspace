@@ -54,7 +54,6 @@ export class CreateTaskHandler implements ICommandHandler<
       command.title,
       command.description,
       command.workspaceId,
-      command.projectId,
       creator,
       {
         projectId: command.projectId ?? null,

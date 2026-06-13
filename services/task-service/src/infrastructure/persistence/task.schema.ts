@@ -42,9 +42,6 @@ export class TaskPersistence {
   labels!: string[];
 
   @Prop({ type: String, default: null })
-  projectId?: string | null;
-
-  @Prop({ type: String, default: null })
   assigneeId?: string | null; // ID của người được gán task
 
   @Prop({ type: Object, required: true })

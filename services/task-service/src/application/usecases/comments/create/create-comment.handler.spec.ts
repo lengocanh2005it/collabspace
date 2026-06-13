@@ -76,6 +76,7 @@ describe("CreateCommentHandler", () => {
       "Desc",
       "TODO",
       "workspace-1",
+      null,
       assigneeId,
       assigneeId
         ? UserSnapshot.create(
