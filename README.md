@@ -56,13 +56,13 @@
 | PostgreSQL | postgres:15 | 5432 | Auth, User, Workspace DBs |
 | MongoDB | mongo:6 | 27017 | Task service |
 | Prometheus | prom/prometheus | 9090 | Metrics collection |
-| Grafana | grafana/grafana | 3005 | Metrics visualization |
-| Elasticsearch | elasticsearch:8.8.2 | 9200 | Log storage |
-| Logstash | logstash:8.8.2 | 5044 | Log pipeline |
-| Kibana | kibana:8.8.2 | 5601 | Log visualization |
-| Jaeger | jaegertracing/all-in-one:1.41 | 16686 | Distributed tracing |
-| Jenkins | jenkins/jenkins:lts | 8081 | CI/CD |
+| Grafana | grafana/grafana | 3005 | Dashboards (local Compose) |
+| Loki + Promtail | Helm subcharts (K8s) | 3100 | **Log aggregation (production path)** |
+| Jaeger | jaegertracing/all-in-one:1.41 | 16686 | Distributed tracing (optional profile) |
+| Jenkins | jenkins/jenkins:lts | 8081 | CI/CD (optional) |
 | HashiCorp Vault (optional) | hashicorp/vault:1.17 | 8200 | Dev secrets store — see `infrastructure/vault/` |
+
+**Logging:** K8s/Helm dùng **Loki + Promtail** (không Elasticsearch). Docker Compose có profile **ELK tùy chọn** (`docker-compose.logging.yml`) — chỉ local dev, không dùng trên prod.
 
 ## Quick Start
 
@@ -86,7 +86,7 @@ docker-compose -f docker-compose.yml -f docker-compose.db.yml -f docker-compose.
 # With monitoring (Prometheus + Grafana)
 docker-compose -f docker-compose.yml -f docker-compose.db.yml -f docker-compose.monitoring.yml up -d
 
-# With logging (ELK Stack)
+# Optional: legacy ELK logging profile (local only — prod uses Loki on K8s)
 docker-compose -f docker-compose.yml -f docker-compose.db.yml -f docker-compose.logging.yml up -d
 
 # With tracing (Jaeger)
@@ -95,7 +95,7 @@ docker-compose -f docker-compose.yml -f docker-compose.db.yml -f docker-compose.
 # With API Gateway (Traefik)
 docker-compose -f docker-compose.yml -f docker-compose.db.yml -f docker-compose.traefik.yml up -d
 
-# Full stack (everything)
+# Full stack (monitoring + optional ELK + tracing + gateway)
 docker-compose -f docker-compose.yml -f docker-compose.db.yml -f docker-compose.override.yml -f docker-compose.monitoring.yml -f docker-compose.logging.yml -f docker-compose.tracing.yml -f docker-compose.traefik.yml up -d
 ```
 
@@ -233,18 +233,30 @@ Protected routes: **Authorize** → Bearer JWT. Internal S2S routes (user/worksp
 
 ## Monitoring & Observability
 
-### Dashboards
+Hướng dẫn đầy đủ: **[docs/observability.md](docs/observability.md)**.
 
-| Tool | URL (local Compose) | Purpose |
-|------|---------------------|---------|
+### Local Docker Compose
+
+| Tool | URL | Purpose |
+|------|-----|---------|
 | Grafana | http://localhost:3005 | Metrics dashboards |
 | Prometheus | http://localhost:9090 | Metrics queries |
-| Kibana | http://localhost:5601 | Log exploration (Compose profile) |
-| Jaeger | http://localhost:16686 | Trace analysis |
+| Jaeger | http://localhost:16686 | Trace analysis (tracing profile) |
 | Traefik | http://localhost:8080 | API Gateway dashboard |
 | RabbitMQ | http://localhost:15672 | Message queue management |
+| Kibana | http://localhost:5601 | Logs — **chỉ khi bật profile ELK** (`docker-compose.logging.yml`) |
 
-**Kubernetes (Helm):** Grafana tại `http://<HOST>/grafana/` — folder **CollabSpace** (Service Health, App Logs, Load Test Run). Log tail: **Explore → Loki**. Chi tiết: [docs/observability.md](docs/observability.md).
+Log trên Compose: container `stdout` + tùy chọn profile ELK. **Không** dùng ELK trên K8s prod.
+
+### Kubernetes (Helm) — đường chính
+
+| Tool | URL | Purpose |
+|------|-----|---------|
+| Grafana | `http://<HOST>/grafana/` | Folder **CollabSpace**: Service Health, App Logs, Load Test Run |
+| Prometheus | in-cluster `:9090` | Scrape app + Traefik (`metricsAuthToken`) |
+| Loki | in-cluster `:3100` | Logs — tail/search qua **Grafana Explore** |
+
+**Đọc log chi tiết:** Explore → Loki → `{namespace="collabspace", app="auth-service"}` (không tail trong dashboard App Logs).
 
 ### Load testing (k6)
 
@@ -299,8 +311,9 @@ Chart docs: [infrastructure/helm/README.md](infrastructure/helm/README.md). **Pr
 | notification-service | 2 | 128Mi | 256Mi | 100m | 250m |
 | traefik | 2 | 64Mi | 128Mi | 100m | 200m |
 | grafana | 1 | 128Mi | 256Mi | 100m | 200m |
-| elasticsearch | 1 | 1Gi | 2Gi | 500m | 1000m |
-| kibana | 1 | 512Mi | 1Gi | 250m | 500m |
+| prometheus | 1 | 256Mi | 512Mi | 100m | 500m |
+| loki | 1 | 128Mi | 256Mi | 100m | 250m |
+| promtail | 1 | 64Mi | 128Mi | 50m | 100m |
 | jaeger | 1 | 256Mi | 512Mi | 100m | 250m |
 
 ## CI/CD Pipeline
@@ -333,8 +346,8 @@ collabspace/
 │   ├── vault/               # HashiCorp Vault (dev + ESO manifests)
 │   ├── helm/                # Helm umbrella chart (preferred for K8s)
 │   ├── k8s/                 # Legacy Kubernetes manifests
-│   ├── monitoring/          # Prometheus + Grafana configs
-│   ├── logging/             # ELK Stack configs
+│   ├── monitoring/          # Prometheus alert rules + Grafana dashboard JSON (sync)
+│   ├── logging/             # Legacy ELK configs (optional Docker Compose profile)
 │   ├── tracing/             # Jaeger configs
 │   ├── rabbitmq/            # RabbitMQ setup
 │   ├── redis/               # Redis setup
@@ -376,7 +389,7 @@ This project is for educational purposes.
 ---
 
 **Infrastructure Engineer**: Phan Phu Tho  
-**Last Updated**: 2026-06-11
+**Last Updated**: 2026-06-13
 
 ---
 
