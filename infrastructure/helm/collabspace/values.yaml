@@ -214,7 +214,7 @@ gateway:
     expose: true
   rateLimit:
     average: 100
-    burst: 200
+    burst: 50
   cors:
     allowOrigins:
       - "*"
@@ -476,7 +476,7 @@ apps:
     extraEnv:
       AUTH_SERVICE_GRPC_URL: auth-service:50051
       WORKSPACE_OUTBOX_ENABLED: "true"
-      DATABASE_SYNCHRONIZE: "true"
+      DATABASE_SYNCHRONIZE: "false"
 
   task-service:
     enabled: true
