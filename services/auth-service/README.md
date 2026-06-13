@@ -1,98 +1,68 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Auth Service
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+The Auth Service is the foundational identity and access management microservice for CollabSpace. It handles user registration, authentication, authorization (RBAC), and session management.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Tech Stack
+- **Framework:** NestJS
+- **Database:** PostgreSQL (`collabspace_auth`) via TypeORM
+- **Authentication:** JWT (JSON Web Tokens)
+- **Messaging:** RabbitMQ (via amqplib)
+- **Containerization:** Docker (Alpine Node.js 20)
 
-## Description
-
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
-
-## Project setup
+## Quick Start
 
 ```bash
-$ pnpm install
+# Install dependencies
+pnpm install
+
+# Run database migrations
+pnpm run typeorm migration:run
+
+# Seed initial data (Admin/Roles)
+pnpm run seed
+
+# Run in development mode
+pnpm run start:dev
+
+# Run tests
+pnpm test
 ```
 
-## Compile and run the project
+## Core Responsibilities
 
-```bash
-# development
-$ pnpm run start
+1. **Identity Provider:** Serves as the central authority for user credentials.
+2. **Session Management:** Issues and revokes Access Tokens (short-lived) and Refresh Tokens (long-lived, rotatable).
+3. **RBAC:** Manages Roles and Permissions. Injects `X-Role`, `X-Roles`, and `X-Permissions` into headers during validation.
+4. **Token Validation:** Exposes a `/verify` endpoint used by Traefik's `ForwardAuth` middleware to authenticate all inbound requests.
+5. **Event Publisher:** Publishes `AUTH_EMAIL_VERIFIED_EVENT` to RabbitMQ upon successful email verification to trigger downstream hydration in `user-service`.
 
-# watch mode
-$ pnpm run start:dev
+## API Endpoints
 
-# production mode
-$ pnpm run start:prod
-```
+All endpoints are prefixed with `/api/v1/auth`.
 
-## Run tests
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/v1/auth/health` | GET | Health check (no auth required) |
+| `/api/v1/auth/register` | POST | Register a new user and generate an OTP |
+| `/api/v1/auth/login` | POST | Authenticate and retrieve JWT tokens |
+| `/api/v1/auth/refresh` | POST | Rotate refresh token |
+| `/api/v1/auth/verify` | GET | Internal Traefik forward-auth validation endpoint |
+| `/api/v1/auth/verify-email` | POST | Verify email via OTP |
+| `/api/v1/auth/me` | GET | Get current authenticated user details |
+| `/api/v1/auth/logout` | POST | Revoke current session |
+| `/api/v1/auth/roles` | POST | Create a new role |
+| `/api/v1/auth/permissions` | POST | Create a new permission |
 
-```bash
-# unit tests
-$ pnpm run test
+## Internal Contracts
+- **gRPC Server:** Exposes `AuthService.VerifyAccessToken` for downstream services requiring explicit identity checks outside of HTTP middleware.
+- **gRPC Client:** Calls `UserProfilesService.CreatePendingProfile` on the `user-service` during registration to bootstrap the user's profile.
 
-# e2e tests
-$ pnpm run test:e2e
+## Environment Variables
 
-# test coverage
-$ pnpm run test:cov
-```
-
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ pnpm install -g @nestjs/mau
-$ mau deploy
-```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+- `NODE_ENV`: Application environment (e.g., `production`, `development`)
+- `PORT`: Service port (default: 3000)
+- `DATABASE_URL`: PostgreSQL connection string
+- `JWT_SECRET`: Secret key for JWT signing
+- `JWT_EXPIRES_IN`: Access token expiration (e.g., `1h`)
+- `JWT_REFRESH_EXPIRES_IN`: Refresh token expiration (e.g., `7d`)
+- `RABBITMQ_URL`: RabbitMQ connection string
