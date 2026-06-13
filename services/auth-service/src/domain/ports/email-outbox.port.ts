@@ -22,4 +22,5 @@ export interface EmailOutbox {
     payload: EmailVerificationOtpEnqueuePayload,
   ): Promise<void>;
   getStats(): Promise<EmailOutboxStats>;
+  getDevOtp(email: string): Promise<string | null>;
 }

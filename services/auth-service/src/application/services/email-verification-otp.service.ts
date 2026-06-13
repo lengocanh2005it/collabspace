@@ -1,4 +1,4 @@
-import { AuthUser } from '@/common/types/identity.type';
+import type { AuthUser } from '@/domain/entities/auth-user';
 import { ConfigurationService } from '@/configuration/configuration.service';
 import {
   EMAIL_OUTBOX,

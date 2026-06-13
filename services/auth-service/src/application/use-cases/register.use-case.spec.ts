@@ -23,6 +23,7 @@ describe('RegisterUseCase', () => {
 
   const emailOutboxMock = {
     enqueueEmailVerificationOtp: jest.fn(),
+    getDevOtp: jest.fn(),
     getStats: jest.fn(),
   } as unknown as EmailOutbox;
 

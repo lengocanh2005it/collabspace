@@ -1,4 +1,4 @@
-import { AuthUser } from '@/common/types/identity.type';
+import type { AuthUser } from '@/domain/entities/auth-user';
 import { UnauthorizedException } from '@nestjs/common';
 
 export class User {

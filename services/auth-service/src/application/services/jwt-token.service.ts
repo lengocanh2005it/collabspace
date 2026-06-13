@@ -1,5 +1,5 @@
-import { AuthUser } from '@/common/types/identity.type';
-import { JwtPayload, SignAccessTokenInput } from '@/common/types/jwt.type';
+import type { AuthUser } from '@/domain/entities/auth-user';
+import type { JwtPayload, SignAccessTokenInput } from '@/domain/types/jwt';
 import { ConfigurationService } from '@/configuration/configuration.service';
 import {
   USER_REPOSITORY,

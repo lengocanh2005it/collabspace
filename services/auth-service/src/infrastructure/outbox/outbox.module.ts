@@ -4,11 +4,11 @@ import { EmailsModule } from '@/infrastructure/emails/emails.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthOutboxProcessor } from './auth-outbox.processor';
 import { AuthOutboxService } from './auth-outbox.service';
-import { AuthOutboxEventEntity } from './entities/auth-outbox-event.entity';
+import { AuthOutboxEventOrmEntity } from '@/infrastructure/database/entities/auth-outbox-event.orm-entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([AuthOutboxEventEntity]),
+    TypeOrmModule.forFeature([AuthOutboxEventOrmEntity]),
     DatabaseModule,
     EmailsModule,
   ],

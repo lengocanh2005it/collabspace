@@ -1,5 +1,5 @@
 import { ChangePasswordRequestDto } from '@/application/dto/auth-request.dto';
-import { ChangePasswordResult } from '@/common/types/identity.type';
+import type { ChangePasswordResult } from '@/application/dto/auth-use-case-results';
 import {
   REFRESH_TOKEN_REPOSITORY,
   type RefreshTokenRepository,

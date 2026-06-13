@@ -2,7 +2,7 @@ import {
   SendEmailJobPayload,
   SendHtmlEmailInput,
   SendTextEmailInput,
-} from '@/common/types/email.type';
+} from '@/infrastructure/emails/email-job.types';
 import {
   isOperationTimeoutError,
   withTimeout,

@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { RefreshTokenEntity } from './entities/refresh-token.entity';
+import { RefreshTokenOrmEntity } from '@/infrastructure/database/entities/refresh-token.orm-entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([RefreshTokenEntity])],
+  imports: [TypeOrmModule.forFeature([RefreshTokenOrmEntity])],
   exports: [TypeOrmModule],
 })
 export class RefreshTokensModule {}

@@ -7,11 +7,9 @@ import {
 } from '@nestjs/common';
 import { randomBytes, randomUUID, scrypt, timingSafeEqual } from 'crypto';
 import { promisify } from 'util';
-import type {
-  AuthUser,
-  LoginInput,
-  RegisterInput,
-} from '@/common/types/identity.type';
+import type { AuthUser } from '@/domain/entities/auth-user';
+import type { LoginInput } from '@/domain/types/login-input';
+import type { RegisterUserInput } from '@/domain/types/register-user-input';
 import { User } from '@/domain/entities/user.entity';
 import { UserRepository } from '@/domain/repositories/user.repository';
 
@@ -59,7 +57,7 @@ export class InMemoryUserRepository implements UserRepository {
     return this.toAuthUser(user);
   }
 
-  async register(input: RegisterInput): Promise<AuthUser> {
+  async register(input: RegisterUserInput): Promise<AuthUser> {
     const email = this.normalizeEmail(input.email);
     this.normalizeFullName(input.fullName);
     const password = this.normalizePassword(input.password);

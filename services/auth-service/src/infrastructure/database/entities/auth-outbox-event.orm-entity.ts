@@ -12,7 +12,7 @@ export const AUTH_OUTBOX_EVENT_PASSWORD_RESET_EMAIL =
   'auth.password_reset_email';
 
 @Entity({ name: 'auth_outbox_events' })
-export class AuthOutboxEventEntity {
+export class AuthOutboxEventOrmEntity {
   @Column({ name: 'attempt_count', default: 0, type: 'integer' })
   attemptCount!: number;
 

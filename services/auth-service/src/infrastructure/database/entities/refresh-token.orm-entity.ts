@@ -11,7 +11,7 @@ import {
 @Index('IDX_refresh_tokens_family_id', ['familyId'])
 @Index('IDX_refresh_tokens_user_id', ['userId'])
 @Index('UQ_refresh_tokens_token_hash', ['tokenHash'], { unique: true })
-export class RefreshTokenEntity {
+export class RefreshTokenOrmEntity {
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
 

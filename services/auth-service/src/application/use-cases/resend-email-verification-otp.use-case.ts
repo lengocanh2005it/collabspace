@@ -1,7 +1,5 @@
-import {
-  ResendEmailVerificationOtpInput,
-  ResendEmailVerificationOtpResult,
-} from '@/common/types/identity.type';
+import type { ResendEmailVerificationOtpResult } from '@/application/dto/auth-use-case-results';
+import { ResendEmailVerificationOtpRequestDto } from '@/application/dto/auth-request.dto';
 import {
   USER_REPOSITORY,
   type UserRepository,
@@ -18,7 +16,7 @@ export class ResendEmailVerificationOtpUseCase {
   ) {}
 
   async execute(
-    input: ResendEmailVerificationOtpInput,
+    input: ResendEmailVerificationOtpRequestDto,
   ): Promise<ResendEmailVerificationOtpResult> {
     const email = input.email?.trim().toLowerCase();
 

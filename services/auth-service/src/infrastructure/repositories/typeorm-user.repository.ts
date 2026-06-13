@@ -9,28 +9,26 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { randomBytes, randomUUID, scrypt, timingSafeEqual } from 'crypto';
 import { promisify } from 'util';
 import { EntityManager, Repository } from 'typeorm';
-import type {
-  AuthUser,
-  LoginInput,
-  RegisterInput,
-} from '@/common/types/identity.type';
+import type { AuthUser } from '@/domain/entities/auth-user';
+import type { LoginInput } from '@/domain/types/login-input';
+import type { RegisterUserInput } from '@/domain/types/register-user-input';
 import { User } from '@/domain/entities/user.entity';
 import { UserRepository } from '@/domain/repositories/user.repository';
-import { RoleEntity } from '@/infrastructure/identity/entities/role.entity';
-import { UserRoleEntity } from '@/infrastructure/identity/entities/user-role.entity';
-import { UserEntity } from '@/infrastructure/identity/entities/user.entity';
+import { RoleOrmEntity } from '@/infrastructure/database/entities/role.orm-entity';
+import { UserRoleOrmEntity } from '@/infrastructure/database/entities/user-role.orm-entity';
+import { UserOrmEntity } from '@/infrastructure/database/entities/user.orm-entity';
 
 const scryptAsync = promisify(scrypt);
 
 @Injectable()
 export class TypeOrmUserRepository implements UserRepository {
   constructor(
-    @InjectRepository(RoleEntity)
-    private readonly roleRepository: Repository<RoleEntity>,
-    @InjectRepository(UserEntity)
-    private readonly userRepository: Repository<UserEntity>,
-    @InjectRepository(UserRoleEntity)
-    private readonly userRoleRepository: Repository<UserRoleEntity>,
+    @InjectRepository(RoleOrmEntity)
+    private readonly roleRepository: Repository<RoleOrmEntity>,
+    @InjectRepository(UserOrmEntity)
+    private readonly userRepository: Repository<UserOrmEntity>,
+    @InjectRepository(UserRoleOrmEntity)
+    private readonly userRoleRepository: Repository<UserRoleOrmEntity>,
   ) {}
 
   async getAuthUserById(userId: string): Promise<AuthUser> {
@@ -76,7 +74,7 @@ export class TypeOrmUserRepository implements UserRepository {
     return this.toAuthUser(user);
   }
 
-  async register(input: RegisterInput): Promise<AuthUser> {
+  async register(input: RegisterUserInput): Promise<AuthUser> {
     const email = this.normalizeEmail(input.email);
     this.normalizeFullName(input.fullName);
     const password = this.normalizePassword(input.password);
@@ -179,7 +177,7 @@ export class TypeOrmUserRepository implements UserRepository {
     await this.userRepository.save(user);
   }
 
-  private async ensureRole(roleName: string): Promise<RoleEntity> {
+  private async ensureRole(roleName: string): Promise<RoleOrmEntity> {
     const name = this.normalizeName(roleName, 'role');
     const existingRole = await this.roleRepository.findOne({
       where: {
@@ -206,7 +204,7 @@ export class TypeOrmUserRepository implements UserRepository {
     return `scrypt:${salt}:${derivedKey.toString('hex')}`;
   }
 
-  private async loadUserByEmail(email: string): Promise<UserEntity> {
+  private async loadUserByEmail(email: string): Promise<UserOrmEntity> {
     const user = await this.userRepository.findOne({
       relations: {
         userRoles: {
@@ -232,16 +230,16 @@ export class TypeOrmUserRepository implements UserRepository {
     return user;
   }
 
-  private getUserRepository(manager?: EntityManager): Repository<UserEntity> {
+  private getUserRepository(manager?: EntityManager): Repository<UserOrmEntity> {
     return manager
-      ? manager.getRepository(UserEntity)
+      ? manager.getRepository(UserOrmEntity)
       : this.userRepository;
   }
 
   private async loadUserById(
     userId: string,
     manager?: EntityManager,
-  ): Promise<UserEntity> {
+  ): Promise<UserOrmEntity> {
     const user = await this.getUserRepository(manager).findOne({
       relations: {
         userRoles: {
@@ -319,7 +317,7 @@ export class TypeOrmUserRepository implements UserRepository {
     return normalizedPassword;
   }
 
-  private toAuthUser(user: UserEntity): AuthUser {
+  private toAuthUser(user: UserOrmEntity): AuthUser {
     const roles = user.userRoles
       .map((userRole) => userRole.role?.name)
       .filter((roleName): roleName is string => Boolean(roleName));

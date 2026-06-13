@@ -1,10 +1,10 @@
 import { Column, Entity, Index, OneToMany, PrimaryColumn } from 'typeorm';
-import { RolePermissionEntity } from './role-permission.entity';
-import { UserRoleEntity } from './user-role.entity';
+import { RolePermissionOrmEntity } from './role-permission.orm-entity';
+import { UserRoleOrmEntity } from './user-role.orm-entity';
 
 @Entity({ name: 'roles' })
 @Index('UQ_roles_name', ['name'], { unique: true })
-export class RoleEntity {
+export class RoleOrmEntity {
   @Column({ type: 'varchar' })
   description!: string;
 
@@ -15,11 +15,11 @@ export class RoleEntity {
   name!: string;
 
   @OneToMany(
-    () => RolePermissionEntity,
+    () => RolePermissionOrmEntity,
     (rolePermission) => rolePermission.role,
   )
-  rolePermissions!: RolePermissionEntity[];
+  rolePermissions!: RolePermissionOrmEntity[];
 
-  @OneToMany(() => UserRoleEntity, (userRole) => userRole.role)
-  userRoles!: UserRoleEntity[];
+  @OneToMany(() => UserRoleOrmEntity, (userRole) => userRole.role)
+  userRoles!: UserRoleOrmEntity[];
 }

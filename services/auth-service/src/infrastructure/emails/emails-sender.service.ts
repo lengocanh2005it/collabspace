@@ -1,4 +1,4 @@
-import { SendEmailJobPayload } from '@/common/types/email.type';
+import { SendEmailJobPayload } from '@/infrastructure/emails/email-job.types';
 import { ConfigurationService } from '@/configuration/configuration.service';
 import { MailerService } from '@nestjs-modules/mailer';
 import { Injectable } from '@nestjs/common';

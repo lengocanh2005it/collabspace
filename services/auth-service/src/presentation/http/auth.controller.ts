@@ -4,6 +4,7 @@ import {
   ForbiddenException,
   Get,
   HttpCode,
+  Inject,
   NotFoundException,
   Post,
   Query,
@@ -21,14 +22,13 @@ import {
   ApiUnauthorizedResponse,
   ApiTooManyRequestsResponse,
 } from '@nestjs/swagger';
-import { RegisterInput, ResendEmailVerificationOtpInput } from '@/common/types/identity.type';
-import type { RequestWithId } from '@/common/http/request-id.middleware';
-import type { Request, Response } from 'express';
 import {
   ChangePasswordRequestDto,
   LoginRequestDto,
   LogoutRequestDto,
   RefreshSessionRequestDto,
+  RegisterRequestDto,
+  ResendEmailVerificationOtpRequestDto,
   VerifyEmailOtpRequestDto,
 } from '@/application/dto/auth-request.dto';
 import { AuthSessionResponseDto } from '@/application/dto/auth-session-response.dto';
@@ -57,7 +57,12 @@ import { VerifyEmailOtpUseCase } from '@/application/use-cases/verify-email-otp.
 import { AuthHealthService } from '@/health/auth-health.service';
 import { assertMetricsAccess } from '@/metrics/metrics-access';
 import { MetricsService } from '@/metrics/metrics.service';
-import { AuthOutboxService } from '@/infrastructure/outbox/auth-outbox.service';
+import type { RequestWithId } from '@/common/http/request-id.middleware';
+import type { Request, Response } from 'express';
+import {
+  EMAIL_OUTBOX,
+  type EmailOutbox,
+} from '@/domain/ports/email-outbox.port';
 import { ConfigurationService } from '@/configuration/configuration.service';
 
 @ApiTags('auth')
@@ -75,7 +80,8 @@ export class AuthController {
     private readonly verifyAccessTokenUseCase: VerifyAccessTokenUseCase,
     private readonly authHealthService: AuthHealthService,
     private readonly metricsService: MetricsService,
-    private readonly authOutboxService: AuthOutboxService,
+    @Inject(EMAIL_OUTBOX)
+    private readonly emailOutbox: EmailOutbox,
     private readonly configurationService: ConfigurationService,
   ) {}
 
@@ -143,7 +149,7 @@ export class AuthController {
       'Creates auth user and pending user profile. Email verification OTP is sent asynchronously (outbox). Unverified accounts can recover via register with the same email.',
   })
   @ApiCreatedResponse({ type: RegisterPendingResponseDto })
-  async register(@Body() body: RegisterInput) {
+  async register(@Body() body: RegisterRequestDto) {
     return this.registerUseCase.execute(body);
   }
 
@@ -156,7 +162,7 @@ export class AuthController {
   })
   @ApiOkResponse({ type: ResendEmailVerificationOtpResponseDto })
   @ApiTooManyRequestsResponse({ description: 'Resend cooldown or max attempts exceeded' })
-  async resendVerificationOtp(@Body() body: ResendEmailVerificationOtpInput) {
+  async resendVerificationOtp(@Body() body: ResendEmailVerificationOtpRequestDto) {
     return this.resendEmailVerificationOtpUseCase.execute(body);
   }
 
@@ -217,7 +223,7 @@ export class AuthController {
     if (!email) {
       throw new NotFoundException('email query param required');
     }
-    const otp = await this.authOutboxService.getDevOtp(email);
+    const otp = await this.emailOutbox.getDevOtp(email);
     if (!otp) {
       throw new NotFoundException(`No OTP found for ${email}`);
     }

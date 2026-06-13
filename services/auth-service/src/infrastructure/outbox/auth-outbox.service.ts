@@ -9,8 +9,8 @@ import {
 import {
   AUTH_OUTBOX_EVENT_EMAIL_VERIFICATION_OTP,
   AUTH_OUTBOX_EVENT_PASSWORD_RESET_EMAIL,
-  AuthOutboxEventEntity,
-} from './entities/auth-outbox-event.entity';
+  AuthOutboxEventOrmEntity,
+} from '../database/entities/auth-outbox-event.orm-entity';
 
 type AuthEmailVerificationOtpOutboxPayload = {
   email: string;
@@ -102,7 +102,7 @@ export class AuthOutboxService {
 
   async claimPendingBatch(limit?: number): Promise<ClaimedOutboxEvent[]> {
     const batchSize = limit ?? this.configurationService.getOutboxConfig().batchSize;
-    const tablePath = this.dataSource.getMetadata(AuthOutboxEventEntity).tablePath;
+    const tablePath = this.dataSource.getMetadata(AuthOutboxEventOrmEntity).tablePath;
 
     const rows = (await this.dataSource.query(
       `
@@ -136,7 +136,7 @@ export class AuthOutboxService {
   }
 
   async getStats(): Promise<AuthOutboxStats> {
-    const tablePath = this.dataSource.getMetadata(AuthOutboxEventEntity).tablePath;
+    const tablePath = this.dataSource.getMetadata(AuthOutboxEventOrmEntity).tablePath;
     const { staleClaimThresholdMs } = this.configurationService.getOutboxConfig();
     const rows = (await this.dataSource.query(
       `
@@ -248,7 +248,7 @@ export class AuthOutboxService {
   }
 
   async reclaimStaleClaims(): Promise<number> {
-    const tablePath = this.dataSource.getMetadata(AuthOutboxEventEntity).tablePath;
+    const tablePath = this.dataSource.getMetadata(AuthOutboxEventOrmEntity).tablePath;
     const { staleClaimThresholdMs } = this.configurationService.getOutboxConfig();
     const rows = (await this.dataSource.query(
       `
@@ -301,7 +301,7 @@ export class AuthOutboxService {
   }
 
   private getRepository(manager?: EntityManager) {
-    return (manager ?? this.dataSource.manager).getRepository(AuthOutboxEventEntity);
+    return (manager ?? this.dataSource.manager).getRepository(AuthOutboxEventOrmEntity);
   }
 
   private async enqueueEvent(

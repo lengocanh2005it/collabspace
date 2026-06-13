@@ -1,8 +1,6 @@
-import type {
-  AuthUser,
-  LoginInput,
-  RegisterInput,
-} from '@/common/types/identity.type';
+import type { AuthUser } from '@/domain/entities/auth-user';
+import type { LoginInput } from '@/domain/types/login-input';
+import type { RegisterUserInput } from '@/domain/types/register-user-input';
 
 export const USER_REPOSITORY = Symbol('USER_REPOSITORY');
 
@@ -10,7 +8,7 @@ export interface UserRepository {
   getAuthUserById(userId: string): Promise<AuthUser>;
   findUserByEmail(email: string): Promise<AuthUser | null>;
   markEmailVerified(userId: string): Promise<AuthUser>;
-  register(input: RegisterInput): Promise<AuthUser>;
+  register(input: RegisterUserInput): Promise<AuthUser>;
   rollbackNewRegistration(userId: string): Promise<void>;
   validateCredentials(input: LoginInput): Promise<AuthUser>;
   changePassword(

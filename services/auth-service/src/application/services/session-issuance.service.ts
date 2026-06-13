@@ -1,5 +1,5 @@
 import type { AuthSessionResponseDto } from '@/application/dto/auth-session-response.dto';
-import { AuthUser } from '@/common/types/identity.type';
+import type { AuthUser } from '@/domain/entities/auth-user';
 import {
   REFRESH_TOKEN_REPOSITORY,
   type RefreshTokenRepository,

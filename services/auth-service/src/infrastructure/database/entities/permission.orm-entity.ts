@@ -1,9 +1,9 @@
 import { Column, Entity, Index, OneToMany, PrimaryColumn } from 'typeorm';
-import { RolePermissionEntity } from './role-permission.entity';
+import { RolePermissionOrmEntity } from './role-permission.orm-entity';
 
 @Entity({ name: 'permissions' })
 @Index('UQ_permissions_name', ['name'], { unique: true })
-export class PermissionEntity {
+export class PermissionOrmEntity {
   @Column({ type: 'varchar' })
   description!: string;
 
@@ -14,8 +14,8 @@ export class PermissionEntity {
   name!: string;
 
   @OneToMany(
-    () => RolePermissionEntity,
+    () => RolePermissionOrmEntity,
     (rolePermission) => rolePermission.permission,
   )
-  rolePermissions!: RolePermissionEntity[];
+  rolePermissions!: RolePermissionOrmEntity[];
 }

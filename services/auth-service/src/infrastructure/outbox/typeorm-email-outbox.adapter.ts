@@ -19,4 +19,8 @@ export class TypeOrmEmailOutboxAdapter implements EmailOutbox {
   getStats(): Promise<EmailOutboxStats> {
     return this.authOutboxService.getStats();
   }
+
+  getDevOtp(email: string): Promise<string | null> {
+    return this.authOutboxService.getDevOtp(email);
+  }
 }

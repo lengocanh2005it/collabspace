@@ -8,11 +8,11 @@ import {
   PrimaryColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { UserRoleEntity } from './user-role.entity';
+import { UserRoleOrmEntity } from './user-role.orm-entity';
 
 @Entity({ name: 'users' })
 @Index('UQ_users_email', ['email'], { unique: true })
-export class UserEntity {
+export class UserOrmEntity {
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
 
@@ -37,6 +37,6 @@ export class UserEntity {
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
   updatedAt!: Date;
 
-  @OneToMany(() => UserRoleEntity, (userRole) => userRole.user)
-  userRoles!: UserRoleEntity[];
+  @OneToMany(() => UserRoleOrmEntity, (userRole) => userRole.user)
+  userRoles!: UserRoleOrmEntity[];
 }

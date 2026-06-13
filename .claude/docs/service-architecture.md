@@ -62,19 +62,19 @@ presentation → application/use-cases → domain (entities, ports) → infrastr
 src/
 ├── presentation/http/auth.controller.ts
 ├── presentation/grpc/auth.grpc.controller.ts
-├── application/use-cases/ | application/services/
-├── domain/entities/ | domain/repositories/ | domain/ports/
+├── application/use-cases/ | application/services/ | application/dto/
+├── domain/entities/ | domain/types/ | domain/repositories/ | domain/ports/
 ├── infrastructure/
-│   ├── repositories/          # typeorm-user, typeorm-refresh-token, in-memory-user
-│   ├── database/
-│   ├── identity/              # user/role ORM entities
+│   ├── repositories/
+│   ├── database/entities/     # *.orm-entity.ts (UserOrmEntity, …)
+│   ├── identity/              # TypeORM feature module for users/roles
 │   ├── refresh-tokens/
 │   ├── redis/
 │   ├── outbox/
 │   ├── emails/
 │   └── graphile-worker/
-├── integrations/user-profiles/  # user-service gRPC client
-├── common/types/
+├── integrations/user-profiles/
+├── common/http/               # middleware only (no business types)
 ├── configuration/
 ├── health/
 └── generated/proto/
@@ -86,14 +86,12 @@ src/
 |------|----------|
 | New HTTP route | `presentation/http/auth.controller.ts` |
 | New auth action | `application/use-cases/<action>.use-case.ts` |
+| HTTP request DTO | `application/dto/auth-request.dto.ts` |
+| Use-case result type | `application/dto/auth-use-case-results.ts` |
 | Shared JWT/session/OTP | `application/services/` |
+| Domain auth user / login rules | `domain/entities/auth-user.ts`, `domain/entities/user.entity.ts` |
 | User/role/password DB | `infrastructure/repositories/typeorm-user.repository.ts` |
-| Refresh token behavior | `infrastructure/repositories/typeorm-refresh-token.repository.ts` |
-| Redis OTP | `infrastructure/redis/` (port: `domain/ports/otp-store.port.ts`) |
-| Async email | `infrastructure/outbox/` (not sync from controller) |
-| gRPC for downstream | `presentation/grpc/auth.grpc.controller.ts` |
-| Config / env | `configuration/env.config.ts` + `ConfigurationService` |
-| Migration | `migrations/` + `scripts/sql/` |
+| TypeORM entity | `infrastructure/database/entities/*.orm-entity.ts` |
 
 ### Conventions
 

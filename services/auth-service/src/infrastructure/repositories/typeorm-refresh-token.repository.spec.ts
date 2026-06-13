@@ -1,7 +1,7 @@
 import { ConfigurationService } from '@/configuration/configuration.service';
 import { UnauthorizedException } from '@nestjs/common';
 import { DataSource, Repository } from 'typeorm';
-import { RefreshTokenEntity } from '@/infrastructure/refresh-tokens/entities/refresh-token.entity';
+import { RefreshTokenOrmEntity } from '@/infrastructure/database/entities/refresh-token.orm-entity';
 import { TypeOrmRefreshTokenRepository } from './typeorm-refresh-token.repository';
 
 describe('TypeOrmRefreshTokenRepository', () => {
@@ -17,7 +17,7 @@ describe('TypeOrmRefreshTokenRepository', () => {
     createQueryBuilder: jest.fn(),
     findOne: jest.fn(),
     save: jest.fn(),
-  } as unknown as Repository<RefreshTokenEntity>;
+  } as unknown as Repository<RefreshTokenOrmEntity>;
 
   const dataSourceMock = {
     transaction: jest.fn(),
@@ -30,7 +30,7 @@ describe('TypeOrmRefreshTokenRepository', () => {
     (dataSourceMock.transaction as jest.Mock).mockImplementation(
       async (
         callback: (manager: {
-          getRepository: () => Repository<RefreshTokenEntity>;
+          getRepository: () => Repository<RefreshTokenOrmEntity>;
         }) => unknown,
       ) =>
         callback({
@@ -68,7 +68,7 @@ describe('TypeOrmRefreshTokenRepository', () => {
   });
 
   it('rotates an active token into the same family', async () => {
-    const currentToken: RefreshTokenEntity = {
+    const currentToken: RefreshTokenOrmEntity = {
       createdAt: new Date(),
       expiresAt: new Date(Date.now() + 60_000),
       familyId: 'fam-1',
@@ -109,7 +109,7 @@ describe('TypeOrmRefreshTokenRepository', () => {
   });
 
   it('revokes the whole family when a rotated token is reused', async () => {
-    const currentToken: RefreshTokenEntity = {
+    const currentToken: RefreshTokenOrmEntity = {
       createdAt: new Date(),
       expiresAt: new Date(Date.now() + 60_000),
       familyId: 'fam-2',

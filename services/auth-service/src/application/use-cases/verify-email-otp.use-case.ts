@@ -1,5 +1,5 @@
 import { VerifyEmailOtpRequestDto } from '@/application/dto/auth-request.dto';
-import { VerifyEmailOtpResult } from '@/common/types/identity.type';
+import type { VerifyEmailOtpResult } from '@/application/dto/auth-use-case-results';
 import {
   EmailVerificationOtpPayload,
   OTP_STORE,

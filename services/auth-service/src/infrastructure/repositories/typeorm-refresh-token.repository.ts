@@ -1,27 +1,27 @@
 import {
   IssueRefreshTokenInput,
   RefreshTokenPayload,
-} from '@/common/types/refresh-token.type';
+} from '@/domain/types/refresh-token';
 import { ConfigurationService } from '@/configuration/configuration.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { createHash, randomBytes, randomUUID } from 'crypto';
 import { DataSource, IsNull, MoreThan, Repository } from 'typeorm';
 import { RefreshTokenRepository } from '@/domain/repositories/refresh-token.repository';
-import { RefreshTokenEntity } from '@/infrastructure/refresh-tokens/entities/refresh-token.entity';
+import { RefreshTokenOrmEntity } from '@/infrastructure/database/entities/refresh-token.orm-entity';
 
 @Injectable()
 export class TypeOrmRefreshTokenRepository implements RefreshTokenRepository {
   constructor(
     private readonly configurationService: ConfigurationService,
     private readonly dataSource: DataSource,
-    @InjectRepository(RefreshTokenEntity)
-    private readonly refreshTokenRepository: Repository<RefreshTokenEntity>,
+    @InjectRepository(RefreshTokenOrmEntity)
+    private readonly refreshTokenRepository: Repository<RefreshTokenOrmEntity>,
   ) {}
 
   async findActiveToken(
     refreshToken: string,
-  ): Promise<RefreshTokenEntity | null> {
+  ): Promise<RefreshTokenOrmEntity | null> {
     const tokenHash = this.hashToken(refreshToken);
 
     return this.refreshTokenRepository.findOne({
@@ -33,7 +33,7 @@ export class TypeOrmRefreshTokenRepository implements RefreshTokenRepository {
     });
   }
 
-  async listSessionsByUserId(userId: string): Promise<RefreshTokenEntity[]> {
+  async listSessionsByUserId(userId: string): Promise<RefreshTokenOrmEntity[]> {
     const tokens = await this.refreshTokenRepository.find({
       order: {
         createdAt: 'DESC',
@@ -42,7 +42,7 @@ export class TypeOrmRefreshTokenRepository implements RefreshTokenRepository {
         userId,
       },
     });
-    const latestByFamily = new Map<string, RefreshTokenEntity>();
+    const latestByFamily = new Map<string, RefreshTokenOrmEntity>();
 
     for (const token of tokens) {
       if (!latestByFamily.has(token.familyId)) {
@@ -57,7 +57,7 @@ export class TypeOrmRefreshTokenRepository implements RefreshTokenRepository {
 
   async issue(input: IssueRefreshTokenInput): Promise<RefreshTokenPayload> {
     return this.dataSource.transaction(async (manager) => {
-      const repository = manager.getRepository(RefreshTokenEntity);
+      const repository = manager.getRepository(RefreshTokenOrmEntity);
       const payload = this.buildTokenPayload(input);
 
       await repository.save(
@@ -87,7 +87,7 @@ export class TypeOrmRefreshTokenRepository implements RefreshTokenRepository {
     const now = new Date();
     const result = await this.refreshTokenRepository
       .createQueryBuilder()
-      .update(RefreshTokenEntity)
+      .update(RefreshTokenOrmEntity)
       .set({
         revokeReason: reason,
         revokedAt: now,
@@ -107,7 +107,7 @@ export class TypeOrmRefreshTokenRepository implements RefreshTokenRepository {
     const now = new Date();
     const result = await this.refreshTokenRepository
       .createQueryBuilder()
-      .update(RefreshTokenEntity)
+      .update(RefreshTokenOrmEntity)
       .set({
         revokeReason: reason,
         revokedAt: now,
@@ -143,7 +143,7 @@ export class TypeOrmRefreshTokenRepository implements RefreshTokenRepository {
     const now = new Date();
     const result = await this.refreshTokenRepository
       .createQueryBuilder()
-      .update(RefreshTokenEntity)
+      .update(RefreshTokenOrmEntity)
       .set({
         revokeReason: reason,
         revokedAt: now,
@@ -172,7 +172,7 @@ export class TypeOrmRefreshTokenRepository implements RefreshTokenRepository {
     const now = new Date();
     const result = await this.refreshTokenRepository
       .createQueryBuilder()
-      .update(RefreshTokenEntity)
+      .update(RefreshTokenOrmEntity)
       .set({
         revokeReason: reason,
         revokedAt: now,
@@ -187,7 +187,7 @@ export class TypeOrmRefreshTokenRepository implements RefreshTokenRepository {
 
   async rotate(refreshToken: string): Promise<RefreshTokenPayload> {
     return this.dataSource.transaction(async (manager) => {
-      const repository = manager.getRepository(RefreshTokenEntity);
+      const repository = manager.getRepository(RefreshTokenOrmEntity);
       const currentToken = await this.loadTokenByValue(
         refreshToken,
         repository,
@@ -287,14 +287,14 @@ export class TypeOrmRefreshTokenRepository implements RefreshTokenRepository {
     return createHash('sha256').update(refreshToken).digest('hex');
   }
 
-  private isExpired(token: RefreshTokenEntity): boolean {
+  private isExpired(token: RefreshTokenOrmEntity): boolean {
     return token.expiresAt.getTime() <= Date.now();
   }
 
   private async loadTokenByValue(
     refreshToken: string,
     repository = this.refreshTokenRepository,
-  ): Promise<RefreshTokenEntity | null> {
+  ): Promise<RefreshTokenOrmEntity | null> {
     return repository.findOne({
       where: {
         tokenHash: this.hashToken(refreshToken),
@@ -303,14 +303,14 @@ export class TypeOrmRefreshTokenRepository implements RefreshTokenRepository {
   }
 
   private async revokeFamilyWithRepository(
-    repository: Repository<RefreshTokenEntity>,
+    repository: Repository<RefreshTokenOrmEntity>,
     familyId: string,
     reason: string,
   ): Promise<void> {
     const now = new Date();
     await repository
       .createQueryBuilder()
-      .update(RefreshTokenEntity)
+      .update(RefreshTokenOrmEntity)
       .set({
         revokeReason: reason,
         revokedAt: now,

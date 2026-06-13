@@ -1,8 +1,6 @@
-import {
-  AuthUser,
-  RegisterInput,
-  RegisterPendingResult,
-} from '@/common/types/identity.type';
+import type { RegisterPendingResult } from '@/application/dto/auth-use-case-results';
+import { RegisterRequestDto } from '@/application/dto/auth-request.dto';
+import type { AuthUser } from '@/domain/entities/auth-user';
 import {
   USER_PROFILE_CLIENT,
   type UserProfileClient,
@@ -26,7 +24,7 @@ export class RegisterUseCase {
     private readonly emailVerificationOtpService: EmailVerificationOtpService,
   ) {}
 
-  async execute(input: RegisterInput): Promise<RegisterPendingResult> {
+  async execute(input: RegisterRequestDto): Promise<RegisterPendingResult> {
     const { user, newlyCreated } = await this.registerOrRecoverPendingUser(input);
 
     try {
@@ -51,7 +49,7 @@ export class RegisterUseCase {
   }
 
   private async registerOrRecoverPendingUser(
-    input: RegisterInput,
+    input: RegisterRequestDto,
   ): Promise<{ newlyCreated: boolean; user: AuthUser }> {
     try {
       const user = await this.userRepository.register(input);

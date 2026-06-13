@@ -8,9 +8,9 @@ import { randomBytes, scrypt } from 'crypto';
 import { promisify } from 'util';
 import { Repository } from 'typeorm';
 import { TypeOrmUserRepository } from './typeorm-user.repository';
-import { RoleEntity } from '@/infrastructure/identity/entities/role.entity';
-import { UserRoleEntity } from '@/infrastructure/identity/entities/user-role.entity';
-import { UserEntity } from '@/infrastructure/identity/entities/user.entity';
+import { RoleOrmEntity } from '@/infrastructure/database/entities/role.orm-entity';
+import { UserRoleOrmEntity } from '@/infrastructure/database/entities/user-role.orm-entity';
+import { UserOrmEntity } from '@/infrastructure/database/entities/user.orm-entity';
 
 const scryptAsync = promisify(scrypt);
 
@@ -20,9 +20,9 @@ async function hashPassword(password: string): Promise<string> {
   return `scrypt:${salt}:${derivedKey.toString('hex')}`;
 }
 
-function buildAuthUserEntity(
-  overrides: Partial<UserEntity> = {},
-): UserEntity {
+function buildAuthUserOrmEntity(
+  overrides: Partial<UserOrmEntity> = {},
+): UserOrmEntity {
   return {
     id: 'user-1',
     email: 'member@example.com',
@@ -41,7 +41,7 @@ function buildAuthUserEntity(
       },
     ],
     ...overrides,
-  } as UserEntity;
+  } as UserOrmEntity;
 }
 
 describe('TypeOrmUserRepository', () => {
@@ -49,20 +49,20 @@ describe('TypeOrmUserRepository', () => {
     create: jest.fn((value) => value),
     findOne: jest.fn(),
     save: jest.fn(),
-  } as unknown as Repository<RoleEntity>;
+  } as unknown as Repository<RoleOrmEntity>;
 
   const userRepositoryMock = {
     create: jest.fn((value) => value),
     findOne: jest.fn(),
     save: jest.fn(),
     softDelete: jest.fn(),
-  } as unknown as Repository<UserEntity>;
+  } as unknown as Repository<UserOrmEntity>;
 
   const userRoleRepositoryMock = {
     create: jest.fn((value) => value),
     delete: jest.fn(),
     save: jest.fn(),
-  } as unknown as Repository<UserRoleEntity>;
+  } as unknown as Repository<UserRoleOrmEntity>;
 
   let userRepository: TypeOrmUserRepository;
 
@@ -102,7 +102,7 @@ describe('TypeOrmUserRepository', () => {
 
   it('returns auth user by id', async () => {
     (userRepositoryMock.findOne as jest.Mock).mockResolvedValue(
-      buildAuthUserEntity(),
+      buildAuthUserOrmEntity(),
     );
 
     await expect(userRepository.getAuthUserById('user-1')).resolves
@@ -124,7 +124,7 @@ describe('TypeOrmUserRepository', () => {
 
   it('validates credentials for a verified active user', async () => {
     const password = 'password123';
-    const user = buildAuthUserEntity({
+    const user = buildAuthUserOrmEntity({
       passwordHash: await hashPassword(password),
     });
     (userRepositoryMock.findOne as jest.Mock).mockResolvedValue(user);
@@ -142,7 +142,7 @@ describe('TypeOrmUserRepository', () => {
 
   it('rejects login when email is not verified', async () => {
     const password = 'password123';
-    const user = buildAuthUserEntity({
+    const user = buildAuthUserOrmEntity({
       emailVerifiedAt: null,
       passwordHash: await hashPassword(password),
     });
@@ -165,7 +165,7 @@ describe('TypeOrmUserRepository', () => {
   });
 
   it('rejects change password when current password is invalid', async () => {
-    const user = buildAuthUserEntity({
+    const user = buildAuthUserOrmEntity({
       passwordHash: await hashPassword('password123'),
     });
     (userRepositoryMock.findOne as jest.Mock).mockResolvedValue(user);
@@ -178,7 +178,7 @@ describe('TypeOrmUserRepository', () => {
   });
 
   it('marks email verified when pending verification', async () => {
-    const user = buildAuthUserEntity({ emailVerifiedAt: null });
+    const user = buildAuthUserOrmEntity({ emailVerifiedAt: null });
     (userRepositoryMock.findOne as jest.Mock).mockResolvedValue(user);
     (userRepositoryMock.save as jest.Mock).mockImplementation(async (value) => value);
 

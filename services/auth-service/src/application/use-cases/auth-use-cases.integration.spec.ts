@@ -56,6 +56,7 @@ describe('Auth use cases (integration)', () => {
   } as unknown as ConfigurationService;
   const emailOutboxMock = {
     enqueueEmailVerificationOtp: jest.fn(),
+    getDevOtp: jest.fn(),
     getStats: jest.fn(),
   } as unknown as EmailOutbox;
   const refreshTokenRepositoryMock = {

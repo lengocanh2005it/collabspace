@@ -1,4 +1,4 @@
-import { AuthUser } from '@/common/types/identity.type';
+import type { AuthUser } from '@/domain/entities/auth-user';
 import { Injectable } from '@nestjs/common';
 import { JwtTokenService } from '../services/jwt-token.service';
 import { readFirstString } from '../services/jwt-payload.util';

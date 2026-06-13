@@ -7,7 +7,7 @@ import { AuthOutboxService } from './auth-outbox.service';
 import {
   AUTH_OUTBOX_EVENT_EMAIL_VERIFICATION_OTP,
   AUTH_OUTBOX_EVENT_PASSWORD_RESET_EMAIL,
-} from './entities/auth-outbox-event.entity';
+} from '../database/entities/auth-outbox-event.orm-entity';
 
 @Injectable()
 export class AuthOutboxProcessor implements OnModuleInit, OnModuleDestroy {

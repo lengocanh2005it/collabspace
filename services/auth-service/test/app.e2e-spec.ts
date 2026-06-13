@@ -10,7 +10,6 @@ import { REFRESH_TOKEN_REPOSITORY } from '../src/domain/repositories/refresh-tok
 import { OTP_STORE } from '../src/domain/ports/otp-store.port';
 import { EMAIL_OUTBOX } from '../src/domain/ports/email-outbox.port';
 import { USER_PROFILE_CLIENT } from '../src/domain/ports/user-profile-client.port';
-import { AuthOutboxService } from '../src/infrastructure/outbox/auth-outbox.service';
 
 describe('AuthController (e2e)', () => {
   let app: INestApplication<App>;
@@ -45,6 +44,7 @@ describe('AuthController (e2e)', () => {
   };
   const emailOutboxMock = {
     enqueueEmailVerificationOtp: jest.fn(),
+    getDevOtp: jest.fn(),
     getStats: jest.fn(),
   };
   const userProfileClientMock = {
@@ -185,8 +185,6 @@ describe('AuthController (e2e)', () => {
       .overrideProvider(OTP_STORE)
       .useValue(otpStoreMock)
       .overrideProvider(EMAIL_OUTBOX)
-      .useValue(emailOutboxMock)
-      .overrideProvider(AuthOutboxService)
       .useValue(emailOutboxMock)
       .overrideProvider(AuthHealthService)
       .useValue(authHealthServiceMock)
