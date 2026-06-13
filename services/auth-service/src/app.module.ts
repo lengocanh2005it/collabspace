@@ -13,6 +13,13 @@ import { JwtTokenService } from '@/application/services/jwt-token.service';
 import { SessionIssuanceService } from '@/application/services/session-issuance.service';
 import { UserProfileResolverService } from '@/application/services/user-profile-resolver.service';
 import { ConfigurationModule } from '@/configuration/configuration.module';
+import {
+  REFRESH_TOKEN_REPOSITORY,
+} from '@/domain/repositories/refresh-token.repository';
+import { USER_REPOSITORY } from '@/domain/repositories/user.repository';
+import { InMemoryUserRepository } from '@/infrastructure/repositories/in-memory-user.repository';
+import { TypeOrmRefreshTokenRepository } from '@/infrastructure/repositories/typeorm-refresh-token.repository';
+import { TypeOrmUserRepository } from '@/infrastructure/repositories/typeorm-user.repository';
 import { DatabaseModule } from '@/modules/database/database.module';
 import { EmailsModule } from '@/modules/emails/emails.module';
 import { GraphileWorkerModule } from '@/modules/graphile-worker/graphile-worker.module';
@@ -53,6 +60,24 @@ import { AuthService } from './app.service';
     ResendEmailVerificationOtpUseCase,
     VerifyEmailOtpUseCase,
     ChangePasswordUseCase,
+    TypeOrmUserRepository,
+    InMemoryUserRepository,
+    TypeOrmRefreshTokenRepository,
+    {
+      provide: USER_REPOSITORY,
+      inject: [TypeOrmUserRepository, InMemoryUserRepository],
+      useFactory: (
+        typeOrmUserRepository: TypeOrmUserRepository,
+        inMemoryUserRepository: InMemoryUserRepository,
+      ) =>
+        process.env.DATABASE_URL
+          ? typeOrmUserRepository
+          : inMemoryUserRepository,
+    },
+    {
+      provide: REFRESH_TOKEN_REPOSITORY,
+      useExisting: TypeOrmRefreshTokenRepository,
+    },
     AuthService,
     AuthHealthService,
   ],

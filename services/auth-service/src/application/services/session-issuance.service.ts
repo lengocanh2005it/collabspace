@@ -1,14 +1,18 @@
 import type { AuthSessionResponseDto } from '@/application/dto/auth-session-response.dto';
 import { AuthUser } from '@/common/types/identity.type';
-import { RefreshTokensService } from '@/modules/refresh-tokens/refresh-tokens.service';
-import { Injectable } from '@nestjs/common';
+import {
+  REFRESH_TOKEN_REPOSITORY,
+  type RefreshTokenRepository,
+} from '@/domain/repositories/refresh-token.repository';
+import { Inject, Injectable } from '@nestjs/common';
 import { JwtTokenService } from './jwt-token.service';
 
 @Injectable()
 export class SessionIssuanceService {
   constructor(
     private readonly jwtTokenService: JwtTokenService,
-    private readonly refreshTokensService: RefreshTokensService,
+    @Inject(REFRESH_TOKEN_REPOSITORY)
+    private readonly refreshTokenRepository: RefreshTokenRepository,
   ) {}
 
   async issue(
@@ -21,7 +25,7 @@ export class SessionIssuanceService {
       userId: user.userId,
       workspaceId,
     });
-    const refreshTokenPayload = await this.refreshTokensService.issue({
+    const refreshTokenPayload = await this.refreshTokenRepository.issue({
       userId: user.userId,
       workspaceId,
     });

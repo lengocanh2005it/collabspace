@@ -3,9 +3,12 @@ import {
   RegisterInput,
   RegisterPendingResult,
 } from '@/common/types/identity.type';
-import { IdentityService } from '@/modules/identity/identity.service';
+import {
+  USER_REPOSITORY,
+  type UserRepository,
+} from '@/domain/repositories/user.repository';
 import { UserProfilesGrpcService } from '@/modules/identity/user-profiles-grpc.service';
-import { ConflictException, Injectable, Logger } from '@nestjs/common';
+import { ConflictException, Inject, Injectable, Logger } from '@nestjs/common';
 import { EmailVerificationOtpService } from '../services/email-verification-otp.service';
 
 @Injectable()
@@ -13,7 +16,8 @@ export class RegisterUseCase {
   private readonly logger = new Logger(RegisterUseCase.name);
 
   constructor(
-    private readonly identityService: IdentityService,
+    @Inject(USER_REPOSITORY)
+    private readonly userRepository: UserRepository,
     private readonly userProfilesGrpcService: UserProfilesGrpcService,
     private readonly emailVerificationOtpService: EmailVerificationOtpService,
   ) {}
@@ -35,7 +39,7 @@ export class RegisterUseCase {
       };
     } catch (error) {
       if (newlyCreated) {
-        await this.identityService.rollbackNewRegistration(user.userId);
+        await this.userRepository.rollbackNewRegistration(user.userId);
       }
 
       throw error;
@@ -46,14 +50,14 @@ export class RegisterUseCase {
     input: RegisterInput,
   ): Promise<{ newlyCreated: boolean; user: AuthUser }> {
     try {
-      const user = await this.identityService.register(input);
+      const user = await this.userRepository.register(input);
       return { newlyCreated: true, user };
     } catch (error) {
       if (!this.isUserAlreadyExistsConflict(error)) {
         throw error;
       }
 
-      const existingUser = await this.identityService.findUserByEmail(input.email);
+      const existingUser = await this.userRepository.findUserByEmail(input.email);
 
       if (!existingUser || existingUser.emailVerified || !existingUser.isActive) {
         throw error;

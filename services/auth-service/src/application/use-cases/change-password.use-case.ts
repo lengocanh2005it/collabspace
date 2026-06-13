@@ -1,16 +1,24 @@
 import { ChangePasswordRequestDto } from '@/application/dto/auth-request.dto';
 import { ChangePasswordResult } from '@/common/types/identity.type';
-import { IdentityService } from '@/modules/identity/identity.service';
-import { RefreshTokensService } from '@/modules/refresh-tokens/refresh-tokens.service';
-import { Injectable } from '@nestjs/common';
+import {
+  REFRESH_TOKEN_REPOSITORY,
+  type RefreshTokenRepository,
+} from '@/domain/repositories/refresh-token.repository';
+import {
+  USER_REPOSITORY,
+  type UserRepository,
+} from '@/domain/repositories/user.repository';
+import { Inject, Injectable } from '@nestjs/common';
 import { JwtTokenService } from '../services/jwt-token.service';
 
 @Injectable()
 export class ChangePasswordUseCase {
   constructor(
-    private readonly identityService: IdentityService,
+    @Inject(USER_REPOSITORY)
+    private readonly userRepository: UserRepository,
     private readonly jwtTokenService: JwtTokenService,
-    private readonly refreshTokensService: RefreshTokensService,
+    @Inject(REFRESH_TOKEN_REPOSITORY)
+    private readonly refreshTokenRepository: RefreshTokenRepository,
   ) {}
 
   async execute(
@@ -19,12 +27,12 @@ export class ChangePasswordUseCase {
   ): Promise<ChangePasswordResult> {
     const { userId } =
       await this.jwtTokenService.resolveVerifiedUserContext(authorizationHeader);
-    await this.identityService.changePassword(
+    await this.userRepository.changePassword(
       userId,
       input.currentPassword,
       input.newPassword,
     );
-    const revokedSessionCount = await this.refreshTokensService.revokeAllForUser(
+    const revokedSessionCount = await this.refreshTokenRepository.revokeAllForUser(
       userId,
       'password_changed',
     );

@@ -12,11 +12,11 @@ import { EmailVerificationOtpService } from '@/application/services/email-verifi
 import { JwtTokenService } from '@/application/services/jwt-token.service';
 import { SessionIssuanceService } from '@/application/services/session-issuance.service';
 import { UserProfileResolverService } from '@/application/services/user-profile-resolver.service';
-import { IdentityService } from '@/modules/identity/identity.service';
+import { UserRepository } from '@/domain/repositories/user.repository';
+import { RefreshTokenRepository } from '@/domain/repositories/refresh-token.repository';
 import { UserProfilesGrpcService } from '@/modules/identity/user-profiles-grpc.service';
 import { AuthOutboxService } from '@/modules/outbox/auth-outbox.service';
 import { RedisService } from '@/modules/redis/redis.service';
-import { RefreshTokensService } from '@/modules/refresh-tokens/refresh-tokens.service';
 import {
   ConflictException,
   HttpException,
@@ -45,12 +45,12 @@ describe('AuthService', () => {
   const authOutboxServiceMock = {
     enqueueEmailVerificationOtp: jest.fn(),
   } as unknown as AuthOutboxService;
-  const refreshTokensServiceMock = {
+  const refreshTokenRepositoryMock = {
     issue: jest.fn(),
     revokeAllForUser: jest.fn(),
     revokeToken: jest.fn(),
     rotate: jest.fn(),
-  } as unknown as RefreshTokensService;
+  } as unknown as RefreshTokenRepository;
   const redisServiceMock = {
     assertAvailable: jest.fn(),
     delete: jest.fn(),
@@ -70,7 +70,7 @@ describe('AuthService', () => {
     register: jest.fn(),
     rollbackNewRegistration: jest.fn(),
     validateCredentials: jest.fn(),
-  } as unknown as IdentityService;
+  } as unknown as UserRepository;
   const userProfilesGrpcServiceMock = {
     createPendingProfile: jest.fn(),
     getProfile: jest.fn(),
@@ -88,7 +88,7 @@ describe('AuthService', () => {
     );
     const sessionIssuanceService = new SessionIssuanceService(
       jwtTokenService,
-      refreshTokensServiceMock,
+      refreshTokenRepositoryMock,
     );
     const emailVerificationOtpService = new EmailVerificationOtpService(
       configurationServiceMock,
@@ -101,11 +101,11 @@ describe('AuthService', () => {
       new VerifyAccessTokenUseCase(jwtTokenService, userProfileResolverService),
       new GetCurrentUserUseCase(jwtTokenService, userProfileResolverService),
       new LoginUseCase(identityServiceMock, sessionIssuanceService),
-      new LogoutUseCase(refreshTokensServiceMock),
+      new LogoutUseCase(refreshTokenRepositoryMock),
       new RefreshSessionUseCase(
         identityServiceMock,
         jwtTokenService,
-        refreshTokensServiceMock,
+        refreshTokenRepositoryMock,
       ),
       new RegisterUseCase(
         identityServiceMock,
@@ -124,7 +124,7 @@ describe('AuthService', () => {
       new ChangePasswordUseCase(
         identityServiceMock,
         jwtTokenService,
-        refreshTokensServiceMock,
+        refreshTokenRepositoryMock,
       ),
     );
   }
@@ -194,7 +194,7 @@ describe('AuthService', () => {
       roles: ['admin'],
       userId: 'user-1',
     });
-    jest.spyOn(refreshTokensServiceMock, 'issue').mockResolvedValue({
+    jest.spyOn(refreshTokenRepositoryMock, 'issue').mockResolvedValue({
       refreshToken: 'refresh-token-1',
       userId: 'user-1',
       workspaceId: 'workspace-1',
@@ -214,7 +214,7 @@ describe('AuthService', () => {
   });
 
   it('rotates refresh token into a new session', async () => {
-    jest.spyOn(refreshTokensServiceMock, 'rotate').mockResolvedValue({
+    jest.spyOn(refreshTokenRepositoryMock, 'rotate').mockResolvedValue({
       refreshToken: 'refresh-token-2',
       userId: 'user-2',
       workspaceId: 'workspace-2',
@@ -625,7 +625,7 @@ describe('AuthService', () => {
       userId: 'user-2',
     });
     jest.spyOn(identityServiceMock, 'changePassword').mockResolvedValue(undefined);
-    jest.spyOn(refreshTokensServiceMock, 'revokeAllForUser').mockResolvedValue(2);
+    jest.spyOn(refreshTokenRepositoryMock, 'revokeAllForUser').mockResolvedValue(2);
     const token = await authService.signAccessToken({
       role: 'member',
       roles: ['member'],
@@ -647,7 +647,7 @@ describe('AuthService', () => {
 
   it('revokes refresh token on logout', async () => {
     jest
-      .spyOn(refreshTokensServiceMock, 'revokeToken')
+      .spyOn(refreshTokenRepositoryMock, 'revokeToken')
       .mockResolvedValue(undefined);
 
     await expect(
@@ -655,7 +655,7 @@ describe('AuthService', () => {
     ).resolves.toEqual({
       revoked: true,
     });
-    expect(refreshTokensServiceMock.revokeToken).toHaveBeenCalledWith(
+    expect(refreshTokenRepositoryMock.revokeToken).toHaveBeenCalledWith(
       'refresh-token-3',
       'logged_out',
     );

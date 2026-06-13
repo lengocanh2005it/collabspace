@@ -14,14 +14,15 @@ import type {
   LoginInput,
   RegisterInput,
 } from '@/common/types/identity.type';
-import { RoleEntity } from './entities/role.entity';
-import { UserRoleEntity } from './entities/user-role.entity';
-import { UserEntity } from './entities/user.entity';
+import { UserRepository } from '@/domain/repositories/user.repository';
+import { RoleEntity } from '@/modules/identity/entities/role.entity';
+import { UserRoleEntity } from '@/modules/identity/entities/user-role.entity';
+import { UserEntity } from '@/modules/identity/entities/user.entity';
 
 const scryptAsync = promisify(scrypt);
 
 @Injectable()
-export class IdentityService {
+export class TypeOrmUserRepository implements UserRepository {
   constructor(
     @InjectRepository(RoleEntity)
     private readonly roleRepository: Repository<RoleEntity>,

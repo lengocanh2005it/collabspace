@@ -4,7 +4,6 @@ import { Module } from '@nestjs/common';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { join } from 'node:path';
-import { IdentityService } from './identity.service';
 import {
   USER_PROFILES_GRPC_CLIENT,
   UserProfilesGrpcService,
@@ -56,7 +55,7 @@ const protoIncludeDir = join(process.cwd(), 'proto');
       RolePermissionEntity,
     ]),
   ],
-  providers: [IdentityService, UserProfilesGrpcService],
-  exports: [IdentityService, TypeOrmModule, UserProfilesGrpcService],
+  providers: [UserProfilesGrpcService],
+  exports: [TypeOrmModule, UserProfilesGrpcService],
 })
 export class IdentityModule {}

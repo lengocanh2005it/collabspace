@@ -1,8 +1,11 @@
 import { VerifyEmailOtpRequestDto } from '@/application/dto/auth-request.dto';
 import { VerifyEmailOtpResult } from '@/common/types/identity.type';
-import { IdentityService } from '@/modules/identity/identity.service';
+import {
+  USER_REPOSITORY,
+  type UserRepository,
+} from '@/domain/repositories/user.repository';
 import { RedisService } from '@/modules/redis/redis.service';
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import {
   EmailVerificationOtpPayload,
   EmailVerificationOtpService,
@@ -11,7 +14,8 @@ import {
 @Injectable()
 export class VerifyEmailOtpUseCase {
   constructor(
-    private readonly identityService: IdentityService,
+    @Inject(USER_REPOSITORY)
+    private readonly userRepository: UserRepository,
     private readonly redisService: RedisService,
     private readonly emailVerificationOtpService: EmailVerificationOtpService,
   ) {}
@@ -26,7 +30,7 @@ export class VerifyEmailOtpUseCase {
       });
     }
 
-    const existingUser = await this.identityService.getAuthUserById(input.userId);
+    const existingUser = await this.userRepository.getAuthUserById(input.userId);
 
     if (existingUser.emailVerified) {
       return {
@@ -54,7 +58,7 @@ export class VerifyEmailOtpUseCase {
       });
     }
 
-    const user = await this.identityService.markEmailVerified(input.userId);
+    const user = await this.userRepository.markEmailVerified(input.userId);
     await this.redisService.delete(
       this.emailVerificationOtpService.buildOtpKey(input.userId),
     );

@@ -1,8 +1,11 @@
 import { AuthUser } from '@/common/types/identity.type';
 import { JwtPayload, SignAccessTokenInput } from '@/common/types/jwt.type';
 import { ConfigurationService } from '@/configuration/configuration.service';
-import { IdentityService } from '@/modules/identity/identity.service';
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  USER_REPOSITORY,
+  type UserRepository,
+} from '@/domain/repositories/user.repository';
+import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { createSecretKey } from 'crypto';
 import { readFirstString } from './jwt-payload.util';
 
@@ -10,7 +13,8 @@ import { readFirstString } from './jwt-payload.util';
 export class JwtTokenService {
   constructor(
     private readonly configurationService: ConfigurationService,
-    private readonly identityService: IdentityService,
+    @Inject(USER_REPOSITORY)
+    private readonly userRepository: UserRepository,
   ) {}
 
   getJwtExpiry(): string {
@@ -62,7 +66,7 @@ export class JwtTokenService {
       });
     }
 
-    const user = await this.identityService.getAuthUserById(userId);
+    const user = await this.userRepository.getAuthUserById(userId);
 
     if (!user.isActive) {
       throw new UnauthorizedException({

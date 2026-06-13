@@ -2,17 +2,18 @@
 
 NestJS 11 + TypeORM + PostgreSQL + Redis + gRPC + Graphile Worker outbox.
 
-## Pattern (Phase 1 — migrating to clean/hexagonal)
+## Pattern (Phase 1–2 — migrating to clean/hexagonal)
 
-**In progress:** presentation → application/use-cases → modules (DB layer unchanged until Phase 2+).
+**In progress:** presentation → application/use-cases → domain/ports → infrastructure adapters.
 
 ```text
-presentation/http|grpc → application/use-cases → application/services
-  → modules/* (identity, refresh-tokens, redis, outbox) — legacy until Phase 4
+presentation/http|grpc → application/use-cases → domain/repositories (ports)
+  → infrastructure/repositories (TypeORM + in-memory user repo)
+modules/* (redis, outbox, emails) — legacy until Phase 4
 ```
 
-- `AuthService` (`app.service.ts`) — thin facade for e2e/tests; controllers use use cases directly.
-- Remove facade in Phase 4.
+- `USER_REPOSITORY` / `REFRESH_TOKEN_REPOSITORY` — inject ports in use cases, not `IdentityService`.
+- `AuthService` (`app.service.ts`) — thin facade for e2e/tests; remove in Phase 4.
 
 ## Layout
 
@@ -20,13 +21,13 @@ presentation/http|grpc → application/use-cases → application/services
 src/
 ├── presentation/http/auth.controller.ts
 ├── presentation/grpc/auth.grpc.controller.ts
-├── application/use-cases/          # one class per auth action
-├── application/services/           # JwtToken, SessionIssuance, EmailOtp, ProfileResolver
-├── application/dto/
-├── modules/identity/               # users, roles, passwords (Phase 2+ → infrastructure)
-├── modules/refresh-tokens/
-├── modules/redis/
-├── modules/outbox/
+├── application/use-cases/
+├── application/services/
+├── domain/repositories/            # USER_REPOSITORY, REFRESH_TOKEN_REPOSITORY ports
+├── infrastructure/repositories/    # typeorm-*, in-memory-user
+├── modules/identity/               # entities + user-profiles gRPC only
+├── modules/refresh-tokens/         # ORM entity module only
+├── modules/redis/ | outbox/ | emails/
 └── configuration/ | health/ | metrics/
 ```
 
@@ -61,8 +62,8 @@ pnpm run seed
 | New HTTP route | `presentation/http/auth.controller.ts` |
 | New auth action | `application/use-cases/<action>.use-case.ts` |
 | Shared JWT/session/OTP | `application/services/` |
-| User/role/password DB | `modules/identity/` (until Phase 2 ports) |
-| Refresh token behavior | `modules/refresh-tokens/` |
+| User/role/password DB | `infrastructure/repositories/typeorm-user.repository.ts` (port: `domain/repositories/user.repository.ts`) |
+| Refresh token behavior | `infrastructure/repositories/typeorm-refresh-token.repository.ts` |
 | Redis OTP | `modules/redis/` |
 | Async email | `modules/outbox/` |
 | gRPC for downstream | `presentation/grpc/auth.grpc.controller.ts` |

@@ -5,11 +5,11 @@ import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
 import { AuthService } from '../src/app.service';
 import { AuthHealthService } from '../src/health/auth-health.service';
-import { IdentityService } from '../src/modules/identity/identity.service';
+import { USER_REPOSITORY } from '../src/domain/repositories/user.repository';
+import { REFRESH_TOKEN_REPOSITORY } from '../src/domain/repositories/refresh-token.repository';
 import { UserProfilesGrpcService } from '../src/modules/identity/user-profiles-grpc.service';
 import { AuthOutboxService } from '../src/modules/outbox/auth-outbox.service';
 import { RedisService } from '../src/modules/redis/redis.service';
-import { RefreshTokensService } from '../src/modules/refresh-tokens/refresh-tokens.service';
 
 describe('AuthController (e2e)', () => {
   let app: INestApplication<App>;
@@ -173,9 +173,9 @@ describe('AuthController (e2e)', () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     })
-      .overrideProvider(RefreshTokensService)
+      .overrideProvider(REFRESH_TOKEN_REPOSITORY)
       .useValue(refreshTokensServiceMock)
-      .overrideProvider(IdentityService)
+      .overrideProvider(USER_REPOSITORY)
       .useValue(identityServiceMock)
       .overrideProvider(RedisService)
       .useValue(redisServiceMock)

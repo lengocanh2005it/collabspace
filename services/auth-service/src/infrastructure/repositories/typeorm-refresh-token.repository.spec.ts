@@ -1,10 +1,10 @@
 import { ConfigurationService } from '@/configuration/configuration.service';
 import { UnauthorizedException } from '@nestjs/common';
 import { DataSource, Repository } from 'typeorm';
-import { RefreshTokenEntity } from './entities/refresh-token.entity';
-import { RefreshTokensService } from './refresh-tokens.service';
+import { RefreshTokenEntity } from '@/modules/refresh-tokens/entities/refresh-token.entity';
+import { TypeOrmRefreshTokenRepository } from './typeorm-refresh-token.repository';
 
-describe('RefreshTokensService', () => {
+describe('TypeOrmRefreshTokenRepository', () => {
   const configurationServiceMock = {
     getRefreshTokenConfig: jest.fn(() => ({
       byteLength: 32,
@@ -23,7 +23,7 @@ describe('RefreshTokensService', () => {
     transaction: jest.fn(),
   } as unknown as DataSource;
 
-  let refreshTokensService: RefreshTokensService;
+  let refreshTokenRepository: TypeOrmRefreshTokenRepository;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -37,7 +37,7 @@ describe('RefreshTokensService', () => {
           getRepository: () => repositoryMock,
         }),
     );
-    refreshTokensService = new RefreshTokensService(
+    refreshTokenRepository = new TypeOrmRefreshTokenRepository(
       configurationServiceMock,
       dataSourceMock,
       repositoryMock,
@@ -47,7 +47,7 @@ describe('RefreshTokensService', () => {
   it('issues a refresh token with hashed persistence', async () => {
     (repositoryMock.save as jest.Mock).mockResolvedValue(undefined);
 
-    const payload = await refreshTokensService.issue({
+    const payload = await refreshTokenRepository.issue({
       userId: '0d0a930c-f3c4-4db2-98fc-6a6932651910',
       workspaceId: 'ff2344a5-f498-4a10-8f79-9b0992b87255',
     });
@@ -98,7 +98,7 @@ describe('RefreshTokensService', () => {
       queryBuilderMock,
     );
 
-    const payload = await refreshTokensService.rotate('plain-refresh-token');
+    const payload = await refreshTokenRepository.rotate('plain-refresh-token');
 
     expect(payload.familyId).toBe('fam-1');
     expect(payload.userId).toBe('user-1');
@@ -139,7 +139,7 @@ describe('RefreshTokensService', () => {
     );
 
     await expect(
-      refreshTokensService.rotate('reused-refresh-token'),
+      refreshTokenRepository.rotate('reused-refresh-token'),
     ).rejects.toThrow(UnauthorizedException);
 
     expect(queryBuilderMock.where).toHaveBeenCalledWith(

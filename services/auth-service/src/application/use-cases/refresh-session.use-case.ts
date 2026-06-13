@@ -1,27 +1,35 @@
 import { RefreshSessionRequestDto } from '@/application/dto/auth-request.dto';
 import type { AuthSessionResponseDto } from '@/application/dto/auth-session-response.dto';
-import { IdentityService } from '@/modules/identity/identity.service';
-import { RefreshTokensService } from '@/modules/refresh-tokens/refresh-tokens.service';
-import { Injectable } from '@nestjs/common';
+import {
+  REFRESH_TOKEN_REPOSITORY,
+  type RefreshTokenRepository,
+} from '@/domain/repositories/refresh-token.repository';
+import {
+  USER_REPOSITORY,
+  type UserRepository,
+} from '@/domain/repositories/user.repository';
+import { Inject, Injectable } from '@nestjs/common';
 import { JwtTokenService } from '../services/jwt-token.service';
 import { assertRefreshTokenPresent } from '../services/refresh-token-input.util';
 
 @Injectable()
 export class RefreshSessionUseCase {
   constructor(
-    private readonly identityService: IdentityService,
+    @Inject(USER_REPOSITORY)
+    private readonly userRepository: UserRepository,
     private readonly jwtTokenService: JwtTokenService,
-    private readonly refreshTokensService: RefreshTokensService,
+    @Inject(REFRESH_TOKEN_REPOSITORY)
+    private readonly refreshTokenRepository: RefreshTokenRepository,
   ) {}
 
   async execute(
     input: RefreshSessionRequestDto,
   ): Promise<AuthSessionResponseDto> {
     assertRefreshTokenPresent(input.refreshToken);
-    const refreshTokenPayload = await this.refreshTokensService.rotate(
+    const refreshTokenPayload = await this.refreshTokenRepository.rotate(
       input.refreshToken,
     );
-    const user = await this.identityService.getAuthUserById(
+    const user = await this.userRepository.getAuthUserById(
       refreshTokenPayload.userId,
     );
     const accessToken = await this.jwtTokenService.signAccessToken({

@@ -7,10 +7,10 @@ import {
 import { randomBytes, scrypt } from 'crypto';
 import { promisify } from 'util';
 import { Repository } from 'typeorm';
-import { IdentityService } from './identity.service';
-import { RoleEntity } from './entities/role.entity';
-import { UserRoleEntity } from './entities/user-role.entity';
-import { UserEntity } from './entities/user.entity';
+import { TypeOrmUserRepository } from './typeorm-user.repository';
+import { RoleEntity } from '@/modules/identity/entities/role.entity';
+import { UserRoleEntity } from '@/modules/identity/entities/user-role.entity';
+import { UserEntity } from '@/modules/identity/entities/user.entity';
 
 const scryptAsync = promisify(scrypt);
 
@@ -44,7 +44,7 @@ function buildAuthUserEntity(
   } as UserEntity;
 }
 
-describe('IdentityService', () => {
+describe('TypeOrmUserRepository', () => {
   const roleRepositoryMock = {
     create: jest.fn((value) => value),
     findOne: jest.fn(),
@@ -64,11 +64,11 @@ describe('IdentityService', () => {
     save: jest.fn(),
   } as unknown as Repository<UserRoleEntity>;
 
-  let identityService: IdentityService;
+  let userRepository: TypeOrmUserRepository;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    identityService = new IdentityService(
+    userRepository = new TypeOrmUserRepository(
       roleRepositoryMock,
       userRepositoryMock,
       userRoleRepositoryMock,
@@ -77,7 +77,7 @@ describe('IdentityService', () => {
 
   it('rejects invalid email on register', async () => {
     await expect(
-      identityService.register({
+      userRepository.register({
         email: 'not-an-email',
         fullName: 'Member Example',
         password: 'password123',
@@ -92,7 +92,7 @@ describe('IdentityService', () => {
     });
 
     await expect(
-      identityService.register({
+      userRepository.register({
         email: 'member@example.com',
         fullName: 'Member Example',
         password: 'password123',
@@ -105,7 +105,7 @@ describe('IdentityService', () => {
       buildAuthUserEntity(),
     );
 
-    await expect(identityService.getAuthUserById('user-1')).resolves
+    await expect(userRepository.getAuthUserById('user-1')).resolves
       .toMatchObject({
         userId: 'user-1',
         email: 'member@example.com',
@@ -117,7 +117,7 @@ describe('IdentityService', () => {
   it('throws when auth user is not found', async () => {
     (userRepositoryMock.findOne as jest.Mock).mockResolvedValue(null);
 
-    await expect(identityService.getAuthUserById('missing')).rejects.toThrow(
+    await expect(userRepository.getAuthUserById('missing')).rejects.toThrow(
       NotFoundException,
     );
   });
@@ -130,7 +130,7 @@ describe('IdentityService', () => {
     (userRepositoryMock.findOne as jest.Mock).mockResolvedValue(user);
 
     await expect(
-      identityService.validateCredentials({
+      userRepository.validateCredentials({
         email: 'member@example.com',
         password,
       }),
@@ -149,7 +149,7 @@ describe('IdentityService', () => {
     (userRepositoryMock.findOne as jest.Mock).mockResolvedValue(user);
 
     await expect(
-      identityService.validateCredentials({
+      userRepository.validateCredentials({
         email: 'member@example.com',
         password,
       }),
@@ -157,7 +157,7 @@ describe('IdentityService', () => {
       response: { code: 'EMAIL_NOT_VERIFIED' },
     });
     await expect(
-      identityService.validateCredentials({
+      userRepository.validateCredentials({
         email: 'member@example.com',
         password,
       }),
@@ -171,7 +171,7 @@ describe('IdentityService', () => {
     (userRepositoryMock.findOne as jest.Mock).mockResolvedValue(user);
 
     await expect(
-      identityService.changePassword('user-1', 'wrong-password', 'newpassword1'),
+      userRepository.changePassword('user-1', 'wrong-password', 'newpassword1'),
     ).rejects.toMatchObject({
       response: { code: 'PASSWORD_INVALID' },
     });
@@ -182,7 +182,7 @@ describe('IdentityService', () => {
     (userRepositoryMock.findOne as jest.Mock).mockResolvedValue(user);
     (userRepositoryMock.save as jest.Mock).mockImplementation(async (value) => value);
 
-    await expect(identityService.markEmailVerified('user-1')).resolves
+    await expect(userRepository.markEmailVerified('user-1')).resolves
       .toMatchObject({
         userId: 'user-1',
         emailVerified: true,
@@ -197,7 +197,7 @@ describe('IdentityService', () => {
       emailVerifiedAt: null,
     });
 
-    await identityService.rollbackNewRegistration('user-1');
+    await userRepository.rollbackNewRegistration('user-1');
 
     expect(userRoleRepositoryMock.delete).toHaveBeenCalledWith({ userId: 'user-1' });
     expect(userRepositoryMock.softDelete).toHaveBeenCalledWith({ id: 'user-1' });
