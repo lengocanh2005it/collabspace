@@ -172,7 +172,7 @@ Public URLs (when `gateway.swagger.expose: true`):
 | task-service | `http://<HOST>/swagger/task` |
 | notification-service | `http://<HOST>/swagger/notification` |
 
-Helm sets `SWAGGER_UI_PATH` per app ConfigMap; IngressRoute `collabspace-swagger` forwards without JWT (public docs).
+Helm sets `SWAGGER_UI_PATH` per app ConfigMap; IngressRoute `collabspace-swagger` forwards without JWT (public docs). OpenAPI includes request/response schemas (`@ApiOkResponse`). Full URL index: [docs/service-urls.md](../../docs/service-urls.md).
 
 Provisioned dashboards (folder **CollabSpace**): Service Health, App Logs, Load Test Run.  
 Full guide: [docs/observability.md](../../docs/observability.md).

@@ -434,7 +434,7 @@ Xem chi tiết: [application-backlog.md](./application-backlog.md) (Lê Ngọc A
 | Activity feed task-level | Võ Trung Tín | ✅ `GET /tasks/:id/activity` |
 | Activity feed workspace-level | Võ Trung Tín | Planned — không block smoke |
 | E2E `*.e2e-spec.ts` per service | Tiến / Tín | Infra cung cấp DB ephemeral trong CI |
-| Swagger/OpenAPI | Anh / Tiến / Tín | ✅ 5/5 tại `/swagger` |
+| Swagger/OpenAPI | Anh / Tiến / Tín | ✅ 5/5 UI + response schemas; gateway `/swagger/<service>` — [service-urls.md](../service-urls.md) |
 | Inject `requestId` vào Nest Logger | Application devs | Infra: Loki labels / Explore query |
 | User/auth use-case tests | Lê Ngọc Anh | ✅ đóng backlog Anh |
 

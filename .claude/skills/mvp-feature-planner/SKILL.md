@@ -22,8 +22,8 @@ Read:
 If the user says "continue MVP" without a target, read `docs/features.md` for **Planned** / **Partial** items first. Typical gaps (2026-06 sync):
 
 1. **E2E + CI** — `scripts/demo-e2e` Done; gắn CI + `*.e2e-spec.ts` workspace/task/notification.
-2. **Workspace activity feed** — task-level `GET /tasks/:id/activity` Done.
-3. **OpenAPI / contract test** — workspace + notification Swagger; Pact/schema (backlog).
+2. **Workspace activity feed** — task-level `GET /tasks/:id/activity` Done; workspace-level aggregate chưa có.
+3. **Contract test** — Pact/schema (backlog). **OpenAPI 5/5** ✅ — Swagger UI + `@ApiOkResponse` schemas trên 5 service.
 4. **Frontend UI** — out of scope repo; backend APIs largely Done.
 
 Do **not** re-implement: board API, task delete, mark-read, Phase B/C platform work — see `docs/features.md`.

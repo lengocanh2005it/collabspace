@@ -78,8 +78,8 @@ Chi tiết resilience: [resilience.md](./resilience.md), [resilience-overview.md
 Ưu tiên từ [features.md](../../docs/features.md) và [mvp-demo-scope.md](../../docs/mvp-demo-scope.md):
 
 1. **E2E per service + CI smoke** — `scripts/demo-e2e` đã có; gắn pipeline + `*.e2e-spec.ts` workspace/task/notification
-2. **Workspace activity feed** — task timeline đã Done
-3. **OpenAPI 5/5** + contract test (Pact/schema) — xem [application-backlog.md](../../docs/team/application-backlog.md)
+2. **Workspace activity feed** — task timeline đã Done; workspace-level aggregate chưa có route
+3. **Contract test** (Pact/schema) — backlog; **OpenAPI 5/5** ✅ (Swagger UI + response schemas + gateway `/swagger/<service>`)
 4. **Infra** — theo backlog Phan Phú Thọ (secrets, backup, CI) nếu role infra
 
 Nếu chưa rõ service nào: đọc [service-architecture.md](./service-architecture.md) và [features.md](../../docs/features.md) trước.

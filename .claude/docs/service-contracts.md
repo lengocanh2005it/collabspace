@@ -4,7 +4,7 @@ For dependency failures, timeouts, idempotency, and degradation behavior, see `r
 
 ## HTTP API Rules
 
-- **OpenAPI (Swagger UI):** each app service exposes **`GET /swagger`** on its HTTP port (see [README.md](../../README.md#openapi-swagger-ui)). Protected routes use Bearer JWT; internal S2S routes document `X-Internal-Service-Token`.
+- **OpenAPI (Swagger UI):** each app service exposes **`GET /swagger`** on its HTTP port with **request/response schemas** (`@ApiOkResponse` / `@ApiCreatedResponse`, DTO `@ApiProperty`). K8s prod: Traefik `http://<HOST>/swagger/<service>` (`gateway.swagger.expose: true`). URL index: [service-urls.md](../../docs/service-urls.md); overview: [README.md](../../README.md#openapi-swagger-ui). Protected routes use Bearer JWT; internal S2S routes document `X-Internal-Service-Token`.
 - Implemented NestJS services use global prefix `/api/v1` (task and notification: global `api` + `v1/...` on `@Controller()`).
 - Controllers should use resource-oriented paths.
 - Auth-required endpoints should verify bearer tokens through auth-service, preferably via existing gRPC integration patterns.

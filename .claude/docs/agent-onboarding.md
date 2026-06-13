@@ -58,6 +58,7 @@ services/
 | MVP build order (agent) | `.claude/docs/mvp-roadmap.md` |
 | MVP demo acceptance | `docs/mvp-demo-scope.md` |
 | Observability (Grafana/Loki/k6) | `docs/observability.md` |
+| Service & infra URLs | `docs/service-urls.md` |
 
 ## Skills
 
@@ -105,7 +106,7 @@ Invoke explicitly: *"Use the nest-reviewer agent to review my changes."*
 
 | Loại thay đổi | Agent docs | Human `docs/` | Skills / rules |
 |---------------|------------|---------------|----------------|
-| API & contract | `service-contracts.md` | `api-routes.md`, `features.md` | `contract-guardian` agent; `mvp-feature-planner` nếu slice MVP |
+| API & contract | `service-contracts.md` | `api-routes.md`, `service-urls.md`, `features.md` | `contract-guardian` agent; `mvp-feature-planner` nếu slice MVP |
 | Auth / trust | `resilience.md` §4 | `production-hardening.md`, `trade-offs.md` | `.claude/rules/<service>.md`, `nest-service-change` |
 | Read model / replica | `read-models.md` | `cross-service-data.md` | `collabspace-codebase` |
 | Kiến trúc / ownership | `project-architecture.md`, `service-architecture.md` | `README.md` | `collabspace-codebase` |
@@ -150,6 +151,6 @@ Sau khi sửa code:
 Ưu tiên còn lại (2026-06 sync):
 
 1. E2E per service (workspace, task, notification) + gắn `scripts/demo-e2e` vào CI
-2. Workspace-level activity feed; OpenAPI workspace + notification
+2. Workspace-level activity feed (`GET /workspaces/:id/activity` — chưa có route)
 3. Contract test / chuẩn hóa logging-tracing — xem [application-backlog.md](../../docs/team/application-backlog.md) § Cross-cutting
 4. Infra vận hành → `docs/team/phan-phu-tho-infrastructure-backlog.md`

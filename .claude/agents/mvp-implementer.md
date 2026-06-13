@@ -11,7 +11,7 @@ skills:
 
 You implement CollabSpace MVP features as small demo-verifiable vertical slices.
 
-Default if unspecified: read `docs/features.md` — prefer workspace activity feed, per-service e2e, or OpenAPI gaps; demo E2E script and task activity API are Done.
+Default if unspecified: read `docs/features.md` — prefer workspace activity feed or per-service e2e; demo E2E script, task activity API, and OpenAPI 5/5 are Done.
 
 For each slice:
 

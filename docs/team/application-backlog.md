@@ -1,6 +1,6 @@
 # Backlog ứng dụng — Lê Ngọc Anh, Ngô Quang Tiến, Võ Trung Tín
 
-Tài liệu này liệt kê **việc còn lại về logic code / API / test / demo** sau khi rà soát codebase (2026-06-11).  
+Tài liệu này liệt kê **việc còn lại về logic code / API / test / demo** (cập nhật 2026-06-13).  
 **Nguồn chính trạng thái tính năng:** [features.md](../features.md). **Infra/DevOps:** [phan-phu-tho-infrastructure-backlog.md](./phan-phu-tho-infrastructure-backlog.md) (Phan Phú Thọ). **Admin Platform API (owner Võ Trung Tín, deadline sáng CN 14/06/2026):** [admin-backlog.md](./admin-backlog.md).
 
 ## Tóm tắt rà soát
@@ -10,8 +10,9 @@ Tài liệu này liệt kê **việc còn lại về logic code / API / test / d
 | **MVP API backend** | Luồng 7 bước demo **đã có endpoint** — [mvp-demo-scope.md](../mvp-demo-scope.md) |
 | **Demo E2E script** | ✅ `scripts/demo-e2e.sh` + `scripts/demo-e2e.ps1` — 7 bước qua Traefik |
 | **Activity feed task** | ✅ `GET /api/v1/tasks/:id/activity` (`get-task-activity.handler.ts`) |
-| **Không có `TODO`/`FIXME`** trong `services/**` | Gap chủ yếu: e2e per service, OpenAPI 5/5, contract test, workspace activity |
-| **Thiếu lớn nhất (app)** | E2E workspace/task/notification; CI smoke; OpenAPI; contract test tự động |
+| **OpenAPI 5/5** | ✅ Swagger UI 5 service + response schemas; public gateway `/swagger/<service>` — [service-urls.md](../service-urls.md) |
+| **Không có `TODO`/`FIXME`** trong `services/**` | Gap chủ yếu: e2e per service, contract test, workspace activity |
+| **Thiếu lớn nhất (app)** | E2E workspace/task/notification; CI smoke; contract test tự động |
 | **Rủi ro cấu hình** | `WORKSPACE_CLIENT_MODE` ≠ `http` → task dùng mock workspace (bỏ qua membership thật) |
 
 ### Phân công (theo [README.md](../../README.md#team))
@@ -31,7 +32,7 @@ Tài liệu này liệt kê **việc còn lại về logic code / API / test / d
 P0  Gắn demo-e2e vào CI smoke              →  Phú Thọ + Tín
 P1  E2E per service (workspace/task/notif) →  Tiến + Tín
 P1  Workspace activity feed                →  gap product (Tín)
-P1  OpenAPI workspace + notification        →  ✅ Done (5/5 tại `/swagger`)
+P1  OpenAPI 5/5 + response schemas          →  ✅ Done (`/swagger`, gateway expose)
 P1  Contract test (Pact / event schema)     →  cross-team
 P2  Tech debt (Kafka dead code, console.log, mock paths) →  theo service
 ```
@@ -76,6 +77,7 @@ P2  Tech debt (Kafka dead code, console.log, mock paths) →  theo service
 #### P2 — OpenAPI & polish
 
 - [x] Swagger **decorator** — `@ApiTags` / `@ApiOperation` / `@ApiBearerAuth` trên auth + user controllers; `@ApiProperty` trên DTO chính; internal API + `X-Internal-Service-Token` trong user Swagger
+- [x] **Response schemas** — `@ApiOkResponse` / `@ApiCreatedResponse` + swagger response DTOs
 - [x] Document flow OTP / resend cooldown — mô tả trong `auth-service` Swagger (`app.controller.ts` + `main.ts`)
 
 #### Out of scope MVP (ghi nhận, không ưu tiên)
@@ -116,7 +118,7 @@ P2  Tech debt (Kafka dead code, console.log, mock paths) →  theo service
 
 #### P2 — OpenAPI & mở rộng (Planned)
 
-- [x] **Swagger** — `workspace-service/src/main.ts` → `/swagger`
+- [x] **Swagger** — `workspace-service/src/main.ts` → `/swagger` + `@ApiOkResponse` response DTOs
 - [ ] **Project-scoped board** (Planned trong [features.md](../features.md) §4) — tùy chọn; hiện board ở `GET /tasks/board` (task-service, owner Tín)
 
 #### P2 — API ngoài MVP (tùy product)
@@ -168,8 +170,8 @@ P2  Tech debt (Kafka dead code, console.log, mock paths) →  theo service
   - `services/notification-service/package.json` (`kafka-node`)
   - `src/domain/events/kafka-event-wrapper.ts`, `kafka-event-payloads.ts`
 - [ ] **Xóa / sửa `getAzureStorageConfig()`** không dùng trong `notification-service` và `task-service` `configuration.service.ts`
-- [x] **Swagger notification-service** — `/swagger` + `@ApiTags` trên `notifications.controller.ts`
-- [x] **Swagger task** — `/swagger` + `@ApiTags` task/comment/health; `@ApiProperty` trên request DTOs
+- [x] **Swagger notification-service** — `/swagger` + `@ApiTags` + `@ApiOkResponse` trên `notifications.controller.ts`
+- [x] **Swagger task** — `/swagger` + `@ApiTags` task/comment/health; `@ApiProperty` request DTOs; `@ApiOkResponse` trên task controller
 - [ ] Thay `console.log` bằng `Logger` (có `requestId` khi Phase C+ structured log):
   - `task-service/src/main.ts`, RMQ listeners
   - `notification-service` comment listener
@@ -190,9 +192,9 @@ P2  Tech debt (Kafka dead code, console.log, mock paths) →  theo service
 |---------|-----------|-----------|--------|
 | auth-service | Done | — (identity spec + Swagger + e2e flow ✅) | Anh |
 | user-service | Done | — (12/12 use-case specs + internal/auth-events tests ✅) | Anh |
-| workspace-service | Done | E2E, Swagger, outbox test | Tiến |
+| workspace-service | Done | E2E, outbox test | Tiến |
 | task-service | Done | Board test, e2e, workspace mock guard, workspace activity | Tín (+ Tiến integration) |
-| notification-service | Done | mark-all test, e2e, Kafka cleanup, Swagger | Tín |
+| notification-service | Done | mark-all test, e2e, Kafka cleanup | Tín |
 
 ---
 
@@ -203,7 +205,7 @@ P2  Tech debt (Kafka dead code, console.log, mock paths) →  theo service
 | **Contract test tự động** | Pact hoặc schema test event JSON; hiện chỉ doc + `@collabspace/shared` | Cả team |
 | **CI smoke `demo-e2e`** | Script Done; chưa gate PR | Phú Thọ + Tín |
 | Structured logging + `requestId` trong log line | Phase C middleware có; chưa inject mọi log line; gRPC chưa propagate | Tín + Anh |
-| OpenAPI 5/5 services | ✅ Tất cả tại `/swagger` — xem [README.md](../../README.md#openapi-swagger-ui) | — |
+| OpenAPI 5/5 services | ✅ UI + response schemas; prod URLs: [service-urls.md](../service-urls.md) | — |
 | Chuẩn hóa API prefix | task/notification: `api` + `v1/...` controller vs `api/v1` global ở auth/user/workspace | Cả team (breaking nếu đổi) |
 | Contract sync sau đổi API | `service-contracts.md`, `api-routes.md` | Người mở PR |
 | `pnpm` workspace root | `package.json` + `packages/shared` — build/test từ root | Phú Thọ (CI) |
@@ -219,18 +221,19 @@ P2  Tech debt (Kafka dead code, console.log, mock paths) →  theo service
 | 2 | E2E qua Traefik | Tín | P0 ✅ |
 | 3 | Activity feed `GET .../tasks/:id/activity` | Tín | P1 ✅ |
 | 3b | Workspace activity `GET .../workspaces/:id/activity` | Tín | P1 |
-| 15 | Gắn `demo-e2e` CI smoke | Phú Thọ | P0 |
 | 4 | User use-case tests (batch 1: create/update/bulk) | Anh | P1 ✅ |
 | 5 | User use-case tests (batch 2: preferences/status) | Anh | P1 ✅ |
 | 6 | auth IdentityService spec | Anh | P1 ✅ |
 | 7 | workspace e2e spec | Tiến | P1 |
-| 8 | workspace Swagger | Tiến | P2 ✅ |
+| 8 | workspace Swagger + response schemas | Tiến | P2 ✅ |
 | 9 | WORKSPACE_CLIENT_MODE=http enforce prod | Tiến | P1 |
 | 10 | get-task-board unit test | Tín | P1 |
 | 11 | mark-all-read unit test | Tín | P1 |
 | 12 | notification e2e spec | Tín | P1 |
 | 13 | Remove kafka-node dead code | Tín | P2 |
-| 14 | notification Swagger | Tín | P2 ✅ |
+| 14 | notification Swagger + response schemas | Tín | P2 ✅ |
+| 15 | Gắn `demo-e2e` CI smoke | Phú Thọ | P0 |
+| 16 | auth/user/task OpenAPI response schemas (`@ApiOkResponse`) | Anh + Tín | P2 ✅ |
 
 ---
 
@@ -241,6 +244,7 @@ P2  Tech debt (Kafka dead code, console.log, mock paths) →  theo service
 | [features.md](../features.md) | Trạng thái tính năng canonical |
 | [mvp-demo-scope.md](../mvp-demo-scope.md) | 7 bước demo + acceptance |
 | [mvp-roadmap.md](../../.claude/docs/mvp-roadmap.md) | Phase lịch sử |
+| [service-urls.md](../service-urls.md) | URL API, Swagger, Grafana (prod & local) |
 | [service-contracts.md](../../.claude/docs/service-contracts.md) | Route, event, header |
 | [phan-phu-tho-infrastructure-backlog.md](./phan-phu-tho-infrastructure-backlog.md) | Việc infra (không trùng file này) |
 

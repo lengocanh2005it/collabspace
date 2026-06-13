@@ -21,6 +21,7 @@ Read these files as needed:
 - `docs/team/phan-phu-tho-infrastructure-backlog.md` (infra/DevOps gaps)
 - `infrastructure/vault/README.md` (HashiCorp Vault — local dev + K8s ESO)
 - `docs/observability.md` (Grafana, Prometheus, Loki, k6 on K8s)
+- `docs/service-urls.md` (API, Swagger, Grafana URLs — prod & local)
 
 ## Orientation Steps
 
@@ -32,7 +33,7 @@ Read these files as needed:
    - notification/activity
    - infrastructure/observability/CI
 2. Map the request to the owning service.
-3. Check `docs/features.md` for Done / Planned — all five app services are implemented; main gaps: workspace activity feed, per-service e2e + CI smoke, contract tests, frontend, infra ops. OpenAPI: `/swagger` on each service. Demo E2E: `scripts/demo-e2e.sh` / `.ps1`.
+3. Check `docs/features.md` for Done / Planned — all five app services are implemented; main gaps: workspace activity feed, per-service e2e + CI smoke, contract tests, frontend, infra ops. **OpenAPI 5/5 Done** — `/swagger` + response schemas; prod URLs: `docs/service-urls.md`. Demo E2E: `scripts/demo-e2e.sh` / `.ps1`.
 4. Read `services/<service>/CLAUDE.md` and `.claude/docs/service-architecture.md` for that service's layering rules.
 5. Read the target service's `src/app.module.ts`, controllers, use cases/handlers, entities, repositories, migrations, and tests.
 6. Summarize the current state before proposing cross-service work.

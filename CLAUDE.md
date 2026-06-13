@@ -20,6 +20,7 @@ Read before broad changes:
 - Conventions: `.claude/docs/coding-conventions.md`
 - Product features: `docs/features.md`
 - API routes & gateway: `docs/api-routes.md`
+- Service & infra URLs: `docs/service-urls.md`
 - Trust boundaries (Phase B): `docs/production-hardening.md`, `.claude/docs/service-contracts.md` → Auth Header Propagation
 - Correlation ID (Phase C): `X-Request-Id` — `.claude/docs/service-contracts.md` → Correlation ID
 - Infra backlog: `docs/team/phan-phu-tho-infrastructure-backlog.md`
@@ -58,7 +59,7 @@ Subagents in `.claude/agents/`: `nest-reviewer`, `mvp-implementer`, `contract-gu
   - workspace: host `3002` -> container `8080`
   - task: host `3003` -> container `3000`
   - notification: host `3004` -> container `3000`
-- **MVP backend APIs** are largely complete per `docs/features.md`; remaining product gaps: workspace-level activity feed, per-service e2e tests, OpenAPI 5/5, frontend UI. **Demo E2E script:** `scripts/demo-e2e.sh` / `.ps1`. **Infra prod gaps:** `docs/team/phan-phu-tho-infrastructure-backlog.md`.
+- **MVP backend APIs** are largely complete per `docs/features.md`; remaining product gaps: workspace-level activity feed, per-service e2e tests, frontend UI. **OpenAPI 5/5** Done (Swagger UI + response schemas, gateway `/swagger/<service>`). **Demo E2E script:** `scripts/demo-e2e.sh` / `.ps1`. **Infra prod gaps:** `docs/team/phan-phu-tho-infrastructure-backlog.md`.
 - **pnpm workspace** at repo root (`package.json`, `pnpm-workspace.yaml`) — `pnpm run build|test` from root, or per `services/*`.
 - Use `pnpm`, not npm, for the NestJS services unless a service-specific file proves otherwise.
 

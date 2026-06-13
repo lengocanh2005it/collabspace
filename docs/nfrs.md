@@ -146,7 +146,7 @@ Chi tiết kỹ thuật:
 | NFR | Mục tiêu | CollabSpace |
 |-----|----------|-------------|
 | API versioning | `/api/v1` ổn định | ✅ |
-| OpenAPI | Swagger 5/5 services tại `/swagger` | ✅ auth, user, workspace, task, notification |
+| OpenAPI | Swagger 5/5 tại `/swagger` + response schemas; gateway prod `/swagger/<service>` | ✅ auth, user, workspace, task, notification — [service-urls.md](./service-urls.md) |
 | Frontend client | UI end-user | ❌ Backend + infra focus |
 | i18n / accessibility | — | ❌ Out of scope |
 

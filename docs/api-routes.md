@@ -3,7 +3,8 @@
 Route HTTP đọc nhanh cho phát triển local và demo. Mọi service HTTP dùng prefix global `/api` trừ khi ghi chú khác.
 
 **Hợp đồng chính thức** (payload, header, event): [`.claude/docs/service-contracts.md`](../.claude/docs/service-contracts.md)  
-**Trạng thái tính năng:** [`features.md`](features.md)
+**Trạng thái tính năng:** [`features.md`](features.md)  
+**URL đầy đủ (API, Swagger, Grafana):** [`service-urls.md`](service-urls.md)
 
 ## Truy cập qua gateway
 
