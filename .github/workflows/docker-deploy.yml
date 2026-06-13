@@ -68,6 +68,7 @@ jobs:
               - 'infrastructure/docker/Dockerfile.service'
               - 'package.json'
               - 'pnpm-workspace.yaml'
+              - 'pnpm-lock.yaml'
 
   build-images:
     runs-on: ubuntu-latest
