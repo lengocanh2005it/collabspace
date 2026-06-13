@@ -2,6 +2,45 @@
 {{- $ns := include "collabspace.namespace" . }}
 ---
 apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: prometheus
+  namespace: {{ $ns }}
+  labels:
+    app: prometheus
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: prometheus-{{ $ns }}
+  labels:
+    app: prometheus
+rules:
+  - apiGroups: [""]
+    resources: [nodes, nodes/metrics, services, endpoints, pods]
+    verbs: [get, list, watch]
+  - apiGroups: [""]
+    resources: [configmaps]
+    verbs: [get]
+  - nonResourceURLs: [/metrics, /metrics/cadvisor]
+    verbs: [get]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: prometheus-{{ $ns }}
+  labels:
+    app: prometheus
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: prometheus-{{ $ns }}
+subjects:
+  - kind: ServiceAccount
+    name: prometheus
+    namespace: {{ $ns }}
+---
+apiVersion: v1
 kind: ConfigMap
 metadata:
   name: prometheus-config
@@ -82,8 +121,10 @@ spec:
     metadata:
       labels:
         app: prometheus
+      annotations:
+        checksum/config: {{ toJson .Values.observability | sha256sum }}
     spec:
-      serviceAccountName: default
+      serviceAccountName: prometheus
       containers:
         - name: prometheus
           image: prom/prometheus:v2.54.1
