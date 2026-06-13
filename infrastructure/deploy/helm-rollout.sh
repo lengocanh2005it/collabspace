@@ -26,15 +26,17 @@ fi
 cd "$APP_DIR"
 
 # CI/workflow may export IMAGE_TAG before this script; phase0.env must not override it.
-saved_image_tag="${IMAGE_TAG:-}"
+ci_image_tag="${IMAGE_TAG:-}"
 if [[ -f "$PHASE0_ENV" ]]; then
   set -a
   # shellcheck disable=SC1090
   source "$PHASE0_ENV"
   set +a
 fi
-if [[ -n "$saved_image_tag" ]]; then
-  export IMAGE_TAG="$saved_image_tag"
+if [[ -n "$ci_image_tag" ]]; then
+  export IMAGE_TAG="$ci_image_tag"
+else
+  unset IMAGE_TAG
 fi
 
 GHCR_OWNER="${GHCR_OWNER:-}"
@@ -148,7 +150,8 @@ helm upgrade --install "$RELEASE" "$CHART_DIR" \
 
 # Persist the deployed image tag back into values-prod.yaml so that
 # subsequent helm-only deploys (no IMAGE_TAG) don't revert to an old tag.
-if [[ -n "${IMAGE_TAG:-}" ]]; then
+# Only when CI/workflow explicitly passed a non-empty IMAGE_TAG.
+if [[ -n "${ci_image_tag:-}" ]]; then
   echo "==> Persisting image tag ${IMAGE_TAG} into values-prod.yaml..."
   python3 - <<PYEOF
 import re, sys
