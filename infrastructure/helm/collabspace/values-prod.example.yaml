@@ -34,6 +34,10 @@ global:
     rabbitmqUsername: collabspace
     rabbitmqPassword: "REPLACE_ME"
     metricsAuthToken: "REPLACE_ME"
+    azureStorageConnectionString: "REPLACE_ME_AZURE"
+  azureStorage:
+    containerName: task-attachments
+    maxFileSize: "5242880"
 
 postgresql:
   auth:

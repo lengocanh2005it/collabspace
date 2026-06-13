@@ -154,9 +154,9 @@ Dùng bảng này khi seed Vault KV (`secret/collabspace/staging`, …).
 | Service | Secret (đưa vào SM) | Config (Helm ConfigMap / values) |
 |---------|---------------------|----------------------------------|
 | **auth-service** | `JWT_SECRET`, `POSTGRES_PASSWORD`, `REDIS_PASSWORD`, `RABBITMQ_PASSWORD`, `MAIL_USER`, `MAIL_PASSWORD`, `METRICS_AUTH_TOKEN` | `PORT`, `GRPC_*`, `RABBITMQ_QUEUE`, OTP TTL, outbox tuning, `TRACING_*` |
-| **user-service** | `POSTGRES_PASSWORD`, `RABBITMQ_PASSWORD`, `INTERNAL_SERVICE_TOKEN`, `METRICS_AUTH_TOKEN` | `AUTH_SERVICE_GRPC_URL`, `GRPC_URL`, `DATABASE_SCHEMA` |
+| **user-service** | `POSTGRES_PASSWORD`, `RABBITMQ_PASSWORD`, `INTERNAL_SERVICE_TOKEN`, `METRICS_AUTH_TOKEN`, `AZURE_STORAGE_CONNECTION_STRING` (avatar upload; optional local) | `AUTH_SERVICE_GRPC_URL`, `GRPC_URL`, `DATABASE_SCHEMA` |
 | **workspace-service** | `POSTGRES_PASSWORD`, `RABBITMQ_PASSWORD`, `INTERNAL_SERVICE_TOKEN`, `METRICS_AUTH_TOKEN` | `PORT=8080`, `AUTH_SERVICE_GRPC_URL`, `ALLOW_DEV_IDENTITY_HEADERS=false` |
-| **task-service** | `MONGO_URI` (hoặc password riêng + template URI), `RABBITMQ_PASSWORD`, `INTERNAL_SERVICE_TOKEN`, `AZURE_STORAGE_CONNECTION_STRING`, `METRICS_AUTH_TOKEN` | `WORKSPACE_SERVICE_URL`, `USER_SERVICE_URL`, outbox, `ALLOW_DEV_IDENTITY_HEADERS=false` |
+| **task-service** | `MONGO_URI` (hoặc password riêng + template URI), `RABBITMQ_PASSWORD`, `INTERNAL_SERVICE_TOKEN`, `AZURE_STORAGE_CONNECTION_STRING`, `METRICS_AUTH_TOKEN` | `WORKSPACE_SERVICE_URL`, `USER_SERVICE_URL`, `AZURE_STORAGE_CONTAINER_NAME`, `AZURE_STORAGE_MAX_FILE_SIZE`, outbox, `ALLOW_DEV_IDENTITY_HEADERS=false` |
 | **notification-service** | `JWT_SECRET` (nếu service đọc — hiện verify gRPC), `MONGO_URI`, `REDIS_PASSWORD`, `RABBITMQ_PASSWORD`, `INTERNAL_SERVICE_TOKEN`, `METRICS_AUTH_TOKEN` | `USER_SERVICE_URL`, `RABBITMQ_QUEUE` |
 | **rabbitmq** (infra) | `RABBITMQ_DEFAULT_USER`, `RABBITMQ_DEFAULT_PASS` | vhost `collabspace` |
 | **Compose / Helm datastores** | Bitnami `postgresPassword`, `mongoPassword`, `redisPassword`, `rabbitmqPassword` | hostnames: `postgres`, `mongo`, `redis`, `rabbitmq` |
@@ -164,7 +164,7 @@ Dùng bảng này khi seed Vault KV (`secret/collabspace/staging`, …).
 #### 2.2 Công việc triển khai HashiCorp Vault + ESO
 
 - [x] **Chốt provider:** HashiCorp Vault + External Secrets Operator — [vault/README.md](../../infrastructure/vault/README.md).
-- [x] **Naming convention KV v2:** `secret/collabspace/<env>` — keys: `jwt_secret`, `internal_service_token`, `postgres_password`, `mongo_*`, `redis_password`, `rabbitmq_*`, `metrics_auth_token`.
+- [x] **Naming convention KV v2:** `secret/collabspace/<env>` — keys: `jwt_secret`, `internal_service_token`, `postgres_password`, `mongo_*`, `redis_password`, `rabbitmq_*`, `metrics_auth_token`, `azure_storage_connection_string`.
 - [x] Scaffold local: `docker-compose.vault.yml`, `seed-dev-secrets`, `sync-env-from-vault`.
 - [x] Manifest ESO: `infrastructure/vault/k8s/external-secrets.yaml` → per-app `{app}-secrets`.
 - [x] Helm: `global.externalSecrets.enabled`, `global.secrets.internalServiceToken` trong [secret.yaml](../../infrastructure/helm/collabspace/templates/apps/secret.yaml).

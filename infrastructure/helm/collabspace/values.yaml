@@ -24,6 +24,11 @@ global:
     rabbitmqUsername: guest
     rabbitmqPassword: guest
     metricsAuthToken: ""
+    # Optional — task attachments + user avatars (mock mode when empty)
+    azureStorageConnectionString: ""
+  azureStorage:
+    containerName: task-attachments
+    maxFileSize: "5242880"
 
 infra:
   hosts:

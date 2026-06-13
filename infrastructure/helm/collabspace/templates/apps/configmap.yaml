@@ -41,6 +41,8 @@ data:
   {{- if eq $name "task-service" }}
   MONGO_URI: {{ include "collabspace.mongoUri" (dict "database" "collabspace_task" "root" $root) | quote }}
   RABBITMQ_URL: {{ include "collabspace.rabbitmqUrl" (dict "root" $root) | quote }}
+  AZURE_STORAGE_CONTAINER_NAME: {{ $root.Values.global.azureStorage.containerName | default "task-attachments" | quote }}
+  AZURE_STORAGE_MAX_FILE_SIZE: {{ $root.Values.global.azureStorage.maxFileSize | default "5242880" | quote }}
   {{- end }}
   {{- if eq $name "notification-service" }}
   MONGO_URI: {{ include "collabspace.mongoUri" (dict "database" "collabspace_notification" "root" $root) | quote }}

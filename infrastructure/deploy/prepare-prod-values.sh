@@ -38,6 +38,7 @@ required=(
   METRICS_AUTH_TOKEN
   RABBITMQ_ERLANG_COOKIE
   PROD_DOMAIN
+  AZURE_STORAGE_CONNECTION_STRING
 )
 
 missing=()
@@ -72,6 +73,7 @@ replacements = {
     'redisPassword: "REPLACE_ME"': f'redisPassword: "{os.environ["REDIS_PASSWORD"]}"',
     'rabbitmqPassword: "REPLACE_ME"': f'rabbitmqPassword: "{os.environ["RABBITMQ_PASSWORD"]}"',
     'metricsAuthToken: "REPLACE_ME"': f'metricsAuthToken: "{os.environ["METRICS_AUTH_TOKEN"]}"',
+    'azureStorageConnectionString: "REPLACE_ME_AZURE"': f'azureStorageConnectionString: "{os.environ["AZURE_STORAGE_CONNECTION_STRING"]}"',
     'rootPassword: "REPLACE_ME"': f'rootPassword: "{os.environ["MONGO_PASSWORD"]}"',
     'erlangCookie: "REPLACE_ME_ERLANG_COOKIE"': f'erlangCookie: "{os.environ["RABBITMQ_ERLANG_COOKIE"]}"',
     "rabbitmqUsername: collabspace": f'rabbitmqUsername: {os.environ["RABBITMQ_USERNAME"]}',

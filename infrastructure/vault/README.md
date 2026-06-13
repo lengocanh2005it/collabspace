@@ -27,6 +27,14 @@ Keys in each path:
 | `redis_password` | `REDIS_PASSWORD` | auth, notification |
 | `rabbitmq_username` / `rabbitmq_password` | `RABBITMQ_*`, `RABBITMQ_URL` | all publishers/consumers |
 | `metrics_auth_token` | `METRICS_AUTH_TOKEN` | all five apps |
+| `azure_storage_connection_string` | `AZURE_STORAGE_CONNECTION_STRING` | user-service (avatar), task-service (attachments) |
+
+Non-secret Azure config for task attachments (Helm ConfigMap, not Vault):
+
+| Env var | Default | Service |
+|---------|---------|---------|
+| `AZURE_STORAGE_CONTAINER_NAME` | `task-attachments` | task-service |
+| `AZURE_STORAGE_MAX_FILE_SIZE` | `5242880` | task-service |
 
 ---
 

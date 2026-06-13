@@ -32,6 +32,7 @@ redis_pass=$(echo "$response" | jq -r '.data.data.redis_password')
 rmq_user=$(echo "$response" | jq -r '.data.data.rabbitmq_username')
 rmq_pass=$(echo "$response" | jq -r '.data.data.rabbitmq_password')
 metrics=$(echo "$response" | jq -r '.data.data.metrics_auth_token // ""')
+azure=$(echo "$response" | jq -r '.data.data.azure_storage_connection_string // ""')
 
 set_env_key() {
   local file="$1" key="$2" value="$3"
@@ -75,6 +76,11 @@ if [[ -n "$metrics" ]]; then
   for f in "$AUTH_ENV" "$USER_ENV" "$WS_ENV" "$TASK_ENV" "$NOTIF_ENV"; do
     set_env_key "$f" "METRICS_AUTH_TOKEN" "$metrics"
   done
+fi
+
+if [[ -n "$azure" ]]; then
+  set_env_key "$USER_ENV" "AZURE_STORAGE_CONNECTION_STRING" "$azure"
+  set_env_key "$TASK_ENV" "AZURE_STORAGE_CONNECTION_STRING" "$azure"
 fi
 
 url_encode() {
