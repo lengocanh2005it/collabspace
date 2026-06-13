@@ -5,6 +5,8 @@ Tài liệu này liệt kê **công việc hạ tầng / DevOps / observability 
 **Phạm vi:** chỉ infra, platform, pipeline, cluster, datastore, gateway, observability stack.  
 **Ngoài phạm vi file này:** feature API, business logic, middleware trong NestJS app services (thuộc application team).
 
+**Phối hợp deploy Droplet:** **Lê Ngọc Anh** (Member 2) — vận hành hands-on k3s/Helm trên DigitalOcean Droplet, verify prod sau CI; thiết kế/pipeline dài hạn vẫn theo backlog này.
+
 **Trạng thái repo (snapshot 2026-06-12):**
 
 | Đã có sẵn | Chưa operational hóa / prod-ready |
@@ -13,16 +15,17 @@ Tài liệu này liệt kê **công việc hạ tầng / DevOps / observability 
 | **pnpm workspace** — root `package.json`, `pnpm-workspace.yaml`, `packages/shared` | CI `pnpm -r run build\|test` từ root trong pipeline |
 | **Demo E2E script** — `scripts/demo-e2e.sh` + `scripts/demo-e2e.ps1` (7 bước qua Traefik) | Gắn script vào CI smoke / nightly |
 | **HashiCorp Vault scaffold** (`infrastructure/vault/`) — dev Compose, KV seed/sync, ESO YAML, Helm `externalSecrets` | Vault HA deploy, K8s auth, rotation, smoke sau ESO sync |
-| Helm umbrella chart (`infrastructure/helm/collabspace/`) | `values-prod.yaml` + deploy k3s lần đầu |
-| **GHCR image build** — GitHub Actions `build-images` 5 service ✅ | Workflow deploy Helm/k3s (thay Compose SSH) |
-| **Lộ trình deploy DO** — [deployment-k3s-phases.md](../deployment-k3s-phases.md) | Thực hiện Phase 0–5 trên Droplet thật |
+| Helm umbrella chart (`infrastructure/helm/collabspace/`) | `values-prod.yaml` trên Droplet ✅; multi-env staging ⬜ |
+| **GHCR image build** — GitHub Actions `build-images` 5 service ✅ | Alert routing, backup cron ⬜ |
+| **Helm/k3s deploy qua CI** — SSH Droplet (`helm-deploy-ci.sh`) ✅ | Phase 5 TLS; smoke gate PR ⬜ |
+| **Lộ trình deploy DO** — [deployment-k3s-phases.md](../deployment-k3s-phases.md) | Phase 0–3 ✅ trên Droplet (`167.172.77.110`, owner vận hành: Lê Ngọc Anh); Phase 5 TLS ⬜ |
 | K8s manifests legacy (`infrastructure/k8s/`) — tham chiếu | Load test baseline → tune resources |
 | Traefik gateway + forward-auth (`api-gateway/`) | Backup tự động + restore drill |
 | Prometheus + Alertmanager + Grafana (`infrastructure/monitoring/`) | **K8s:** Helm + Loki — [observability.md](../observability.md) |
 | Jaeger / OTLP (`docker-compose.tracing.yml`, `infrastructure/tracing/`) | Tracing bật trên staging/prod |
-| Jenkins container + shell scripts (`infrastructure/jenkins/`), GitHub Actions CI/CD (`.github/workflows/`) | GitHub Secrets `DROPLET_*` + workflow `helm upgrade` |
+| Jenkins container + shell scripts (`infrastructure/jenkins/`), GitHub Actions CI/CD (`.github/workflows/`) | `DROPLET_*` secrets ✅; nightly smoke ⬜ |
 | k6 load tests (`infrastructure/load-testing/`) | k6 baseline doc + tune HPA/limits |
-| Backup scripts (`infrastructure/backup/scripts/`) | ESO installed + Vault reachable on cluster |
+| Backup scripts (`infrastructure/backup/scripts/`) | Restore drill + snapshot schedule ⬜ |
 | Drills (`verify-readiness`, `chaos-stop-service`) | Smoke job sau mỗi deploy (readiness + `demo-e2e`) |
 
 **Tài liệu liên quan:**

@@ -20,7 +20,7 @@ Tài liệu này liệt kê **việc còn lại về logic code / API / test / d
 | Thành viên | Service / vùng | File backlog |
 |------------|----------------|--------------|
 | Phan Phú Thọ | Infra, CI/CD, backup, secrets | [phan-phu-tho-infrastructure-backlog.md](./phan-phu-tho-infrastructure-backlog.md) |
-| **Lê Ngọc Anh** | `auth-service`, `user-service` | [§ Lê Ngọc Anh](#lê-ngọc-anh--auth--user) |
+| **Lê Ngọc Anh** | `auth-service`, `user-service`; **DO Droplet deploy** (k3s/Helm, verify prod) | [§ Lê Ngọc Anh](#lê-ngọc-anh--auth-user-do-droplet) |
 | **Ngô Quang Tiến** | `workspace-service`, tích hợp workspace ↔ task | [§ Ngô Quang Tiến](#ngô-quang-tiến--workspace--task-integration) |
 | **Võ Trung Tín** | `task-service` (task/comment/notify path), `notification-service`, demo E2E | [§ Võ Trung Tín](#võ-trung-tín--task--notification--demo) |
 
@@ -51,11 +51,30 @@ P2  Tech debt (Kafka dead code, console.log, mock paths) →  theo service
 
 ---
 
-## Lê Ngọc Anh — Auth & User
+## Lê Ngọc Anh — Auth, User, DO Droplet
 
-**Services:** `services/auth-service`, `services/user-service`
+**Services:** `services/auth-service`, `services/user-service`  
+**Platform (phối hợp [Phú Thọ](./phan-phu-tho-infrastructure-backlog.md)):** vận hành deploy **DigitalOcean Droplet** — k3s single-node, Helm, Vault+ESO, verify prod sau CI.
 
-### Đã xong (không làm lại)
+**Tài liệu deploy:** [deployment-k3s-phases.md](../deployment-k3s-phases.md) · [deployment-droplet-ip-quickstart.md](../deployment-droplet-ip-quickstart.md) · [service-urls.md](../service-urls.md)
+
+### Đã xong — Droplet / production
+
+- [x] Droplet prod `167.172.77.110` — k3s + Helm stack (5 app + datastore + observability)
+- [x] CI **Build Images And Deploy** — GHCR build + `helm-deploy-ci.sh` qua SSH
+- [x] API gateway `/api/v1`, Swagger `/swagger/<service>`, Grafana `/grafana/` — [service-urls.md](../service-urls.md)
+- [x] Script local: `infrastructure/deploy/deploy-droplet-from-local.ps1`, `prepare-prod-values.ps1`
+
+### Việc còn lại — Droplet (shared với infra backlog Phú Thọ)
+
+- [ ] Phase 5 — TLS/domain (`cert-manager`, HTTPS)
+- [ ] Gắn `scripts/demo-e2e` vào CI smoke sau deploy
+- [ ] Backup/snapshot Droplet + restore drill — [backup-policy.md](../backup-policy.md)
+- [ ] Alertmanager routing (Slack/email)
+
+Chi tiết infra: [phan-phu-tho-infrastructure-backlog.md](./phan-phu-tho-infrastructure-backlog.md).
+
+### Đã xong — Auth & User (không làm lại)
 
 - Register → OTP → verify → login → refresh → logout → change password
 - `GET /auth/me`, `GET /auth/verify` (gateway)
@@ -250,4 +269,4 @@ P2  Tech debt (Kafka dead code, console.log, mock paths) →  theo service
 
 ---
 
-*Cập nhật: 2026-06-11 — sync doc với codebase: demo-e2e Done, task activity feed Done, ưu tiên e2e per service + CI + contract test. Đóng backlog **Lê Ngọc Anh** (user tests, identity spec, e2e, Swagger).*
+*Cập nhật: 2026-06-13 — sync doc: demo-e2e Done, OpenAPI 5/5 Done, **Lê Ngọc Anh** + DO Droplet deploy (k3s/Helm prod).*

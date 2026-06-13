@@ -46,7 +46,7 @@ Read these files as needed:
 - Projects, boards, tasks, comments, mentions, activity: `services/task-service`.
 - Notification persistence, notification list/read API, event consumption: `services/notification-service`.
 - Gateway routing: `api-gateway`.
-- Compose/K8s/Vault/observability/CI: `infrastructure` (`infrastructure/vault/` for secrets).
+- Compose/K8s/Vault/observability/CI: `infrastructure` (`infrastructure/vault/` for secrets). **DO Droplet hands-on deploy:** Lê Ngọc Anh (phối hợp Phan Phú Thọ — infra backlog).
 
 ## Output Style
 

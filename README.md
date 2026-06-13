@@ -59,7 +59,6 @@
 | Grafana | grafana/grafana | 3005 | Dashboards (local Compose) |
 | Loki + Promtail | Helm subcharts (K8s) | 3100 | **Log aggregation (production path)** |
 | Jaeger | jaegertracing/all-in-one:1.41 | 16686 | Distributed tracing (optional profile) |
-| Jenkins | jenkins/jenkins:lts | 8081 | CI/CD (optional) |
 | HashiCorp Vault | hashicorp/vault:1.17 | 8200 (local); in-cluster (K8s, nội bộ) | **Secrets store** — KV `secret/collabspace/<env>` + ESO → K8s `Secret` — `infrastructure/vault/` |
 
 **Logging:** K8s/Helm dùng **Loki + Promtail** (không Elasticsearch). Docker Compose có profile **ELK tùy chọn** (`docker-compose.logging.yml`) — chỉ local dev, không dùng trên prod.
@@ -211,7 +210,7 @@ Details: [docs/mvp-demo-scope.md](docs/mvp-demo-scope.md). CI integration: [infr
 | Member | Name | Role | Responsibilities | Backlog |
 |--------|------|------|------------------|---------|
 | Member 1 | Phan Phú Thọ | Infrastructure Engineer | Docker, K8s, CI/CD, secrets, backup, monitoring | [infra backlog](docs/team/phan-phu-tho-infrastructure-backlog.md) |
-| Member 2 | Lê Ngọc Anh | Auth & User Service | JWT auth, OTP, profile, user directory, gRPC | [app backlog § Anh](docs/team/application-backlog.md#lê-ngọc-anh--auth--user) |
+| Member 2 | Lê Ngọc Anh | Auth & User · DO Deploy | JWT auth, OTP, profile, user directory, gRPC; **DigitalOcean Droplet deploy** (k3s, Helm, Vault+ESO, verify prod) | [app backlog § Anh](docs/team/application-backlog.md#lê-ngọc-anh--auth-user-do-droplet) |
 | Member 3 | Ngô Quang Tiến | Workspace Service | Workspace, project, invite, membership, task↔workspace integration | [app backlog § Tiến](docs/team/application-backlog.md#ngô-quang-tiến--workspace--task-integration) |
 | Member 4 | Võ Trung Tín | Task & Notification Service | Task, board, activity feed, comments, notifications; lead `demo-e2e` (Done) | [app backlog § Tín](docs/team/application-backlog.md#võ-trung-tín--task--notification--demo) |
 
@@ -339,11 +338,9 @@ Chart docs: [infrastructure/helm/README.md](infrastructure/helm/README.md). **Pr
 GitHub Actions workflows:
 
 1. `.github/workflows/ci.yml` — install, build, test on PRs and `main`.
-2. `.github/workflows/docker-deploy.yml` — build five service images, push to GHCR; deploy Compose qua SSH (legacy — chuyển sang Helm/k3s).
+2. `.github/workflows/docker-deploy.yml` — build five service images, push GHCR; **Helm deploy on k3s Droplet** via SSH (`infrastructure/deploy/helm-deploy-ci.sh`).
 
-Lộ trình production: [docs/deployment-k3s-phases.md](docs/deployment-k3s-phases.md). Compose legacy: [docs/deployment-digitalocean-droplet.md](docs/deployment-digitalocean-droplet.md).
-
-Jenkins scaffolding vẫn có tại http://localhost:8081 khi chạy `docker-compose.jenkins.yml`; GitHub Actions là đường chính cho build image.
+Lộ trình production: [docs/deployment-k3s-phases.md](docs/deployment-k3s-phases.md). URL prod/local: [docs/service-urls.md](docs/service-urls.md). Compose legacy: [docs/deployment-digitalocean-droplet.md](docs/deployment-digitalocean-droplet.md).
 
 ## Project Structure
 
@@ -351,29 +348,36 @@ Jenkins scaffolding vẫn có tại http://localhost:8081 khi chạy `docker-com
 collabspace/
 ├── package.json             # pnpm workspace root (build/test all)
 ├── pnpm-workspace.yaml
+├── CLAUDE.md                # Primary agent guide (Cursor / Claude Code)
+├── AGENTS.md                # Cross-tool agent index
+├── .github/workflows/       # CI: test (ci.yml) + GHCR build & k3s deploy (docker-deploy.yml)
+├── .claude/                 # Agent docs, skills, rules, subagents
 ├── packages/
-│   └── shared/              # @collabspace/shared — event types
+│   └── shared/              # @collabspace/shared — event types & contracts
 ├── services/
-│   ├── auth-service/        # Auth (NestJS + TypeORM + Redis)
-│   ├── user-service/        # Profiles (NestJS + TypeORM)
+│   ├── auth-service/        # Auth (NestJS + TypeORM + Redis + gRPC)
+│   ├── user-service/        # Profiles (NestJS + TypeORM + gRPC)
 │   ├── workspace-service/   # Workspace, project, invite (NestJS + TypeORM, port 8080)
 │   ├── task-service/        # Tasks, comments, board (NestJS + CQRS + MongoDB)
 │   └── notification-service/# Notifications (NestJS + CQRS + MongoDB)
 ├── infrastructure/
-│   ├── docker/              # Docker Compose files
-│   ├── vault/               # HashiCorp Vault (dev + ESO manifests)
-│   ├── helm/                # Helm umbrella chart (preferred for K8s)
-│   ├── k8s/                 # Legacy Kubernetes manifests
-│   ├── monitoring/          # Prometheus alert rules + Grafana dashboard JSON (sync)
-│   ├── logging/             # Legacy ELK configs (optional Docker Compose profile)
-│   ├── tracing/             # Jaeger configs
+│   ├── docker/              # Docker Compose (app, db, traefik, monitoring, vault, logging profile, …)
+│   ├── deploy/              # Droplet/k3s scripts (Phase 0–3, helm-deploy-ci, seed/migrate prod)
+│   ├── helm/                # Umbrella chart `collabspace` (preferred K8s) + Grafana dashboards
+│   ├── vault/               # HashiCorp Vault (local dev + ESO manifests)
+│   ├── k8s/                 # Legacy plain Kubernetes YAML (reference)
+│   ├── monitoring/          # Prometheus alert rules + Grafana JSON (sync from helm/dashboards)
+│   ├── backup/              # Backup/restore scripts
+│   ├── load-testing/        # k6 scenarios (smoke, demo-flow)
+│   ├── tracing/             # Jaeger / OTLP configs (optional Compose profile)
 │   ├── rabbitmq/            # RabbitMQ setup
 │   ├── redis/               # Redis setup
-│   ├── jenkins/             # CI/CD configs
-│   └── load-testing/        # k6 load tests
-├── api-gateway/             # Traefik configuration
-├── scripts/                 # migrate, seed, demo-e2e, …
-└── docs/                    # Documentation
+│   ├── resilience/          # Readiness drills, degradation helpers
+│   ├── chaos/               # Chaos / stop-service drills
+│   └── dev/                 # Local dev helpers (dev.bat, dev-mode.ps1)
+├── api-gateway/             # Traefik static + dynamic config (forward-auth, routes)
+├── scripts/                 # Root shortcuts: migrate, seed, demo-e2e
+└── docs/                    # features, deploy, observability, service-urls, team/, runbooks/
 ```
 
 ## Event-Driven Architecture
@@ -407,6 +411,7 @@ This project is for educational purposes.
 ---
 
 **Infrastructure Engineer**: Phan Phu Tho  
+**Auth & DO Deploy**: Lê Ngọc Anh  
 **Last Updated**: 2026-06-13
 
 ---
@@ -421,5 +426,5 @@ All five application services run on **NestJS** (`workspace-service` listens on 
 - **MVP automation**: `scripts/demo-e2e.sh` / `.ps1` — 7-step story through Traefik.
 - **Docker Tooling**: Node 20, NestJS builds, `pnpm`. Restart policies and memory limits applied.
 - **K8s / Helm**: Health probes, HPAs, ConfigMaps, Vault ESO scaffold (`infrastructure/vault/`).
-- **Observability**: Prometheus + Grafana + Loki (K8s Helm); Docker profiles ELK/Jaeger tùy chọn; k6 load tests — [docs/observability.md](docs/observability.md).
+- **Observability**: Prometheus + Grafana + Loki (K8s Helm); Docker profile ELK tùy chọn trong `infrastructure/docker/docker-compose.logging.yml`; k6 — [docs/observability.md](docs/observability.md).
 - **Dev Tooling**: `infrastructure/dev/` (`dev.bat`, `stop_all.bat`, `dev-mode.ps1`).
