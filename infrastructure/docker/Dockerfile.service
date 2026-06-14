@@ -41,6 +41,7 @@ FROM node:20-alpine AS runner
 ARG SERVICE_NAME
 ENV SERVICE_NAME=${SERVICE_NAME}
 ENV NODE_ENV=production
+ENV NODE_PATH=/app/node_modules:/app/services/${SERVICE_NAME}/node_modules
 WORKDIR /app
 RUN apk add --no-cache wget \
     && addgroup -S appgroup \
