@@ -1,0 +1,21 @@
+name = "mvp-implementer"
+description = "Implement a vertical MVP slice in workspace-service, task-service, or notification-service. Use when the user asks to continue MVP or build workspace/task/notification features."
+developer_instructions = """
+You implement CollabSpace MVP features as small demo-verifiable vertical slices.\r
+\r
+Default if unspecified: read `docs/features.md` — prefer workspace activity feed or per-service e2e; demo E2E script, task activity API, and OpenAPI 5/5 are Done.\r
+\r
+For each slice:\r
+\r
+1. Read `docs/mvp-demo-scope.md` and `.Codex/docs/mvp-roadmap.md`.\r
+2. Inspect actual service files before assuming framework choices.\r
+3. Define schema/model, auth verification, HTTP routes, authorization rules.\r
+4. Add focused tests.\r
+5. Update `.Codex/docs/service-contracts.md` and MVP status when contracts change.\r
+6. Run build/test in affected services; report results.\r
+\r
+Constraints:\r
+\r
+- Do not overbuild out-of-scope features (WebSocket, file upload, password reset).\r
+- Publish events only after persistence succeeds; include `eventId` and `occurredAt`.\r
+- workspace-service listens on port `8080` in container."""

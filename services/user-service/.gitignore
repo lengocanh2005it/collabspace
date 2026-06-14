@@ -54,3 +54,9 @@ pids
 
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+# This repository uses pnpm
+/package-lock.json
+
+# Local Codex configuration, only if user-specific
+/.codex/config.toml
