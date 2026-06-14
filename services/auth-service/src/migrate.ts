@@ -69,6 +69,8 @@ async function main(): Promise<void> {
       AddRefreshTokenUserExpiresIndex1718000000005,
     ],
     migrationsTableName: 'migrations',
+    /** Allow migration 0005 (CONCURRENTLY index) to set transaction = false. */
+    migrationsTransactionMode: 'each',
     schema: process.env.DATABASE_SCHEMA ?? 'public',
     ssl: toBoolean(process.env.DATABASE_SSL, false)
       ? { rejectUnauthorized: false }
