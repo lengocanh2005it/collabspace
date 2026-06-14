@@ -5,6 +5,9 @@ export class AddRefreshTokenUserExpiresIndex1718000000005
 {
   name = 'AddRefreshTokenUserExpiresIndex1718000000005';
 
+  /** CONCURRENTLY indexes cannot run inside TypeORM's migration transaction. */
+  transaction = false;
+
   async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
       `CREATE INDEX CONCURRENTLY IF NOT EXISTS "IDX_refresh_tokens_user_expires"

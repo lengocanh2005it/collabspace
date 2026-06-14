@@ -5,6 +5,7 @@ import { CreateAuthOutboxEvents1718000000001 } from '../migrations/1718000000001
 import { AddAuthOutboxRecoveryIndexes1718000000002 } from '../migrations/1718000000002-AddAuthOutboxRecoveryIndexes';
 import { RemoveLegacyEmailVerifiedOutboxEvents1718000000003 } from '../migrations/1718000000003-RemoveLegacyEmailVerifiedOutboxEvents';
 import { AddLastLoginAt1718000000004 } from '../migrations/1718000000004-AddLastLoginAt';
+import { AddRefreshTokenUserExpiresIndex1718000000005 } from '../migrations/1718000000005-AddRefreshTokenUserExpiresIndex';
 
 function loadEnvFile(): void {
   const envPath = join(process.cwd(), '.env');
@@ -65,6 +66,7 @@ async function main(): Promise<void> {
       AddAuthOutboxRecoveryIndexes1718000000002,
       RemoveLegacyEmailVerifiedOutboxEvents1718000000003,
       AddLastLoginAt1718000000004,
+      AddRefreshTokenUserExpiresIndex1718000000005,
     ],
     migrationsTableName: 'migrations',
     schema: process.env.DATABASE_SCHEMA ?? 'public',

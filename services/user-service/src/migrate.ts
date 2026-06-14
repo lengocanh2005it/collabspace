@@ -1,6 +1,7 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { DataSource } from 'typeorm';
+import { DataSource, type EntityManager } from 'typeorm';
+import { parseSqlStatements, statementUsesConcurrently } from './migrate-sql';
 
 function loadEnvFile(): void {
   const envPath = join(process.cwd(), '.env');
@@ -51,6 +52,42 @@ function toBoolean(value: string | undefined, fallback: boolean): boolean {
   return ['1', 'true', 'yes', 'on'].includes(value.toLowerCase());
 }
 
+async function runStatements(
+  runner: Pick<EntityManager, 'query'> | DataSource,
+  statements: string[],
+): Promise<void> {
+  for (const statement of statements) {
+    await runner.query(statement);
+  }
+}
+
+async function applyMigrationFile(
+  dataSource: DataSource,
+  migrationFile: string,
+  sql: string,
+): Promise<void> {
+  const statements = parseSqlStatements(sql);
+  const transactionalStatements = statements.filter(
+    (statement) => !statementUsesConcurrently(statement),
+  );
+  const concurrentStatements = statements.filter((statement) =>
+    statementUsesConcurrently(statement),
+  );
+
+  if (transactionalStatements.length > 0) {
+    await dataSource.transaction(async (manager) => {
+      await runStatements(manager, transactionalStatements);
+    });
+  }
+
+  await runStatements(dataSource, concurrentStatements);
+
+  await dataSource.query(
+    'INSERT INTO schema_migrations (filename) VALUES ($1)',
+    [migrationFile],
+  );
+}
+
 async function main(): Promise<void> {
   loadEnvFile();
 
@@ -93,13 +130,7 @@ async function main(): Promise<void> {
       }
 
       const sql = readFileSync(join(migrationsDir, migrationFile), 'utf8');
-      await dataSource.transaction(async (manager) => {
-        await manager.query(sql);
-        await manager.query(
-          'INSERT INTO schema_migrations (filename) VALUES ($1)',
-          [migrationFile],
-        );
-      });
+      await applyMigrationFile(dataSource, migrationFile, sql);
       console.log(`Applied migration ${migrationFile}`);
     }
   } finally {

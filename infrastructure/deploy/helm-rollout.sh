@@ -179,7 +179,22 @@ fi
 echo "==> Reconciling RabbitMQ consumer queues (DLX)..."
 bash "$SCRIPT_DIR/reconcile-rabbitmq-queues.sh"
 
+restore_app_replicas() {
+  if [[ "${REPLICAS_RESTORED:-}" == "1" ]]; then
+    return 0
+  fi
+  REPLICAS_RESTORED=1
+  echo "==> Restoring app replica counts from values-prod..."
+  for dep in auth-service user-service workspace-service task-service notification-service; do
+    replicas="$(grep -A20 "^  ${dep}:" "$VALUES_PROD" | grep -m1 'replicas:' | awk '{print $2}' || echo 1)"
+    if kubectl get deployment "$dep" -n "$APP_NS" >/dev/null 2>&1; then
+      kubectl scale deployment "$dep" -n "$APP_NS" --replicas="${replicas:-1}"
+    fi
+  done
+}
+
 echo "==> Scaling down Postgres app deployments (migration window)..."
+trap restore_app_replicas EXIT
 for dep in auth-service user-service workspace-service; do
   if kubectl get deployment "$dep" -n "$APP_NS" >/dev/null 2>&1; then
     kubectl scale deployment "$dep" -n "$APP_NS" --replicas=0
@@ -193,16 +208,18 @@ kubectl wait --for=condition=Ready pod -l app.kubernetes.io/name=redis -n "$APP_
 kubectl wait --for=condition=Ready pod -l app.kubernetes.io/name=rabbitmq -n "$APP_NS" --timeout=300s || true
 
 echo "==> Running database migrations..."
-PHASE0_ENV="$PHASE0_ENV" VALUES_PROD="$VALUES_PROD" APP_NS="$APP_NS" IMAGE_TAG="${IMAGE_TAG:-}" \
-  bash "$SCRIPT_DIR/run-k8s-migrations.sh"
+migration_failed=0
+if ! PHASE0_ENV="$PHASE0_ENV" VALUES_PROD="$VALUES_PROD" APP_NS="$APP_NS" IMAGE_TAG="${IMAGE_TAG:-}" \
+  bash "$SCRIPT_DIR/run-k8s-migrations.sh"; then
+  migration_failed=1
+  echo "ERROR: database migrations failed — restoring replicas before exit."
+fi
 
-echo "==> Restoring app replica counts from values-prod..."
-for dep in auth-service user-service workspace-service task-service notification-service; do
-  replicas="$(grep -A20 "^  ${dep}:" "$VALUES_PROD" | grep -m1 'replicas:' | awk '{print $2}' || echo 1)"
-  if kubectl get deployment "$dep" -n "$APP_NS" >/dev/null 2>&1; then
-    kubectl scale deployment "$dep" -n "$APP_NS" --replicas="${replicas:-1}"
-  fi
-done
+restore_app_replicas
+
+if [[ "$migration_failed" -eq 1 ]]; then
+  exit 1
+fi
 
 prune_stuck_terminating_pods() {
   local dep="$1"

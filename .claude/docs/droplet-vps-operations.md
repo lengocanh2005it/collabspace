@@ -96,6 +96,8 @@ bash infrastructure/deploy/helm-rollout.sh
 
 Vault/ESO (khi đổi secret keys): `infrastructure/vault/scripts/seed-vault-k3s-from-phase0.sh`, apply `external-secrets.prod.yaml`, force ESO sync — xem `infrastructure/vault/README.md`.
 
+**Migration fail không được để replicas=0:** `helm-rollout.sh` scale down auth/user/workspace trước migrate; nếu job fail, script vẫn **restore replicas** (EXIT trap + explicit restore). User-service SQL dùng `CREATE INDEX CONCURRENTLY` phải chạy **ngoài** transaction (`src/migrate.ts` tách statement). Auth TypeORM migration CONCURRENTLY cần `transaction = false` và đăng ký trong `src/migrate.ts`.
+
 ## Trước khi push thay đổi ảnh hưởng deploy
 
 1. `pnpm run build` service đích + `packages/shared` / `nest-auth` nếu đụng workspace.
