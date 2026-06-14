@@ -46,7 +46,7 @@ import { MetricsModule } from '@/metrics/metrics.module';
 import { AuthGrpcController } from '@/presentation/grpc/auth.grpc.controller';
 import { AuthController } from '@/presentation/http/auth.controller';
 import { AuthAdminController } from '@/presentation/http/auth-admin.controller';
-import { PlatformAdminGuard } from '@/presentation/http/guards/platform-admin.guard';
+import { platformAdminAuthProviders } from '@/presentation/http/platform-admin-auth.providers';
 import { ManageAuthAdminUseCase } from '@/application/use-cases/manage-auth-admin.use-case';
 import { AUTH_ADMIN_REPOSITORY } from '@/domain/repositories/auth-admin.repository';
 import { TypeOrmAuthAdminRepository } from '@/infrastructure/repositories/typeorm-auth-admin.repository';
@@ -89,7 +89,7 @@ import { InMemoryAuthAdminRepository } from '@/infrastructure/repositories/in-me
     LogoutOthersUseCase,
     LogoutAllUseCase,
     ManageAuthAdminUseCase,
-    PlatformAdminGuard,
+    ...platformAdminAuthProviders,
     TypeOrmUserRepository,
     InMemoryUserRepository,
     TypeOrmAuthAdminRepository,

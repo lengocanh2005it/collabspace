@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  ForbiddenException,
   Get,
   Headers,
   Param,
@@ -45,6 +46,7 @@ import { UserHealthService } from '../../health/user-health.service';
 import { assertMetricsAccess } from '../../metrics/metrics-access';
 import { MetricsService } from '../../metrics/metrics.service';
 import type { UploadedFile as CustomUploadedFile } from '../../common/types/uploaded-file';
+import { isPlatformAdmin } from '@collabspace/shared';
 
 @ApiTags('users')
 @Controller('users')
@@ -196,7 +198,8 @@ export class UsersController {
     @Query() query: ListUsersQueryDto,
     @Headers('authorization') authorizationHeader?: string,
   ) {
-    await this.requireIdentity(authorizationHeader);
+    const identity = await this.requireIdentity(authorizationHeader);
+    this.assertDirectoryAccess(identity, query.q);
     return this.listUserSummariesUseCase.execute({
       limit: query.limit ?? 20,
       offset: query.offset ?? 0,
@@ -210,7 +213,8 @@ export class UsersController {
     @Query() query: SearchUsersQueryDto,
     @Headers('authorization') authorizationHeader?: string,
   ) {
-    await this.requireIdentity(authorizationHeader);
+    const identity = await this.requireIdentity(authorizationHeader);
+    this.assertDirectoryAccess(identity, query.q);
     return this.listUserSummariesUseCase.execute({
       limit: query.limit ?? 20,
       offset: query.offset ?? 0,
@@ -263,5 +267,23 @@ export class UsersController {
 
   private async requireIdentity(authorizationHeader?: string) {
     return this.authGrpcService.verifyAccessTokenLite(authorizationHeader);
+  }
+
+  private assertDirectoryAccess(
+    identity: {
+      permissions?: string[];
+      role?: string;
+      roles?: string[];
+      userId: string;
+    },
+    query?: string,
+  ) {
+    if (query?.trim() || isPlatformAdmin(identity)) {
+      return;
+    }
+    throw new ForbiddenException({
+      code: 'DIRECTORY_QUERY_REQUIRED',
+      message: 'Provide a search query to browse the user directory',
+    });
   }
 }

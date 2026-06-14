@@ -39,6 +39,7 @@ import { WORKSPACE_ACTIVITY_REPOSITORY } from './domain/repositories/workspace-a
 import { ListInvitationsUseCase } from './application/use-cases/invitation/list-invitations.use-case';
 import { WorkspaceAdminController } from './presentation/http/workspace-admin.controller';
 import { ManageWorkspacesAdminUseCase } from './application/use-cases/workspace/manage-workspaces-admin.use-case';
+import { platformAdminAuthProviders } from './presentation/http/platform-admin-auth.providers';
 
 @Module({
   imports: [
@@ -66,6 +67,7 @@ import { ManageWorkspacesAdminUseCase } from './application/use-cases/workspace/
     CheckWorkspaceMembershipUseCase,
     GetWorkspaceActivityUseCase,
     ManageWorkspacesAdminUseCase,
+    ...platformAdminAuthProviders,
     CreateProjectUseCase,
     ListProjectsUseCase,
     UpdateProjectUseCase,

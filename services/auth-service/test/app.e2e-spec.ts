@@ -59,6 +59,7 @@ describe('AuthController (e2e)', () => {
   };
   const authAdminRepositoryMock = {
     createRole: jest.fn(),
+    setUserActive: jest.fn(),
   };
   const jwtSecret = 'test-secret';
 
@@ -360,6 +361,43 @@ describe('AuthController (e2e)', () => {
         id: 'role-1',
         name: 'support',
         permissions: [],
+      });
+  });
+
+  it('/api/v1/auth/admin/users/:id/active-status blocks subsequent login', async () => {
+    authAdminRepositoryMock.setUserActive.mockResolvedValue(undefined);
+    const adminToken = await jwtTokenService.signAccessToken({
+      permissions: ['auth.manage'],
+      role: 'admin',
+      roles: ['admin'],
+      userId: 'admin-123',
+    });
+
+    await request(app.getHttpServer())
+      .patch('/api/v1/auth/admin/users/user-123/active-status')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ isActive: false })
+      .expect(200);
+
+    identityServiceMock.validateCredentials.mockResolvedValueOnce({
+      email: 'member@example.com',
+      emailVerified: true,
+      isActive: false,
+      permissions: ['users.read'],
+      role: 'member',
+      roles: ['member'],
+      userId: 'user-123',
+    });
+
+    await request(app.getHttpServer())
+      .post('/api/v1/auth/login')
+      .send({
+        email: 'member@example.com',
+        password: 'password123',
+      })
+      .expect(401)
+      .expect((response) => {
+        expect(response.body.code).toBe('USER_INACTIVE');
       });
   });
 

@@ -52,6 +52,7 @@ import {
 } from "./application/services/user-replica-lookup.service";
 import { BroadcastJobService } from "./application/services/broadcast-job.service";
 import { NotificationAdminController } from "./presentation/controllers/notification-admin.controller";
+import { platformAdminAuthProviders } from "./integrations/auth/platform-admin-auth.providers";
 
 const Handlers = [
   CreateNotificationHandler,
@@ -98,6 +99,7 @@ const Handlers = [
     UserProfileHttpClient,
     UserReplicaLookupService,
     BroadcastJobService,
+    ...platformAdminAuthProviders,
     {
       provide: NOTIFICATION_REPOSITORY_TOKEN,
       useClass: NotificationRepository,

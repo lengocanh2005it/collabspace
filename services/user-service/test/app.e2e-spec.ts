@@ -4,6 +4,7 @@ import { UnauthorizedException } from '@nestjs/common';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { AuthGrpcService } from '../src/integrations/auth/auth-grpc.service';
+import { AuthAdminHttpClient } from '../src/integrations/auth/auth-admin-http.client';
 import { AppModule } from './../src/app.module';
 import { configureHttpApp } from '../src/app.setup';
 import { UserHealthService } from '../src/health/user-health.service';
@@ -15,6 +16,10 @@ describe('AppController (e2e)', () => {
     ping: jest.fn(),
     verifyAccessToken: jest.fn(),
     verifyAccessTokenLite: jest.fn(),
+  };
+  const authAdminHttpClientMock = {
+    deactivateUser: jest.fn(),
+    listUsers: jest.fn(),
   };
   const userHealthServiceMock = {
     getLiveness: jest.fn(),
@@ -71,6 +76,8 @@ describe('AppController (e2e)', () => {
     })
       .overrideProvider(AuthGrpcService)
       .useValue(authGrpcServiceMock)
+      .overrideProvider(AuthAdminHttpClient)
+      .useValue(authAdminHttpClientMock)
       .overrideProvider(UserHealthService)
       .useValue(userHealthServiceMock)
       .compile();

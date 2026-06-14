@@ -27,6 +27,7 @@
   "author": "CollabSpace Team",
   "license": "MIT",
   "dependencies": {
+    "@collabspace/nest-auth": "workspace:*",
     "@collabspace/shared": "workspace:*",
     "@nestjs/common": "^11.1.19",
     "@nestjs/config": "^4.0.4",

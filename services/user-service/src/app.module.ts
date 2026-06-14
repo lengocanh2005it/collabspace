@@ -28,6 +28,7 @@ import { AzureBlobService } from './infrastructure/services/azure-blob.service';
 import { UsersAdminController } from './presentation/http/users-admin.controller';
 import { ManageUsersAdminUseCase } from './application/use-cases/manage-users-admin.use-case';
 import { AuthAdminHttpClient } from './integrations/auth/auth-admin-http.client';
+import { platformAdminAuthProviders } from './integrations/auth/platform-admin-auth.providers';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { AuthAdminHttpClient } from './integrations/auth/auth-admin-http.client'
     AzureBlobService,
     AuthAdminHttpClient,
     ManageUsersAdminUseCase,
+    ...platformAdminAuthProviders,
     BulkGetUserProfilesUseCase,
     LookupUserReplicasUseCase,
     CreatePendingUserProfileUseCase,

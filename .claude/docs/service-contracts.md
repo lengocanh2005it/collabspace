@@ -125,6 +125,7 @@ Behavior notes:
 - User-service verifies incoming bearer tokens through auth-service gRPC.
 - `me` always resolves from token identity, not from a user id in the request body.
 - Search/list supports user directory and mention flows.
+- **Directory browse:** `GET /users` and `GET /users/search` require `q` unless caller is platform admin (`403 DIRECTORY_QUERY_REQUIRED`); full list via `GET /users/admin/all`.
 - Bulk fetch exists to hydrate assignees/comment authors efficiently.
 - Avatar upload: `AZURE_STORAGE_CONNECTION_STRING` optional — without it, service returns a mock avatar URL (`ui-avatars.com`) for local UI; container `user-avatars` when configured.
 

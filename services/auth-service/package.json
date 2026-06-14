@@ -25,6 +25,7 @@
     "test:e2e": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --config ./test/jest-e2e.json"
   },
   "dependencies": {
+    "@collabspace/nest-auth": "workspace:*",
     "@collabspace/shared": "workspace:*",
     "@golevelup/nestjs-graphile-worker": "^2.0.0",
     "@grpc/grpc-js": "^1.14.3",

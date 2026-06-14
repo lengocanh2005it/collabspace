@@ -8,10 +8,14 @@ import {
   Patch,
   Post,
   Put,
-  Req,
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  AdminUserId,
+  PlatformAdminGuard,
+  RequirePlatformAdmin,
+} from '@collabspace/nest-auth';
 import {
   AssignPermissionDto,
   AssignRoleDto,
@@ -21,13 +25,10 @@ import {
   UpdateAdminRoleDto,
 } from '@/application/dto/auth-admin.dto';
 import { ManageAuthAdminUseCase } from '@/application/use-cases/manage-auth-admin.use-case';
-import {
-  type AdminAuthenticatedRequest,
-  PlatformAdminGuard,
-} from './guards/platform-admin.guard';
 
 @ApiTags('auth-admin')
 @ApiBearerAuth()
+@RequirePlatformAdmin()
 @UseGuards(PlatformAdminGuard)
 @Controller('auth/admin')
 export class AuthAdminController {
@@ -53,15 +54,11 @@ export class AuthAdminController {
 
   @Post('users/:userId/roles')
   assignRole(
-    @Req() request: AdminAuthenticatedRequest,
+    @AdminUserId() actorId: string,
     @Param('userId') userId: string,
     @Body() body: AssignRoleDto,
   ) {
-    return this.adminUseCase.assignRole(
-      request.adminIdentity.userId,
-      userId,
-      body.roleId,
-    );
+    return this.adminUseCase.assignRole(actorId, userId, body.roleId);
   }
 
   @Get('roles')
@@ -81,15 +78,11 @@ export class AuthAdminController {
 
   @Patch('users/:id/active-status')
   setUserActive(
-    @Req() request: AdminAuthenticatedRequest,
+    @AdminUserId() actorId: string,
     @Param('id') userId: string,
     @Body() body: SetUserActiveStatusDto,
   ) {
-    return this.adminUseCase.setUserActive(
-      request.adminIdentity.userId,
-      userId,
-      body.isActive,
-    );
+    return this.adminUseCase.setUserActive(actorId, userId, body.isActive);
   }
 
   @Put('roles/:id')
