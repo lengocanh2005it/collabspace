@@ -7,13 +7,13 @@ FROM base AS deps
 WORKDIR /app
 COPY package.json pnpm-lock.yaml ./
 RUN --mount=type=cache,id=pnpm-workspace,target=/root/.local/share/pnpm/store \
-    pnpm install --frozen-lockfile
+    pnpm install --no-frozen-lockfile
 
 FROM base AS prod-deps
 WORKDIR /app
 COPY package.json pnpm-lock.yaml ./
 RUN --mount=type=cache,id=pnpm-workspace,target=/root/.local/share/pnpm/store \
-    pnpm install --frozen-lockfile --prod
+    pnpm install --no-frozen-lockfile --prod
 
 FROM deps AS builder
 WORKDIR /app

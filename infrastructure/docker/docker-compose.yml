@@ -21,10 +21,15 @@ services:
       - collabspace-network
 
   auth-service:
-    build: ../../services/auth-service
+    build:
+      context: ../../
+      dockerfile: infrastructure/docker/Dockerfile.service
+      args:
+        SERVICE_NAME: auth-service
+    image: collabspace-auth-service
     container_name: auth-service
     restart: unless-stopped
-    mem_limit: 512m
+    mem_limit: 1g
     env_file:
       - ../../services/auth-service/.env
     depends_on:
@@ -42,10 +47,15 @@ services:
       - collabspace-network
 
   user-service:
-    build: ../../services/user-service
+    build:
+      context: ../../
+      dockerfile: infrastructure/docker/Dockerfile.service
+      args:
+        SERVICE_NAME: user-service
+    image: collabspace-user-service
     container_name: user-service
     restart: unless-stopped
-    mem_limit: 512m
+    mem_limit: 1g
     env_file:
       - ../../services/user-service/.env
     depends_on:
@@ -65,10 +75,15 @@ services:
       - collabspace-network
 
   workspace-service:
-    build: ../../services/workspace-service
+    build:
+      context: ../../
+      dockerfile: infrastructure/docker/Dockerfile.service
+      args:
+        SERVICE_NAME: workspace-service
+    image: collabspace-workspace-service
     container_name: workspace-service
     restart: unless-stopped
-    mem_limit: 512m
+    mem_limit: 1g
     env_file:
       - ../../services/workspace-service/.env
     depends_on:
@@ -86,10 +101,15 @@ services:
       - collabspace-network
 
   task-service:
-    build: ../../services/task-service
+    build:
+      context: ../../
+      dockerfile: infrastructure/docker/Dockerfile.service
+      args:
+        SERVICE_NAME: task-service
+    image: collabspace-task-service
     container_name: task-service
     restart: unless-stopped
-    mem_limit: 512m
+    mem_limit: 1g
     env_file:
       - ../../services/task-service/.env
     depends_on:
@@ -107,10 +127,15 @@ services:
       - collabspace-network
 
   notification-service:
-    build: ../../services/notification-service
+    build:
+      context: ../../
+      dockerfile: infrastructure/docker/Dockerfile.service
+      args:
+        SERVICE_NAME: notification-service
+    image: collabspace-notification-service
     container_name: notification-service
     restart: unless-stopped
-    mem_limit: 512m
+    mem_limit: 1g
     environment:
       - PORT=3000
     env_file:

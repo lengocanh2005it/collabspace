@@ -1,37 +1,58 @@
 services:
   auth-service:
-    command: pnpm run start:dev
+    image: node:20-alpine
+    working_dir: /monorepo
+    command: sh -c "corepack enable && pnpm install --no-frozen-lockfile && cd services/auth-service && pnpm run start:dev"
     volumes:
-      - ../../services/auth-service:/app
-      - /app/node_modules
+      - ../../:/monorepo
+      - /monorepo/node_modules
+      - /monorepo/services/auth-service/node_modules
+      - /monorepo/packages/shared/node_modules
     ports:
       - "3000:3000"
 
   user-service:
-    command: pnpm run start:dev
+    image: node:20-alpine
+    working_dir: /monorepo
+    command: sh -c "corepack enable && pnpm install --no-frozen-lockfile && cd services/user-service && pnpm run start:dev"
     volumes:
-      - ../../services/user-service:/app
-      - /app/node_modules
+      - ../../:/monorepo
+      - /monorepo/node_modules
+      - /monorepo/services/user-service/node_modules
+      - /monorepo/packages/shared/node_modules
     ports:
       - "3001:3000"
       - "50052:50052"
 
   workspace-service:
-    command: npm run start:dev
+    image: node:20-alpine
+    working_dir: /monorepo
+    command: sh -c "corepack enable && pnpm install --no-frozen-lockfile && cd services/workspace-service && npm run start:dev"
     volumes:
-      - ../../services/workspace-service:/app
-      - /app/node_modules
+      - ../../:/monorepo
+      - /monorepo/node_modules
+      - /monorepo/services/workspace-service/node_modules
+      - /monorepo/packages/shared/node_modules
     ports:
       - "3002:8080"
 
   task-service:
+    image: node:20-alpine
+    working_dir: /monorepo
+    command: sh -c "corepack enable && pnpm install --no-frozen-lockfile && cd services/task-service && pnpm run start:dev"
+    volumes:
+      - ../../:/monorepo
+      - /monorepo/node_modules
+      - /monorepo/services/task-service/node_modules
+      - /monorepo/packages/shared/node_modules
     ports:
       - "3003:3000"
 
   notification-service:
-    command: pnpm run start:dev
+    image: node:20-alpine
+    working_dir: /monorepo
+    command: sh -c "corepack enable && pnpm install --no-frozen-lockfile && cd services/notification-service && pnpm run start:dev"
     volumes:
-      - ../../services/notification-service:/app
-      - /app/node_modules
+      - ../../:/monorepo
     ports:
       - "3004:3000"

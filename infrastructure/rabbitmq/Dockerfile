@@ -15,7 +15,7 @@ RUN rabbitmq-plugins enable --offline rabbitmq_management rabbitmq_prometheus
 
 # Copy entrypoint script (optional, dùng để load env và definitions)
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+RUN sed -i 's/\r$//' /usr/local/bin/docker-entrypoint.sh && chmod +x /usr/local/bin/docker-entrypoint.sh
 
 # Override default entrypoint
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
