@@ -2,8 +2,8 @@ import { AssignTaskHandler } from "./assign-task.handler";
 import { AssignTaskCommand } from "../commands/assign-task.command";
 import { ITaskRepository } from "../ports/ITaskRepository";
 import { createMockTaskRepository } from "../../test-utils/mock-task-repository";
-import { UserReplicaLookupService } from "../services/user-replica-lookup.service";
-import { TaskOutboxService } from "../../infrastructure/outbox/task-outbox.service";
+import { IUserReplicaRepository } from "../ports/IUserReplicaRepository";
+import { RabbitMqEventsService } from "../../infrastructure/messaging/rabbitmq/rabbitmq-events.service";
 import { Task } from "../../domain/entities/Task";
 import { TaskId } from "../../domain/value-objects/TaskId";
 import { UserSnapshot } from "../../domain/value-objects/UserSnapshot";
@@ -14,27 +14,24 @@ import { BusinessRuleException } from "../../domain/exceptions/BusinessRuleExcep
 describe("AssignTaskHandler", () => {
   let handler: AssignTaskHandler;
   let mockTaskRepo: jest.Mocked<ITaskRepository>;
-  let mockUserReplicaLookup: jest.Mocked<
-    Pick<UserReplicaLookupService, "findActiveByIdAsync">
-  >;
-  let mockTaskOutboxService: jest.Mocked<TaskOutboxService>;
+  let mockUserReplicaRepo: jest.Mocked<Pick<IUserReplicaRepository, "findByIdAsync">>;
+  let mockRabbitMqEvents: jest.Mocked<Pick<RabbitMqEventsService, "publishTaskAssigned">>;
 
   beforeEach(() => {
     mockTaskRepo = createMockTaskRepository();
 
-    mockUserReplicaLookup = {
-      findActiveByIdAsync: jest.fn(),
+    mockUserReplicaRepo = {
+      findByIdAsync: jest.fn(),
     };
 
-    mockTaskOutboxService = {
-      enqueueTaskAssigned: jest.fn(),
-      enqueueTaskCommented: jest.fn(),
-    } as any;
+    mockRabbitMqEvents = {
+      publishTaskAssigned: jest.fn().mockResolvedValue(undefined),
+    };
 
     handler = new AssignTaskHandler(
       mockTaskRepo,
-      mockUserReplicaLookup as UserReplicaLookupService,
-      mockTaskOutboxService,
+      mockUserReplicaRepo as IUserReplicaRepository,
+      mockRabbitMqEvents as RabbitMqEventsService,
     );
   });
 
@@ -74,7 +71,7 @@ describe("AssignTaskHandler", () => {
     );
 
     mockTaskRepo.loadAggregateByIdAsync.mockResolvedValue(task);
-    mockUserReplicaLookup.findActiveByIdAsync.mockImplementation(async (id) => {
+    mockUserReplicaRepo.findByIdAsync.mockImplementation(async (id) => {
       if (id === "assigner-1") return createMockReplica("assigner-1", true);
       if (id === "assignee-1") return createMockReplica("assignee-1", true);
       return null;
@@ -84,8 +81,8 @@ describe("AssignTaskHandler", () => {
 
     expect(task.getAssigneeId()).toBe("assignee-1");
     expect(mockTaskRepo.saveAsync).toHaveBeenCalledWith(task);
-    expect(mockTaskOutboxService.enqueueTaskAssigned).toHaveBeenCalledTimes(1);
-    expect(mockTaskOutboxService.enqueueTaskAssigned).toHaveBeenCalledWith(
+    expect(mockRabbitMqEvents.publishTaskAssigned).toHaveBeenCalledTimes(1);
+    expect(mockRabbitMqEvents.publishTaskAssigned).toHaveBeenCalledWith(
       expect.objectContaining({
         eventId: expect.any(String),
         occurredAt: expect.any(String),
@@ -112,7 +109,7 @@ describe("AssignTaskHandler", () => {
     );
 
     mockTaskRepo.loadAggregateByIdAsync.mockResolvedValue(task);
-    mockUserReplicaLookup.findActiveByIdAsync.mockImplementation(async (id) => {
+    mockUserReplicaRepo.findByIdAsync.mockImplementation(async (id) => {
       if (id === "assigner-1") return createMockReplica("assigner-1", true);
       return null;
     });
@@ -121,7 +118,7 @@ describe("AssignTaskHandler", () => {
 
     expect(task.getAssigneeId()).toBeNull();
     expect(mockTaskRepo.saveAsync).toHaveBeenCalledWith(task);
-    expect(mockTaskOutboxService.enqueueTaskAssigned).not.toHaveBeenCalled();
+    expect(mockRabbitMqEvents.publishTaskAssigned).not.toHaveBeenCalled();
   });
 
   it("should throw EntityNotFoundException if task does not exist", async () => {
@@ -146,8 +143,8 @@ describe("AssignTaskHandler", () => {
     );
 
     mockTaskRepo.loadAggregateByIdAsync.mockResolvedValue(task);
-    mockUserReplicaLookup.findActiveByIdAsync.mockImplementation(async (id) => {
-      if (id === "assigner-1") return createMockReplica("assigner-1", false); // INACTIVE
+    mockUserReplicaRepo.findByIdAsync.mockImplementation(async (id) => {
+      if (id === "assigner-1") return createMockReplica("assigner-1", false);
       return null;
     });
 
@@ -165,9 +162,9 @@ describe("AssignTaskHandler", () => {
     );
 
     mockTaskRepo.loadAggregateByIdAsync.mockResolvedValue(task);
-    mockUserReplicaLookup.findActiveByIdAsync.mockImplementation(async (id) => {
+    mockUserReplicaRepo.findByIdAsync.mockImplementation(async (id) => {
       if (id === "assigner-1") return createMockReplica("assigner-1", true);
-      if (id === "assignee-1") return createMockReplica("assignee-1", false); // INACTIVE
+      if (id === "assignee-1") return createMockReplica("assignee-1", false);
       return null;
     });
 
