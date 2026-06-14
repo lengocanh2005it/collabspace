@@ -48,6 +48,8 @@ RUN apk add --no-cache wget \
 # pnpm workspace: hoisted store at root + service-level symlinks.
 COPY --from=prod-deps /app/node_modules ./node_modules
 COPY --from=prod-deps /app/services/${SERVICE_NAME}/node_modules ./services/${SERVICE_NAME}/node_modules
+COPY --from=prod-deps /app/packages/shared/node_modules ./packages/shared/node_modules
+COPY --from=prod-deps /app/packages/nest-auth/node_modules ./packages/nest-auth/node_modules
 COPY --from=builder /app/packages/shared/dist ./packages/shared/dist
 COPY --from=builder /app/packages/shared/package.json ./packages/shared/package.json
 COPY --from=builder /app/packages/nest-auth/dist ./packages/nest-auth/dist
