@@ -5,10 +5,11 @@ import {
   type GrpcOptions,
   type RmqOptions,
 } from '@nestjs/microservices';
+import { buildConsumerQueueOptions } from '@collabspace/shared';
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { RedisOptions } from 'ioredis';
 import { join } from 'node:path';
-import type { GraphileWorkerModuleOptions } from '@/modules/graphile-worker/graphile-worker.types';
+import type { GraphileWorkerModuleOptions } from '@/infrastructure/graphile-worker/graphile-worker.types';
 
 export type AppConfig = {
   port: number;
@@ -19,6 +20,11 @@ export type AuthJwtConfig = {
   expiry: string;
   issuer?: string;
   secret?: string;
+};
+
+export type VerifyLiteCacheConfig = {
+  enabled: boolean;
+  maxTtlSeconds: number;
 };
 
 export type EmailVerificationConfig = {
@@ -44,6 +50,7 @@ export type DatabaseConfig = {
 };
 
 export type EmailConfig = {
+  deliveryTimeoutMs: number;
   from: string;
   host: string;
   ignoreTls: boolean;
@@ -62,6 +69,16 @@ export type GraphileWorkerConfig = {
   schema: string;
 };
 
+export type OutboxConfig = {
+  batchSize: number;
+  degradedFailedThreshold: number;
+  degradedPendingThreshold: number;
+  enabled: boolean;
+  maxAttempts: number;
+  pollIntervalMs: number;
+  staleClaimThresholdMs: number;
+};
+
 export type GrpcConfig = {
   enabled: boolean;
   includeDirs: string[];
@@ -78,6 +95,7 @@ export type RefreshTokenConfig = {
 export type RabbitMqConfig = {
   enabled: boolean;
   noAck: boolean;
+  publishTimeoutMs: number;
   prefetchCount: number;
   queue: string;
   queueDurable: boolean;
@@ -97,6 +115,7 @@ export type RedisConfig = {
 
 export type UserServiceConfig = {
   grpcUrl: string;
+  grpcTimeoutMs: number;
 };
 
 @Injectable()
@@ -116,6 +135,18 @@ export class ConfigurationService {
       expiry: this.configService.get<string>('auth.jwt.expiry') ?? '1h',
       issuer: this.configService.get<string>('auth.jwt.issuer') || undefined,
       secret: this.configService.get<string>('auth.jwt.secret') || undefined,
+    };
+  }
+
+  getVerifyLiteCacheConfig(): VerifyLiteCacheConfig {
+    return {
+      enabled:
+        this.configService.get<boolean>('auth.verifyLiteCache.enabled') ??
+        true,
+      maxTtlSeconds:
+        this.configService.get<number>(
+          'auth.verifyLiteCache.maxTtlSeconds',
+        ) ?? 300,
     };
   }
 
@@ -184,6 +215,8 @@ export class ConfigurationService {
 
   getEmailConfig(): EmailConfig {
     return {
+      deliveryTimeoutMs:
+        this.configService.get<number>('email.deliveryTimeoutMs') ?? 5000,
       from:
         this.configService.get<string>('email.from') ??
         'no-reply@collabspace.local',
@@ -226,6 +259,26 @@ export class ConfigurationService {
     };
   }
 
+  getOutboxConfig(): OutboxConfig {
+    return {
+      batchSize: this.configService.get<number>('outbox.batchSize') ?? 20,
+      degradedFailedThreshold:
+        this.configService.get<number>('outbox.degradedFailedThreshold') ?? 1,
+      degradedPendingThreshold:
+        this.configService.get<number>('outbox.degradedPendingThreshold') ?? 50,
+      enabled: this.configService.get<boolean>('outbox.enabled') ?? true,
+      maxAttempts: this.configService.get<number>('outbox.maxAttempts') ?? 10,
+      pollIntervalMs:
+        this.configService.get<number>('outbox.pollIntervalMs') ?? 5000,
+      staleClaimThresholdMs:
+        this.configService.get<number>('outbox.staleClaimThresholdMs') ?? 60000,
+    };
+  }
+
+  isDevOtpEndpointEnabled(): boolean {
+    return this.configService.get<boolean>('dev.exposeOtpEndpoint') ?? false;
+  }
+
   getGrpcConfig(): GrpcConfig {
     const protoDir = join(process.cwd(), 'proto');
 
@@ -263,6 +316,8 @@ export class ConfigurationService {
     return {
       enabled: this.configService.get<boolean>('rabbitmq.enabled') ?? false,
       noAck: this.configService.get<boolean>('rabbitmq.noAck') ?? false,
+      publishTimeoutMs:
+        this.configService.get<number>('rabbitmq.publishTimeoutMs') ?? 3000,
       prefetchCount:
         this.configService.get<number>('rabbitmq.prefetchCount') ?? 10,
       queue: this.configService.get<string>('rabbitmq.queue') ?? 'auth-service',
@@ -277,15 +332,23 @@ export class ConfigurationService {
 
   getRabbitMqMicroserviceOptions(): RmqOptions {
     const rabbitMqConfig = this.getRabbitMqConfig();
+    const dlxExchange =
+      this.configService.get<string>('RABBITMQ_DLX_EXCHANGE') ??
+      'collabspace_dlx';
+    const dlxRoutingKey =
+      this.configService.get<string>('RABBITMQ_DLX_ROUTING_KEY') ??
+      `${rabbitMqConfig.queue}.dlq`;
 
     return {
       options: {
         noAck: rabbitMqConfig.noAck,
         prefetchCount: rabbitMqConfig.prefetchCount,
         queue: rabbitMqConfig.queue,
-        queueOptions: {
+        queueOptions: buildConsumerQueueOptions({
           durable: rabbitMqConfig.queueDurable,
-        },
+          deadLetterExchange: dlxExchange,
+          deadLetterRoutingKey: dlxRoutingKey,
+        }),
         urls: rabbitMqConfig.url ? [rabbitMqConfig.url] : [],
       },
       transport: Transport.RMQ,
@@ -331,6 +394,8 @@ export class ConfigurationService {
       grpcUrl:
         this.configService.get<string>('userService.grpcUrl') ??
         'user-service:50052',
+      grpcTimeoutMs:
+        this.configService.get<number>('userService.grpcTimeoutMs') ?? 3000,
     };
   }
 }
