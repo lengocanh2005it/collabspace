@@ -14,6 +14,7 @@ import { UserSnapshot } from "../../domain/value-objects/UserSnapshot";
 import { EntityNotFoundException } from "../../domain/exceptions/EntityNotFoundException";
 import { BusinessRuleException } from "../../domain/exceptions/BusinessRuleException";
 import { TaskOutboxService } from "../../infrastructure/outbox/task-outbox.service";
+import type { TaskAssignedEventPayload } from "../../domain/events/task.events";
 
 @CommandHandler(AssignTaskCommand)
 export class AssignTaskHandler implements ICommandHandler<
@@ -89,9 +90,10 @@ export class AssignTaskHandler implements ICommandHandler<
 
     // 5. Bắn sự kiện sang RabbitMQ
     if (shouldNotify && assigneeSnapshot) {
-      await this.taskOutboxService.enqueueTaskAssigned({
+      const occurredAt = new Date().toISOString();
+      const event: TaskAssignedEventPayload = {
         eventId: randomUUID(),
-        occurredAt: new Date().toISOString(),
+        occurredAt,
         taskId: command.taskId,
         taskTitle: task.getTitle(),
         recipientId: assigneeSnapshot.getUserId(),
@@ -100,9 +102,11 @@ export class AssignTaskHandler implements ICommandHandler<
         actorName: assignerSnapshot.getDisplayName(),
         actorAvatarUrl: assignerSnapshot.getAvatarUrl() || undefined,
 
-        assignedAt: new Date().toISOString(),
+        assignedAt: occurredAt,
         workspaceId: task.getWorkspaceId(),
-      });
+      };
+
+      await this.taskOutboxService.enqueueTaskAssigned(event);
     }
   }
 }

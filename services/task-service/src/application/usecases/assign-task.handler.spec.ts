@@ -87,9 +87,12 @@ describe("AssignTaskHandler", () => {
     expect(mockTaskOutboxService.enqueueTaskAssigned).toHaveBeenCalledTimes(1);
     expect(mockTaskOutboxService.enqueueTaskAssigned).toHaveBeenCalledWith(
       expect.objectContaining({
+        eventId: expect.any(String),
+        occurredAt: expect.any(String),
         taskId: "123e4567-e89b-12d3-a456-426614174000",
         recipientId: "assignee-1",
         actorId: "assigner-1",
+        assignedAt: expect.any(String),
         workspaceId: "workspace-1",
       }),
     );
