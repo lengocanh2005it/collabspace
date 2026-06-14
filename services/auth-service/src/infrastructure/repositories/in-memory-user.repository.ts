@@ -173,6 +173,13 @@ export class InMemoryUserRepository implements UserRepository {
     this.users.set(userId, user);
   }
 
+  async resetPassword(userId: string, newPassword: string): Promise<void> {
+    const user = await this.getStoredUser(userId);
+    const normalizedNewPassword = this.normalizePassword(newPassword);
+    user.passwordHash = await this.hashPassword(normalizedNewPassword);
+    this.users.set(userId, user);
+  }
+
   private async getStoredUser(userId: string): Promise<StoredUser> {
     const user = this.users.get(userId);
 

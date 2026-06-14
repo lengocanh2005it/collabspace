@@ -7,6 +7,13 @@ export type EmailVerificationOtpEnqueuePayload = {
   userId: string;
 };
 
+export type PasswordResetEmailEnqueuePayload = {
+  email: string;
+  token: string;
+  ttlSeconds: number;
+  userId: string;
+};
+
 export type EmailOutboxStats = {
   failedCount: number;
   oldestFailedAt: string | null;
@@ -21,6 +28,10 @@ export interface EmailOutbox {
   enqueueEmailVerificationOtp(
     payload: EmailVerificationOtpEnqueuePayload,
   ): Promise<void>;
+  enqueuePasswordResetEmail(
+    payload: PasswordResetEmailEnqueuePayload,
+  ): Promise<void>;
   getStats(): Promise<EmailOutboxStats>;
   getDevOtp(email: string): Promise<string | null>;
+  getDevPasswordResetToken(email: string): Promise<string | null>;
 }

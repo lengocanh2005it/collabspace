@@ -38,6 +38,8 @@ Tài liệu này là **nguồn chính** mô tả chức năng và mức độ ho
 - Gửi lại OTP xác thực email (cooldown + giới hạn số lần)
 - Xác thực email bằng OTP
 - Đăng nhập / refresh token / đăng xuất
+- Quên mật khẩu / reset password (token qua email outbox)
+- Quản lý session: list, revoke family, logout-others, logout-all
 - `GET /auth/me` — thông tin user hiện tại; degrade `profileStatus: unavailable` khi user-service down
 - `GET /auth/verify` — xác thực token cho gateway/service khác (kèm headers `X-User-Id`, …)
 - Đổi mật khẩu (revoke session sau đổi)
@@ -45,9 +47,7 @@ Tài liệu này là **nguồn chính** mô tả chức năng và mức độ ho
 
 **Out of scope (MVP)**
 
-- Quên mật khẩu / reset password công khai
 - Quản trị role/permission qua API công khai
-- Quản lý session nâng cao
 
 ---
 

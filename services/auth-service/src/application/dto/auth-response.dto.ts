@@ -138,3 +138,80 @@ export class MessageResponseDto {
   @ApiProperty({ example: 'ok' })
   message: string;
 }
+
+export class ForgotPasswordResponseDto {
+  @ApiProperty({
+    example: 'If the account exists, password reset instructions were sent.',
+  })
+  message: string;
+
+  @ApiProperty({ example: true })
+  sent: true;
+}
+
+export class ResetPasswordResponseDto {
+  @ApiProperty({ example: 'Password reset successfully' })
+  message: string;
+
+  @ApiProperty({ example: true })
+  reset: true;
+
+  @ApiProperty({ example: 2 })
+  revokedSessionCount: number;
+
+  @ApiProperty({ format: 'uuid' })
+  userId: string;
+}
+
+export class RefreshTokenSessionResponseDto {
+  @ApiProperty({ format: 'uuid' })
+  tokenId: string;
+
+  @ApiProperty({ format: 'uuid' })
+  familyId: string;
+
+  @ApiProperty({ format: 'uuid' })
+  userId: string;
+
+  @ApiPropertyOptional({ nullable: true, format: 'uuid' })
+  workspaceId: string | null;
+
+  @ApiProperty()
+  isActive: boolean;
+
+  @ApiPropertyOptional({ nullable: true, format: 'date-time' })
+  lastUsedAt: string | null;
+
+  @ApiProperty({ format: 'date-time' })
+  expiresAt: string;
+
+  @ApiProperty({ format: 'date-time' })
+  createdAt: string;
+
+  @ApiPropertyOptional({ nullable: true, format: 'date-time' })
+  revokedAt: string | null;
+}
+
+export class RevokeSessionResponseDto {
+  @ApiProperty({ example: true })
+  revoked: true;
+
+  @ApiProperty({ format: 'uuid' })
+  familyId: string;
+}
+
+export class LogoutOthersResponseDto {
+  @ApiProperty({ example: true })
+  revoked: true;
+
+  @ApiProperty({ example: 1 })
+  revokedSessionCount: number;
+}
+
+export class LogoutAllResponseDto {
+  @ApiProperty({ example: true })
+  revoked: true;
+
+  @ApiProperty({ example: 2 })
+  revokedSessionCount: number;
+}
