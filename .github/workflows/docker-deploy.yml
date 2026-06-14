@@ -221,24 +221,25 @@ jobs:
           GHCR_OWNER: ${{ github.repository_owner }}
           GHCR_USERNAME: ${{ secrets.GHCR_USERNAME }}
           GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SKIP_HELM_DEP_UPDATE: "true"
         with:
           host: ${{ secrets.DROPLET_HOST }}
           username: ${{ secrets.DROPLET_USER }}
           key: ${{ secrets.DROPLET_SSH_KEY }}
           command_timeout: 30m
-          envs: IMAGE_TAG,GHCR_OWNER,GHCR_USERNAME,GHCR_TOKEN,SKIP_HELM_DEP_UPDATE
+          envs: IMAGE_TAG,GHCR_OWNER,GHCR_USERNAME,GHCR_TOKEN,GITHUB_TOKEN,SKIP_HELM_DEP_UPDATE
           script: |
             set -euo pipefail
             export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
             export APP_DIR=/opt/collabspace
             export PHASE0_ENV=/opt/collabspace/infrastructure/deploy/phase0.env
-            export GITHUB_TOKEN="${GHCR_TOKEN}"
-            if [[ -f "$PHASE0_ENV" ]]; then
-              bash /opt/collabspace/infrastructure/deploy/git-sync-private-repo.sh
-            else
-              cd /opt/collabspace && git pull --ff-only
-            fi
+            export GITHUB_TOKEN="${GITHUB_TOKEN}"
+
+            # Deliberately no fallback. If git-sync-private-repo.sh fails, CI fails.
+            # This is intentional: a partial deployment is worse than a visible CI failure.
+            bash /opt/collabspace/infrastructure/deploy/git-sync-private-repo.sh
+
             cd /opt/collabspace
             export APP_DIR=/opt/collabspace
             export IMAGE_TAG
