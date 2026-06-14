@@ -171,6 +171,33 @@ Route protected yêu cầu `Authorization: Bearer …` (auth gRPC). Dev-only `X-
 
 ---
 
+## Platform Admin API
+
+All routes below require a bearer token with platform role `admin` or
+permission `auth.manage`.
+
+| Service | Method | Path | Description |
+|---------|--------|------|-------------|
+| auth | POST | `/api/v1/auth/admin/roles` | Create role |
+| auth | POST | `/api/v1/auth/admin/permissions` | Create permission |
+| auth | POST | `/api/v1/auth/admin/roles/{roleId}/permissions` | Assign permission |
+| auth | POST | `/api/v1/auth/admin/users/{userId}/roles` | Assign role and revoke sessions |
+| auth | GET | `/api/v1/auth/admin/roles` | List roles |
+| auth | GET | `/api/v1/auth/admin/permissions` | List permissions |
+| auth | GET | `/api/v1/auth/admin/users` | List accounts including `lastLoginAt` |
+| auth | PATCH | `/api/v1/auth/admin/users/{id}/active-status` | Disable/enable account |
+| auth | PUT | `/api/v1/auth/admin/roles/{id}` | Update role |
+| auth | DELETE | `/api/v1/auth/admin/roles/{id}` | Delete unused non-seed role |
+| user | GET | `/api/v1/users/admin/all` | Account and profile aggregate |
+| user | DELETE | `/api/v1/users/admin/{id}` | Anonymize and deactivate user |
+| workspace | GET | `/api/v1/workspaces/admin/all` | List all workspaces |
+| workspace | DELETE | `/api/v1/workspaces/admin/{id}` | Soft delete and cascade by event |
+| workspace | POST | `/api/v1/workspaces/admin/{id}/force-join` | Audited admin investigation access |
+| notification | POST | `/api/v1/notifications/admin/broadcast` | Queue broadcast; requires `Idempotency-Key` |
+
+`workspace-service` publishes `workspace_deleted`; `task-service` consumes it
+and removes task projections, comments, activity, and event streams.
+
 ## Tài liệu liên quan
 
 | Tài liệu | Dùng khi |

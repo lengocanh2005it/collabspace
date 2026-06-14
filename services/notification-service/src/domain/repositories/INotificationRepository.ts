@@ -14,6 +14,11 @@ export interface INotificationRepository {
    */
   createAsync(notification: Notification): Promise<string>;
 
+  createBroadcastAsync(
+    notification: Notification,
+    dedupeKey: string,
+  ): Promise<boolean>;
+
   /**
    * Tìm notification theo ID
    * @param id Notification ID

@@ -1,7 +1,7 @@
 import "./observability/instrumentation";
 import "reflect-metadata";
 import { NestFactory } from "@nestjs/core";
-import { ValidationPipe } from "@nestjs/common";
+import { Logger, ValidationPipe } from "@nestjs/common";
 import { AppModule } from "./app.module";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import { MicroserviceOptions, Transport } from "@nestjs/microservices";
@@ -11,6 +11,7 @@ import { MetricsService } from "./metrics/metrics.service";
 import { registerRequestIdMiddleware } from "./common/http/register-request-id.middleware";
 import { registerMetricsMiddleware } from "./metrics/register-metrics.middleware";
 async function bootstrap() {
+  const logger = new Logger("Bootstrap");
   const app = await NestFactory.create(AppModule);
 
   // --- PHẦN MỚI: CẤU HÌNH MICROSERVICE ---
@@ -39,7 +40,7 @@ async function bootstrap() {
     });
     // Bắt đầu lắng nghe các event từ RabbitMQ
     await app.startAllMicroservices();
-    console.log(`📡 RabbitMQ Microservice is connected and listening`);
+    logger.log("RabbitMQ microservice is connected and listening");
   }
   // ----------------------------
 
@@ -85,7 +86,7 @@ async function bootstrap() {
 
   const port = process.env.PORT || 3000;
   await app.listen(port);
-  console.log(`Task Service is running on port ${port}`);
-  console.log(`Swagger Docs: http://localhost:${port}/${swaggerPath}`);
+  logger.log(`Task Service is running on port ${port}`);
+  logger.log(`Swagger Docs: http://localhost:${port}/${swaggerPath}`);
 }
 void bootstrap();

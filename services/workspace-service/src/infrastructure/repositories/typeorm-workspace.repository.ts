@@ -5,6 +5,9 @@ import { Workspace } from '../../domain/entities/workspace.entity';
 import { IWorkspaceRepository } from '../../domain/repositories/workspace.repository';
 import { WorkspaceOrmEntity } from '../database/entities/workspace.orm-entity';
 import { WorkspaceMemberOrmEntity } from '../database/entities/workspace-member.orm-entity';
+import { ProjectOrmEntity } from '../database/entities/project.orm-entity';
+import { WorkspaceOutboxService } from '../outbox/workspace-outbox.service';
+import { randomUUID } from 'crypto';
 
 @Injectable()
 export class TypeOrmWorkspaceRepository implements IWorkspaceRepository {
@@ -13,11 +16,71 @@ export class TypeOrmWorkspaceRepository implements IWorkspaceRepository {
     private readonly repo: Repository<WorkspaceOrmEntity>,
     @InjectDataSource()
     private readonly dataSource: DataSource,
+    private readonly outboxService: WorkspaceOutboxService,
   ) {}
 
   async findById(id: string): Promise<Workspace | null> {
     const orm = await this.repo.findOne({ where: { id } });
     return orm ? this.toDomain(orm) : null;
+  }
+
+  async adminListAll(): Promise<Array<Workspace & { memberCount: number }>> {
+    const rows = await this.repo
+      .createQueryBuilder('workspace')
+      .loadRelationCountAndMap('workspace.memberCount', 'workspace.members')
+      .orderBy('workspace.created_at', 'DESC')
+      .getMany();
+    return rows.map((row) =>
+      Object.assign(this.toDomain(row), {
+        memberCount: Number(
+          (row as WorkspaceOrmEntity & { memberCount?: number }).memberCount ??
+            0,
+        ),
+      }),
+    );
+  }
+
+  async adminForceDelete(id: string, actorId: string): Promise<void> {
+    await this.dataSource.transaction(async (manager) => {
+      const workspace = await manager.findOne(WorkspaceOrmEntity, {
+        where: { id },
+      });
+      if (!workspace) {
+        throw new NotFoundException('Workspace not found');
+      }
+      await manager.update(ProjectOrmEntity, { workspace_id: id }, { is_deleted: true });
+      await manager.delete(WorkspaceMemberOrmEntity, { workspace_id: id });
+      await manager.softDelete(WorkspaceOrmEntity, { id });
+      await this.outboxService.enqueueWorkspaceDeleted(
+        {
+          eventId: randomUUID(),
+          occurredAt: new Date().toISOString(),
+          deletedById: actorId,
+          workspaceId: id,
+        },
+        manager,
+      );
+    });
+  }
+
+  async adminForceJoin(
+    id: string,
+    userId: string,
+    role: 'admin',
+  ): Promise<void> {
+    const workspace = await this.repo.findOne({ where: { id } });
+    if (!workspace) {
+      throw new NotFoundException('Workspace not found');
+    }
+    const repository = this.dataSource.getRepository(WorkspaceMemberOrmEntity);
+    await repository.upsert(
+      {
+        role,
+        user_id: userId,
+        workspace_id: id,
+      },
+      ['workspace_id', 'user_id'],
+    );
   }
 
   async findByMember(userId: string): Promise<Workspace[]> {

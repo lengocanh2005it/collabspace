@@ -5,10 +5,6 @@
  * Facilitates easy importing and maintains clear structure
  */
 
-// Event wrappers and types
-export { KafkaEventType, createKafkaEventWrapper } from "./kafka-event-wrapper";
-export type { KafkaEventWrapper } from "./kafka-event-wrapper";
-
 // Task events
 export type {
   TaskAssignedEventPayload,

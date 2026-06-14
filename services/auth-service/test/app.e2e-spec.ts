@@ -10,6 +10,7 @@ import { REFRESH_TOKEN_REPOSITORY } from '../src/domain/repositories/refresh-tok
 import { OTP_STORE } from '../src/domain/ports/otp-store.port';
 import { EMAIL_OUTBOX } from '../src/domain/ports/email-outbox.port';
 import { USER_PROFILE_CLIENT } from '../src/domain/ports/user-profile-client.port';
+import { AUTH_ADMIN_REPOSITORY } from '../src/domain/repositories/auth-admin.repository';
 
 describe('AuthController (e2e)', () => {
   let app: INestApplication<App>;
@@ -56,6 +57,9 @@ describe('AuthController (e2e)', () => {
     getLiveness: jest.fn(),
     getReadiness: jest.fn(),
   };
+  const authAdminRepositoryMock = {
+    createRole: jest.fn(),
+  };
   const jwtSecret = 'test-secret';
 
   beforeEach(async () => {
@@ -64,15 +68,27 @@ describe('AuthController (e2e)', () => {
     process.env.JWT_EXPIRY = '10m';
     process.env.OUTBOX_ENABLED = 'false';
 
-    identityServiceMock.getAuthUserById.mockResolvedValue({
-      email: 'member@example.com',
-      emailVerified: true,
-      isActive: true,
-      permissions: ['users.read'],
-      role: 'member',
-      roles: ['member'],
-      userId: 'user-123',
-    });
+    identityServiceMock.getAuthUserById.mockImplementation(async (userId) =>
+      userId === 'admin-123'
+        ? {
+            email: 'admin@example.com',
+            emailVerified: true,
+            isActive: true,
+            permissions: ['auth.manage'],
+            role: 'admin',
+            roles: ['admin'],
+            userId,
+          }
+        : {
+            email: 'member@example.com',
+            emailVerified: true,
+            isActive: true,
+            permissions: ['users.read'],
+            role: 'member',
+            roles: ['member'],
+            userId: 'user-123',
+          },
+    );
     identityServiceMock.validateCredentials.mockResolvedValue({
       email: 'member@example.com',
       emailVerified: true,
@@ -190,6 +206,8 @@ describe('AuthController (e2e)', () => {
       .useValue(authHealthServiceMock)
       .overrideProvider(USER_PROFILE_CLIENT)
       .useValue(userProfileClientMock)
+      .overrideProvider(AUTH_ADMIN_REPOSITORY)
+      .useValue(authAdminRepositoryMock)
       .compile();
 
     app = moduleFixture.createNestApplication();
@@ -302,6 +320,47 @@ describe('AuthController (e2e)', () => {
       username: 'member.example',
       workspaceId: 'workspace-456',
     });
+  });
+
+  it('/api/v1/auth/admin/roles rejects a member', async () => {
+    const token = await jwtTokenService.signAccessToken({
+      role: 'member',
+      roles: ['member'],
+      userId: 'user-123',
+    });
+
+    await request(app.getHttpServer())
+      .post('/api/v1/auth/admin/roles')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ description: 'Support operator', name: 'support' })
+      .expect(403);
+  });
+
+  it('/api/v1/auth/admin/roles allows a platform admin', async () => {
+    authAdminRepositoryMock.createRole.mockResolvedValue({
+      description: 'Support operator',
+      id: 'role-1',
+      name: 'support',
+      permissions: [],
+    });
+    const token = await jwtTokenService.signAccessToken({
+      permissions: ['auth.manage'],
+      role: 'admin',
+      roles: ['admin'],
+      userId: 'admin-123',
+    });
+
+    await request(app.getHttpServer())
+      .post('/api/v1/auth/admin/roles')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ description: 'Support operator', name: 'support' })
+      .expect(201)
+      .expect({
+        description: 'Support operator',
+        id: 'role-1',
+        name: 'support',
+        permissions: [],
+      });
   });
 
   it('/api/v1/auth/login (POST) returns an access token and refresh token', async () => {

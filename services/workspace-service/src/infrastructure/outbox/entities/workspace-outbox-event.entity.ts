@@ -8,6 +8,8 @@ import {
 
 export const WORKSPACE_OUTBOX_EVENT_WORKSPACE_INVITED =
   'workspace.workspace_invited';
+export const WORKSPACE_OUTBOX_EVENT_WORKSPACE_DELETED =
+  'workspace.workspace_deleted';
 
 @Entity({ name: 'workspace_outbox_events' })
 export class WorkspaceOutboxEventEntity {

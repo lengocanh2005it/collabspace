@@ -1,19 +1,12 @@
-import "./observability/instrumentation";
-import { NestFactory } from "@nestjs/core";
-import { AppModule } from "./app.module";
-import { MicroserviceOptions, Transport } from "@nestjs/microservices";
-import { buildConsumerQueueOptions } from "@collabspace/shared";
-import { ConfigurationService } from "./configuration/configuration.service";
-import { Logger, ValidationPipe } from "@nestjs/common";
-import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
-import { MetricsService } from "./metrics/metrics.service";
-import { registerRequestIdMiddleware } from "./common/http/register-request-id.middleware";
-import { registerMetricsMiddleware } from "./metrics/register-metrics.middleware";
-async function bootstrap() {
-  const logger = new Logger("Bootstrap");
-  const app = await NestFactory.create(AppModule);
-  app.enableShutdownHooks();
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app.module';
+import { MicroserviceOptions, Transport } from '@nestjs/microservices';
+import { ConfigurationService } from './configuration/configuration.service';
+import { ValidationPipe } from '@nestjs/common';
 
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+  
   const configService = app.get(ConfigurationService);
   const rmqConfig = configService.getRabbitMqConfig();
 
@@ -24,47 +17,25 @@ async function bootstrap() {
       options: {
         urls: [rmqConfig.url],
         queue: rmqConfig.queue,
-        queueOptions: buildConsumerQueueOptions({
-          durable: rmqConfig.queueDurable,
-          deadLetterExchange: rmqConfig.deadLetterExchange,
-          deadLetterRoutingKey: rmqConfig.deadLetterRoutingKey,
-        }),
+        queueOptions: { durable: rmqConfig.queueDurable },
         noAck: rmqConfig.noAck,
         prefetchCount: rmqConfig.prefetchCount,
       },
     });
     await app.startAllMicroservices();
-    logger.log(
-      `Notification Service is listening to RabbitMQ: ${rmqConfig.queue}`,
-    );
+    console.log(`📡 Notification Service is listening to RabbitMQ: ${rmqConfig.queue}`);
   }
-  app.enableCors({
-    origin: "*",
+    app.enableCors({
+    origin: '*',
     credentials: true,
   });
   // 2. Cấu hình HTTP API
   app.useGlobalPipes(new ValidationPipe({ transform: true }));
-  app.setGlobalPrefix("api/v1");
-  registerRequestIdMiddleware(app);
-  registerMetricsMiddleware(app, app.get(MetricsService));
+  app.setGlobalPrefix('api');
 
-  const swaggerConfig = new DocumentBuilder()
-    .setTitle("Notification Service API")
-    .setDescription(
-      "CollabSpace notifications: list, mark-read, mark-all-read. JWT via auth gRPC. Events consumed via RabbitMQ (not in this doc).",
-    )
-    .setVersion("1.0")
-    .addBearerAuth()
-    .build();
-
-  const swaggerDocument = SwaggerModule.createDocument(app, swaggerConfig);
-  const swaggerPath = process.env.SWAGGER_UI_PATH?.trim() || "swagger";
-  SwaggerModule.setup(swaggerPath, app, swaggerDocument);
-
-  const port = process.env.PORT || 3000;
+  const port = process.env.PORT || 3002;
   await app.listen(port);
-  logger.log(`Notification HTTP API is running on port ${port}`);
-  logger.log(`Swagger Docs: http://localhost:${port}/${swaggerPath}`);
+  console.log(`✅ Notification HTTP API is running on port ${port}`);
 }
 
-void bootstrap();
+bootstrap();

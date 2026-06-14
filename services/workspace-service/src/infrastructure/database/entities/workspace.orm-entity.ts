@@ -3,6 +3,7 @@ import {
   Column,
   PrimaryGeneratedColumn,
   CreateDateColumn,
+  DeleteDateColumn,
   UpdateDateColumn,
   OneToMany,
 } from 'typeorm';
@@ -29,6 +30,9 @@ export class WorkspaceOrmEntity {
 
   @UpdateDateColumn({ type: 'timestamptz' })
   updated_at: Date;
+
+  @DeleteDateColumn({ type: 'timestamptz', nullable: true })
+  deleted_at: Date | null;
 
   @OneToMany(() => WorkspaceMemberOrmEntity, (member) => member.workspace)
   members: WorkspaceMemberOrmEntity[];

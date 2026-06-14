@@ -1,15 +1,11 @@
 // src/infrastructure/repositories/comment.repository.ts
-import { Injectable } from "@nestjs/common";
-import { InjectModel } from "@nestjs/mongoose";
-import { Model } from "mongoose";
-import { ICommentRepository } from "../../domain/repositories/comment.repository.interface";
-import { Comment } from "../../domain/entities/comment.entity";
-import {
-  TaskComment,
-  TaskCommentDocument,
-} from "../persistence/task-comment.schema";
-import { CommentMapper } from "../mappers/comment.mapper";
-import { CommentSpecs } from "../../domain/specifications/comment.specifications";
+import { Injectable } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { ICommentRepository } from '../../domain/repositories/comment.repository.interface';
+import { Comment } from '../../domain/entities/comment.entity';
+import { TaskComment, TaskCommentDocument } from '../persistence/task-comment.schema';
+import { CommentMapper } from '../mappers/comment.mapper';
 
 /**
  * Comment Repository - Infrastructure Layer Adapter
@@ -38,7 +34,7 @@ export class CommentRepository implements ICommentRepository {
   async findByIdAsync(id: string): Promise<Comment | null> {
     const document = await this.commentModel.findOne({
       _id: id,
-      ...CommentSpecs.notDeleted,
+      deletedAt: null,
     });
 
     if (!document) {
@@ -55,7 +51,11 @@ export class CommentRepository implements ICommentRepository {
     taskId: string,
     options?: { skip?: number; limit?: number },
   ): Promise<Comment[]> {
-    const query = CommentSpecs.topLevelForTask(taskId);
+    const query = {
+      taskId,
+      parentId: null, // Only parent comments, not replies
+      deletedAt: null,
+    };
 
     let queryBuilder = this.commentModel.find(query).sort({ createdAt: -1 });
 
@@ -78,7 +78,10 @@ export class CommentRepository implements ICommentRepository {
     parentId: string,
     options?: { skip?: number; limit?: number },
   ): Promise<Comment[]> {
-    const query = CommentSpecs.repliesOf(parentId);
+    const query = {
+      parentId,
+      deletedAt: null,
+    };
 
     let queryBuilder = this.commentModel.find(query).sort({ createdAt: 1 });
 
@@ -99,9 +102,11 @@ export class CommentRepository implements ICommentRepository {
    * Aggregate pipeline để load parent comments + replies cùng lúc
    */
   async findTaskCommentsWithRepliesAsync(taskId: string): Promise<Comment[]> {
-    const parentComments = await this.commentModel.find(
-      CommentSpecs.topLevelForTask(taskId),
-    );
+    const parentComments = await this.commentModel.find({
+      taskId,
+      parentId: null,
+      deletedAt: null,
+    });
 
     // For each parent comment, fetch replies
     const commentsWithReplies: Comment[] = [];
@@ -160,7 +165,7 @@ export class CommentRepository implements ICommentRepository {
   ): Promise<Comment[]> {
     const query = {
       mentions: userId,
-      ...CommentSpecs.notDeleted,
+      deletedAt: null,
     };
 
     let queryBuilder = this.commentModel.find(query).sort({ createdAt: -1 });
@@ -181,14 +186,21 @@ export class CommentRepository implements ICommentRepository {
    * Đếm comment của task (không bao gồm deleted)
    */
   async countByTaskIdAsync(taskId: string): Promise<number> {
-    return this.commentModel.countDocuments(CommentSpecs.topLevelForTask(taskId));
+    return this.commentModel.countDocuments({
+      taskId,
+      parentId: null,
+      deletedAt: null,
+    });
   }
 
   /**
    * Đếm reply của parent comment
    */
   async countRepliesByParentIdAsync(parentId: string): Promise<number> {
-    return this.commentModel.countDocuments(CommentSpecs.repliesOf(parentId));
+    return this.commentModel.countDocuments({
+      parentId,
+      deletedAt: null,
+    });
   }
 
   /**

@@ -1,4 +1,9 @@
-import { Inject, Injectable, OnModuleDestroy } from "@nestjs/common";
+import {
+  Inject,
+  Injectable,
+  Logger,
+  OnModuleDestroy,
+} from "@nestjs/common";
 import { ClientProxy } from "@nestjs/microservices";
 import { lastValueFrom } from "rxjs";
 import {
@@ -14,34 +19,36 @@ import {
 
 @Injectable()
 export class RabbitMqEventsService implements OnModuleDestroy {
+  private readonly logger = new Logger(RabbitMqEventsService.name);
+
   constructor(
     @Inject("NOTIFICATION_SERVICE")
     private readonly client: ClientProxy,
   ) {}
 
   async publishTaskAssigned(payload: TaskAssignedEventPayload): Promise<void> {
-    await this.client.connect();
-    await lastValueFrom(this.client.emit(TASK_ASSIGNED_EVENT, payload));
+    await this.publish(TASK_ASSIGNED_EVENT, payload);
   }
 
   async publishTaskCommented(
     payload: TaskCommentedEventPayload,
   ): Promise<void> {
-    await this.client.connect();
-
-    console.log(`📤 [RABBITMQ] Đang bắn event: ${TASK_COMMENTED_EVENT}`);
-
-    await lastValueFrom(this.client.emit(TASK_COMMENTED_EVENT, payload));
+    await this.publish(TASK_COMMENTED_EVENT, payload);
   }
 
   async publishCommentMentioned(
     payload: CommentMentionedEventPayload,
   ): Promise<void> {
-    await this.client.connect();
-    await lastValueFrom(this.client.emit(COMMENT_MENTIONED_EVENT, payload));
+    await this.publish(COMMENT_MENTIONED_EVENT, payload);
   }
 
   async onModuleDestroy(): Promise<void> {
     await this.client.close();
+  }
+
+  private async publish(event: string, payload: object): Promise<void> {
+    await this.client.connect();
+    this.logger.debug(`Publishing RabbitMQ event ${event}`);
+    await lastValueFrom(this.client.emit(event, payload));
   }
 }

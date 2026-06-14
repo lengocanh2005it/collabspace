@@ -11,10 +11,12 @@ describe("MarkNotificationReadHandler", () => {
   beforeEach(() => {
     mockRepo = {
       createAsync: jest.fn(),
+      createBroadcastAsync: jest.fn(),
       findByIdAsync: jest.fn(),
       findByRecipientIdAsync: jest.fn(),
       findUnreadByRecipientIdAsync: jest.fn(),
       countUnreadByRecipientIdAsync: jest.fn(),
+      countByRecipientIdAsync: jest.fn(),
       updateAsync: jest.fn(),
       deleteAsync: jest.fn(),
       markAllAsReadAsync: jest.fn(),

@@ -14,6 +14,7 @@ import { SessionIssuanceService } from '@/application/services/session-issuance.
 import { UserProfileResolverService } from '@/application/services/user-profile-resolver.service';
 import { UserRepository } from '@/domain/repositories/user.repository';
 import { RefreshTokenRepository } from '@/domain/repositories/refresh-token.repository';
+import { AuthAdminRepository } from '@/domain/repositories/auth-admin.repository';
 import { UserProfileClient } from '@/domain/ports/user-profile-client.port';
 import { EmailOutbox } from '@/domain/ports/email-outbox.port';
 import { OtpStore } from '@/domain/ports/otp-store.port';
@@ -86,6 +87,9 @@ describe('Auth use cases (integration)', () => {
     rollbackNewRegistration: jest.fn(),
     validateCredentials: jest.fn(),
   } as unknown as UserRepository;
+  const authAdminRepositoryMock = {
+    recordLogin: jest.fn(),
+  } as unknown as AuthAdminRepository;
   const userProfileClientMock = {
     createPendingProfile: jest.fn(),
     getProfile: jest.fn(),
@@ -122,7 +126,11 @@ describe('Auth use cases (integration)', () => {
         jwtTokenService,
         userProfileResolverService,
       ),
-      loginUseCase: new LoginUseCase(identityServiceMock, sessionIssuanceService),
+      loginUseCase: new LoginUseCase(
+        identityServiceMock,
+        authAdminRepositoryMock,
+        sessionIssuanceService,
+      ),
       logoutUseCase: new LogoutUseCase(refreshTokenRepositoryMock),
       refreshSessionUseCase: new RefreshSessionUseCase(
         identityServiceMock,

@@ -462,6 +462,8 @@ apps:
       GRPC_ENABLED: "true"
       GRPC_URL: "0.0.0.0:50052"
       AUTH_SERVICE_GRPC_URL: auth-service:50051
+      AUTH_SERVICE_HTTP_URL: http://auth-service:3000
+      AUTH_SERVICE_HTTP_TIMEOUT_MS: "3000"
       RABBITMQ_ENABLED: "true"
       RABBITMQ_QUEUE: user-service
 

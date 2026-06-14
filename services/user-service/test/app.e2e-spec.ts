@@ -14,6 +14,7 @@ describe('AppController (e2e)', () => {
   const authGrpcServiceMock = {
     ping: jest.fn(),
     verifyAccessToken: jest.fn(),
+    verifyAccessTokenLite: jest.fn(),
   };
   const userHealthServiceMock = {
     getLiveness: jest.fn(),
@@ -24,8 +25,7 @@ describe('AppController (e2e)', () => {
     jest.clearAllMocks();
     delete process.env.DATABASE_URL;
     process.env.INTERNAL_SERVICE_TOKEN = 'test-internal-token';
-    authGrpcServiceMock.verifyAccessToken.mockImplementation(
-      async (authorizationHeader?: string) => {
+    const verifyIdentity = async (authorizationHeader?: string) => {
         if (!authorizationHeader) {
           throw new UnauthorizedException();
         }
@@ -35,8 +35,9 @@ describe('AppController (e2e)', () => {
           userId: 'user-1',
           workspaceId: 'workspace-1',
         };
-      },
-    );
+      };
+    authGrpcServiceMock.verifyAccessToken.mockImplementation(verifyIdentity);
+    authGrpcServiceMock.verifyAccessTokenLite.mockImplementation(verifyIdentity);
     authGrpcServiceMock.ping.mockResolvedValue(undefined);
     userHealthServiceMock.getLiveness.mockReturnValue({
       service: 'user-service',

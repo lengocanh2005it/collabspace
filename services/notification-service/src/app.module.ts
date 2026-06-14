@@ -39,6 +39,10 @@ import {
   UserReplica,
   UserReplicaSchema,
 } from "./infrastructure/database/schemas/user-replica.schema";
+import {
+  BroadcastJob,
+  BroadcastJobSchema,
+} from "./infrastructure/database/schemas/broadcast-job.schema";
 import { USER_REPLICA_REPOSITORY_TOKEN } from "./application/ports/IUserReplicaRepository";
 import { UserReplicaRepository } from "./infrastructure/database/repositories/user-replica.repository";
 import { UserProfileHttpClient } from "./infrastructure/clients/user-profile-http.client";
@@ -46,6 +50,8 @@ import {
   USER_REPLICA_LOOKUP_TOKEN,
   UserReplicaLookupService,
 } from "./application/services/user-replica-lookup.service";
+import { BroadcastJobService } from "./application/services/broadcast-job.service";
+import { NotificationAdminController } from "./presentation/controllers/notification-admin.controller";
 
 const Handlers = [
   CreateNotificationHandler,
@@ -73,10 +79,12 @@ const Handlers = [
       { name: Notification.name, schema: NotificationSchema },
       { name: ProcessedEvent.name, schema: ProcessedEventSchema },
       { name: UserReplica.name, schema: UserReplicaSchema },
+      { name: BroadcastJob.name, schema: BroadcastJobSchema },
     ]),
   ],
   controllers: [
     NotificationsController,
+    NotificationAdminController,
     TaskEventController,
     CommentEventListenerController,
     CommentMentionEventListenerController,
@@ -89,6 +97,7 @@ const Handlers = [
     AuthGuard,
     UserProfileHttpClient,
     UserReplicaLookupService,
+    BroadcastJobService,
     {
       provide: NOTIFICATION_REPOSITORY_TOKEN,
       useClass: NotificationRepository,

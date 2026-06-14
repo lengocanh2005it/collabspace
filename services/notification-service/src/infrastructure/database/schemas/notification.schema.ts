@@ -1,34 +1,33 @@
-// src/infrastructure/database/schemas/notification.schema.ts
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import type { HydratedDocument } from "mongoose";
-import { NotificationType } from "../../../domain/value-objects/NotificationType";
-import { NotificationStatus } from "../../../domain/value-objects/NotificationStatus";
 import type { NotificationMetadata } from "../../../domain/types/notification-metadata";
+import { NotificationStatus } from "../../../domain/value-objects/NotificationStatus";
+import { NotificationType } from "../../../domain/value-objects/NotificationType";
 
 export type NotificationDocument = HydratedDocument<Notification>;
 
 @Schema({ collection: "notifications", timestamps: true })
 export class Notification {
   @Prop({ type: String, required: true, index: true })
-  recipientId!: string; // User ID của người nhận thông báo
+  recipientId!: string;
 
   @Prop({ type: String, required: true })
-  actorId!: string; // User ID của người tạo hành động
+  actorId!: string;
 
   @Prop({ type: String, required: true, enum: Object.values(NotificationType) })
-  type!: NotificationType; // Loại thông báo
+  type!: NotificationType;
 
   @Prop({ type: String, required: true })
-  title!: string; // Tiêu đề ngắn
+  title!: string;
 
   @Prop({ type: String, required: true })
-  message!: string; // Nội dung thông báo
+  message!: string;
 
   @Prop({ type: String, required: true, index: true })
-  targetId!: string; // ID của resource (taskId, commentId, workspaceId, etc)
+  targetId!: string;
 
   @Prop({ type: String, required: true })
-  targetType!: string; // Loại resource (TASK, COMMENT, WORKSPACE, etc)
+  targetType!: string;
 
   @Prop({
     type: String,
@@ -36,10 +35,13 @@ export class Notification {
     enum: Object.values(NotificationStatus),
     default: NotificationStatus.UNREAD,
   })
-  status!: NotificationStatus; // Trạng thái: UNREAD, READ, ARCHIVED
+  status!: NotificationStatus;
 
   @Prop({ type: Object, default: {} })
-  metadata!: NotificationMetadata; // Metadata thêm (actorName, actorAvatar, taskPriority, etc)
+  metadata!: NotificationMetadata;
+
+  @Prop({ type: String, required: false })
+  broadcastDedupeKey?: string;
 
   @Prop({ type: Date, default: () => new Date() })
   createdAt!: Date;
@@ -50,14 +52,11 @@ export class Notification {
 
 export const NotificationSchema = SchemaFactory.createForClass(Notification);
 
-// Index để tìm nhanh notification của user
 NotificationSchema.index({ recipientId: 1, createdAt: -1 });
-
-// Index để tìm notification chưa đọc nhanh chóng
 NotificationSchema.index({ recipientId: 1, status: 1 });
-
-// Index để delete notification cũ
 NotificationSchema.index({ createdAt: 1 });
-
-// Index cho targetId để có thể query theo resource
 NotificationSchema.index({ targetId: 1, targetType: 1 });
+NotificationSchema.index(
+  { broadcastDedupeKey: 1 },
+  { unique: true, sparse: true },
+);
