@@ -9,6 +9,7 @@ RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
 WORKDIR /app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY packages/shared/package.json packages/shared/package.json
+COPY packages/nest-auth/package.json packages/nest-auth/package.json
 COPY services/${SERVICE_NAME}/package.json services/${SERVICE_NAME}/package.json
 RUN --mount=type=cache,id=pnpm-ci,target=/root/.local/share/pnpm/store \
     pnpm install --frozen-lockfile --ignore-scripts
@@ -20,6 +21,7 @@ COPY packages packages
 COPY scripts scripts
 COPY services/${SERVICE_NAME} services/${SERVICE_NAME}
 RUN pnpm --filter @collabspace/shared run build \
+  && pnpm --filter @collabspace/nest-auth run build \
   && pnpm --filter ${SERVICE_NAME} run build
 
 # --- Stage 3: Production deps only ---
@@ -29,6 +31,7 @@ RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
 WORKDIR /app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY packages/shared/package.json packages/shared/package.json
+COPY packages/nest-auth/package.json packages/nest-auth/package.json
 COPY services/${SERVICE_NAME}/package.json services/${SERVICE_NAME}/package.json
 RUN --mount=type=cache,id=pnpm-ci,target=/root/.local/share/pnpm/store \
     pnpm install --frozen-lockfile --prod --ignore-scripts
@@ -47,6 +50,8 @@ COPY --from=prod-deps /app/node_modules ./node_modules
 COPY --from=prod-deps /app/services/${SERVICE_NAME}/node_modules ./services/${SERVICE_NAME}/node_modules
 COPY --from=builder /app/packages/shared/dist ./packages/shared/dist
 COPY --from=builder /app/packages/shared/package.json ./packages/shared/package.json
+COPY --from=builder /app/packages/nest-auth/dist ./packages/nest-auth/dist
+COPY --from=builder /app/packages/nest-auth/package.json ./packages/nest-auth/package.json
 COPY --from=builder /app/services/${SERVICE_NAME}/dist ./services/${SERVICE_NAME}/dist
 COPY --from=builder /app/services/${SERVICE_NAME}/package.json ./services/${SERVICE_NAME}/package.json
 COPY --from=builder /app/scripts/demo-seed-data.json ./scripts/demo-seed-data.json
