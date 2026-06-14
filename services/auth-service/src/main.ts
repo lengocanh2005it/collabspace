@@ -16,7 +16,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.use(compression());
   app.setGlobalPrefix('api/v1');
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true, forbidNonWhitelisted: true }));
   registerRequestIdMiddleware(app);
   registerMetricsMiddleware(app, app.get(MetricsService));
 
@@ -31,7 +31,9 @@ async function bootstrap() {
 
   const swaggerDocument = SwaggerModule.createDocument(app, swaggerConfig);
   const swaggerPath = process.env.SWAGGER_UI_PATH?.trim() || 'swagger';
-  SwaggerModule.setup(swaggerPath, app, swaggerDocument);
+  if (process.env.SWAGGER_ENABLED !== 'false') {
+    SwaggerModule.setup(swaggerPath, app, swaggerDocument);
+  }
 
   await app.get(DatabaseService).initialize();
   const configurationService = app.get(ConfigurationService);

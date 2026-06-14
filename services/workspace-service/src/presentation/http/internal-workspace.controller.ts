@@ -7,6 +7,7 @@ import {
   Req,
 } from '@nestjs/common';
 import {
+  ApiExcludeController,
   ApiOperation,
   ApiParam,
   ApiQuery,
@@ -17,6 +18,7 @@ import type { Request } from 'express';
 import { CheckWorkspaceMembershipUseCase } from '../../application/use-cases/workspace/check-workspace-membership.use-case';
 import { assertInternalServiceAccess } from './internal-service-access';
 
+@ApiExcludeController()
 @ApiTags('workspaces-internal')
 @ApiSecurity('service-jwt')
 @Controller('workspaces/internal')

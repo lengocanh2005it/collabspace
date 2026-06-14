@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { IdempotencyRecordOrmEntity } from './entities/idempotency-record.orm-entity';
@@ -12,6 +12,8 @@ const TTL_MS = 24 * 60 * 60 * 1000;
 
 @Injectable()
 export class IdempotencyService {
+  private readonly logger = new Logger(IdempotencyService.name);
+
   constructor(
     @InjectRepository(IdempotencyRecordOrmEntity)
     private readonly recordRepo: Repository<IdempotencyRecordOrmEntity>,
@@ -30,7 +32,9 @@ export class IdempotencyService {
     }
 
     if (record.expiresAt.getTime() <= Date.now()) {
-      await this.recordRepo.delete({ userId, idempotencyKey }).catch(() => {});
+      await this.recordRepo.delete({ userId, idempotencyKey }).catch((err) => {
+        this.logger.warn('Failed to delete expired idempotency record', err instanceof Error ? err.message : String(err));
+      });
       return null;
     }
 

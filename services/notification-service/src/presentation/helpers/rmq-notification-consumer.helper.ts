@@ -22,6 +22,18 @@ function resolveMaxRetries(maxRetries?: number): number {
   return Number(process.env.RABBITMQ_MAX_RETRIES ?? 5);
 }
 
+function resolveCommandTimeoutMs(): number {
+  return Number(process.env.COMMAND_TIMEOUT_MS ?? 10000);
+}
+
+function withCommandTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  let timer: ReturnType<typeof setTimeout>;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`Command timed out after ${ms}ms`)), ms);
+  });
+  return Promise.race([promise, timeoutPromise]).finally(() => clearTimeout(timer));
+}
+
 /**
  * Template Method: ack / retry / DLQ wrapper for notification event consumers.
  */
@@ -30,7 +42,7 @@ export async function consumeNotificationEvent(
   command: CreateNotificationCommand,
 ): Promise<void> {
   try {
-    await deps.commandBus.execute(command);
+    await withCommandTimeout(deps.commandBus.execute(command), resolveCommandTimeoutMs());
     deps.channel.ack(deps.message);
   } catch (error) {
     deps.logger.error(

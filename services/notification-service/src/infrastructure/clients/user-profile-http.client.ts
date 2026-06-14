@@ -23,6 +23,23 @@ export type UserReplicaLookupRequest = {
   username?: string;
 };
 
+async function fetchWithRetry(fn: () => Promise<Response>, maxAttempts = 3): Promise<Response> {
+  let lastError: unknown;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const res = await fn();
+      if (res.status < 500) return res;
+      lastError = new Error(`HTTP ${res.status}`);
+    } catch (err) {
+      lastError = err;
+    }
+    if (attempt < maxAttempts) {
+      await new Promise((r) => setTimeout(r, 50 * attempt));
+    }
+  }
+  throw lastError;
+}
+
 @Injectable()
 export class UserProfileHttpClient {
   private readonly baseUrl: string;
@@ -90,8 +107,6 @@ export class UserProfileHttpClient {
   }
 
   private async post(path: string, body: unknown): Promise<Response> {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
       ...outboundRequestIdHeaders(),
@@ -99,11 +114,15 @@ export class UserProfileHttpClient {
     };
 
     try {
-      return await fetch(`${this.baseUrl}${path}`, {
-        method: "POST",
-        headers,
-        body: JSON.stringify(body),
-        signal: controller.signal,
+      return await fetchWithRetry(() => {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
+        return fetch(`${this.baseUrl}${path}`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify(body),
+          signal: controller.signal,
+        }).finally(() => clearTimeout(timeout));
       });
     } catch (error) {
       throw new ServiceUnavailableException({
@@ -113,8 +132,6 @@ export class UserProfileHttpClient {
             ? error.message
             : "User service replica lookup failed",
       });
-    } finally {
-      clearTimeout(timeout);
     }
   }
 }

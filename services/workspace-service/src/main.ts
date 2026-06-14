@@ -56,7 +56,9 @@ async function bootstrap() {
 
   const swaggerDocument = SwaggerModule.createDocument(app, swaggerConfig);
   const swaggerPath = process.env.SWAGGER_UI_PATH?.trim() || 'swagger';
-  SwaggerModule.setup(swaggerPath, app, swaggerDocument);
+  if (process.env.SWAGGER_ENABLED !== 'false') {
+    SwaggerModule.setup(swaggerPath, app, swaggerDocument);
+  }
 
   const port = process.env.PORT || 8080;
   await app.listen(port);
