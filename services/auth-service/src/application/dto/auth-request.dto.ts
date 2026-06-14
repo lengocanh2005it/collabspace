@@ -75,3 +75,26 @@ export class ResendEmailVerificationOtpRequestDto {
   @IsEmail()
   email: string;
 }
+
+export class ForgotPasswordRequestDto {
+  @ApiProperty({ example: 'member@collabspace.dev' })
+  @IsEmail()
+  email: string;
+}
+
+export class ResetPasswordRequestDto {
+  @ApiProperty({ example: 'base64url-reset-token' })
+  @IsString()
+  token: string;
+
+  @ApiProperty({ example: 'newpassword456' })
+  @IsString()
+  @MinLength(8)
+  newPassword: string;
+}
+
+export class LogoutOthersRequestDto {
+  @ApiProperty({ example: 'refresh-token-uuid' })
+  @IsString()
+  refreshToken: string;
+}

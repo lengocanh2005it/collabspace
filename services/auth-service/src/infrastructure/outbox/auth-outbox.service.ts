@@ -352,6 +352,19 @@ export class AuthOutboxService {
     return rows[0]?.otp ?? null;
   }
 
+  async getDevPasswordResetToken(email: string): Promise<string | null> {
+    const rows = await this.dataSource.query<Array<{ token: string }>>(
+      `SELECT payload->>'token' AS token
+       FROM auth_outbox_events
+       WHERE event_type = $1
+         AND payload->>'email' = $2
+       ORDER BY created_at DESC
+       LIMIT 1`,
+      [AUTH_OUTBOX_EVENT_PASSWORD_RESET_EMAIL, email],
+    );
+    return rows[0]?.token ?? null;
+  }
+
   private toIsoString(value: Date | string | null): string | null {
     if (!value) {
       return null;

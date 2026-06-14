@@ -66,6 +66,12 @@ Base: `/api/v1/auth` · Cổng **3000** (host **3000**)
 | POST | `/login` | Đăng nhập → access + refresh token |
 | POST | `/refresh` | Xoay refresh token |
 | POST | `/logout` | Thu hồi refresh token |
+| POST | `/logout-others` | Thu hồi mọi session khác (giữ session hiện tại) |
+| POST | `/logout-all` | Thu hồi toàn bộ refresh-token families |
+| POST | `/forgot-password` | Gửi email reset (chỉ account đã verify; phản hồi generic) |
+| POST | `/reset-password` | Đặt lại mật khẩu bằng token email |
+| GET | `/sessions` | List refresh-token session families của user hiện tại |
+| DELETE | `/sessions/{familyId}` | Revoke một session family |
 | POST | `/change-password` | Đổi mật khẩu; thu hồi session |
 | GET | `/me` | User hiện tại từ access token |
 | GET | `/verify` | Verify bearer token; set header identity cho service downstream |
