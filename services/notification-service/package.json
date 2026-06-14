@@ -1,7 +1,7 @@
 {
   "name": "notification-service",
   "version": "1.0.0",
-  "description": "Notification Service for CollabSpace - Scalable event-driven notifications with Kafka & WebSocket",
+  "description": "CollabSpace RabbitMQ notification persistence and polling API",
   "main": "dist/main.js",
   "scripts": {
     "start": "nest start",
@@ -15,12 +15,13 @@
     "test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js",
     "test:watch": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --watch",
     "test:cov": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --coverage",
-    "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand"
+    "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
+    "test:e2e": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --config ./test/jest-e2e.json"
   },
   "keywords": [
     "notification",
-    "kafka",
-    "websocket",
+    "rabbitmq",
+    "polling",
     "nestjs"
   ],
   "author": "CollabSpace Team",
@@ -35,8 +36,6 @@
     "@nestjs/mongoose": "^11.0.4",
     "@nestjs/platform-express": "^11.1.19",
     "@nestjs/swagger": "^11.4.2",
-    "@nestjs/platform-ws": "^11.1.19",
-    "@nestjs/websockets": "^11.1.19",
     "@opentelemetry/api": "^1.9.1",
     "@opentelemetry/auto-instrumentations-node": "^0.76.0",
     "@opentelemetry/exporter-trace-otlp-http": "^0.218.0",
@@ -48,13 +47,11 @@
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
     "dotenv": "^17.4.2",
-    "kafka-node": "^5.0.0",
     "mongoose": "^9.6.1",
     "prom-client": "^15.1.3",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
-    "uuid": "^9.0.1",
-    "ws": "^8.20.0"
+    "uuid": "^9.0.1"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.5",

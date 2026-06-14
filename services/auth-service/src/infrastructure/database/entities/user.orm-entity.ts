@@ -31,6 +31,9 @@ export class UserOrmEntity {
   @Column({ default: true, name: 'is_active', type: 'boolean' })
   isActive!: boolean;
 
+  @Column({ name: 'last_login_at', nullable: true, type: 'timestamptz' })
+  lastLoginAt!: Date | null;
+
   @Column({ name: 'password_hash', type: 'varchar' })
   passwordHash!: string;
 

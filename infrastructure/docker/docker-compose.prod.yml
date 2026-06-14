@@ -55,6 +55,7 @@ services:
       NODE_ENV: production
       DATABASE_SYNCHRONIZE: "false"
       ALLOW_DEV_IDENTITY_HEADERS: "false"
+      AUTH_SERVICE_HTTP_URL: http://auth-service:3000
 
   workspace-service:
     image: ${COLLABSPACE_IMAGE_REGISTRY:-ghcr.io/your-github-owner}/collabspace-workspace-service:${COLLABSPACE_IMAGE_TAG:-latest}

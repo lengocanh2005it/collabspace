@@ -1,5 +1,13 @@
 # Backlog ứng dụng — Lê Ngọc Anh, Ngô Quang Tiến, Võ Trung Tín
 
+> **Võ Trung Tín update (2026-06-14):** task board and mark-all-read unit
+> specs, task/notification E2E specs, user/mention listener specs, Kafka dead
+> code removal, unused Azure config cleanup, Nest logger migration, and
+> attachment storage documentation are complete. Workspace activity was
+> already implemented at `GET /api/v1/workspaces/:id/activity`. The Admin
+> Platform backlog is also implemented. CI demo smoke remains an
+> infrastructure-owned deployment workflow item.
+
 Tài liệu này liệt kê **việc còn lại về logic code / API / test / demo** (cập nhật 2026-06-13).  
 **Nguồn chính trạng thái tính năng:** [features.md](../features.md). **Infra/DevOps:** [phan-phu-tho-infrastructure-backlog.md](./phan-phu-tho-infrastructure-backlog.md) (Phan Phú Thọ). **Admin Platform API (owner Võ Trung Tín, deadline sáng CN 14/06/2026):** [admin-backlog.md](./admin-backlog.md).
 
@@ -173,40 +181,40 @@ Chi tiết infra: [phan-phu-tho-infrastructure-backlog.md](./phan-phu-tho-infras
 #### P1 — Tính năng Planned
 
 - [x] **Activity feed task-level** — `GET /api/v1/tasks/:taskId/activity` (events + comments, `limit`/`offset`)
-- [ ] **Activity feed workspace-level** — `GET /api/v1/workspaces/:id/activity` (aggregate gần đây — chưa có route)
+- [x] **Activity feed workspace-level** — `GET /api/v1/workspaces/:id/activity`
 
 #### P1 — Test gaps
 
-- [ ] **`get-task-board.handler.spec.ts`** — thiếu
+- [x] **`get-task-board.handler.spec.ts`**
   - `services/task-service/src/application/usecases/get-task-board.handler.ts`
-- [ ] **`mark-all-notifications-read.handler.spec.ts`** — thiếu
+- [x] **`mark-all-notifications-read.handler.spec.ts`**
   - `services/notification-service/src/application/usecases/mark-all-notifications-read/`
-- [ ] **E2E task-service** — chỉ có `test-api.sh` thủ công; thêm `test/*.e2e-spec.ts`
-- [ ] **E2E notification-service** — tương tự workspace
-- [ ] **Event listener specs** — bổ sung cho:
+- [x] **E2E task-service** — `test/app.e2e-spec.ts`
+- [x] **E2E notification-service** — `test/app.e2e-spec.ts`
+- [x] **Event listener specs** — bổ sung cho:
   - `user-event-listener.controller.ts`
   - `comment-mention-event-listener.controller.ts`
   - (đã có spec một phần: `task-comment-event-listener.controller.spec.ts`)
 
 #### P2 — Tech debt & OpenAPI
 
-- [ ] **Xóa Kafka dead code** — runtime chỉ RabbitMQ:
+- [x] **Xóa Kafka dead code** — runtime chỉ RabbitMQ:
   - `services/notification-service/package.json` (`kafka-node`)
   - `src/domain/events/kafka-event-wrapper.ts`, `kafka-event-payloads.ts`
-- [ ] **Xóa / sửa `getAzureStorageConfig()`** không dùng trong `notification-service` và `task-service` `configuration.service.ts`
+- [x] **Xóa / sửa `getAzureStorageConfig()`** không dùng trong `notification-service` và `task-service` `configuration.service.ts`
 - [x] **Swagger notification-service** — `/swagger` + `@ApiTags` + `@ApiOkResponse` trên `notifications.controller.ts`
 - [x] **Swagger task** — `/swagger` + `@ApiTags` task/comment/health; `@ApiProperty` request DTOs; `@ApiOkResponse` trên task controller
-- [ ] Thay `console.log` bằng `Logger` (có `requestId` khi Phase C+ structured log):
+- [x] Thay runtime `console.log` bằng `Logger`:
   - `task-service/src/main.ts`, RMQ listeners
   - `notification-service` comment listener
-- [ ] **Attachment Azure** — document rõ mock vs prod trong `task-service/CLAUDE.md` / `.env.example`
+- [x] **Attachment Azure** — document rõ mock vs prod trong `task-service/CLAUDE.md` / `.env.example`
 
 #### Out of scope MVP
 
 - WebSocket push notification
 - HTTP archive notification (domain `Notification.archive()` chưa expose route)
 
-**DoD giai đoạn Tín (còn lại):** board + mark-all-read có unit test; e2e task + notification; notification bỏ kafka-node; workspace activity feed (tuỳ product).
+**DoD giai đoạn Tín:** hoàn thành board + mark-all-read unit test; task + notification E2E; listener specs; Kafka cleanup; workspace activity feed; attachment docs.
 
 ---
 
@@ -251,10 +259,10 @@ Chi tiết infra: [phan-phu-tho-infrastructure-backlog.md](./phan-phu-tho-infras
 | 7 | workspace e2e spec | Tiến | P1 |
 | 8 | workspace Swagger + response schemas | Tiến | P2 ✅ |
 | 9 | WORKSPACE_CLIENT_MODE=http enforce prod | Tiến | P1 |
-| 10 | get-task-board unit test | Tín | P1 |
-| 11 | mark-all-read unit test | Tín | P1 |
-| 12 | notification e2e spec | Tín | P1 |
-| 13 | Remove kafka-node dead code | Tín | P2 |
+| 10 | get-task-board unit test | Tín | P1 ✅ |
+| 11 | mark-all-read unit test | Tín | P1 ✅ |
+| 12 | notification e2e spec | Tín | P1 ✅ |
+| 13 | Remove kafka-node dead code | Tín | P2 ✅ |
 | 14 | notification Swagger + response schemas | Tín | P2 ✅ |
 | 15 | Gắn `demo-e2e` CI smoke | Phú Thọ | P0 |
 | 16 | auth/user/task OpenAPI response schemas (`@ApiOkResponse`) | Anh + Tín | P2 ✅ |

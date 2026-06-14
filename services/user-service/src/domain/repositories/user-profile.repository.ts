@@ -59,6 +59,7 @@ export interface UserProfileRepository {
   getStatus(userId: string): Promise<UserStatus>;
   getStatusesByUserIds(userIds: string[]): Promise<UserStatus[]>;
   list(input: ListUserProfilesInput): Promise<ListUserProfilesResult>;
+  anonymize(userId: string): Promise<void>;
   updatePreferences(
     userId: string,
     input: UpdateUserPreferencesInput,

@@ -16,6 +16,7 @@ describe("GetNotificationsHandler", () => {
   beforeEach(() => {
     mockRepository = {
       createAsync: jest.fn(),
+      createBroadcastAsync: jest.fn(),
       findByIdAsync: jest.fn(),
       findByRecipientIdAsync: jest.fn(),
       countByRecipientIdAsync: jest.fn(),

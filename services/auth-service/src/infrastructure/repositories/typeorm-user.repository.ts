@@ -357,9 +357,11 @@ export class TypeOrmUserRepository implements UserRepository {
       );
 
     return {
+      createdAt: user.createdAt,
       email: user.email,
       emailVerified: !!user.emailVerifiedAt,
       isActive: user.isActive,
+      lastLoginAt: user.lastLoginAt,
       permissions: [...new Set(permissions)],
       role: roles[0],
       roles: [...new Set(roles)],

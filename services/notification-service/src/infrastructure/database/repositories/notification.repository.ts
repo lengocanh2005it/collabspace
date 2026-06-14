@@ -34,6 +34,25 @@ export class NotificationRepository implements INotificationRepository {
     return createdNotification._id.toString();
   }
 
+  async createBroadcastAsync(
+    notification: NotificationEntity,
+    dedupeKey: string,
+  ): Promise<boolean> {
+    const notificationDocument = NotificationMapper.toPersistence(notification);
+    const result = await this.notificationModel.updateOne(
+      { broadcastDedupeKey: dedupeKey },
+      {
+        $setOnInsert: {
+          ...notificationDocument,
+          broadcastDedupeKey: dedupeKey,
+        },
+      },
+      { upsert: true },
+    );
+
+    return result.upsertedCount > 0;
+  }
+
   /**
    * Tìm notification theo ID
    */

@@ -408,4 +408,21 @@ export class TypeOrmUserProfileRepository implements UserProfileRepository {
   private createUsername(fullName: string): string {
     return fullName.trim().toLowerCase().replace(/\s+/g, '.');
   }
+
+  async anonymize(userId: string): Promise<void> {
+    const profile = await this.repository.findOne({ where: { userId } });
+    if (!profile) {
+      throw new NotFoundException({
+        code: 'USER_PROFILE_NOT_FOUND',
+        message: `Profile for user ${userId} was not found`,
+      });
+    }
+    profile.avatarUrl = null;
+    profile.bio = null;
+    profile.deletedAt = new Date();
+    profile.displayName = 'Deleted user';
+    profile.fullName = 'Deleted user';
+    profile.username = `deleted.${userId}`;
+    await this.repository.save(profile);
+  }
 }

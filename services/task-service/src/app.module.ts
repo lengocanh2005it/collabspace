@@ -10,6 +10,7 @@ import { TaskCommentController } from "./presentation/controllers/task-comment.c
 import { TaskHealthService } from "./health/task-health.service";
 import { TaskEventController } from "./presentation/controllers/internal/task-event-internal.controller";
 import { UserEventController } from "./presentation/controllers/internal/user-event-internal.controller";
+import { WorkspaceEventController } from "./presentation/controllers/internal/workspace-event-internal.controller";
 
 // Command & Query Handlers
 import { CreateTaskHandler } from "./application/usecases/create-task.handler";
@@ -42,6 +43,7 @@ import {
 import { WorkspaceMockService } from "./infrastructure/services/workspace.mock.service";
 import { WorkspaceMembershipCacheService } from "./infrastructure/cache/workspace-membership-cache.service";
 import { TaskCommentNotificationPublisher } from "./application/services/task-comment-notification.publisher";
+import { WorkspaceDeletionService } from "./application/services/workspace-deletion.service";
 import { TaskOutboxService } from "./infrastructure/outbox/task-outbox.service";
 import { TaskOutboxProcessor } from "./infrastructure/outbox/task-outbox.processor";
 import {
@@ -151,6 +153,7 @@ const Handlers = [
     TaskCommentController,
     TaskEventController,
     UserEventController,
+    WorkspaceEventController,
   ],
   providers: [
     ...Handlers,
@@ -164,6 +167,7 @@ const Handlers = [
     TaskOutboxService,
     TaskOutboxProcessor,
     TaskCommentNotificationPublisher,
+    WorkspaceDeletionService,
     IdempotencyService,
     AuthGuard,
     WorkspaceValidationGuard,

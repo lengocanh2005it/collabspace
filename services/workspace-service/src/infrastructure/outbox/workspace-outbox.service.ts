@@ -4,6 +4,7 @@ import { randomUUID } from 'crypto';
 import { DataSource, EntityManager } from 'typeorm';
 import { getWorkspaceOutboxConfig } from './workspace-outbox.config';
 import {
+  WORKSPACE_OUTBOX_EVENT_WORKSPACE_DELETED,
   WORKSPACE_OUTBOX_EVENT_WORKSPACE_INVITED,
   WorkspaceOutboxEventEntity,
 } from './entities/workspace-outbox-event.entity';
@@ -55,6 +56,17 @@ export class WorkspaceOutboxService {
   ): Promise<void> {
     await this.enqueueEvent(
       WORKSPACE_OUTBOX_EVENT_WORKSPACE_INVITED,
+      payload,
+      manager,
+    );
+  }
+
+  async enqueueWorkspaceDeleted(
+    payload: Record<string, unknown>,
+    manager?: EntityManager,
+  ): Promise<void> {
+    await this.enqueueEvent(
+      WORKSPACE_OUTBOX_EVENT_WORKSPACE_DELETED,
       payload,
       manager,
     );

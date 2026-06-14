@@ -92,10 +92,12 @@ export class InMemoryUserRepository implements UserRepository {
 
     const userId = randomUUID();
     const storedUser: StoredUser = {
+      createdAt: new Date(),
       deletedAt: null,
       email,
       emailVerified: false,
       isActive: true,
+      lastLoginAt: null,
       passwordHash: await this.hashPassword(password),
       permissions: [],
       role: 'user',
@@ -186,9 +188,11 @@ export class InMemoryUserRepository implements UserRepository {
 
   private toAuthUser(user: StoredUser): AuthUser {
     return {
+      createdAt: user.createdAt,
       email: user.email,
       emailVerified: user.emailVerified,
       isActive: user.isActive,
+      lastLoginAt: user.lastLoginAt,
       permissions: user.permissions,
       role: user.role,
       roles: user.roles,

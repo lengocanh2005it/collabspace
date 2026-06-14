@@ -217,6 +217,17 @@ Hướng dẫn chạy demo: [mvp-demo-scope.md](./mvp-demo-scope.md#demo-story).
 
 ---
 
+## Platform Administration
+
+**Done**
+
+- Shared authorization rule: platform role `admin` or permission `auth.manage`.
+- Auth role/permission management, account activation, session revocation, and `lastLoginAt`.
+- User account/profile aggregation and GDPR anonymization.
+- Workspace global list, transactional soft delete, audited force-join, and task cleanup through `workspace_deleted`.
+- Asynchronous system broadcast with persisted jobs and recipient-level idempotency.
+- Structured audit logs for every admin mutation.
+
 ## Tài liệu liên quan
 
 | Tài liệu | Dùng khi |

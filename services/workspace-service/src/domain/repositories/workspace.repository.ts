@@ -3,6 +3,15 @@ import { Workspace } from '../entities/workspace.entity';
 export const WORKSPACE_REPOSITORY = Symbol('WORKSPACE_REPOSITORY');
 
 export interface IWorkspaceRepository {
+  adminForceDelete(id: string, actorId: string): Promise<void>;
+  adminForceJoin(
+    id: string,
+    userId: string,
+    role: 'admin',
+  ): Promise<void>;
+  adminListAll(): Promise<
+    Array<Workspace & { memberCount: number }>
+  >;
   findById(id: string): Promise<Workspace | null>;
   findByMember(userId: string): Promise<Workspace[]>;
   createWithOwner(data: {

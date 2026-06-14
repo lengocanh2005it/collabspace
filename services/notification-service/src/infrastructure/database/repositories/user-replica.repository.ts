@@ -11,6 +11,18 @@ export class UserReplicaRepository implements IUserReplicaRepository {
     private readonly userReplicaModel: Model<UserReplica>,
   ) {}
 
+  async listActiveUserIdsAsync(skip: number, limit: number): Promise<string[]> {
+    const users = await this.userReplicaModel
+      .find({ isActive: true })
+      .select({ userId: 1, _id: 0 })
+      .sort({ userId: 1 })
+      .skip(skip)
+      .limit(limit)
+      .lean()
+      .exec();
+    return users.map((user) => user.userId);
+  }
+
   async findByIdAsync(userId: string): Promise<UserReplica | null> {
     return this.userReplicaModel.findOne({ userId }).lean().exec();
   }

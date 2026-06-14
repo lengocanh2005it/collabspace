@@ -5,12 +5,6 @@ export type MongoConfig = {
   uri: string;
 };
 
-export type AzureStorageConfig = {
-  connectionString: string;
-  containerName: string;
-  maxFileSize: number;
-};
-
 // 1. Thêm định nghĩa Type cho RabbitMQ
 export type RabbitMqConfig = {
   enabled: boolean;
@@ -36,26 +30,6 @@ export class ConfigurationService {
     }
 
     return { uri };
-  }
-
-  getAzureStorageConfig(): AzureStorageConfig {
-    const connectionString = this.configService.get<string>(
-      "AZURE_STORAGE_CONNECTION_STRING",
-    );
-
-    if (!connectionString) {
-      throw new Error("AZURE_STORAGE_CONNECTION_STRING is missing!");
-    }
-
-    return {
-      connectionString,
-      containerName:
-        this.configService.get<string>("AZURE_STORAGE_CONTAINER_NAME") ??
-        "task-attachments",
-      maxFileSize:
-        Number(this.configService.get<number>("AZURE_STORAGE_MAX_FILE_SIZE")) ||
-        5242880,
-    };
   }
 
   // 2. Thêm hàm lấy cấu hình RabbitMQ

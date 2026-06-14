@@ -41,6 +41,7 @@ export const sampleUserStatus = {
 
 export function createUserProfileRepositoryMock(): UserProfileRepository {
   return {
+    anonymize: jest.fn(),
     findByUserId: jest.fn(),
     findByUsername: jest.fn(),
     findManyByUserIds: jest.fn(),

@@ -38,6 +38,12 @@ import { AuthHealthService } from '@/health/auth-health.service';
 import { MetricsModule } from '@/metrics/metrics.module';
 import { AuthGrpcController } from '@/presentation/grpc/auth.grpc.controller';
 import { AuthController } from '@/presentation/http/auth.controller';
+import { AuthAdminController } from '@/presentation/http/auth-admin.controller';
+import { PlatformAdminGuard } from '@/presentation/http/guards/platform-admin.guard';
+import { ManageAuthAdminUseCase } from '@/application/use-cases/manage-auth-admin.use-case';
+import { AUTH_ADMIN_REPOSITORY } from '@/domain/repositories/auth-admin.repository';
+import { TypeOrmAuthAdminRepository } from '@/infrastructure/repositories/typeorm-auth-admin.repository';
+import { InMemoryAuthAdminRepository } from '@/infrastructure/repositories/in-memory-auth-admin.repository';
 
 @Module({
   imports: [
@@ -52,7 +58,7 @@ import { AuthController } from '@/presentation/http/auth.controller';
     RefreshTokensModule,
     RedisModule,
   ],
-  controllers: [AuthController, AuthGrpcController],
+  controllers: [AuthController, AuthAdminController, AuthGrpcController],
   providers: [
     JwtTokenService,
     UserProfileResolverService,
@@ -68,8 +74,12 @@ import { AuthController } from '@/presentation/http/auth.controller';
     ResendEmailVerificationOtpUseCase,
     VerifyEmailOtpUseCase,
     ChangePasswordUseCase,
+    ManageAuthAdminUseCase,
+    PlatformAdminGuard,
     TypeOrmUserRepository,
     InMemoryUserRepository,
+    TypeOrmAuthAdminRepository,
+    InMemoryAuthAdminRepository,
     TypeOrmRefreshTokenRepository,
     RedisOtpStoreAdapter,
     AccessTokenVerifyLiteCacheService,
@@ -84,6 +94,14 @@ import { AuthController } from '@/presentation/http/auth.controller';
         process.env.DATABASE_URL
           ? typeOrmUserRepository
           : inMemoryUserRepository,
+    },
+    {
+      provide: AUTH_ADMIN_REPOSITORY,
+      inject: [TypeOrmAuthAdminRepository, InMemoryAuthAdminRepository],
+      useFactory: (
+        typeOrmRepository: TypeOrmAuthAdminRepository,
+        inMemoryRepository: InMemoryAuthAdminRepository,
+      ) => (process.env.DATABASE_URL ? typeOrmRepository : inMemoryRepository),
     },
     {
       provide: REFRESH_TOKEN_REPOSITORY,

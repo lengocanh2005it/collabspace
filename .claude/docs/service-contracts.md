@@ -63,6 +63,45 @@ Important identity fields:
 - `username`
 - `workspaceId`
 
+## Platform Admin HTTP Contract
+
+All platform admin routes require a fully verified bearer token and either the
+platform role `admin` or permission `auth.manage`. A workspace membership role
+named `admin` does not grant platform administration. Rejected callers receive
+`403` with code `PLATFORM_ADMIN_REQUIRED`.
+
+Auth service:
+
+- `POST /api/v1/auth/admin/roles`
+- `POST /api/v1/auth/admin/permissions`
+- `POST /api/v1/auth/admin/roles/{roleId}/permissions`
+- `POST /api/v1/auth/admin/users/{userId}/roles`
+- `GET /api/v1/auth/admin/roles`
+- `GET /api/v1/auth/admin/permissions`
+- `GET /api/v1/auth/admin/users`
+- `PATCH /api/v1/auth/admin/users/{id}/active-status`
+- `PUT /api/v1/auth/admin/roles/{id}`
+- `DELETE /api/v1/auth/admin/roles/{id}`
+
+Other services:
+
+- `GET /api/v1/users/admin/all`
+- `DELETE /api/v1/users/admin/{id}`
+- `GET /api/v1/workspaces/admin/all`
+- `DELETE /api/v1/workspaces/admin/{id}`
+- `POST /api/v1/workspaces/admin/{id}/force-join`
+- `POST /api/v1/notifications/admin/broadcast`
+
+Admin status and role changes revoke all refresh tokens for the target user.
+Successful login updates `lastLoginAt`; a timestamp write failure is logged but
+does not invalidate an already-issued session. Mutations emit structured
+`admin_action=...` log entries.
+
+Notification broadcast requires `Idempotency-Key`, supports target `all`, and
+uses a persisted fan-out job with one delivery per job and recipient.
+`user-service` uses `AUTH_SERVICE_HTTP_URL` and
+`AUTH_SERVICE_HTTP_TIMEOUT_MS` for admin aggregation and deactivation.
+
 ## User Service HTTP Routes
 
 Base prefix: `/api/v1`
@@ -259,6 +298,24 @@ Suggested payload:
 ```
 
 ### TASK_ASSIGNED
+
+### WORKSPACE_DELETED
+
+Producer: `workspace-service` transactional outbox.
+
+Consumer: `task-service`.
+
+```json
+{
+  "eventId": "uuid",
+  "occurredAt": "2026-06-14T00:00:00.000Z",
+  "workspaceId": "uuid",
+  "deletedById": "uuid"
+}
+```
+
+The consumer idempotently removes task projections, comments, activity entries,
+and event streams belonging to the deleted workspace.
 
 Producer:
 

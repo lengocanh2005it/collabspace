@@ -331,4 +331,30 @@ export class InMemoryUserProfileRepository implements UserProfileRepository {
   private createUsername(fullName: string): string {
     return fullName.trim().toLowerCase().replace(/\s+/g, '.');
   }
+
+  async anonymize(userId: string): Promise<void> {
+    const profile = await this.findByUserId(userId);
+    if (!profile) {
+      throw new NotFoundException({
+        code: 'USER_PROFILE_NOT_FOUND',
+        message: `Profile for user ${userId} was not found`,
+      });
+    }
+    const now = new Date();
+    const anonymized = new UserProfile(
+      profile.id,
+      profile.userId,
+      `deleted.${userId}`,
+      'Deleted user',
+      'Deleted user',
+      null,
+      null,
+      now,
+      profile.createdAt,
+      now,
+    );
+    this.profiles = this.profiles.map((item) =>
+      item.userId === userId ? anonymized : item,
+    );
+  }
 }

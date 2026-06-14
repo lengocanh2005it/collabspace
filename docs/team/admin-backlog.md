@@ -1,5 +1,12 @@
 # Backlog Admin Platform API
 
+> **Implementation update (2026-06-14): Done.** A1-A7, AUTH-1 through
+> AUTH-12, USER-1/2, WS-1/2/3, and NOTIF-1 are implemented. Workspace deletion
+> publishes `workspace_deleted`; broadcasts use persisted jobs and
+> recipient-level deduplication. Focused unit tests and auth, user, task, and
+> notification E2E suites are green. Existing gateway prefix routers already
+> include `/admin/*`, so no separate Traefik route was required.
+
 Tài liệu chốt **phạm vi backend** cho Admin UI (team đã có frontend riêng).  
 **Không** tạo `admin-service` mới — mở rộng 4 service hiện tại + guard dùng chung.
 

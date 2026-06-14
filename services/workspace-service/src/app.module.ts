@@ -37,6 +37,8 @@ import { PROJECT_REPOSITORY } from './domain/repositories/project.repository';
 import { INVITATION_REPOSITORY } from './domain/repositories/invitation.repository';
 import { WORKSPACE_ACTIVITY_REPOSITORY } from './domain/repositories/workspace-activity.repository';
 import { ListInvitationsUseCase } from './application/use-cases/invitation/list-invitations.use-case';
+import { WorkspaceAdminController } from './presentation/http/workspace-admin.controller';
+import { ManageWorkspacesAdminUseCase } from './application/use-cases/workspace/manage-workspaces-admin.use-case';
 
 @Module({
   imports: [
@@ -50,6 +52,7 @@ import { ListInvitationsUseCase } from './application/use-cases/invitation/list-
     HealthController,
     InternalWorkspaceController,
     WorkspaceController,
+    WorkspaceAdminController,
     ProjectController,
     InvitationController,
   ],
@@ -62,6 +65,7 @@ import { ListInvitationsUseCase } from './application/use-cases/invitation/list-
     ListMembersUseCase,
     CheckWorkspaceMembershipUseCase,
     GetWorkspaceActivityUseCase,
+    ManageWorkspacesAdminUseCase,
     CreateProjectUseCase,
     ListProjectsUseCase,
     UpdateProjectUseCase,
