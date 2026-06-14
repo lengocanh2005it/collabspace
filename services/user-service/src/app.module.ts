@@ -29,6 +29,7 @@ import { UsersAdminController } from './presentation/http/users-admin.controller
 import { ManageUsersAdminUseCase } from './application/use-cases/manage-users-admin.use-case';
 import { AuthAdminHttpClient } from './integrations/auth/auth-admin-http.client';
 import { platformAdminAuthProviders } from './integrations/auth/platform-admin-auth.providers';
+import { AuthGuard } from './presentation/http/guards/auth.guard';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { platformAdminAuthProviders } from './integrations/auth/platform-admin-a
   providers: [
     AzureBlobService,
     AuthAdminHttpClient,
+    AuthGuard,
     ManageUsersAdminUseCase,
     ...platformAdminAuthProviders,
     BulkGetUserProfilesUseCase,

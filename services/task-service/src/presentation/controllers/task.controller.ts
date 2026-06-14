@@ -16,6 +16,7 @@ import {
   UploadedFile,
   ParseFilePipe,
   MaxFileSizeValidator,
+  BadRequestException,
 } from "@nestjs/common";
 import {
   ApiBearerAuth,
@@ -44,7 +45,6 @@ import { CreateTaskRequest } from "../dtos/create-task.request";
 import { UpdateTaskDetailsRequest } from "../dtos/update-task-details.request";
 import { ChangeTaskStatusRequest } from "../dtos/change-task-status.request";
 import { AssignTaskRequest } from "../dtos/assign-task.request";
-import { CreateTaskResponse } from "../dtos/create-task.response";
 import type { TaskResponseData } from "../dtos/task.response";
 import { GetTasksResponse } from "../dtos/get-tasks.response";
 import { CreateTaskCommand } from "../../application/commands/create-task.command";
@@ -63,6 +63,7 @@ import { GetTaskActivityQuery } from "../../application/queries/get-task-activit
 import { TaskActivityResponse } from "../dtos/task-activity.response";
 import type { UploadAttachmentResponse } from "../../application/usecases/upload-attachment.handler";
 import { created, ok } from "../common/response/api-response.wrapper";
+import type { ApiResponse } from "../common/response/api-response.interface";
 import { WorkspaceValidationGuard } from "../guards/workspace-validation.guard";
 import { AuthGuard } from "../guards/auth.guard";
 import { IdempotencyService } from "../../infrastructure/idempotency/idempotency.service";
@@ -82,6 +83,30 @@ function assertUploadedFile(file: unknown): asserts file is TaskUploadedFile {
   }
 }
 
+type TaskHealthResponse = { service: string; status: string };
+type CreateTaskBody = { id: string; taskId: string };
+type MessageBody = { message: string };
+type UploadAttachmentBody = {
+  message: string;
+  data: UploadAttachmentResponse;
+};
+
+function replayCachedResponse<T>(
+  body: Record<string, unknown>,
+  requestId?: string,
+): ApiResponse<T> {
+  const cached = body as unknown as ApiResponse<T>;
+
+  return {
+    ...cached,
+    meta: {
+      ...cached.meta,
+      requestId,
+      idempotentReplay: true,
+    },
+  };
+}
+
 @ApiTags("tasks")
 @ApiBearerAuth()
 @Controller("tasks")
@@ -95,7 +120,7 @@ export class TaskController {
 
   @Get("health")
   @HttpCode(200)
-  getHealth() {
+  getHealth(): TaskHealthResponse {
     return { service: "task-service", status: "ok" };
   }
 
@@ -108,7 +133,10 @@ export class TaskController {
     required: false,
     description: "Optional idempotency key (24h replay)",
   })
-  async createTask(@Body() request: CreateTaskRequest, @Req() req: AppRequest) {
+  async createTask(
+    @Body() request: CreateTaskRequest,
+    @Req() req: AppRequest,
+  ): Promise<ApiResponse<CreateTaskBody>> {
     const currentUserId = req.user.id;
     const currentUserName = req.user.name;
     const requestId = getHeaderValue(req.headers, "x-request-id");
@@ -122,10 +150,7 @@ export class TaskController {
       );
 
       if (cached) {
-        return {
-          ...cached.body,
-          meta: { requestId, idempotentReplay: true },
-        };
+        return replayCachedResponse<CreateTaskBody>(cached.body, requestId);
       }
     }
 
@@ -153,7 +178,7 @@ export class TaskController {
         idempotencyKey,
         route,
         201,
-        response,
+        response as unknown as Record<string, unknown>,
       );
     }
 
@@ -183,15 +208,13 @@ export class TaskController {
     @Query("priority") priority?: string,
     @Query("skip") skip?: string,
     @Query("limit") limit?: string,
-  ): Promise<any> {
+  ): Promise<ApiResponse<GetTasksResponse>> {
     const parsedSkip =
       skip != null && !Number.isNaN(Number(skip))
         ? Math.max(0, Number(skip))
         : undefined;
     const parsedLimit =
-      limit != null && !Number.isNaN(Number(limit))
-        ? Number(limit)
-        : undefined;
+      limit != null && !Number.isNaN(Number(limit)) ? Number(limit) : undefined;
 
     const query = new GetTasksQuery(
       workspaceId,
@@ -231,7 +254,7 @@ export class TaskController {
     @Query("workspaceId") workspaceId: string,
     @Req() req: AppRequest,
     @Query("projectId") projectId?: string,
-  ): Promise<any> {
+  ): Promise<ApiResponse<GetTaskBoardResponse>> {
     const query = new GetTaskBoardQuery(workspaceId, projectId);
     const requestId = getHeaderValue(req.headers, "x-request-id");
     const result = await this.queryBus.execute<
@@ -253,7 +276,7 @@ export class TaskController {
   async getTaskById(
     @Param("id") taskId: string,
     @Req() req: AppRequest,
-  ): Promise<any> {
+  ): Promise<ApiResponse<TaskResponseData>> {
     const query = new GetTaskByIdQuery(taskId);
     const requestId = getHeaderValue(req.headers, "x-request-id");
     const result = await this.queryBus.execute<
@@ -276,11 +299,11 @@ export class TaskController {
   @ApiQuery({ name: "offset", required: false, type: Number, example: 0 })
   async getTaskActivity(
     @Param("id") taskId: string,
+    @Req() req: AppRequest,
     @Query("limit") limit?: string,
     @Query("offset") offset?: string,
-    @Req() req?: AppRequest,
-  ): Promise<any> {
-    const requestId = getHeaderValue(req!.headers, "x-request-id");
+  ): Promise<ApiResponse<TaskActivityResponse>> {
+    const requestId = getHeaderValue(req.headers, "x-request-id");
     const query = new GetTaskActivityQuery(
       taskId,
       limit ? Math.min(parseInt(limit, 10), 200) : 50,
@@ -305,7 +328,7 @@ export class TaskController {
     @Param("id") taskId: string,
     @Body() request: UpdateTaskDetailsRequest,
     @Req() req: AppRequest,
-  ): Promise<any> {
+  ): Promise<ApiResponse<MessageBody>> {
     const requestId = getHeaderValue(req.headers, "x-request-id");
     const command = new UpdateTaskDetailsCommand(
       taskId,
@@ -336,7 +359,7 @@ export class TaskController {
     @Param("id") taskId: string,
     @Body() request: ChangeTaskStatusRequest,
     @Req() req: AppRequest,
-  ): Promise<any> {
+  ): Promise<ApiResponse<MessageBody>> {
     const requestId = getHeaderValue(req.headers, "x-request-id");
     const command = new ChangeTaskStatusCommand(taskId, request.status);
 
@@ -363,7 +386,7 @@ export class TaskController {
     @Param("id") taskId: string,
     @Body() request: AssignTaskRequest,
     @Req() req: AppRequest,
-  ): Promise<any> {
+  ): Promise<ApiResponse<MessageBody>> {
     const assignerId = req.user.id;
     const requestId = getHeaderValue(req.headers, "x-request-id");
     const idempotencyKey = getHeaderValue(req.headers, "idempotency-key");
@@ -376,10 +399,7 @@ export class TaskController {
       );
 
       if (cached) {
-        return {
-          ...cached.body,
-          meta: { requestId, idempotentReplay: true },
-        };
+        return replayCachedResponse<MessageBody>(cached.body, requestId);
       }
     }
 
@@ -402,7 +422,7 @@ export class TaskController {
         idempotencyKey,
         route,
         200,
-        response,
+        response as unknown as Record<string, unknown>,
       );
     }
 
@@ -420,7 +440,7 @@ export class TaskController {
   async deleteTask(
     @Param("id") taskId: string,
     @Req() req: AppRequest,
-  ): Promise<any> {
+  ): Promise<ApiResponse<MessageBody>> {
     const requestId = getHeaderValue(req.headers, "x-request-id");
     await this.commandBus.execute(new DeleteTaskCommand(taskId));
 
@@ -459,7 +479,7 @@ export class TaskController {
     )
     file: unknown,
     @Req() req: AppRequest,
-  ): Promise<any> {
+  ): Promise<ApiResponse<UploadAttachmentBody>> {
     assertUploadedFile(file);
 
     const requestId = getHeaderValue(req.headers, "x-request-id");
@@ -492,9 +512,9 @@ export class TaskController {
     @Param("id") taskId: string,
     @Query("fileUrl") fileUrl: string,
     @Req() req: AppRequest,
-  ): Promise<any> {
+  ): Promise<ApiResponse<MessageBody>> {
     if (!fileUrl) {
-      throw new Error("fileUrl query parameter is required");
+      throw new BadRequestException("fileUrl query parameter is required");
     }
 
     const requestId = getHeaderValue(req.headers, "x-request-id");

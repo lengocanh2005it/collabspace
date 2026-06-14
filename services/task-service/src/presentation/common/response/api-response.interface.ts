@@ -6,6 +6,6 @@ export interface ApiResponse<T> {
     timestamp: string;
     requestId?: string;
     errorCode?: string;
-    [key: string]: any;
+    [key: string]: unknown;
   };
 }

@@ -72,6 +72,7 @@ presentation -> application -> domain repository port -> infrastructure reposito
 Layer rules:
 
 - `presentation/http`: controllers and DTOs.
+- Protected HTTP routes: `@UseGuards(AuthGuard)`; current user from `request.user.id`.
 - `presentation/grpc`: gRPC controllers and protobuf mapping.
 - `application/use-cases`: one class per user action/query where practical.
 - `application/dto`: response DTO mapping functions.
@@ -92,14 +93,15 @@ Validation:
 - Global `ValidationPipe` is configured in `app.setup.ts`.
 - DTOs should use `class-validator` and `class-transformer`.
 - Whitelist and forbid non-whitelisted input are enabled.
+- Direct-port dev fallback `X-User-Id` is allowed only when `ALLOW_DEV_IDENTITY_HEADERS=true`.
 
 ## workspace-service Conventions
 
 Architecture style:
 
 ```text
-presentation/http -> application/use-cases -> TypeORM Repository<OrmEntity>
-domain/events/    -> event constants and payload types only
+presentation/http -> application/use-cases -> domain repository ports <- infrastructure repositories
+domain/events     -> event constants and payload types only
 ```
 
 Layer rules:
@@ -107,13 +109,15 @@ Layer rules:
 - `presentation/http`: controllers, `AuthGuard`, `@UserId()` decorator, `internal-workspace.controller.ts`, filters.
 - `application/use-cases/<area>/`: one class per action (`*.use-case.ts`, `execute()`).
 - `application/dto/`: input DTOs with `class-validator`.
+- `domain/repositories/`: port interfaces + Symbol tokens used by use cases.
 - `infrastructure/database/entities/`: `*.orm-entity.ts` with snake_case columns.
+- `infrastructure/repositories/`: TypeORM adapters; keep ORM access here.
 - `domain/events/`: routing keys and event payload types for RabbitMQ.
 
 Rules:
 
-- Do not add repository ports for small features; inject `Repository<OrmEntity>` like existing use cases.
-- Use `manager.transaction()` when multiple tables must commit together.
+- Use cases inject repository ports via `@Inject(SYMBOL)`; do not inject `Repository<OrmEntity>` directly.
+- Transactions live in infrastructure adapters when multiple tables must commit together.
 - Publish events only after successful persistence; include `eventId` and `occurredAt`.
 - Port `8080`; global prefix `api/v1`.
 - Full folder guide: `.claude/docs/service-architecture.md`.
@@ -138,7 +142,7 @@ Layer rules:
 Rules:
 
 - Register every new handler in `app.module.ts` `Handlers` array.
-- Global prefix `api`; put `v1/tasks` (or similar) on `@Controller()`.
+- Global prefix `api/v1`; controllers use `@Controller("tasks")`.
 - Use double-quote style to match existing task-service files.
 - Wrap HTTP responses with `presentation/common/response/` helpers where applicable.
 - Protected routes: `@UseGuards(AuthGuard, WorkspaceValidationGuard)`; workspace S2S via `INTERNAL_SERVICE_TOKEN`.
@@ -164,7 +168,7 @@ Rules:
 
 - Pass `eventId` into `CreateNotificationCommand`; handler must dedupe via `ProcessedEventRepository`.
 - Ack RabbitMQ messages only after successful handler execution.
-- Global prefix `api`; controller `v1/notifications`.
+- Global prefix `api/v1`; controller `notifications`.
 - Protected list/read routes: `@UseGuards(AuthGuard)`; recipient from `request.user.id`.
 - Full folder guide: `.claude/docs/service-architecture.md`.
 
@@ -309,4 +313,3 @@ Docs to consider:
 - Do not let clients supply `userId` for current-user actions.
 - Do not trust raw identity headers from public clients.
 - Do not bypass auth-service verification for protected downstream service endpoints.
-

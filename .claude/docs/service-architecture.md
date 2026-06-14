@@ -27,13 +27,13 @@ Related docs:
 
 ## Quick comparison
 
-| Service | Pattern | DB | Global prefix | API base | Port |
-|---------|---------|-----|---------------|----------|------|
-| auth-service | Clean / hexagonal | Postgres / TypeORM | `api/v1` | `/api/v1/auth` | 3000 |
-| user-service | Clean / hexagonal | Postgres / TypeORM | `api/v1` | `/api/v1/users` | 3000 |
-| workspace-service | Clean Architecture | Postgres / TypeORM | `api/v1` | `/api/v1/workspaces` | **8080** |
-| task-service | Clean + CQRS | Mongo / Mongoose | `api/v1` | `/api/v1/tasks` | 3000 |
-| notification-service | Clean + CQRS (event-driven) | Mongo / Mongoose | `api/v1` | `/api/v1/notifications` | 3000 |
+| Service              | Pattern                     | DB                 | Global prefix | API base                | Port     |
+| -------------------- | --------------------------- | ------------------ | ------------- | ----------------------- | -------- |
+| auth-service         | Clean / hexagonal           | Postgres / TypeORM | `api/v1`      | `/api/v1/auth`          | 3000     |
+| user-service         | Clean / hexagonal           | Postgres / TypeORM | `api/v1`      | `/api/v1/users`         | 3000     |
+| workspace-service    | Clean Architecture          | Postgres / TypeORM | `api/v1`      | `/api/v1/workspaces`    | **8080** |
+| task-service         | Clean + CQRS                | Mongo / Mongoose   | `api/v1`      | `/api/v1/tasks`         | 3000     |
+| notification-service | Clean + CQRS (event-driven) | Mongo / Mongoose   | `api/v1`      | `/api/v1/notifications` | 3000     |
 
 **All five services** use `app.setGlobalPrefix('api/v1')`. Controllers use the resource name directly (e.g. `@Controller('tasks')`, `@Controller('notifications')`) — no `v1/` prefix in controller decorators.
 
@@ -83,16 +83,16 @@ src/
 
 ### Where to add code
 
-| Task | Location |
-|------|----------|
-| New HTTP route | `presentation/http/auth.controller.ts` |
-| New auth action | `application/use-cases/<action>.use-case.ts` |
-| HTTP request DTO | `application/dto/auth-request.dto.ts` |
-| Use-case result type | `application/dto/auth-use-case-results.ts` |
-| Shared JWT/session/OTP | `application/services/` |
+| Task                           | Location                                                         |
+| ------------------------------ | ---------------------------------------------------------------- |
+| New HTTP route                 | `presentation/http/auth.controller.ts`                           |
+| New auth action                | `application/use-cases/<action>.use-case.ts`                     |
+| HTTP request DTO               | `application/dto/auth-request.dto.ts`                            |
+| Use-case result type           | `application/dto/auth-use-case-results.ts`                       |
+| Shared JWT/session/OTP         | `application/services/`                                          |
 | Domain auth user / login rules | `domain/entities/auth-user.ts`, `domain/entities/user.entity.ts` |
-| User/role/password DB | `infrastructure/repositories/typeorm-user.repository.ts` |
-| TypeORM entity | `infrastructure/database/entities/*.orm-entity.ts` |
+| User/role/password DB          | `infrastructure/repositories/typeorm-user.repository.ts`         |
+| TypeORM entity                 | `infrastructure/database/entities/*.orm-entity.ts`               |
 
 ### Conventions
 
@@ -148,18 +148,18 @@ src/
 
 ### Where to add code
 
-| Task | Location |
-|------|----------|
-| HTTP endpoint | `presentation/http/*.controller.ts` |
-| Request DTO | `presentation/http/dto/` |
-| Use case | `application/use-cases/<name>.use-case.ts` |
-| Response shape | `application/dto/` + mapper function |
-| Domain model | `domain/entities/` |
-| Repository contract | `domain/repositories/` + inject token |
-| TypeORM entity | `infrastructure/database/entities/*.orm-entity.ts` |
-| Repository impl | `infrastructure/repositories/` |
-| External client | `integrations/` |
-| Event consumer | `presentation/rabbitmq/` |
+| Task                | Location                                           |
+| ------------------- | -------------------------------------------------- |
+| HTTP endpoint       | `presentation/http/*.controller.ts`                |
+| Request DTO         | `presentation/http/dto/`                           |
+| Use case            | `application/use-cases/<name>.use-case.ts`         |
+| Response shape      | `application/dto/` + mapper function               |
+| Domain model        | `domain/entities/`                                 |
+| Repository contract | `domain/repositories/` + inject token              |
+| TypeORM entity      | `infrastructure/database/entities/*.orm-entity.ts` |
+| Repository impl     | `infrastructure/repositories/`                     |
+| External client     | `integrations/`                                    |
+| Event consumer      | `presentation/rabbitmq/`                           |
 
 Register use cases in `app.module.ts`. Repository binding uses factory: TypeORM when `DATABASE_URL` is set, else in-memory.
 
@@ -167,7 +167,8 @@ Register use cases in `app.module.ts`. Repository binding uses factory: TypeORM 
 
 - Use cases: `@Injectable()`, `execute(...)`, inject `@Inject(USER_PROFILE_REPOSITORY)`
 - Never return ORM entities from controllers
-- `me` routes resolve `userId` from bearer token via `AuthGrpcService`
+- Protected HTTP routes use `AuthGuard` + auth gRPC `VerifyAccessTokenLite`
+- `me` routes resolve `userId` from `request.user.id`, never from request body
 - `POST /users/me/avatar` — multipart `file`; `AzureBlobService` → container `user-avatars` or mock URL without `AZURE_STORAGE_CONNECTION_STRING`
 - Relative imports (no `@/` alias)
 - Update **both** TypeORM and in-memory repos when repository behavior changes
@@ -222,18 +223,18 @@ src/
 
 ### Where to add code
 
-| Task | Location |
-|------|----------|
-| HTTP route | `presentation/http/*controller.ts` |
-| Auth guard / decorator | `presentation/http/guards/`, `decorators/` |
-| Input validation DTO | `application/dto/` |
-| Business action | `application/use-cases/<area>/<action>.use-case.ts` |
-| Domain entity | `domain/entities/` |
-| Repository port | `domain/repositories/<name>.repository.ts` (interface + Symbol) |
-| TypeORM adapter | `infrastructure/repositories/typeorm-<name>.repository.ts` |
-| DB entity (ORM) | `infrastructure/database/entities/*.orm-entity.ts` + migration |
-| Event contract | `domain/events/` |
-| Health | `health/` + `health.controller.ts` |
+| Task                   | Location                                                        |
+| ---------------------- | --------------------------------------------------------------- |
+| HTTP route             | `presentation/http/*controller.ts`                              |
+| Auth guard / decorator | `presentation/http/guards/`, `decorators/`                      |
+| Input validation DTO   | `application/dto/`                                              |
+| Business action        | `application/use-cases/<area>/<action>.use-case.ts`             |
+| Domain entity          | `domain/entities/`                                              |
+| Repository port        | `domain/repositories/<name>.repository.ts` (interface + Symbol) |
+| TypeORM adapter        | `infrastructure/repositories/typeorm-<name>.repository.ts`      |
+| DB entity (ORM)        | `infrastructure/database/entities/*.orm-entity.ts` + migration  |
+| Event contract         | `domain/events/`                                                |
+| Health                 | `health/` + `health.controller.ts`                              |
 
 Register adapters + Symbol bindings in `app.module.ts`.
 
@@ -300,18 +301,18 @@ src/
 
 ### Where to add code
 
-| Task | Location |
-|------|----------|
-| HTTP endpoint | `presentation/controllers/*.controller.ts` |
-| Request/response DTO | `presentation/dtos/` |
-| Write operation | `application/commands/` + `application/usecases/*handler.ts` |
-| Read operation | `application/queries/` + handler |
-| Domain rules | `domain/entities/` (factory methods, getters) |
-| Repository interface | `application/ports/` or `domain/repositories/` |
-| Mongo schema | `infrastructure/persistence/*.schema.ts` |
-| Persistence | `infrastructure/repositories/` + mapper |
-| Publish event | handler after successful save; payload in `domain/events/` |
-| RMQ consumer | `presentation/controllers/internal/` |
+| Task                 | Location                                                     |
+| -------------------- | ------------------------------------------------------------ |
+| HTTP endpoint        | `presentation/controllers/*.controller.ts`                   |
+| Request/response DTO | `presentation/dtos/`                                         |
+| Write operation      | `application/commands/` + `application/usecases/*handler.ts` |
+| Read operation       | `application/queries/` + handler                             |
+| Domain rules         | `domain/entities/` (factory methods, getters)                |
+| Repository interface | `application/ports/` or `domain/repositories/`               |
+| Mongo schema         | `infrastructure/persistence/*.schema.ts`                     |
+| Persistence          | `infrastructure/repositories/` + mapper                      |
+| Publish event        | handler after successful save; payload in `domain/events/`   |
+| RMQ consumer         | `presentation/controllers/internal/`                         |
 
 Add new handlers to the `Handlers` array in `app.module.ts`.
 
@@ -377,15 +378,15 @@ src/
 
 ### Where to add code
 
-| Task | Location |
-|------|----------|
-| New event type | `domain/events/` + `presentation/controllers/internal/*listener*` |
-| Create notification flow | extend `CreateNotificationCommand` / handler or new use-case folder |
-| List/read API | `get-notifications/` or new query handler |
-| Domain entity rules | `domain/entities/` |
-| Dedupe / idempotency | `ProcessedEvent` schema + `tryClaim(eventId)` in handler |
-| Mongo schema | `infrastructure/database/schemas/` |
-| Repository | `domain/repositories/` interface + `infrastructure/database/repositories/` |
+| Task                     | Location                                                                   |
+| ------------------------ | -------------------------------------------------------------------------- |
+| New event type           | `domain/events/` + `presentation/controllers/internal/*listener*`          |
+| Create notification flow | extend `CreateNotificationCommand` / handler or new use-case folder        |
+| List/read API            | `get-notifications/` or new query handler                                  |
+| Domain entity rules      | `domain/entities/`                                                         |
+| Dedupe / idempotency     | `ProcessedEvent` schema + `tryClaim(eventId)` in handler                   |
+| Mongo schema             | `infrastructure/database/schemas/`                                         |
+| Repository               | `domain/repositories/` interface + `infrastructure/database/repositories/` |
 
 Bind repositories with tokens in `app.module.ts` (`NOTIFICATION_REPOSITORY_TOKEN`, etc.).
 
@@ -433,13 +434,13 @@ head -30 services/<service>/src/app.module.ts
 
 ## Cross-service integration map
 
-| From | To | Mechanism |
-|------|-----|-----------|
-| auth-service | user-service | gRPC `CreatePendingProfile`, `GetProfile` |
-| user-service | auth-service | gRPC `VerifyAccessToken` |
-| workspace-service | notification | RabbitMQ `workspace_invited` |
-| task-service | notification | RabbitMQ `task_assigned`, `comment_created` |
-| API gateway | all HTTP services | Traefik routes + forward-auth to auth `/verify` |
+| From              | To                | Mechanism                                       |
+| ----------------- | ----------------- | ----------------------------------------------- |
+| auth-service      | user-service      | gRPC `CreatePendingProfile`, `GetProfile`       |
+| user-service      | auth-service      | gRPC `VerifyAccessToken`                        |
+| workspace-service | notification      | RabbitMQ `workspace_invited`                    |
+| task-service      | notification      | RabbitMQ `task_assigned`, `comment_created`     |
+| API gateway       | all HTTP services | Traefik routes + forward-auth to auth `/verify` |
 
 ---
 

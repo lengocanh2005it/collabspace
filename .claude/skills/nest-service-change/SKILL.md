@@ -5,7 +5,9 @@ description: Implement, refactor, test, or debug CollabSpace NestJS services, es
 
 # Nest Service Change Skill
 
-Use this skill for `services/auth-service` and `services/user-service`.
+Use this skill for NestJS service changes across `services/*`. Auth and user
+have extra clean/hexagonal rules below; workspace, task, and notification should
+follow their service-local `CLAUDE.md` files plus `.claude/rules/<service>.md`.
 
 ## Required Context
 
@@ -75,11 +77,11 @@ When changing PostgreSQL schema:
 
 TypeORM `runMigrations()` on k3s **rejects** class names without a 13-digit JS timestamp suffix. Follow the same pattern as existing migrations in each service.
 
-| Part | Pattern | Example |
-|------|---------|---------|
-| **File** | `{timestamp}-{PascalCase}.ts` | `1718000000001-CreateAuthOutboxEvents.ts` |
-| **Class** | `{PascalCase}{timestamp}` | `CreateAuthOutboxEvents1718000000001` |
-| **`name` property** | same as class | `name = 'CreateAuthOutboxEvents1718000000001'` |
+| Part                | Pattern                       | Example                                        |
+| ------------------- | ----------------------------- | ---------------------------------------------- |
+| **File**            | `{timestamp}-{PascalCase}.ts` | `1718000000001-CreateAuthOutboxEvents.ts`      |
+| **Class**           | `{PascalCase}{timestamp}`     | `CreateAuthOutboxEvents1718000000001`          |
+| **`name` property** | same as class                 | `name = 'CreateAuthOutboxEvents1718000000001'` |
 
 **Do**
 
@@ -89,15 +91,15 @@ TypeORM `runMigrations()` on k3s **rejects** class names without a 13-digit JS t
 
 **Do not**
 
-- `001-create-foo.ts`, `create-foo.ts`, or class `CreateFoo001` — fails on Droplet with *"Migration class name should have a JavaScript timestamp appended"*.
+- `001-create-foo.ts`, `create-foo.ts`, or class `CreateFoo001` — fails on Droplet with _"Migration class name should have a JavaScript timestamp appended"_.
 - Rename a migration file/class after it has run in any shared DB (add a new migration instead).
 
 **Paths**
 
-| Service | Migration folder | k8s migrate command |
-|---------|------------------|---------------------|
-| auth-service | `migrations/` | `node dist/src/migrate.js` |
-| workspace-service | `src/infrastructure/database/migrations/` | `node dist/migrate.js` |
+| Service           | Migration folder                          | k8s migrate command        |
+| ----------------- | ----------------------------------------- | -------------------------- |
+| auth-service      | `migrations/`                             | `node dist/src/migrate.js` |
+| workspace-service | `src/infrastructure/database/migrations/` | `node dist/migrate.js`     |
 
 **user-service** uses ordered SQL files (`migrations/001_*.sql`, `002_*.sql`) — not TypeORM class migrations.
 
@@ -130,20 +132,44 @@ pnpm run build
 pnpm run test
 ```
 
+For workspace-service:
+
+```sh
+cd services/workspace-service
+pnpm run build
+pnpm run test
+```
+
+For task-service:
+
+```sh
+cd services/task-service
+pnpm run build
+pnpm run test
+```
+
+For notification-service:
+
+```sh
+cd services/notification-service
+pnpm run build
+pnpm run test
+```
+
 Run `test:e2e` when changing routing, validation, bootstrap, or auth guards/integration.
 
 ## Docs & skills sync
 
 After code changes, update when **needed** (same PR):
 
-| Change | Update |
-|--------|--------|
-| HTTP/gRPC route or DTO contract | `.claude/docs/service-contracts.md`, `docs/api-routes.md` |
-| New/changed env / secret key | `services/*/.env.example`, `development-workflows.md`; if shared secret → `infrastructure/vault/` seed scripts + `external-secrets.yaml` |
-| Auth/verify behavior | `service-contracts.md`, `services/<service>/CLAUDE.md`, `.claude/rules/<service>.md` |
-| TypeORM migration added/renamed | This skill (Schema Change Checklist), `coding-conventions.md` |
-| Feature status | `docs/features.md`, `docs/mvp-demo-scope.md` |
-| Verify commands changed | This skill or `local-dev-verify/SKILL.md` |
+| Change                          | Update                                                                                                                                   |
+| ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| HTTP/gRPC route or DTO contract | `.claude/docs/service-contracts.md`, `docs/api-routes.md`                                                                                |
+| New/changed env / secret key    | `services/*/.env.example`, `development-workflows.md`; if shared secret → `infrastructure/vault/` seed scripts + `external-secrets.yaml` |
+| Auth/verify behavior            | `service-contracts.md`, `services/<service>/CLAUDE.md`, `.claude/rules/<service>.md`                                                     |
+| TypeORM migration added/renamed | This skill (Schema Change Checklist), `coding-conventions.md`                                                                            |
+| Feature status                  | `docs/features.md`, `docs/mvp-demo-scope.md`                                                                                             |
+| Verify commands changed         | This skill or `local-dev-verify/SKILL.md`                                                                                                |
 
 Skip for internal refactors with no contract impact. Rule: `.claude/rules/docs-and-skills-sync.md`.
 
@@ -156,4 +182,3 @@ Include:
 - Tests/commands run.
 - Any command that could not run and why.
 - **Agent docs + skills updated** (list paths) or explicit "no doc/skill sync required".
-

@@ -4,6 +4,7 @@ export const INVITATION_REPOSITORY = Symbol('INVITATION_REPOSITORY');
 
 export interface IInvitationRepository {
   findById(id: string): Promise<Invitation | null>;
+  findPendingByWorkspace(workspaceId: string): Promise<Invitation[]>;
   createAndPublishInvited(data: {
     workspaceId: string;
     inviterId: string;

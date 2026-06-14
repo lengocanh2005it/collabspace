@@ -28,6 +28,15 @@ export class TypeOrmInvitationRepository implements IInvitationRepository {
     return orm ? this.toDomain(orm) : null;
   }
 
+  async findPendingByWorkspace(workspaceId: string): Promise<Invitation[]> {
+    const orms = await this.repo.find({
+      where: { workspace_id: workspaceId, status: 'pending' },
+      order: { created_at: 'DESC' },
+    });
+
+    return orms.map((orm) => this.toDomain(orm));
+  }
+
   async createAndPublishInvited(data: {
     workspaceId: string;
     inviterId: string;

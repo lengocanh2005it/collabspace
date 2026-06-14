@@ -4,18 +4,23 @@ import {
   Controller,
   ForbiddenException,
   Get,
-  Headers,
   Param,
   Patch,
   Post,
   Query,
   Req,
   Res,
+  UseGuards,
   UseInterceptors,
   UploadedFile,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
 import {
   PaginatedUserSummaryResponseSchemaDto,
   UserPreferencesResponseSchemaDto,
@@ -33,7 +38,6 @@ import { UpdateUserPreferencesUseCase } from '../../application/use-cases/update
 import { UpdateUserProfileUseCase } from '../../application/use-cases/update-user-profile.use-case';
 import { UpdateUserStatusUseCase } from '../../application/use-cases/update-user-status.use-case';
 import { GetUserStatusesUseCase } from '../../application/use-cases/get-user-statuses.use-case';
-import { AuthGrpcService } from '../../integrations/auth/auth-grpc.service';
 import { AzureBlobService } from '../../infrastructure/services/azure-blob.service';
 import { BulkUsersRequestDto } from './dto/bulk-users-request.dto';
 import { ListUsersQueryDto } from './dto/list-users-query.dto';
@@ -47,12 +51,13 @@ import { assertMetricsAccess } from '../../metrics/metrics-access';
 import { MetricsService } from '../../metrics/metrics.service';
 import type { UploadedFile as CustomUploadedFile } from '../../common/types/uploaded-file';
 import { isPlatformAdmin } from '@collabspace/shared';
+import type { AuthenticatedRequest } from './authenticated-request';
+import { AuthGuard } from './guards/auth.guard';
 
 @ApiTags('users')
 @Controller('users')
 export class UsersController {
   constructor(
-    private readonly authGrpcService: AuthGrpcService,
     private readonly userHealthService: UserHealthService,
     private readonly metricsService: MetricsService,
     private readonly azureBlobService: AzureBlobService,
@@ -94,72 +99,72 @@ export class UsersController {
   }
 
   @Get('me')
+  @UseGuards(AuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Current user profile' })
   @ApiOkResponse({ type: UserProfileResponseSchemaDto })
-  async getMe(@Headers('authorization') authorizationHeader?: string) {
-    const identity = await this.requireIdentity(authorizationHeader);
-    return this.getUserProfileUseCase.execute(identity.userId);
+  async getMe(@Req() request: AuthenticatedRequest) {
+    return this.getUserProfileUseCase.execute(request.user.id);
   }
 
   @Patch('me')
+  @UseGuards(AuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update current user profile' })
   @ApiOkResponse({ type: UserProfileResponseSchemaDto })
   async updateMe(
     @Body() body: UpdateCurrentUserProfileDto,
-    @Headers('authorization') authorizationHeader?: string,
+    @Req() request: AuthenticatedRequest,
   ) {
-    const identity = await this.requireIdentity(authorizationHeader);
-    return this.updateUserProfileUseCase.execute(identity.userId, body);
+    return this.updateUserProfileUseCase.execute(request.user.id, body);
   }
 
   @Post('me/avatar')
+  @UseGuards(AuthGuard)
   @UseInterceptors(FileInterceptor('file'))
   async uploadAvatar(
     @UploadedFile() file: CustomUploadedFile,
-    @Headers('authorization') authorizationHeader?: string,
+    @Req() request: AuthenticatedRequest,
   ) {
-    const identity = await this.requireIdentity(authorizationHeader);
     if (!file) {
       throw new BadRequestException('No file provided');
     }
-    
-    const avatarUrl = await this.azureBlobService.uploadAvatar(file, identity.userId);
-    
-    return this.updateUserProfileUseCase.execute(
-      identity.userId,
-      { avatarUrl },
+
+    const avatarUrl = await this.azureBlobService.uploadAvatar(
+      file,
+      request.user.id,
     );
+
+    return this.updateUserProfileUseCase.execute(request.user.id, {
+      avatarUrl,
+    });
   }
 
   @Get('me/preferences')
+  @UseGuards(AuthGuard)
   @ApiOkResponse({ type: UserPreferencesResponseSchemaDto })
-  async getMyPreferences(
-    @Headers('authorization') authorizationHeader?: string,
-  ) {
-    const identity = await this.requireIdentity(authorizationHeader);
-    return this.getUserPreferencesUseCase.execute(identity.userId);
+  async getMyPreferences(@Req() request: AuthenticatedRequest) {
+    return this.getUserPreferencesUseCase.execute(request.user.id);
   }
 
   @Patch('me/preferences')
+  @UseGuards(AuthGuard)
   @ApiOkResponse({ type: UserPreferencesResponseSchemaDto })
   async updateMyPreferences(
     @Body() body: UpdateCurrentUserPreferencesDto,
-    @Headers('authorization') authorizationHeader?: string,
+    @Req() request: AuthenticatedRequest,
   ) {
-    const identity = await this.requireIdentity(authorizationHeader);
-    return this.updateUserPreferencesUseCase.execute(identity.userId, body);
+    return this.updateUserPreferencesUseCase.execute(request.user.id, body);
   }
 
   @Patch('me/status')
+  @UseGuards(AuthGuard)
   @ApiOkResponse({ type: UserStatusResponseSchemaDto })
   async updateMyStatus(
     @Body() body: UpdateCurrentUserStatusDto,
-    @Headers('authorization') authorizationHeader?: string,
+    @Req() request: AuthenticatedRequest,
   ) {
-    const identity = await this.requireIdentity(authorizationHeader);
-    return this.updateUserStatusUseCase.execute(identity.userId, {
+    return this.updateUserStatusUseCase.execute(request.user.id, {
       clearAt: this.parseOptionalDate(body.clearAt),
       emoji: body.emoji,
       lastSeenAt: this.parseOptionalDate(body.lastSeenAt),
@@ -169,37 +174,31 @@ export class UsersController {
   }
 
   @Get('presence')
+  @UseGuards(AuthGuard)
   @ApiOkResponse({ type: UserStatusResponseSchemaDto, isArray: true })
-  async getPresence(
-    @Query() query: PresenceQueryDto,
-    @Headers('authorization') authorizationHeader?: string,
-  ) {
-    await this.requireIdentity(authorizationHeader);
+  async getPresence(@Query() query: PresenceQueryDto) {
     return this.getUserStatusesUseCase.execute(query.userIds);
   }
 
   @Post('bulk')
+  @UseGuards(AuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Bulk fetch profiles by user id (max 100)' })
   @ApiOkResponse({ type: UserProfileResponseSchemaDto, isArray: true })
-  async bulkGetUsers(
-    @Body() body: BulkUsersRequestDto,
-    @Headers('authorization') authorizationHeader?: string,
-  ) {
-    await this.requireIdentity(authorizationHeader);
+  async bulkGetUsers(@Body() body: BulkUsersRequestDto) {
     return this.bulkGetUserProfilesUseCase.execute(body.userIds);
   }
 
   @Get()
+  @UseGuards(AuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'List/search user directory (mentions, assignees)' })
   @ApiOkResponse({ type: PaginatedUserSummaryResponseSchemaDto })
   async listUsers(
     @Query() query: ListUsersQueryDto,
-    @Headers('authorization') authorizationHeader?: string,
+    @Req() request: AuthenticatedRequest,
   ) {
-    const identity = await this.requireIdentity(authorizationHeader);
-    this.assertDirectoryAccess(identity, query.q);
+    this.assertDirectoryAccess(request.user, query.q);
     return this.listUserSummariesUseCase.execute({
       limit: query.limit ?? 20,
       offset: query.offset ?? 0,
@@ -208,13 +207,13 @@ export class UsersController {
   }
 
   @Get('search')
+  @UseGuards(AuthGuard)
   @ApiOkResponse({ type: PaginatedUserSummaryResponseSchemaDto })
   async searchUsers(
     @Query() query: SearchUsersQueryDto,
-    @Headers('authorization') authorizationHeader?: string,
+    @Req() request: AuthenticatedRequest,
   ) {
-    const identity = await this.requireIdentity(authorizationHeader);
-    this.assertDirectoryAccess(identity, query.q);
+    this.assertDirectoryAccess(request.user, query.q);
     return this.listUserSummariesUseCase.execute({
       limit: query.limit ?? 20,
       offset: query.offset ?? 0,
@@ -223,24 +222,18 @@ export class UsersController {
   }
 
   @Get(':id/summary')
+  @UseGuards(AuthGuard)
   @ApiOkResponse({ type: UserSummaryResponseSchemaDto })
-  async getSummary(
-    @Param('id') id: string,
-    @Headers('authorization') authorizationHeader?: string,
-  ) {
-    await this.requireIdentity(authorizationHeader);
+  async getSummary(@Param('id') id: string) {
     return this.getUserSummaryUseCase.execute(id.trim());
   }
 
   @Get(':id')
+  @UseGuards(AuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get profile by user id' })
   @ApiOkResponse({ type: UserProfileResponseSchemaDto })
-  async getById(
-    @Param('id') id: string,
-    @Headers('authorization') authorizationHeader?: string,
-  ) {
-    await this.requireIdentity(authorizationHeader);
+  async getById(@Param('id') id: string) {
     return this.getUserProfileUseCase.execute(id.trim());
   }
 
@@ -263,10 +256,6 @@ export class UsersController {
     }
 
     return date;
-  }
-
-  private async requireIdentity(authorizationHeader?: string) {
-    return this.authGrpcService.verifyAccessTokenLite(authorizationHeader);
   }
 
   private assertDirectoryAccess(

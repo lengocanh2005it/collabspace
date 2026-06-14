@@ -15,10 +15,10 @@ For dependency failures, timeouts, idempotency, and degradation behavior, see `r
 
 Optional on mutating endpoints. When present, the service stores the first successful response for 24 hours and replays it on duplicate requests with the same key and authenticated user.
 
-| Service | Endpoints | Storage |
-|---------|-----------|---------|
+| Service           | Endpoints                                                                | Storage                        |
+| ----------------- | ------------------------------------------------------------------------ | ------------------------------ |
 | workspace-service | `POST /api/v1/workspaces`, `POST /api/v1/workspaces/:workspaceId/invite` | Postgres `idempotency_records` |
-| task-service | `POST /api/v1/tasks`, `PATCH /api/v1/tasks/:id/assignee` | Mongo `idempotency_keys` |
+| task-service      | `POST /api/v1/tasks`, `PATCH /api/v1/tasks/:id/assignee`                 | Mongo `idempotency_keys`       |
 
 Header: `Idempotency-Key: <opaque-string>` (scoped per `X-User-Id` / gateway identity).
 
@@ -122,7 +122,8 @@ Routes:
 
 Behavior notes:
 
-- User-service verifies incoming bearer tokens through auth-service gRPC.
+- Protected user-service HTTP routes use `AuthGuard` and verify incoming bearer tokens through auth-service gRPC `VerifyAccessTokenLite`.
+- Direct-port local testing may use `X-User-Id` only when `ALLOW_DEV_IDENTITY_HEADERS=true`; gateway/client identity headers remain untrusted.
 - `me` always resolves from token identity, not from a user id in the request body.
 - Search/list supports user directory and mention flows.
 - **Directory browse:** `GET /users` and `GET /users/search` require `q` unless caller is platform admin (`403 DIRECTORY_QUERY_REQUIRED`); full list via `GET /users/admin/all`.
@@ -466,4 +467,3 @@ Rules:
 - MVP does not require WebSocket.
 - Notification API should filter by current authenticated user.
 - Event consumer must be idempotent.
-
