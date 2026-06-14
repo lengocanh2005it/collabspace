@@ -1,49 +1,52 @@
-// src/application/usecases/assign-task.handler.ts
-import { CommandHandler, ICommandHandler } from "@nestjs/cqrs";
-import { Inject } from "@nestjs/common";
-import { randomUUID } from "crypto";
-import { AssignTaskCommand } from "../commands/assign-task.command";
-import { ITaskRepository as ITaskRepositoryToken } from "../ports/ITaskRepository";
-import type { ITaskRepository } from "../ports/ITaskRepository";
+import { Inject } from '@nestjs/common';
+import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
+import { randomUUID } from 'node:crypto';
+
+import { AssignTaskCommand } from '../commands/assign-task.command';
+import { ITaskRepository } from '../ports/ITaskRepository';
+
+import type { IUserReplicaRepository } from '../ports/IUserReplicaRepository';
 import {
-  USER_REPLICA_LOOKUP_TOKEN,
-  UserReplicaLookupService,
-} from "../services/user-replica-lookup.service";
-import { TaskId } from "../../domain/value-objects/TaskId";
-import { UserSnapshot } from "../../domain/value-objects/UserSnapshot";
-import { EntityNotFoundException } from "../../domain/exceptions/EntityNotFoundException";
-import { BusinessRuleException } from "../../domain/exceptions/BusinessRuleException";
-import { TaskOutboxService } from "../../infrastructure/outbox/task-outbox.service";
-import type { TaskAssignedEventPayload } from "../../domain/events/task.events";
+  USER_REPLICA_REPOSITORY_TOKEN,
+} from '../ports/IUserReplicaRepository';
+
+import { TaskId } from '../../domain/value-objects/TaskId';
+import { UserSnapshot } from '../../domain/value-objects/UserSnapshot';
+import { EntityNotFoundException } from '../../domain/exceptions/EntityNotFoundException';
+import { BusinessRuleException } from '../../domain/exceptions/BusinessRuleException';
+import { RabbitMqEventsService } from '../../infrastructure/messaging/rabbitmq/rabbitmq-events.service';
 
 @CommandHandler(AssignTaskCommand)
-export class AssignTaskHandler implements ICommandHandler<
-  AssignTaskCommand,
-  void
-> {
+export class AssignTaskHandler
+  implements ICommandHandler<AssignTaskCommand, void>
+{
   constructor(
-    @Inject(ITaskRepositoryToken)
+    @Inject(ITaskRepository)
     private readonly taskRepository: ITaskRepository,
-    @Inject(USER_REPLICA_LOOKUP_TOKEN)
-    private readonly userReplicaLookup: UserReplicaLookupService,
-    private readonly taskOutboxService: TaskOutboxService,
+
+    @Inject(USER_REPLICA_REPOSITORY_TOKEN)
+    private readonly userReplicaRepo: IUserReplicaRepository,
+
+    private readonly rabbitMqEvents: RabbitMqEventsService,
   ) {}
 
   async execute(command: AssignTaskCommand): Promise<void> {
     const taskId = new TaskId(command.taskId);
+
+    // Command-side aggregate loading
     const task = await this.taskRepository.loadAggregateByIdAsync(taskId);
 
     if (!task) {
-      throw new EntityNotFoundException("Task", command.taskId);
+      throw new EntityNotFoundException('Task', command.taskId);
     }
 
-    // 1. Kiểm tra và lấy thông tin Assigner
-    const assignerRecord = await this.userReplicaLookup.findActiveByIdAsync(
+    const assignerRecord = await this.userReplicaRepo.findByIdAsync(
       command.assignerId,
     );
+
     if (!assignerRecord || !assignerRecord.isActive) {
       throw new BusinessRuleException(
-        "Tài khoản người giao task không hợp lệ hoặc đã bị khóa!",
+        'The assigner is invalid or inactive.',
       );
     }
 
@@ -55,25 +58,21 @@ export class AssignTaskHandler implements ICommandHandler<
       assignerRecord.avatarUrl,
     );
 
-    let shouldNotify = false;
     let assigneeSnapshot: UserSnapshot | null = null;
 
-    // 2. Xử lý logic Assign/Unassign
     if (!command.assigneeId) {
       task.unassign();
     } else {
-      // 3. Kiểm tra và lấy thông tin Assignee
-      const assigneeRecord = await this.userReplicaLookup.findActiveByIdAsync(
+      const assigneeRecord = await this.userReplicaRepo.findByIdAsync(
         command.assigneeId,
       );
 
       if (!assigneeRecord || !assigneeRecord.isActive) {
         throw new BusinessRuleException(
-          `Người nhận task không tồn tại hoặc đã bị khóa!`,
+          'The assignee does not exist or is inactive.',
         );
       }
 
-      // 👇 Cập nhật chuẩn 5 tham số
       assigneeSnapshot = UserSnapshot.create(
         assigneeRecord.userId,
         assigneeRecord.email,
@@ -83,30 +82,33 @@ export class AssignTaskHandler implements ICommandHandler<
       );
 
       task.assignTo(command.assigneeId, assigneeSnapshot);
-      shouldNotify = true;
     }
 
     await this.taskRepository.saveAsync(task);
 
-    // 5. Bắn sự kiện sang RabbitMQ
-    if (shouldNotify && assigneeSnapshot) {
-      const occurredAt = new Date().toISOString();
-      const event: TaskAssignedEventPayload = {
-        eventId: randomUUID(),
-        occurredAt,
-        taskId: command.taskId,
-        taskTitle: task.getTitle(),
-        recipientId: assigneeSnapshot.getUserId(),
+    if (assigneeSnapshot) {
+      try {
+        const occurred = new Date().toISOString();
 
-        actorId: assignerSnapshot.getUserId(),
-        actorName: assignerSnapshot.getDisplayName(),
-        actorAvatarUrl: assignerSnapshot.getAvatarUrl() || undefined,
+        await this.rabbitMqEvents.publishTaskAssigned({
+          eventId: randomUUID(),
+          occurredAt: occurred,
 
-        assignedAt: occurredAt,
-        workspaceId: task.getWorkspaceId(),
-      };
+          taskId: command.taskId,
+          taskTitle: task.getTitle(),
+          recipientId: assigneeSnapshot.getUserId(),
 
-      await this.taskOutboxService.enqueueTaskAssigned(event);
+          actorId: assignerSnapshot.getUserId(),
+          actorName: assignerSnapshot.getDisplayName(),
+          actorAvatarUrl:
+            assignerSnapshot.getAvatarUrl() || undefined,
+
+          assignedAt: occurred,
+          workspaceId: task.getWorkspaceId(),
+        });
+      } catch (error: unknown) {
+        console.error('RabbitMQ Publish Error:', error);
+      }
     }
   }
 }
