@@ -16,7 +16,10 @@
     "rootDir": "./src",
     "baseUrl": "./",
     "ignoreDeprecations": "6.0",
+
     "incremental": true,
+    "tsBuildInfoFile": "./dist/.tsbuildinfo",
+
     "skipLibCheck": true,
     "strictNullChecks": true,
     "forceConsistentCasingInFileNames": true,
@@ -24,9 +27,7 @@
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false
   },
-  "include": [
-    "src/**/*"
-  ],
+  "include": ["src/**/*"],
   "exclude": [
     "dist",
     "node_modules",
