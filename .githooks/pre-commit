@@ -1,0 +1,19 @@
+#!/bin/sh
+# .githooks/pre-commit
+# Block the accidental commitment of real .env files containing secrets.
+
+# Check if any staged files are named exactly .env (or ending in /.env)
+if git diff --cached --name-only | grep -E '(^|/)\.env$'; then
+  echo "==================================================================="
+  echo "❌ DEVSECOPS SECURITY ERROR: You are trying to commit a .env file!"
+  echo "==================================================================="
+  echo "Committing real environment variables to Git is a severe security risk."
+  echo "Please unstage the file and commit again:"
+  echo ""
+  echo "  git restore --staged <path-to/.env>"
+  echo ""
+  echo "If you meant to update the template, use .env.example instead."
+  exit 1
+fi
+
+exit 0

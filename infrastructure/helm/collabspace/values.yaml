@@ -24,6 +24,8 @@ global:
     rabbitmqUsername: guest
     rabbitmqPassword: guest
     metricsAuthToken: ""
+    mailUser: ""
+    mailPassword: ""
     # Optional — task attachments + user avatars (mock mode when empty)
     azureStorageConnectionString: ""
   azureStorage:
@@ -437,6 +439,15 @@ apps:
       OUTBOX_ENABLED: "true"
       DATABASE_SYNCHRONIZE: "false"
       ALLOW_DEV_OTP_ENDPOINT: "false"
+      MAIL_HOST: smtp.mailtrap.io
+      MAIL_PORT: "587"
+      MAIL_SECURE: "false"
+      MAIL_IGNORE_TLS: "false"
+      MAIL_FROM: no-reply@collabspace.local
+      AUTH_VERIFY_LITE_CACHE_ENABLED: "true"
+      AUTH_VERIFY_LITE_CACHE_MAX_TTL_SECONDS: "300"
+      OUTBOX_POLL_INTERVAL_MS: "5000"
+      OUTBOX_BATCH_SIZE: "20"
 
   user-service:
     enabled: true
@@ -493,6 +504,8 @@ apps:
       AUTH_SERVICE_GRPC_URL: auth-service:50051
       WORKSPACE_OUTBOX_ENABLED: "true"
       DATABASE_SYNCHRONIZE: "false"
+      WORKSPACE_OUTBOX_POLL_INTERVAL_MS: "2000"
+      WORKSPACE_OUTBOX_BATCH_SIZE: "25"
 
   task-service:
     enabled: true
@@ -517,7 +530,14 @@ apps:
       RABBITMQ_QUEUE: task-service
       WORKSPACE_CLIENT_MODE: http
       WORKSPACE_SERVICE_URL: http://workspace-service:8080
+      WORKSPACE_SERVICE_TIMEOUT_MS: "3000"
+      WORKSPACE_MEMBERSHIP_CACHE_ENABLED: "true"
+      WORKSPACE_MEMBERSHIP_CACHE_TTL_SECONDS: "60"
       TASK_OUTBOX_ENABLED: "true"
+      TASK_OUTBOX_POLL_INTERVAL_MS: "2000"
+      USER_SERVICE_URL: http://user-service:3000
+      USER_SERVICE_TIMEOUT_MS: "3000"
+      USER_REPLICA_FALLBACK_ENABLED: "true"
 
   notification-service:
     enabled: true
@@ -546,3 +566,4 @@ apps:
       REDIS_HOST: redis-master
       WS_ENABLED: "true"
       WS_PATH: /notifications/ws
+      USER_SERVICE_URL: http://user-service:3000
