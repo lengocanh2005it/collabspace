@@ -33,6 +33,7 @@ data:
   AUTH_SERVICE_URL: "http://auth-service:3000"
   USER_SERVICE_URL: "http://user-service:3000"
   WORKSPACE_SERVICE_URL: "http://workspace-service:8080"
+  WORKSPACE_CLIENT_MODE: "http"
   JAEGER_AGENT_HOST: "jaeger"
   JAEGER_AGENT_PORT: "6831"
   LOG_LEVEL: "info"

@@ -182,6 +182,10 @@ const Handlers = [
           return httpClient;
         }
 
+        if (configService.get<string>("NODE_ENV") === "production") {
+          throw new Error('FATAL: Mock workspace service is prohibited in production!');
+        }
+
         return mockClient;
       },
       inject: [ConfigService, WorkspaceMockService, WorkspaceHttpClient],
