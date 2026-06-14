@@ -27,6 +27,7 @@ Khi sửa code mà **ảnh hưởng hành vi, contract, hoặc cách vận hành
 | Port, global prefix, gateway route | `CLAUDE.md`, `api-gateway/`, `README.md` nếu quick start đổi |
 | Pattern lặp lại trong một service | `services/<service>/CLAUDE.md`, `.claude/rules/<service>.md` |
 | Workflow verify / migrate / seed đổi | `.claude/docs/development-workflows.md`, skill `/local-dev-verify` nếu bước verify đổi |
+| Docker/K8s Droplet deploy, rollout, probe, NODE_PATH | `.claude/docs/droplet-vps-operations.md`, `.claude/rules/infrastructure.md`, skill `/local-dev-verify` |
 | Quy trình implement NestJS đổi | `.claude/skills/nest-service-change/SKILL.md` (nếu áp dụng rộng) → chạy `scripts/sync-agent-docs.sh` |
 | Skill workflow đổi (bất kỳ) | `.claude/skills/*/SKILL.md` → `scripts/sync-agent-docs.sh` → `.agents/skills/` |
 | Subagent prompt đổi | `.claude/agents/*.md` + `.codex/agents/*.toml` (cùng PR, sync tay) |

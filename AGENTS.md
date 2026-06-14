@@ -29,6 +29,7 @@ After editing `.claude/skills/`, run `bash scripts/sync-agent-docs.sh` (or `pwsh
 | `docs/resilience-overview.md` | Human-facing resilience summary (Vietnamese) |
 | `.claude/docs/service-contracts.md` | HTTP, gRPC, events, auth headers |
 | `.claude/docs/development-workflows.md` | Docker, migrate, seed, test, troubleshoot |
+| `.claude/docs/droplet-vps-operations.md` | **Droplet VPS** — SSH, CI deploy, probe/NODE_PATH, rollout timeout |
 | `.claude/docs/coding-conventions.md` | NestJS, DTO, TypeORM, test style |
 | `docs/features.md` | Product features and status (canonical) |
 | `docs/api-routes.md` | HTTP route index, gateway headers, internal API rules |

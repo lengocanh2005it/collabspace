@@ -349,6 +349,7 @@ GitHub Actions is the preferred CI/CD path for Droplet deployment:
 - Production Compose overlay: `infrastructure/docker/docker-compose.prod.yml`.
 - DigitalOcean production (k3s + Helm): `docs/deployment-k3s-phases.md`.
 - DigitalOcean Compose legacy: `docs/deployment-digitalocean-droplet.md`.
+- **Droplet VPS troubleshooting (agents):** `.claude/docs/droplet-vps-operations.md` — NODE_PATH, probe mismatch, rollout timeout, monorepo Docker.
 - So sánh phương án DO: `docs/digitalocean-production-options.md`.
 
 Required GitHub Actions secrets for deploy:

@@ -17,6 +17,7 @@ Read before broad changes:
 - Resilience / design for failure: `.claude/docs/resilience.md`
 - Service contracts: `.claude/docs/service-contracts.md`
 - Workflows: `.claude/docs/development-workflows.md`
+- **Droplet VPS ops:** `.claude/docs/droplet-vps-operations.md`
 - Conventions: `.claude/docs/coding-conventions.md`
 - Product features: `docs/features.md`
 - API routes & gateway: `docs/api-routes.md`

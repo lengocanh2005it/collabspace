@@ -14,6 +14,8 @@ Route chi tiết từng endpoint: [`api-routes.md`](./api-routes.md) · Observab
 | **Protocol** | HTTP (HTTPS — Phase 5, chưa bật) |
 | **SSH** | `ssh root@167.172.77.110` |
 
+**Agents:** troubleshooting deploy/rollout/probe trên VPS → [`.claude/docs/droplet-vps-operations.md`](../.claude/docs/droplet-vps-operations.md)
+
 ---
 
 ## API Gateway

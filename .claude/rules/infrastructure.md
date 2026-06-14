@@ -16,3 +16,5 @@ paths:
 - **HashiCorp Vault:** `infrastructure/vault/` — local `docker-compose.vault.yml`; K8s ESO manifests; đổi KV key → cập nhật seed scripts + `external-secrets.yaml` + `infrastructure/vault/README.md`.
 - Helm: `global.externalSecrets.enabled` + `global.secrets.serviceJwtSecret` khi không dùng ESO.
 - Health endpoints phải ổn định — Docker/k8s/load tests phụ thuộc chúng.
+- **Droplet k3s:** global prefix `/api/v1`; Helm probe paths phải khớp app; `NODE_PATH` trong ConfigMap + Dockerfile cho monorepo workspace — xem `.claude/docs/droplet-vps-operations.md`.
+- `Dockerfile.service`: `--ignore-scripts` khi `pnpm install`; build `shared` + `nest-auth`; copy `packages/*/node_modules` vào runner.
