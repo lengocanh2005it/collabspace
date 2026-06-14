@@ -57,6 +57,8 @@ export function toBoolean(
 /** Build glob for TypeORM migrations next to compiled migrate output. */
 export function migrationsGlobFromMigrateDir(migrateDirname: string): string {
   const migrationsDir = join(migrateDirname, '..', 'migrations');
-  const runningFromSource = basename(migrateDirname) === 'src';
+  const parentDir = basename(join(migrateDirname, '..'));
+  const runningFromSource =
+    basename(migrateDirname) === 'src' && parentDir !== 'dist';
   return join(migrationsDir, runningFromSource ? '*.{ts,js}' : '*.js');
 }
