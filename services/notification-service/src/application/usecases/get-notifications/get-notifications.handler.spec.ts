@@ -5,6 +5,13 @@ import { Notification } from "../../../domain/entities/Notification";
 import { NotificationType } from "../../../domain/value-objects/NotificationType";
 import { NotificationStatus } from "../../../domain/value-objects/NotificationStatus";
 import { UserReplicaLookupService } from "../../services/user-replica-lookup.service";
+import { NotificationCountCacheService } from "../../../infrastructure/cache/notification-count-cache.service";
+
+const noopCountCache = {
+  getUnreadCount: jest.fn().mockResolvedValue(null),
+  setUnreadCount: jest.fn().mockResolvedValue(undefined),
+  invalidateUnreadCount: jest.fn().mockResolvedValue(undefined),
+} as unknown as NotificationCountCacheService;
 
 describe("GetNotificationsHandler", () => {
   let handler: GetNotificationsHandler;
@@ -47,6 +54,7 @@ describe("GetNotificationsHandler", () => {
     handler = new GetNotificationsHandler(
       mockRepository,
       mockUserReplicaLookup as UserReplicaLookupService,
+      noopCountCache,
     );
   });
 

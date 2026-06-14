@@ -11,6 +11,7 @@ import {
   type IProcessedEventRepository,
   PROCESSED_EVENT_REPOSITORY_TOKEN,
 } from "../../../domain/repositories/IProcessedEventRepository";
+import { NotificationCountCacheService } from "../../../infrastructure/cache/notification-count-cache.service";
 
 export interface CreateNotificationResponse {
   notificationId: string;
@@ -27,6 +28,7 @@ export class CreateNotificationHandler implements ICommandHandler<
     private readonly notificationRepository: INotificationRepository,
     @Inject(PROCESSED_EVENT_REPOSITORY_TOKEN)
     private readonly processedEventRepository: IProcessedEventRepository,
+    private readonly countCache: NotificationCountCacheService,
   ) {}
 
   async execute(
@@ -45,7 +47,6 @@ export class CreateNotificationHandler implements ICommandHandler<
       }
     }
 
-    // Step 1: Create notification entity with validation
     const notification = Notification.create(
       command.recipientId,
       command.actorId,
@@ -57,11 +58,12 @@ export class CreateNotificationHandler implements ICommandHandler<
       command.metadata,
     );
 
-    // Step 2: Persist notification to database
     const savedNotificationId =
       await this.notificationRepository.createAsync(notification);
 
-    // Step 3: Return response
+    // New unread notification — bust the cached count
+    await this.countCache.invalidateUnreadCount(command.recipientId);
+
     return {
       notificationId: savedNotificationId,
       message: "Notification created successfully",

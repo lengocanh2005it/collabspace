@@ -13,6 +13,8 @@ import { UpdateUserStatusUseCase } from './application/use-cases/update-user-sta
 import { VerifyUserProfileEmailUseCase } from './application/use-cases/verify-user-profile-email.use-case';
 import { USER_PROFILE_REPOSITORY } from './domain/repositories/user-profile.repository';
 import { ConfigurationModule } from './configuration/configuration.module';
+import { RedisModule } from './infrastructure/cache/redis.module';
+import { UserProfileCacheService } from './infrastructure/cache/user-profile-cache.service';
 import { DatabaseModule } from './infrastructure/database/database.module';
 import { RabbitMqModule } from './infrastructure/messaging/rabbitmq/rabbitmq.module';
 import { AuthModule } from './integrations/auth/auth.module';
@@ -36,6 +38,7 @@ import { AuthGuard } from './presentation/http/guards/auth.guard';
     ConfigurationModule,
     MetricsModule,
     AuthModule,
+    RedisModule,
     DatabaseModule,
     RabbitMqModule,
   ],
@@ -48,6 +51,7 @@ import { AuthGuard } from './presentation/http/guards/auth.guard';
   ],
   providers: [
     AzureBlobService,
+    UserProfileCacheService,
     AuthAdminHttpClient,
     AuthGuard,
     ManageUsersAdminUseCase,

@@ -4,6 +4,8 @@ import { MongooseModule } from "@nestjs/mongoose";
 import { CqrsModule } from "@nestjs/cqrs";
 
 import { ConfigurationModule } from "./configuration/configuartion.module";
+import { RedisModule } from "./infrastructure/cache/redis.module";
+import { NotificationCountCacheService } from "./infrastructure/cache/notification-count-cache.service";
 import { ConfigurationService } from "./configuration/configuration.service";
 import { TaskEventController } from "./presentation/controllers/internal/task-assign-event-listener.controller";
 import { CommentEventListenerController } from "./presentation/controllers/internal/task-comment-event-listener.controller";
@@ -68,6 +70,7 @@ const Handlers = [
     ConfigurationModule,
     MetricsModule,
     AuthModule,
+    RedisModule,
     ConfigModule.forRoot({ isGlobal: true }),
     CqrsModule,
     MongooseModule.forRootAsync({
@@ -95,6 +98,7 @@ const Handlers = [
   providers: [
     ...Handlers,
     NotificationHealthService,
+    NotificationCountCacheService,
     AuthGuard,
     UserProfileHttpClient,
     UserReplicaLookupService,

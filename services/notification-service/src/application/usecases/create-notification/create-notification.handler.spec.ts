@@ -3,6 +3,11 @@ import { CreateNotificationCommand } from "./create-notification.command";
 import { INotificationRepository } from "../../../domain/repositories/INotificationRepository";
 import { IProcessedEventRepository } from "../../../domain/repositories/IProcessedEventRepository";
 import { NotificationType } from "../../../domain/value-objects/NotificationType";
+import { NotificationCountCacheService } from "../../../infrastructure/cache/notification-count-cache.service";
+
+const noopCountCache = {
+  invalidateUnreadCount: jest.fn().mockResolvedValue(undefined),
+} as unknown as NotificationCountCacheService;
 
 describe("CreateNotificationHandler", () => {
   let handler: CreateNotificationHandler;
@@ -26,6 +31,7 @@ describe("CreateNotificationHandler", () => {
     handler = new CreateNotificationHandler(
       mockRepository,
       mockProcessedEventRepository,
+      noopCountCache,
     );
   });
 

@@ -17,6 +17,7 @@ import {
 import { UserProfileOrmEntity } from '../database/entities/user-profile.orm-entity';
 import { UserPreferencesOrmEntity } from '../database/entities/user-preferences.orm-entity';
 import { UserStatusOrmEntity } from '../database/entities/user-status.orm-entity';
+import { UserProfileCacheService } from '../cache/user-profile-cache.service';
 
 @Injectable()
 export class TypeOrmUserProfileRepository implements UserProfileRepository {
@@ -27,20 +28,17 @@ export class TypeOrmUserProfileRepository implements UserProfileRepository {
     private readonly preferencesRepository: Repository<UserPreferencesOrmEntity>,
     @InjectRepository(UserStatusOrmEntity)
     private readonly statusRepository: Repository<UserStatusOrmEntity>,
+    private readonly cache: UserProfileCacheService,
   ) {}
 
   async findByUserId(userId: string): Promise<UserProfile | null> {
-    const profile = await this.repository.findOne({
-      where: {
-        userId,
-      },
-    });
+    const cached = await this.cache.getProfile(userId);
+    if (cached !== undefined) return cached;
 
-    if (!profile) {
-      return null;
-    }
-
-    return this.toDomainProfile(profile);
+    const profile = await this.repository.findOne({ where: { userId } });
+    const result = profile ? this.toDomainProfile(profile) : null;
+    if (result) await this.cache.setProfile(userId, result);
+    return result;
   }
 
   async findByUsername(username: string): Promise<UserProfile | null> {
@@ -58,28 +56,33 @@ export class TypeOrmUserProfileRepository implements UserProfileRepository {
   }
 
   async findManyByUserIds(userIds: string[]): Promise<UserProfile[]> {
-    if (userIds.length === 0) {
-      return [];
+    if (userIds.length === 0) return [];
+
+    const cached = await this.cache.getManyProfiles(userIds);
+    const missing = userIds.filter((id) => !cached.has(id));
+
+    let dbProfiles: UserProfile[] = [];
+    if (missing.length > 0) {
+      const orms = await this.repository.find({ where: { userId: In(missing) } });
+      dbProfiles = orms.map((p) => this.toDomainProfile(p));
+      await this.cache.setManyProfiles(dbProfiles);
     }
 
-    const profiles = await this.repository.find({
-      where: {
-        userId: In(userIds),
-      },
-    });
-
-    return profiles.map((profile) => this.toDomainProfile(profile));
+    const all = new Map<string, UserProfile>([...cached]);
+    for (const p of dbProfiles) all.set(p.userId, p);
+    return userIds.map((id) => all.get(id)).filter(Boolean) as UserProfile[];
   }
 
   async getPreferences(userId: string): Promise<UserPreferences> {
-    const existingPreferences = await this.preferencesRepository.findOne({
-      where: {
-        userId,
-      },
-    });
+    const cached = await this.cache.getPreferences(userId);
+    if (cached !== undefined && cached !== null) return cached;
+
+    const existingPreferences = await this.preferencesRepository.findOne({ where: { userId } });
 
     if (existingPreferences) {
-      return this.toDomainPreferences(existingPreferences);
+      const result = this.toDomainPreferences(existingPreferences);
+      await this.cache.setPreferences(userId, result);
+      return result;
     }
 
     const defaults = this.preferencesRepository.create({
@@ -97,20 +100,21 @@ export class TypeOrmUserProfileRepository implements UserProfileRepository {
       weekStartsOn: 'monday',
     });
 
-    return this.toDomainPreferences(
-      await this.preferencesRepository.save(defaults),
-    );
+    const result = this.toDomainPreferences(await this.preferencesRepository.save(defaults));
+    await this.cache.setPreferences(userId, result);
+    return result;
   }
 
   async getStatus(userId: string): Promise<UserStatus> {
-    const existingStatus = await this.statusRepository.findOne({
-      where: {
-        userId,
-      },
-    });
+    const cached = await this.cache.getStatus(userId);
+    if (cached !== undefined && cached !== null) return cached;
+
+    const existingStatus = await this.statusRepository.findOne({ where: { userId } });
 
     if (existingStatus) {
-      return this.toDomainStatus(existingStatus);
+      const result = this.toDomainStatus(existingStatus);
+      await this.cache.setStatus(userId, result);
+      return result;
     }
 
     const defaults = this.statusRepository.create({
@@ -123,7 +127,9 @@ export class TypeOrmUserProfileRepository implements UserProfileRepository {
       userId,
     });
 
-    return this.toDomainStatus(await this.statusRepository.save(defaults));
+    const result = this.toDomainStatus(await this.statusRepository.save(defaults));
+    await this.cache.setStatus(userId, result);
+    return result;
   }
 
   async getStatusesByUserIds(userIds: string[]): Promise<UserStatus[]> {
@@ -246,7 +252,9 @@ export class TypeOrmUserProfileRepository implements UserProfileRepository {
     profile.username =
       input.username === undefined ? profile.username : input.username;
 
-    return this.toDomainProfile(await this.repository.save(profile));
+    const result = this.toDomainProfile(await this.repository.save(profile));
+    await this.cache.deleteProfile(userId);
+    return result;
   }
 
   async updatePreferences(
@@ -279,9 +287,9 @@ export class TypeOrmUserProfileRepository implements UserProfileRepository {
     existingPreferences.weekStartsOn =
       input.weekStartsOn ?? existingPreferences.weekStartsOn;
 
-    return this.toDomainPreferences(
-      await this.preferencesRepository.save(existingPreferences),
-    );
+    const result = this.toDomainPreferences(await this.preferencesRepository.save(existingPreferences));
+    await this.cache.deletePreferences(userId);
+    return result;
   }
 
   async updateStatus(
@@ -303,9 +311,9 @@ export class TypeOrmUserProfileRepository implements UserProfileRepository {
         ? existingStatus.statusText
         : input.statusText;
 
-    return this.toDomainStatus(
-      await this.statusRepository.save(existingStatus),
-    );
+    const result = this.toDomainStatus(await this.statusRepository.save(existingStatus));
+    await this.cache.deleteStatus(userId);
+    return result;
   }
 
   private async getPreferencesEntity(
@@ -425,5 +433,6 @@ export class TypeOrmUserProfileRepository implements UserProfileRepository {
     profile.fullName = 'Deleted user';
     profile.username = `deleted.${userId}`;
     await this.repository.save(profile);
+    await this.cache.deleteProfile(userId);
   }
 }

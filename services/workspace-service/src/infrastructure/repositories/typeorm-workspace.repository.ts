@@ -7,6 +7,7 @@ import { WorkspaceOrmEntity } from '../database/entities/workspace.orm-entity';
 import { WorkspaceMemberOrmEntity } from '../database/entities/workspace-member.orm-entity';
 import { ProjectOrmEntity } from '../database/entities/project.orm-entity';
 import { WorkspaceOutboxService } from '../outbox/workspace-outbox.service';
+import { WorkspaceCacheService } from '../cache/workspace-cache.service';
 import { randomUUID } from 'crypto';
 
 @Injectable()
@@ -17,11 +18,17 @@ export class TypeOrmWorkspaceRepository implements IWorkspaceRepository {
     @InjectDataSource()
     private readonly dataSource: DataSource,
     private readonly outboxService: WorkspaceOutboxService,
+    private readonly cache: WorkspaceCacheService,
   ) {}
 
   async findById(id: string): Promise<Workspace | null> {
+    const cached = await this.cache.getWorkspace(id);
+    if (cached !== undefined) return cached;
+
     const orm = await this.repo.findOne({ where: { id } });
-    return orm ? this.toDomain(orm) : null;
+    const result = orm ? this.toDomain(orm) : null;
+    if (result) await this.cache.setWorkspace(result);
+    return result;
   }
 
   async adminListAll(): Promise<Array<Workspace & { memberCount: number }>> {
@@ -84,13 +91,18 @@ export class TypeOrmWorkspaceRepository implements IWorkspaceRepository {
   }
 
   async findByMember(userId: string): Promise<Workspace[]> {
+    const cached = await this.cache.getWorkspaceList(userId);
+    if (cached !== undefined) return cached;
+
     const orms = await this.repo
       .createQueryBuilder('workspace')
       .innerJoin('workspace.members', 'member', 'member.user_id = :userId', {
         userId,
       })
       .getMany();
-    return orms.map((o) => this.toDomain(o));
+    const result = orms.map((o) => this.toDomain(o));
+    await this.cache.setWorkspaceList(userId, result);
+    return result;
   }
 
   async createWithOwner(data: {
@@ -114,7 +126,9 @@ export class TypeOrmWorkspaceRepository implements IWorkspaceRepository {
       });
       await manager.save(member);
 
-      return this.toDomain(saved);
+      const domainWorkspace = this.toDomain(saved);
+      await this.cache.deleteWorkspaceList(data.userId);
+      return domainWorkspace;
     });
   }
 
@@ -127,6 +141,7 @@ export class TypeOrmWorkspaceRepository implements IWorkspaceRepository {
     if (data.name !== undefined) orm.name = data.name;
     if (data.description !== undefined) orm.description = data.description;
     const saved = await this.repo.save(orm);
+    await this.cache.deleteWorkspace(id);
     return this.toDomain(saved);
   }
 

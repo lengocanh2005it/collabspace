@@ -5,6 +5,7 @@ import {
   NOTIFICATION_REPOSITORY_TOKEN,
   type INotificationRepository,
 } from "../../../domain/repositories/INotificationRepository";
+import { NotificationCountCacheService } from "../../../infrastructure/cache/notification-count-cache.service";
 
 @CommandHandler(MarkNotificationReadCommand)
 export class MarkNotificationReadHandler implements ICommandHandler<
@@ -14,6 +15,7 @@ export class MarkNotificationReadHandler implements ICommandHandler<
   constructor(
     @Inject(NOTIFICATION_REPOSITORY_TOKEN)
     private readonly notificationRepository: INotificationRepository,
+    private readonly countCache: NotificationCountCacheService,
   ) {}
 
   async execute(command: MarkNotificationReadCommand): Promise<void> {
@@ -38,6 +40,7 @@ export class MarkNotificationReadHandler implements ICommandHandler<
     if (!notification.isRead()) {
       notification.markAsRead();
       await this.notificationRepository.updateAsync(notification);
+      await this.countCache.invalidateUnreadCount(command.recipientId);
     }
   }
 }

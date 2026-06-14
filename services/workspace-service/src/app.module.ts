@@ -1,5 +1,8 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { DatabaseModule } from './infrastructure/database/database.module';
+import { RedisModule } from './infrastructure/cache/redis.module';
+import { WorkspaceCacheService } from './infrastructure/cache/workspace-cache.service';
 import { IdempotencyService } from './infrastructure/idempotency/idempotency.service';
 import { OutboxModule } from './infrastructure/outbox/outbox.module';
 import { RabbitMqModule } from './infrastructure/messaging/rabbitmq.module';
@@ -43,11 +46,13 @@ import { platformAdminAuthProviders } from './presentation/http/platform-admin-a
 
 @Module({
   imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
     DatabaseModule,
     MetricsModule,
     OutboxModule,
     RabbitMqModule,
     AuthModule,
+    RedisModule,
   ],
   controllers: [
     HealthController,
@@ -76,6 +81,7 @@ import { platformAdminAuthProviders } from './presentation/http/platform-admin-a
     AcceptInvitationUseCase,
     RejectInvitationUseCase,
     // Infrastructure adapters
+    WorkspaceCacheService,
     TypeOrmWorkspaceRepository,
     TypeOrmWorkspaceMemberRepository,
     TypeOrmProjectRepository,

@@ -5,6 +5,7 @@ import {
   NOTIFICATION_REPOSITORY_TOKEN,
   type INotificationRepository,
 } from "../../../domain/repositories/INotificationRepository";
+import { NotificationCountCacheService } from "../../../infrastructure/cache/notification-count-cache.service";
 
 @CommandHandler(MarkAllNotificationsReadCommand)
 export class MarkAllNotificationsReadHandler implements ICommandHandler<
@@ -14,6 +15,7 @@ export class MarkAllNotificationsReadHandler implements ICommandHandler<
   constructor(
     @Inject(NOTIFICATION_REPOSITORY_TOKEN)
     private readonly notificationRepository: INotificationRepository,
+    private readonly countCache: NotificationCountCacheService,
   ) {}
 
   async execute(
@@ -22,6 +24,8 @@ export class MarkAllNotificationsReadHandler implements ICommandHandler<
     const updatedCount = await this.notificationRepository.markAllAsReadAsync(
       command.recipientId,
     );
+
+    await this.countCache.invalidateUnreadCount(command.recipientId);
 
     return { updatedCount };
   }

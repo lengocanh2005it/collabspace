@@ -8,6 +8,7 @@ import {
 } from "@nestjs/common";
 import type { ClientGrpc } from "@nestjs/microservices";
 import { TimeoutError, firstValueFrom, Observable, timeout } from "rxjs";
+import { createHash } from "node:crypto";
 
 export const AUTH_GRPC_CLIENT = "AUTH_GRPC_CLIENT";
 
@@ -60,11 +61,17 @@ export type AuthLiteIdentity = {
   workspaceId?: string;
 };
 
+const LITE_CACHE_TTL_MS = 5_000;
+const LITE_CACHE_MAX = 2_000;
+
+type LiteCacheEntry = { identity: AuthLiteIdentity; expiresAt: number };
+
 @Injectable()
 export class AuthGrpcService implements OnModuleInit {
   private readonly logger = new Logger(AuthGrpcService.name);
   private readonly client: ClientGrpc;
   private authService?: AuthGrpcClient;
+  private readonly liteCache = new Map<string, LiteCacheEntry>();
 
   constructor(@Inject(AUTH_GRPC_CLIENT) client: unknown) {
     this.client = client as ClientGrpc;
@@ -77,9 +84,37 @@ export class AuthGrpcService implements OnModuleInit {
   async verifyAccessTokenLite(
     authorizationHeader?: string,
   ): Promise<AuthLiteIdentity> {
+    const token = authorizationHeader?.trim();
+    if (token) {
+      const cacheKey = createHash("sha256").update(token).digest("hex");
+      const hit = this.liteCache.get(cacheKey);
+      if (hit && hit.expiresAt > Date.now()) {
+        return hit.identity;
+      }
+
+      const response = await this.invokeVerify(
+        (authorization) => this.authService!.verifyAccessTokenLite({ authorization }),
+        token,
+        "VerifyAccessTokenLite",
+      );
+
+      const identity: AuthLiteIdentity = {
+        emailVerified: response.emailVerified,
+        role: response.role,
+        roles: response.roles ?? [],
+        userId: response.userId!,
+        workspaceId: response.workspaceId,
+      };
+
+      if (this.liteCache.size >= LITE_CACHE_MAX) {
+        this.liteCache.delete(this.liteCache.keys().next().value!);
+      }
+      this.liteCache.set(cacheKey, { identity, expiresAt: Date.now() + LITE_CACHE_TTL_MS });
+      return identity;
+    }
+
     const response = await this.invokeVerify(
-      (authorization) =>
-        this.authService!.verifyAccessTokenLite({ authorization }),
+      (authorization) => this.authService!.verifyAccessTokenLite({ authorization }),
       authorizationHeader,
       "VerifyAccessTokenLite",
     );

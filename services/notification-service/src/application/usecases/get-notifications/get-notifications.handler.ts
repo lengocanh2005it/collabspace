@@ -14,6 +14,7 @@ import {
   USER_REPLICA_LOOKUP_TOKEN,
   UserReplicaLookupService,
 } from "../../services/user-replica-lookup.service";
+import { NotificationCountCacheService } from "../../../infrastructure/cache/notification-count-cache.service";
 
 export interface NotificationResponseDto {
   id: string;
@@ -53,6 +54,7 @@ export class GetNotificationsHandler implements IQueryHandler<
     private readonly notificationRepository: INotificationRepository,
     @Inject(USER_REPLICA_LOOKUP_TOKEN)
     private readonly userReplicaLookup: UserReplicaLookupService,
+    private readonly countCache: NotificationCountCacheService,
   ) {}
 
   async execute(
@@ -64,9 +66,7 @@ export class GetNotificationsHandler implements IQueryHandler<
         limit: query.limit,
       }),
       this.notificationRepository.countByRecipientIdAsync(query.recipientId),
-      this.notificationRepository.countUnreadByRecipientIdAsync(
-        query.recipientId,
-      ),
+      this.resolveUnreadCount(query.recipientId),
     ]);
 
     const actorIds = notifications.map((notification) =>
@@ -110,5 +110,14 @@ export class GetNotificationsHandler implements IQueryHandler<
       limit: query.limit,
       unreadCount,
     };
+  }
+
+  private async resolveUnreadCount(recipientId: string): Promise<number> {
+    const cached = await this.countCache.getUnreadCount(recipientId);
+    if (cached !== null) return cached;
+
+    const count = await this.notificationRepository.countUnreadByRecipientIdAsync(recipientId);
+    await this.countCache.setUnreadCount(recipientId, count);
+    return count;
   }
 }
