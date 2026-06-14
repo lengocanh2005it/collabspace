@@ -96,6 +96,7 @@ import { RabbitMqModule } from "./infrastructure/messaging/rabbitmq/rabbitmq.mod
 import { ConfigurationModule } from "./configuration/configuration.module";
 import { MetricsModule } from "./metrics/metrics.module";
 import { AuthModule } from "./integrations/auth/auth.module";
+import { RedisModule } from "./infrastructure/cache/redis.module";
 
 const Handlers = [
   CreateTaskHandler,
@@ -127,6 +128,7 @@ const Handlers = [
     MetricsModule,
     RabbitMqModule,
     AuthModule,
+    RedisModule,
     CqrsModule,
 
     MongooseModule.forRootAsync({

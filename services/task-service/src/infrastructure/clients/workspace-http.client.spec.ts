@@ -1,8 +1,24 @@
 import { ServiceUnavailableException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
+import type { Redis } from "ioredis";
 import { requestIdStorage } from "../../common/http/request-id.context";
 import { WorkspaceHttpClient } from "./workspace-http.client";
 import { WorkspaceMembershipCacheService } from "../cache/workspace-membership-cache.service";
+
+function createMockRedis(): Redis {
+  const store = new Map<string, string>();
+  return {
+    get: jest.fn((key: string) => Promise.resolve(store.get(key) ?? null)),
+    setex: jest.fn((key: string, _ttl: number, value: string) => {
+      store.set(key, value);
+      return Promise.resolve("OK");
+    }),
+    del: jest.fn((key: string) => {
+      store.delete(key);
+      return Promise.resolve(1);
+    }),
+  } as unknown as Redis;
+}
 
 describe("WorkspaceHttpClient", () => {
   const workspaceId = "550e8400-e29b-41d4-a716-446655440000";
@@ -34,7 +50,10 @@ describe("WorkspaceHttpClient", () => {
       }),
     } as unknown as ConfigService;
 
-    const membershipCache = new WorkspaceMembershipCacheService(configService);
+    const membershipCache = new WorkspaceMembershipCacheService(
+      configService,
+      createMockRedis(),
+    );
 
     return new WorkspaceHttpClient(configService, membershipCache);
   }

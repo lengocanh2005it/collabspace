@@ -47,7 +47,7 @@ export class WorkspaceHttpClient implements IWorkspaceClient {
     workspaceId: string,
     userId: string,
   ): Promise<WorkspaceMembershipSnapshot | null> {
-    const cached = this.membershipCache.read(workspaceId, userId);
+    const cached = await this.membershipCache.read(workspaceId, userId);
     if (cached !== undefined) {
       return cached;
     }
@@ -55,7 +55,7 @@ export class WorkspaceHttpClient implements IWorkspaceClient {
     const membership = await this.fetchMembership(workspaceId, userId);
 
     if (!membership) {
-      this.membershipCache.write(workspaceId, userId, null);
+      await this.membershipCache.write(workspaceId, userId, null);
       return null;
     }
 
@@ -63,7 +63,7 @@ export class WorkspaceHttpClient implements IWorkspaceClient {
       isMember: membership.isMember,
       role: membership.role as WorkspaceMember["role"] | null,
     };
-    this.membershipCache.write(workspaceId, userId, snapshot);
+    await this.membershipCache.write(workspaceId, userId, snapshot);
     return snapshot;
   }
 

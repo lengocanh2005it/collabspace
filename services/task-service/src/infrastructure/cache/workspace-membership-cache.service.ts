@@ -1,111 +1,107 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { Inject, Injectable, Logger, Optional } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
+import type { Redis } from "ioredis";
 import type { WorkspaceMembershipSnapshot } from "../../application/ports/IWorkspaceClient";
+import { REDIS_CLIENT } from "./redis-client.token";
 
-type CacheEntry = {
-  value: WorkspaceMembershipSnapshot | null;
-  expiresAt: number;
-};
+const NEGATIVE_SENTINEL = "__null__";
 
 @Injectable()
 export class WorkspaceMembershipCacheService {
   private readonly logger = new Logger(WorkspaceMembershipCacheService.name);
-  private readonly cache = new Map<string, CacheEntry>();
 
-  constructor(private readonly configService: ConfigService) {}
+  constructor(
+    private readonly configService: ConfigService,
+    @Optional() @Inject(REDIS_CLIENT) private readonly redis: Redis | null = null,
+  ) {}
 
-  read(
+  async read(
     workspaceId: string,
     userId: string,
-  ): WorkspaceMembershipSnapshot | null | undefined {
-    if (!this.isEnabled()) {
+  ): Promise<WorkspaceMembershipSnapshot | null | undefined> {
+    if (!this.isEnabled()) return undefined;
+
+    try {
+      const raw = await this.redis!.get(this.cacheKey(workspaceId, userId));
+      if (raw === null) return undefined;
+      if (raw === NEGATIVE_SENTINEL) return null;
+      return JSON.parse(raw) as WorkspaceMembershipSnapshot;
+    } catch (err) {
+      this.logger.warn(
+        "Workspace membership cache read error",
+        err instanceof Error ? err.message : String(err),
+      );
       return undefined;
     }
-
-    const key = this.cacheKey(workspaceId, userId);
-    const entry = this.cache.get(key);
-
-    if (!entry) {
-      return undefined;
-    }
-
-    if (entry.expiresAt <= Date.now()) {
-      this.cache.delete(key);
-      return undefined;
-    }
-
-    return entry.value;
   }
 
-  write(
+  async write(
     workspaceId: string,
     userId: string,
     snapshot: WorkspaceMembershipSnapshot | null,
-  ): void {
-    if (!this.isEnabled()) {
-      return;
-    }
+  ): Promise<void> {
+    if (!this.isEnabled()) return;
 
-    this.evictIfNeeded();
-    this.cache.set(this.cacheKey(workspaceId, userId), {
-      value: snapshot,
-      expiresAt: Date.now() + this.ttlMs(),
-    });
+    const ttl = snapshot === null ? this.negativeTtlSeconds() : this.ttlSeconds();
+    const value = snapshot === null ? NEGATIVE_SENTINEL : JSON.stringify(snapshot);
+
+    try {
+      await this.redis!.setex(this.cacheKey(workspaceId, userId), ttl, value);
+    } catch (err) {
+      this.logger.warn(
+        "Workspace membership cache write error",
+        err instanceof Error ? err.message : String(err),
+      );
+    }
   }
 
-  clear(): void {
-    this.cache.clear();
+  async clear(workspaceId?: string, userId?: string): Promise<void> {
+    if (!this.isEnabled()) return;
+    if (workspaceId && userId) {
+      try {
+        await this.redis!.del(this.cacheKey(workspaceId, userId));
+      } catch (err) {
+        this.logger.warn(
+          "Workspace membership cache clear error",
+          err instanceof Error ? err.message : String(err),
+        );
+      }
+    }
   }
 
   private isEnabled(): boolean {
-    return (
-      this.configService.get<string>("WORKSPACE_MEMBERSHIP_CACHE_ENABLED") !==
+    if (
+      this.configService.get<string>("WORKSPACE_MEMBERSHIP_CACHE_ENABLED") ===
       "false"
-    );
-  }
-
-  private ttlMs(): number {
-    const ttlSeconds = Number(
-      this.configService.get<string>(
-        "WORKSPACE_MEMBERSHIP_CACHE_TTL_SECONDS",
-      ) ?? 60,
-    );
-
-    return Math.max(1, Math.floor(ttlSeconds)) * 1000;
-  }
-
-  private maxEntries(): number {
-    const maxEntries = Number(
-      this.configService.get<string>(
-        "WORKSPACE_MEMBERSHIP_CACHE_MAX_ENTRIES",
-      ) ?? 2000,
-    );
-
-    return Math.max(100, Math.floor(maxEntries));
+    ) {
+      return false;
+    }
+    return this.redis !== null;
   }
 
   private cacheKey(workspaceId: string, userId: string): string {
-    return `${workspaceId}:${userId}`;
+    return `workspace-member:${workspaceId}:${userId}`;
   }
 
-  private evictIfNeeded(): void {
-    const maxEntries = this.maxEntries();
-    if (this.cache.size < maxEntries) {
-      return;
-    }
+  private ttlSeconds(): number {
+    return Math.max(
+      1,
+      Number(
+        this.configService.get<string>(
+          "WORKSPACE_MEMBERSHIP_CACHE_TTL_SECONDS",
+        ) ?? 60,
+      ),
+    );
+  }
 
-    const overflow = this.cache.size - maxEntries + 1;
-    const keys = this.cache.keys();
-    for (let index = 0; index < overflow; index += 1) {
-      const next = keys.next();
-      if (next.done) {
-        break;
-      }
-      this.cache.delete(next.value);
-    }
-
-    this.logger.debug(
-      `Evicted ${overflow} workspace membership cache entries (max ${maxEntries})`,
+  private negativeTtlSeconds(): number {
+    return Math.max(
+      1,
+      Number(
+        this.configService.get<string>(
+          "WORKSPACE_MEMBERSHIP_NEGATIVE_CACHE_TTL_SECONDS",
+        ) ?? 15,
+      ),
     );
   }
 }
