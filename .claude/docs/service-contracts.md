@@ -407,7 +407,7 @@ Phase 1 ✅ helpers + unit tests. Services unchanged until Phase 2+.
 | ----- | ----------- |
 | **0** | This contract (no code). |
 | **1** | `@collabspace/shared` helpers + unit tests. |
-| **2** | Inbound verify on workspace-service + user-service; fallback retained. |
+| **2** | Inbound verify on workspace-service + user-service; fallback retained. | ✅ |
 | **3** | Outbound clients (task → workspace/user, notification → user) send Service JWT. |
 | **4** | `.env.example`, Vault/Helm, doc sweep. |
 | **5** | Prod: disable fallback, warn on legacy token use, optional rotation runbook. |

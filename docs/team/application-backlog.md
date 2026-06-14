@@ -65,7 +65,7 @@ Contract: [service-contracts.md § Service JWT](../../.claude/docs/service-contr
 |-------|------|------------|
 | 0 | Contract (claims, scope, env, rollout) | ✅ |
 | 1 | `@collabspace/shared` sign/verify helpers + tests | ✅ |
-| 2 | Inbound: workspace-service + user-service verify JWT + fallback | [ ] |
+| 2 | Inbound: workspace-service + user-service verify JWT + fallback | ✅ |
 | 3 | Outbound: task → workspace/user; notification → user | [ ] |
 | 4 | `.env.example`, Vault/Helm `SERVICE_JWT_SECRET`, doc sweep | [ ] |
 | 5 | Prod: `INTERNAL_SERVICE_TOKEN_FALLBACK_ENABLED=false`, cảnh báo fallback | [ ] |

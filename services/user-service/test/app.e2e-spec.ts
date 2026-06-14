@@ -2,6 +2,11 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import { UnauthorizedException } from '@nestjs/common';
 import request from 'supertest';
+import {
+  SERVICE_IDS,
+  SERVICE_SCOPES,
+  signServiceJwt,
+} from '@collabspace/shared';
 import { App } from 'supertest/types';
 import { AuthGrpcService } from '../src/integrations/auth/auth-grpc.service';
 import { AuthAdminHttpClient } from '../src/integrations/auth/auth-admin-http.client';
@@ -224,6 +229,22 @@ describe('AppController (e2e)', () => {
           ]),
         );
       });
+  });
+
+  it('POST /users/internal/replicas accepts service JWT', () => {
+    process.env.SERVICE_JWT_SECRET = 'test-service-jwt-secret';
+    const token = signServiceJwt({
+      iss: SERVICE_IDS.NOTIFICATION,
+      aud: SERVICE_IDS.USER,
+      scope: [SERVICE_SCOPES.USER_REPLICAS_READ],
+      secret: 'test-service-jwt-secret',
+    });
+
+    return request(app.getHttpServer())
+      .post('/api/v1/users/internal/replicas')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ username: 'jane.doe' })
+      .expect(201);
   });
 
   it('POST /users/internal/replicas rejects missing internal token', () => {

@@ -40,6 +40,16 @@ async function bootstrap() {
     )
     .setVersion('1.0')
     .addBearerAuth()
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'service-jwt',
+        description:
+          'Short-lived service JWT (iss/aud/scope). Preferred for internal S2S HTTP.',
+      },
+      'service-jwt',
+    )
     .addApiKey(
       {
         type: 'apiKey',

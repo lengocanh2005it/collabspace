@@ -6,6 +6,7 @@ import { LookupUserReplicasRequestDto } from './dto/lookup-user-replicas-request
 import { assertInternalServiceAccess } from './internal-service-access';
 
 @ApiTags('users-internal')
+@ApiSecurity('service-jwt')
 @ApiSecurity('internal-service-token')
 @Controller('users/internal')
 export class InternalUsersController {
@@ -16,7 +17,8 @@ export class InternalUsersController {
   @Post('replicas')
   @ApiOperation({
     summary: 'Hydrate user replicas (S2S)',
-    description: 'Requires X-Internal-Service-Token. Not exposed via Traefik.',
+    description:
+      'Requires Service JWT (user.replicas.read, aud=user-service) or migration X-Internal-Service-Token. Not exposed via Traefik.',
   })
   async lookupReplicas(
     @Req() request: Request,

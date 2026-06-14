@@ -9,7 +9,7 @@ paths:
 - Layering: `presentation/http` → `application/use-cases` → `domain/repositories` (ports) ← `infrastructure/repositories` (adapters).
 - Port **8080**; global prefix `api/v1`; routes under `/workspaces`.
 - Public identity: `AuthGuard` + auth gRPC → `@UserId()` from `request.user` — never from body.
-- Internal membership: `internal-workspace.controller.ts` + `assertInternalServiceAccess` — never expose without token.
+- Internal membership: `internal-workspace.controller.ts` + `assertInternalServiceAccess` — Service JWT (preferred) or migration `X-Internal-Service-Token`; env `SERVICE_JWT_SECRET`.
 - Domain entities: `domain/entities/` (plain, no ORM decorators); port interfaces: `domain/repositories/`.
 - TypeORM adapters: `infrastructure/repositories/typeorm-*.repository.ts` — inject `@InjectRepository` here, not in use cases.
 - Use cases inject ports via `@Inject(SYMBOL)` and `import { type Interface, SYMBOL }`.

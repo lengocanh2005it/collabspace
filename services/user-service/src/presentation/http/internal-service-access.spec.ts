@@ -1,0 +1,94 @@
+import {
+  SERVICE_IDS,
+  SERVICE_SCOPES,
+  signServiceJwt,
+} from '@collabspace/shared';
+import { UnauthorizedException } from '@nestjs/common';
+import type { Request } from 'express';
+import { assertInternalServiceAccess } from './internal-service-access';
+
+describe('assertInternalServiceAccess (user-service)', () => {
+  const originalEnv = {
+    internalToken: process.env.INTERNAL_SERVICE_TOKEN,
+    serviceJwtSecret: process.env.SERVICE_JWT_SECRET,
+    fallbackEnabled: process.env.INTERNAL_SERVICE_TOKEN_FALLBACK_ENABLED,
+    nodeEnv: process.env.NODE_ENV,
+  };
+
+  const request = (headers: Record<string, string>): Request =>
+    ({ headers }) as Request;
+
+  beforeEach(() => {
+    process.env.NODE_ENV = 'test';
+    process.env.INTERNAL_SERVICE_TOKEN = 'legacy-internal-token';
+    process.env.SERVICE_JWT_SECRET = 'phase-2-service-jwt-secret';
+    delete process.env.INTERNAL_SERVICE_TOKEN_FALLBACK_ENABLED;
+  });
+
+  afterEach(() => {
+    process.env.INTERNAL_SERVICE_TOKEN = originalEnv.internalToken;
+    process.env.SERVICE_JWT_SECRET = originalEnv.serviceJwtSecret;
+    process.env.INTERNAL_SERVICE_TOKEN_FALLBACK_ENABLED =
+      originalEnv.fallbackEnabled;
+    process.env.NODE_ENV = originalEnv.nodeEnv;
+  });
+
+  it('accepts a valid service JWT from task-service', () => {
+    const token = signServiceJwt({
+      iss: SERVICE_IDS.TASK,
+      aud: SERVICE_IDS.USER,
+      scope: [SERVICE_SCOPES.USER_REPLICAS_READ],
+      secret: process.env.SERVICE_JWT_SECRET!,
+    });
+
+    expect(() =>
+      assertInternalServiceAccess(
+        request({ authorization: `Bearer ${token}` }),
+      ),
+    ).not.toThrow();
+  });
+
+  it('accepts a valid service JWT from notification-service', () => {
+    const token = signServiceJwt({
+      iss: SERVICE_IDS.NOTIFICATION,
+      aud: SERVICE_IDS.USER,
+      scope: [SERVICE_SCOPES.USER_REPLICAS_READ],
+      secret: process.env.SERVICE_JWT_SECRET!,
+    });
+
+    expect(() =>
+      assertInternalServiceAccess(
+        request({ authorization: `Bearer ${token}` }),
+      ),
+    ).not.toThrow();
+  });
+
+  it('accepts legacy X-Internal-Service-Token during migration', () => {
+    expect(() =>
+      assertInternalServiceAccess(
+        request({ 'x-internal-service-token': 'legacy-internal-token' }),
+      ),
+    ).not.toThrow();
+  });
+
+  it('rejects service JWT with wrong scope', () => {
+    const token = signServiceJwt({
+      iss: SERVICE_IDS.TASK,
+      aud: SERVICE_IDS.USER,
+      scope: [SERVICE_SCOPES.WORKSPACE_MEMBERSHIP_READ],
+      secret: process.env.SERVICE_JWT_SECRET!,
+    });
+
+    expect(() =>
+      assertInternalServiceAccess(
+        request({ authorization: `Bearer ${token}` }),
+      ),
+    ).toThrow(
+      expect.objectContaining({
+        response: expect.objectContaining({
+          code: 'SERVICE_JWT_SCOPE_DENIED',
+        }),
+      }),
+    );
+  });
+});
