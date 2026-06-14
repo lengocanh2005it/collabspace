@@ -12,6 +12,7 @@ metadata:
     {{- include "collabspace.appLabels" (dict "appName" $name "root" $root) | nindent 4 }}
 data:
   NODE_ENV: "production"
+  NODE_PATH: {{ printf "/app/node_modules:/app/services/%s/node_modules" $name | quote }}
   PORT: {{ $app.httpPort | quote }}
   LOG_LEVEL: "info"
   TRACING_ENABLED: "false"
