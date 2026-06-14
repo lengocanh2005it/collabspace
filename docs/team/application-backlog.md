@@ -57,6 +57,21 @@ P2  Tech debt (Kafka dead code, console.log, mock paths) →  theo service
 
 **Definition of Done (còn lại):** CI chạy `demo-e2e` trên Docker Compose + Traefik profile mỗi PR/nightly.
 
+### Service JWT — S2S HTTP (slice nhỏ, cross-team)
+
+Contract: [service-contracts.md § Service JWT](../../.claude/docs/service-contracts.md#service-to-service-http-authentication-service-jwt). Không đổi route public; chỉ auth internal HTTP.
+
+| Phase | Việc | Trạng thái |
+|-------|------|------------|
+| 0 | Contract (claims, scope, env, rollout) | ✅ |
+| 1 | `@collabspace/shared` sign/verify helpers + tests | ✅ |
+| 2 | Inbound: workspace-service + user-service verify JWT + fallback | [ ] |
+| 3 | Outbound: task → workspace/user; notification → user | [ ] |
+| 4 | `.env.example`, Vault/Helm `SERVICE_JWT_SECRET`, doc sweep | [ ] |
+| 5 | Prod: `INTERNAL_SERVICE_TOKEN_FALLBACK_ENABLED=false`, cảnh báo fallback | [ ] |
+
+**Owner gợi ý:** Phase 1–2 Tiến + Anh (inbound); Phase 3 Tín (callers); Phase 4 Phú Thọ + Anh (secrets).
+
 ---
 
 ## Lê Ngọc Anh — Auth, User, DO Droplet

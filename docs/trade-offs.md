@@ -137,7 +137,8 @@ Chi tiết: [cross-service-data.md](./cross-service-data.md)
 |-------|--------|-----------|
 | **B1** Service `AuthGuard` + auth gRPC | Không tin `X-User-Id` từ client | Thêm hop gRPC mỗi request; timeout 3s |
 | **B2** Gateway `strip-identity-headers` | Xóa header giả trước forward-auth | Defense in depth; service vẫn verify JWT |
-| **B3** `INTERNAL_SERVICE_TOKEN` S2S | task→workspace membership, replica fallback | Shared secret; chưa mTLS mesh |
+| **B3** `INTERNAL_SERVICE_TOKEN` S2S | task→workspace membership, replica fallback | Shared secret; blast radius lớn; migration fallback |
+| **B3.1** Service JWT (HTTP internal) | Cùng route B3; `Authorization: Bearer` + scope/`iss`/`aud` | Symmetric `SERVICE_JWT_SECRET`; chưa mTLS; contract Phase 0 — [service-contracts.md](../.claude/docs/service-contracts.md#service-to-service-http-authentication-service-jwt) |
 | **B4** NetworkPolicy + gateway block internal paths | Pod chỉ nhận traffic cần thiết | CNI phải hỗ trợ; local Helm có thể `networkPolicies.enabled: false` |
 
 **Chọn:** cả bốn lớp cho demo an toàn hơn mà không đổi contract public API.

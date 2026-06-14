@@ -7,9 +7,18 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "build:watch": "tsc -p tsconfig.json --watch",
-    "lint": "eslint \"src/**/*.ts\""
+    "lint": "eslint \"src/**/*.ts\"",
+    "test": "jest"
+  },
+  "dependencies": {
+    "jsonwebtoken": "^9.0.2"
   },
   "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "@types/jsonwebtoken": "^9.0.9",
+    "@types/node": "^22.10.7",
+    "jest": "^30.0.0",
+    "ts-jest": "^29.2.5",
     "typescript": "^5.3.0"
   }
 }
