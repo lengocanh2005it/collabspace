@@ -46,7 +46,7 @@ pnpm run seed
 - Internal S2S: `GET /workspaces/internal/:id/membership` — Service JWT (`Authorization: Bearer …`, not on Traefik); env `SERVICE_JWT_SECRET`
 - ORM columns snake_case; multi-step writes use transactions
 - Events: `collabspace_exchange` + routing key from `domain/events/`
-- TypeORM migrations: `src/infrastructure/database/migrations/{timestamp}-{PascalCase}.ts` — class `{PascalCase}{timestamp}` (xem `nest-service-change` skill / auth-service `migrations/` cùng quy ước)
+- TypeORM migrations: `migrations/{timestamp}-{PascalCase}.ts` — class `{PascalCase}{timestamp}` (shared runner `@collabspace/typeorm-migrate`; xem `nest-service-change` skill)
 - Tests: `*.use-case.spec.ts` next to use case; inject in-memory stub implementing the port interface
 - Do **not** inject `@InjectRepository(OrmEntity)` in use cases — all DB access goes through port adapters
 

@@ -186,7 +186,7 @@ Rules:
 
 - Prefer additive migrations over destructive changes.
 - Keep migration filenames ordered and descriptive.
-- Update TypeORM entities and SQL migrations together.
+- Update TypeORM entities and class migrations together.
 - If changing seed assumptions, update seed scripts and README demo account docs.
 
 ## Seed Workflow

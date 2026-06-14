@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # Usage:
-#   ./scripts/migrate.sh                       # migrate all services
+#   ./scripts/migrate.sh                       # migrate all Postgres services
 #   ./scripts/migrate.sh auth                  # migrate one service
-#   ./scripts/migrate.sh auth workspace user   # migrate multiple services
+#   ./scripts/typeorm-migrate/create-migration.sh user AddMyColumn
+#   ./scripts/typeorm-migrate/revert-migration.sh user
 
 set -euo pipefail
 

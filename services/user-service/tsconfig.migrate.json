@@ -5,6 +5,11 @@
     "rootDir": ".",
     "declaration": false
   },
-  "include": ["src/migrate.ts", "src/migrate-revert.ts", "src/typeorm.data-source.ts", "migrations/**/*.ts"],
+  "include": [
+    "src/migrate.ts",
+    "src/migrate-revert.ts",
+    "src/typeorm.data-source.ts",
+    "migrations/**/*.ts"
+  ],
   "exclude": ["node_modules", "dist", "src/seed.ts"]
 }

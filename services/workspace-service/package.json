@@ -7,10 +7,12 @@
   "packageManager": "pnpm@9.15.9",
   "license": "UNLICENSED",
   "scripts": {
-    "build": "nest build && tsc -p tsconfig.seed.json",
+    "build": "nest build && tsc -p tsconfig.migrate.json && tsc -p tsconfig.seed.json",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "migrate": "node -r ts-node/register src/migrate.ts",
-    "migrate:prod": "node dist/migrate.js",
+    "migrate:prod": "node dist/src/migrate.js",
+    "migrate:revert": "node -r ts-node/register src/migrate-revert.ts",
+    "migrate:revert:prod": "node dist/src/migrate-revert.js",
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
@@ -27,6 +29,7 @@
   "dependencies": {
     "@collabspace/nest-auth": "workspace:*",
     "@collabspace/shared": "workspace:*",
+    "@collabspace/typeorm-migrate": "workspace:*",
     "@grpc/grpc-js": "^1.14.4",
     "@grpc/proto-loader": "^0.8.1",
     "@nestjs/common": "^11.0.1",

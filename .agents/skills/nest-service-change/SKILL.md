@@ -96,14 +96,15 @@ TypeORM `runMigrations()` on k3s **rejects** class names without a 13-digit JS t
 
 **Paths**
 
-| Service           | Migration folder                          | k8s migrate command        |
-| ----------------- | ----------------------------------------- | -------------------------- |
-| auth-service      | `migrations/`                             | `node dist/src/migrate.js` |
-| workspace-service | `src/infrastructure/database/migrations/` | `node dist/migrate.js`     |
+| Service           | Migration folder | k8s migrate command        |
+| ----------------- | ---------------- | -------------------------- |
+| auth-service      | `migrations/`    | `node dist/src/migrate.js` |
+| user-service      | `migrations/`    | `node dist/src/migrate.js` |
+| workspace-service | `migrations/`    | `node dist/src/migrate.js` |
 
-**user-service** uses ordered SQL files (`migrations/001_*.sql`, `002_*.sql`) — not TypeORM class migrations.
+Shared runner: `@collabspace/typeorm-migrate` (`migrationsTransactionMode: 'each'`). Create: `scripts/typeorm-migrate/create-migration.sh <auth|user|workspace> <Name>`. Revert: `scripts/typeorm-migrate/revert-migration.sh` or `pnpm run migrate:revert`.
 
-Reference: `services/workspace-service/.../1718000000000-CreateWorkspaceActivities.ts`, `services/auth-service/migrations/1718000000001-CreateAuthOutboxEvents.ts`.
+Reference: `services/auth-service/migrations/1718000000001-CreateAuthOutboxEvents.ts`, `services/user-service/migrations/1718000000103-AddSearchIndexes.ts`.
 
 ## gRPC Change Checklist
 

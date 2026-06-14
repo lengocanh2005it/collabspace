@@ -2,7 +2,7 @@ import {
   createMigrateDataSource,
   loadEnvFile,
   migrationsGlobFromMigrateDir,
-  runServiceMigrations,
+  revertLastServiceMigration,
 } from '@collabspace/typeorm-migrate';
 
 loadEnvFile();
@@ -11,8 +11,8 @@ const dataSource = createMigrateDataSource({
   migrationsGlob: migrationsGlobFromMigrateDir(__dirname),
 });
 
-void runServiceMigrations(dataSource).catch((error: unknown) => {
-  console.error('user-service migration failed');
+void revertLastServiceMigration(dataSource).catch((error: unknown) => {
+  console.error('user-service migration revert failed');
   console.error(error);
   process.exitCode = 1;
 });

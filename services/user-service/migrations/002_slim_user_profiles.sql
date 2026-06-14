@@ -1,7 +1,0 @@
-ALTER TABLE profiles DROP COLUMN IF EXISTS cover_url;
-ALTER TABLE profiles DROP COLUMN IF EXISTS job_title;
-ALTER TABLE profiles DROP COLUMN IF EXISTS department;
-ALTER TABLE profiles DROP COLUMN IF EXISTS location;
-ALTER TABLE profiles DROP COLUMN IF EXISTS timezone;
-ALTER TABLE profiles DROP COLUMN IF EXISTS locale;
-ALTER TABLE profiles DROP COLUMN IF EXISTS email_verified;

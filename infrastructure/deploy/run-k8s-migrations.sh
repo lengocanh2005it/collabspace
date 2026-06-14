@@ -43,8 +43,8 @@ fi
 
 declare -A MIGRATE_CMD=(
   [auth-service]="node dist/src/migrate.js"
-  [user-service]="node dist/migrate.js"
-  [workspace-service]="node dist/migrate.js"
+  [user-service]="node dist/src/migrate.js"
+  [workspace-service]="node dist/src/migrate.js"
 )
 
 wait_postgres() {
@@ -58,14 +58,6 @@ apply_migration_job() {
   local cmd="${MIGRATE_CMD[$deployment]}"
   local job_name="migrate-${deployment}-$(date +%s)"
   local pull_secret_block=""
-  local migrate_extra_env_block=""
-
-  # values-prod often sets DATABASE_SYNCHRONIZE=false; workspace schema still relies on entity sync.
-  if [[ "$deployment" == "workspace-service" ]]; then
-    migrate_extra_env_block="          env:
-            - name: DATABASE_SYNCHRONIZE
-              value: \"true\""
-  fi
 
   if kubectl get secret ghcr-credentials -n "$APP_NS" >/dev/null 2>&1; then
     pull_secret_block="      imagePullSecrets:
@@ -100,7 +92,6 @@ ${pull_secret_block}
                 name: ${deployment}-config
             - secretRef:
                 name: ${deployment}-secrets
-${migrate_extra_env_block}
 EOF
 
   if ! kubectl wait --for=condition=complete "job/${job_name}" -n "$APP_NS" --timeout=300s; then

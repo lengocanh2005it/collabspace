@@ -220,7 +220,7 @@ sudo bash infrastructure/deploy/verify-k8s-readiness.sh
 BASE_URL=http://<ip>/api/v1 ./scripts/demo-e2e.sh
 ```
 
-**Migration trong image production:** `pnpm run migrate:prod` (`node dist/.../migrate.js`) — không dùng `ts-node`. SQL migrations (`user-service/migrations/`) được COPY vào image.
+**Migration trong image production:** `pnpm run migrate:prod` (`node dist/src/migrate.js`) — không dùng `ts-node`. TypeORM class migrations (`services/<svc>/migrations/*.ts`) compile vào `dist/migrations/`; runner `@collabspace/typeorm-migrate`.
 
 **Cờ production quan trọng:**
 
