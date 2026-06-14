@@ -21,7 +21,7 @@ Keys in each path:
 | Vault key | Env var(s) | Services |
 |-----------|------------|----------|
 | `jwt_secret` | `JWT_SECRET` | auth, notification |
-| `internal_service_token` | `INTERNAL_SERVICE_TOKEN` | user, workspace, task, notification |
+| `service_jwt_secret` | `SERVICE_JWT_SECRET` | user, workspace, task, notification (S2S HTTP) |
 | `postgres_password` | `POSTGRES_PASSWORD`, `DATABASE_URL` | auth, user, workspace |
 | `mongo_username` / `mongo_password` | `MONGO_URI` | task, notification |
 | `redis_password` | `REDIS_PASSWORD` | auth, notification |
@@ -196,7 +196,7 @@ Helm still renders ConfigMaps (non-secret URLs). Keep Bitnami subchart passwords
 
 | Secret | Notes |
 |--------|--------|
-| `internal_service_token` | Update Vault → ESO refresh → rolling restart all four consumers |
+| `service_jwt_secret` | Update Vault → ESO refresh → rolling restart user/workspace/task/notification |
 | `jwt_secret` | Prefer dual-key signing in auth before revoking old key |
 | DB passwords | Coordinate Vault, Bitnami charts, and rolling restart |
 

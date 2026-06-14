@@ -7,17 +7,7 @@ import {
 import { UnauthorizedException } from '@nestjs/common';
 import type { Request } from 'express';
 
-function isInternalServiceTokenFallbackEnabled(): boolean {
-  const value = process.env.INTERNAL_SERVICE_TOKEN_FALLBACK_ENABLED?.trim();
-
-  if (!value) {
-    return true;
-  }
-
-  return ['1', 'true', 'yes', 'on'].includes(value.toLowerCase());
-}
-
-/** Validates Service JWT or migration X-Internal-Service-Token for S2S replica lookup. */
+/** Validates Service JWT for S2S replica lookup. */
 export function assertInternalServiceAccess(request: Request): void {
   try {
     assertServiceToServiceAccess({
@@ -26,9 +16,6 @@ export function assertInternalServiceAccess(request: Request): void {
       requiredScopes: [SERVICE_SCOPES.USER_REPLICAS_READ],
       allowedIssuers: [SERVICE_IDS.TASK, SERVICE_IDS.NOTIFICATION],
       serviceJwtSecret: process.env.SERVICE_JWT_SECRET,
-      internalServiceToken: process.env.INTERNAL_SERVICE_TOKEN,
-      internalServiceTokenFallbackEnabled:
-        isInternalServiceTokenFallbackEnabled(),
       nodeEnv: process.env.NODE_ENV,
     });
   } catch (error) {

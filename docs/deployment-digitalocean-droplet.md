@@ -93,7 +93,7 @@ Script deploy chạy `infrastructure/vault/scripts/sync-env-from-vault.sh`, tạ
 - `NODE_ENV=production` trên mọi service
 - `ALLOW_DEV_IDENTITY_HEADERS=false` (workspace, task, notification)
 - `DATABASE_SYNCHRONIZE=false` (workspace)
-- `INTERNAL_SERVICE_TOKEN` giống nhau trên user/workspace/task/notification
+- `SERVICE_JWT_SECRET` giống nhau trên user/workspace/task/notification
 - `WORKSPACE_CLIENT_MODE=http` (task-service)
 - `RUN_MIGRATIONS=true` khi deploy thường
 - `RUN_SEED=true` chỉ khi cần nạp dữ liệu demo

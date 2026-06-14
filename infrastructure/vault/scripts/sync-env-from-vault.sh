@@ -24,7 +24,7 @@ KV_PATH="${VAULT_KV_PATH:-collabspace/dev}"
 
 response=$(curl -sfS -H "X-Vault-Token: $VAULT_TOKEN" "$VAULT_ADDR/v1/secret/data/$KV_PATH")
 jwt=$(echo "$response" | jq -r '.data.data.jwt_secret')
-internal=$(echo "$response" | jq -r '.data.data.internal_service_token')
+service_jwt=$(echo "$response" | jq -r '.data.data.service_jwt_secret')
 pg_pass=$(echo "$response" | jq -r '.data.data.postgres_password')
 mongo_user=$(echo "$response" | jq -r '.data.data.mongo_username')
 mongo_pass=$(echo "$response" | jq -r '.data.data.mongo_password')
@@ -69,7 +69,7 @@ set_env_key "$AUTH_ENV" "JWT_SECRET" "$jwt"
 set_env_key "$NOTIF_ENV" "JWT_SECRET" "$jwt"
 
 for f in "$USER_ENV" "$WS_ENV" "$TASK_ENV" "$NOTIF_ENV"; do
-  set_env_key "$f" "INTERNAL_SERVICE_TOKEN" "$internal"
+  set_env_key "$f" "SERVICE_JWT_SECRET" "$service_jwt"
 done
 
 if [[ -n "$metrics" ]]; then

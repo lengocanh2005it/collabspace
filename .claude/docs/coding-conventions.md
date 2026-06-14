@@ -145,7 +145,7 @@ Rules:
 - Global prefix `api/v1`; controllers use `@Controller("tasks")`.
 - Use double-quote style to match existing task-service files.
 - Wrap HTTP responses with `presentation/common/response/` helpers where applicable.
-- Protected routes: `@UseGuards(AuthGuard, WorkspaceValidationGuard)`; workspace S2S via `INTERNAL_SERVICE_TOKEN`.
+- Protected routes: `@UseGuards(AuthGuard, WorkspaceValidationGuard)`; workspace S2S via Service JWT.
 - Full folder guide: `.claude/docs/service-architecture.md`.
 
 ## notification-service Conventions

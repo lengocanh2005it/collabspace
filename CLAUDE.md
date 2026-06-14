@@ -78,7 +78,7 @@ Subagents: `.claude/agents/` (`nest-reviewer`, `mvp-implementer`, `contract-guar
 - Avoid broad rewrites, dependency churn, or formatting unrelated files.
 - Do not invent production secrets. Use `.env.example` patterns and document required variables.
 - **Secrets:** apps read env vars only. **Local:** Vault dev (`docker-compose.vault.yml` → `infrastructure/vault/scripts/`) hoặc `.env` tay. **K8s prod:** Vault + External Secrets Operator → `{app}-secrets`; Helm `global.externalSecrets.enabled: true`. See `infrastructure/vault/README.md`.
-- Shared dev values (manual `.env` or Vault seed): `JWT_SECRET`, `INTERNAL_SERVICE_TOKEN` (same in user/workspace/task/notification) — `infrastructure/docker/.env.example`.
+- Shared dev values (manual `.env` or Vault seed): `JWT_SECRET`, `SERVICE_JWT_SECRET` (same in user/workspace/task/notification) — `infrastructure/docker/.env.example`.
 - `ALLOW_DEV_IDENTITY_HEADERS=true` only in local `.env`, never production.
 
 ## Common Commands

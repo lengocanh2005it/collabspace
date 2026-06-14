@@ -40,17 +40,9 @@ async function bootstrap() {
         scheme: 'bearer',
         bearerFormat: 'service-jwt',
         description:
-          'Short-lived service JWT (iss/aud/scope). Preferred for internal S2S HTTP.',
+          'Short-lived service JWT (iss/aud/scope) for internal S2S HTTP.',
       },
       'service-jwt',
-    )
-    .addApiKey(
-      {
-        type: 'apiKey',
-        in: 'header',
-        name: 'X-Internal-Service-Token',
-      },
-      'internal-service-token',
     )
     .build();
 
@@ -138,7 +130,10 @@ async function bootstrap() {
   await app.listen(port);
 
   Logger.log(`HTTP Server: http://localhost:${port}`, 'Bootstrap');
-  Logger.log(`Swagger Docs: http://localhost:${port}/${swaggerPath}`, 'Bootstrap');
+  Logger.log(
+    `Swagger Docs: http://localhost:${port}/${swaggerPath}`,
+    'Bootstrap',
+  );
 }
 
 bootstrap();

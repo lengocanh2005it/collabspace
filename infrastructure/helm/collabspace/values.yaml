@@ -16,7 +16,7 @@ global:
     vaultKvPath: collabspace/dev
   secrets:
     jwtSecret: change-me-in-production
-    internalServiceToken: change-me-in-production
+    serviceJwtSecret: change-me-in-production
     postgresPassword: postgres
     mongoUsername: admin
     mongoPassword: password

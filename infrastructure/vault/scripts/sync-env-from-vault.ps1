@@ -51,7 +51,7 @@ $response = Invoke-RestMethod -Method Get -Uri $uri -Headers $headers
 $secrets = $response.data.data
 
 $jwt = $secrets.jwt_secret
-$internal = $secrets.internal_service_token
+$serviceJwt = $secrets.service_jwt_secret
 $pgPass = $secrets.postgres_password
 $mongoUser = $secrets.mongo_username
 $mongoPass = $secrets.mongo_password
@@ -127,10 +127,10 @@ foreach ($f in @($authEnv, $userEnv, $wsEnv, $taskEnv, $notifEnv)) {
 Set-EnvKey $authEnv "JWT_SECRET" $jwt
 Set-EnvKey $notifEnv "JWT_SECRET" $jwt
 
-Set-EnvKey $userEnv "INTERNAL_SERVICE_TOKEN" $internal
-Set-EnvKey $wsEnv "INTERNAL_SERVICE_TOKEN" $internal
-Set-EnvKey $taskEnv "INTERNAL_SERVICE_TOKEN" $internal
-Set-EnvKey $notifEnv "INTERNAL_SERVICE_TOKEN" $internal
+Set-EnvKey $userEnv "SERVICE_JWT_SECRET" $serviceJwt
+Set-EnvKey $wsEnv "SERVICE_JWT_SECRET" $serviceJwt
+Set-EnvKey $taskEnv "SERVICE_JWT_SECRET" $serviceJwt
+Set-EnvKey $notifEnv "SERVICE_JWT_SECRET" $serviceJwt
 
 if ($metrics) {
     foreach ($f in @($authEnv, $userEnv, $wsEnv, $taskEnv, $notifEnv)) {

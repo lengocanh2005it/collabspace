@@ -13,14 +13,11 @@ export type AssertServiceToServiceAccessOptions = {
   requiredScopes: string[];
   allowedIssuers: string[];
   serviceJwtSecret?: string;
-  internalServiceToken?: string;
-  /** Default `true` during migration when omitted. */
-  internalServiceTokenFallbackEnabled?: boolean;
   nodeEnv?: string;
 };
 
 export type AssertServiceToServiceAccessResult = {
-  method: 'service-jwt' | 'internal-token' | 'development-bypass';
+  method: 'service-jwt' | 'development-bypass';
   verifiedJwt?: VerifiedServiceJwt;
 };
 
@@ -41,41 +38,13 @@ function isDevelopmentBypassAllowed(
   options: AssertServiceToServiceAccessOptions,
 ): boolean {
   return (
-    options.nodeEnv === 'development' &&
-    !options.serviceJwtSecret?.trim() &&
-    !options.internalServiceToken?.trim()
+    options.nodeEnv === 'development' && !options.serviceJwtSecret?.trim()
   );
 }
 
-function assertInternalServiceToken(
-  options: AssertServiceToServiceAccessOptions,
-): void {
-  const expected = options.internalServiceToken?.trim();
-
-  if (!expected) {
-    if (isDevelopmentBypassAllowed(options)) {
-      return;
-    }
-
-    throw new ServiceAccessDeniedError(
-      'INTERNAL_ACCESS_DENIED',
-      'INTERNAL_SERVICE_TOKEN is not configured',
-    );
-  }
-
-  const token = readHeader(options.headers, 'x-internal-service-token');
-
-  if (token !== expected) {
-    throw new ServiceAccessDeniedError(
-      'INTERNAL_ACCESS_DENIED',
-      'Valid internal service credentials are required',
-    );
-  }
-}
-
 /**
- * Validates inbound S2S HTTP auth: Service JWT first, then legacy internal token.
- * Throws {@link ServiceAccessDeniedError} — map to HTTP 401 in Nest controllers (Phase 2+).
+ * Validates inbound S2S HTTP auth via Service JWT Bearer token.
+ * Throws {@link ServiceAccessDeniedError} — map to HTTP 401 in Nest controllers.
  */
 export function assertServiceToServiceAccess(
   options: AssertServiceToServiceAccessOptions,
@@ -107,24 +76,12 @@ export function assertServiceToServiceAccess(
     };
   }
 
-  const fallbackEnabled =
-    options.internalServiceTokenFallbackEnabled ?? true;
-
-  if (fallbackEnabled) {
-    if (isDevelopmentBypassAllowed(options)) {
-      return { method: 'development-bypass' };
-    }
-
-    assertInternalServiceToken(options);
-    return { method: 'internal-token' };
-  }
-
   if (isDevelopmentBypassAllowed(options)) {
     return { method: 'development-bypass' };
   }
 
   throw new ServiceAccessDeniedError(
     'INTERNAL_ACCESS_DENIED',
-    'Valid internal service credentials are required',
+    'Valid service JWT credentials are required',
   );
 }

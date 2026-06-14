@@ -115,7 +115,7 @@ Tài liệu này là **nguồn chính** mô tả chức năng và mức độ ho
 - Gán assignee — publish event `task_assigned` qua outbox
 - **Xóa task** `DELETE /tasks/:id`
 - Idempotency-Key trên tạo task và gán assignee
-- Kiểm tra membership workspace (internal API + `X-Internal-Service-Token`, không dùng `X-User-Id` S2S)
+- Kiểm tra membership workspace (internal API + Service JWT, không dùng `X-User-Id` S2S)
 - **JWT verification** qua auth gRPC (`AuthGuard`); dev fallback `X-User-Id` khi `ALLOW_DEV_IDENTITY_HEADERS=true`
 - **Event sourcing** cho aggregate `Task` (create, details, status, assign, delete, **attachments**)
 - Upload / xóa attachment — mock Azure khi chưa cấu hình storage; event `TaskAttachmentAdded` / `TaskAttachmentRemoved`

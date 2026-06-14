@@ -156,7 +156,7 @@ Legend: **Current** = observed or likely today; **Target** = required after resi
 | API / flow | Dependency down | Current | Target |
 |------------|-----------------|---------|--------|
 | Protected routes | auth | JWT via `AuthGuard` + auth gRPC; dev-only `ALLOW_DEV_IDENTITY_HEADERS` | Keep **(DONE — Phase B1)** |
-| Internal membership API | task-service | `X-Internal-Service-Token`; not on Traefik | Keep **(DONE — Phase B3–B4)** |
+| Internal membership API | task-service | Service JWT; not on Traefik | Keep **(DONE — Phase B3–B4, B3.1)** |
 | `POST .../invite` | RabbitMQ | Transactional outbox; HTTP succeeds if DB write succeeds | Keep **(DONE — Phase 2)** |
 | `GET .../health/ready` | Postgres | `ready` checks DB ping | Keep **(DONE — Phase 1)** |
 
@@ -165,7 +165,7 @@ Legend: **Current** = observed or likely today; **Target** = required after resi
 | API / flow | Dependency down | Current | Target |
 |------------|-----------------|---------|--------|
 | Protected routes | auth gRPC | `AuthGuard` on task/comment controllers | Keep **(DONE — Phase B1)** |
-| Task mutations | workspace membership | Internal HTTP + `INTERNAL_SERVICE_TOKEN` when `WORKSPACE_CLIENT_MODE=http` | Keep **(DONE — Phase B3)** |
+| Task mutations | workspace membership | Internal HTTP + Service JWT when `WORKSPACE_CLIENT_MODE=http` | Keep **(DONE — Phase B3, B3.1)** |
 | `TASK_ASSIGNED` publish | RabbitMQ | Mongo outbox + processor retries | Keep **(DONE — Phase 2)** |
 | Reads | MongoDB | Fail | `503` |
 

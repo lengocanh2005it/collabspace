@@ -11,7 +11,7 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY packages/shared/package.json packages/shared/package.json
 COPY services/${SERVICE_NAME}/package.json services/${SERVICE_NAME}/package.json
 RUN --mount=type=cache,id=pnpm-ci,target=/root/.local/share/pnpm/store \
-    pnpm install --frozen-lockfile
+    pnpm install --frozen-lockfile --ignore-scripts
 
 # --- Stage 2: Build shared + service ---
 FROM deps AS builder
@@ -31,7 +31,7 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY packages/shared/package.json packages/shared/package.json
 COPY services/${SERVICE_NAME}/package.json services/${SERVICE_NAME}/package.json
 RUN --mount=type=cache,id=pnpm-ci,target=/root/.local/share/pnpm/store \
-    pnpm install --frozen-lockfile --prod
+    pnpm install --frozen-lockfile --prod --ignore-scripts
 
 # --- Stage 4: Production runner ---
 FROM node:20-alpine AS runner

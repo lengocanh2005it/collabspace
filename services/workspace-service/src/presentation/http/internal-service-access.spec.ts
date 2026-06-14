@@ -9,9 +9,7 @@ import { assertInternalServiceAccess } from './internal-service-access';
 
 describe('assertInternalServiceAccess (workspace-service)', () => {
   const originalEnv = {
-    internalToken: process.env.INTERNAL_SERVICE_TOKEN,
     serviceJwtSecret: process.env.SERVICE_JWT_SECRET,
-    fallbackEnabled: process.env.INTERNAL_SERVICE_TOKEN_FALLBACK_ENABLED,
     nodeEnv: process.env.NODE_ENV,
   };
 
@@ -20,16 +18,11 @@ describe('assertInternalServiceAccess (workspace-service)', () => {
 
   beforeEach(() => {
     process.env.NODE_ENV = 'test';
-    process.env.INTERNAL_SERVICE_TOKEN = 'legacy-internal-token';
     process.env.SERVICE_JWT_SECRET = 'phase-2-service-jwt-secret';
-    delete process.env.INTERNAL_SERVICE_TOKEN_FALLBACK_ENABLED;
   });
 
   afterEach(() => {
-    process.env.INTERNAL_SERVICE_TOKEN = originalEnv.internalToken;
     process.env.SERVICE_JWT_SECRET = originalEnv.serviceJwtSecret;
-    process.env.INTERNAL_SERVICE_TOKEN_FALLBACK_ENABLED =
-      originalEnv.fallbackEnabled;
     process.env.NODE_ENV = originalEnv.nodeEnv;
   });
 
@@ -44,14 +37,6 @@ describe('assertInternalServiceAccess (workspace-service)', () => {
     expect(() =>
       assertInternalServiceAccess(
         request({ authorization: `Bearer ${token}` }),
-      ),
-    ).not.toThrow();
-  });
-
-  it('accepts legacy X-Internal-Service-Token during migration', () => {
-    expect(() =>
-      assertInternalServiceAccess(
-        request({ 'x-internal-service-token': 'legacy-internal-token' }),
       ),
     ).not.toThrow();
   });
@@ -77,9 +62,7 @@ describe('assertInternalServiceAccess (workspace-service)', () => {
     );
   });
 
-  it('rejects missing credentials when fallback is disabled', () => {
-    process.env.INTERNAL_SERVICE_TOKEN_FALLBACK_ENABLED = 'false';
-
+  it('rejects missing credentials outside development', () => {
     expect(() => assertInternalServiceAccess(request({}))).toThrow(
       UnauthorizedException,
     );

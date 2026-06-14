@@ -26,7 +26,7 @@ Dùng trước khi expose CollabSpace ra ngoài môi trường local/demo.
 - [x] workspace-service `AuthGuard`: JWT qua auth gRPC; dev-only `X-User-Id` khi `ALLOW_DEV_IDENTITY_HEADERS=true`.
 - [x] task-service + notification-service `AuthGuard`: JWT qua auth gRPC; bỏ mock `user-123` / tin `X-User-Id` thô.
 - [x] Traefik `strip-identity-headers`: xóa header `X-User-*` / role từ client trước `forward-auth`.
-- [x] task-service → workspace-service membership qua `GET /workspaces/internal/.../membership` + `X-Internal-Service-Token`.
+- [x] task-service → workspace-service membership và task/notification → user replica lookup qua internal HTTP + **Service JWT** (`SERVICE_JWT_SECRET` — không còn shared static token).
 - [x] K8s NetworkPolicies: default deny + ingress theo service (task→workspace/user internal, gRPC auth, Traefik HTTP public).
 - [x] Gateway chặn `/api/v1/workspaces/internal` và `/api/v1/users/internal` từ Traefik (503).
 - [x] `/metrics` yêu cầu `METRICS_AUTH_TOKEN` khi đặt (cả 5 service).
@@ -58,7 +58,7 @@ Dùng trước khi expose CollabSpace ra ngoài môi trường local/demo.
 | Secret | Consumer | Nguồn |
 |--------|----------|-------|
 | `JWT_SECRET` | auth (ký); peer verify qua auth gRPC | Vault `secret/collabspace/<env>` → ESO |
-| `INTERNAL_SERVICE_TOKEN` | user, workspace (inbound); task, notification (outbound S2S) | Vault → ESO; Helm `global.secrets.internalServiceToken` khi tắt ESO |
+| `SERVICE_JWT_SECRET` | user, workspace (inbound verify); task, notification (outbound sign); task → workspace/user internal HTTP | Vault → ESO; Helm `global.secrets.serviceJwtSecret` khi tắt ESO |
 | `POSTGRES_PASSWORD` | auth, user, workspace + Bitnami postgres | Managed DB hoặc secret |
 | `REDIS_PASSWORD` | auth, notification | Secret manager |
 | `RABBITMQ_PASSWORD` | publisher/consumer | Secret manager |

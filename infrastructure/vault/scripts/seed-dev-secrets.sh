@@ -22,7 +22,7 @@ VAULT_TOKEN="${VAULT_TOKEN:-${VAULT_DEV_ROOT_TOKEN:-collabspace-dev-root}}"
 KV_PATH="${VAULT_KV_PATH:-collabspace/dev}"
 
 JWT_SECRET="${COLLABSPACE_JWT_SECRET:-collabspace-dev-jwt-secret-change-me}"
-INTERNAL_TOKEN="${COLLABSPACE_INTERNAL_SERVICE_TOKEN:-collabspace-dev-internal-token-change-me}"
+SERVICE_JWT_SECRET="${COLLABSPACE_SERVICE_JWT_SECRET:-collabspace-dev-service-jwt-secret-change-me}"
 POSTGRES_PASSWORD="${COLLABSPACE_POSTGRES_PASSWORD:-postgres}"
 MONGO_USERNAME="${COLLABSPACE_MONGO_USERNAME:-admin}"
 MONGO_PASSWORD="${COLLABSPACE_MONGO_PASSWORD:-password}"
@@ -35,7 +35,7 @@ payload=$(cat <<EOF
 {
   "data": {
     "jwt_secret": "$JWT_SECRET",
-    "internal_service_token": "$INTERNAL_TOKEN",
+    "service_jwt_secret": "$SERVICE_JWT_SECRET",
     "postgres_password": "$POSTGRES_PASSWORD",
     "mongo_username": "$MONGO_USERNAME",
     "mongo_password": "$MONGO_PASSWORD",

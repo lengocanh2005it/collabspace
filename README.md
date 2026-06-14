@@ -244,7 +244,7 @@ Request/response contracts and event payloads: [`.claude/docs/service-contracts.
 | task-service | http://localhost:3003/swagger |
 | notification-service | http://localhost:3004/swagger |
 
-Protected routes: **Authorize** → Bearer JWT. Internal S2S routes (user/workspace): header `X-Internal-Service-Token`.
+Protected routes: **Authorize** → Bearer JWT. Internal S2S routes (user/workspace): Service JWT (`Authorization: Bearer …`).
 
 ## Monitoring & Observability
 

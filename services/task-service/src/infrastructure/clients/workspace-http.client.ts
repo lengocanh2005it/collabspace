@@ -1,5 +1,11 @@
 import { Injectable, ServiceUnavailableException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
+import {
+  buildOutboundServiceAuthHeaders,
+  isOutboundServiceAuthConfigured,
+  SERVICE_IDS,
+  SERVICE_SCOPES,
+} from "@collabspace/shared";
 import { outboundRequestIdHeaders } from "../../common/http/request-id.context";
 import type {
   IWorkspaceClient,
@@ -20,7 +26,7 @@ type WorkspaceMembershipResponse = {
 export class WorkspaceHttpClient implements IWorkspaceClient {
   private readonly baseUrl: string;
   private readonly timeoutMs: number;
-  private readonly internalToken: string | undefined;
+  private readonly serviceJwtSecret: string | undefined;
 
   constructor(
     private readonly configService: ConfigService,
@@ -32,8 +38,8 @@ export class WorkspaceHttpClient implements IWorkspaceClient {
     this.timeoutMs = Number(
       this.configService.get<string>("WORKSPACE_SERVICE_TIMEOUT_MS") ?? 3000,
     );
-    this.internalToken = this.configService
-      .get<string>("INTERNAL_SERVICE_TOKEN")
+    this.serviceJwtSecret = this.configService
+      .get<string>("SERVICE_JWT_SECRET")
       ?.trim();
   }
 
@@ -100,9 +106,19 @@ export class WorkspaceHttpClient implements IWorkspaceClient {
   }
 
   private isInternalAccessEnabled(): boolean {
-    return (
-      Boolean(this.internalToken) || process.env.NODE_ENV === "development"
-    );
+    return isOutboundServiceAuthConfigured({
+      serviceJwtSecret: this.serviceJwtSecret,
+      nodeEnv: process.env.NODE_ENV,
+    });
+  }
+
+  private buildAuthHeaders(): Record<string, string> {
+    return buildOutboundServiceAuthHeaders({
+      iss: SERVICE_IDS.TASK,
+      aud: SERVICE_IDS.WORKSPACE,
+      scope: [SERVICE_SCOPES.WORKSPACE_MEMBERSHIP_READ],
+      serviceJwtSecret: this.serviceJwtSecret,
+    }).headers;
   }
 
   private async fetchMembership(
@@ -113,7 +129,7 @@ export class WorkspaceHttpClient implements IWorkspaceClient {
       throw new ServiceUnavailableException({
         code: "WORKSPACE_SERVICE_UNAVAILABLE",
         message:
-          "INTERNAL_SERVICE_TOKEN is required for workspace membership checks",
+          "SERVICE_JWT_SECRET is required for workspace membership checks",
       });
     }
 
@@ -121,11 +137,8 @@ export class WorkspaceHttpClient implements IWorkspaceClient {
     const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
     const headers: Record<string, string> = {
       ...outboundRequestIdHeaders(),
+      ...this.buildAuthHeaders(),
     };
-
-    if (this.internalToken) {
-      headers["X-Internal-Service-Token"] = this.internalToken;
-    }
 
     const path =
       `/api/v1/workspaces/internal/${encodeURIComponent(workspaceId)}` +

@@ -158,6 +158,23 @@ pnpm run test
 
 Run `test:e2e` when changing routing, validation, bootstrap, or auth guards/integration.
 
+## Service JWT — S2S HTTP (user, workspace, task, notification)
+
+Internal routes (`/users/internal/*`, `/workspaces/internal/*`) use **short-lived Service JWT** only:
+
+| Role | Services | Code |
+|------|----------|------|
+| Verify inbound | user-service, workspace-service | `assertInternalServiceAccess` → `@collabspace/shared` `assertServiceToServiceAccess` |
+| Sign outbound | task-service, notification-service | `buildOutboundServiceAuthHeaders` in `*HttpClient` |
+
+Rules:
+
+- Env **`SERVICE_JWT_SECRET`** — **same value** in all four services per environment (Vault key `service_jwt_secret`).
+- Header: `Authorization: Bearer <jwt>` with `iss` / `aud` / `scope` per `service-contracts.md`.
+- **No** `INTERNAL_SERVICE_TOKEN`, `X-Internal-Service-Token`, or migration fallback.
+- Local dev: `NODE_ENV=development` allows inbound bypass when `SERVICE_JWT_SECRET` unset (tests only); production requires secret.
+- Gateway still blocks public access to internal paths (503); cluster DNS + NetworkPolicy for pod-to-pod.
+
 ## Docs & skills sync
 
 After code changes, update when **needed** (same PR):
@@ -167,6 +184,7 @@ After code changes, update when **needed** (same PR):
 | HTTP/gRPC route or DTO contract | `.claude/docs/service-contracts.md`, `docs/api-routes.md`                                                                                |
 | New/changed env / secret key    | `services/*/.env.example`, `development-workflows.md`; if shared secret → `infrastructure/vault/` seed scripts + `external-secrets.yaml` |
 | Auth/verify behavior            | `service-contracts.md`, `services/<service>/CLAUDE.md`, `.claude/rules/<service>.md`                                                     |
+| S2S HTTP internal auth          | `service-contracts.md` § Service JWT; `@collabspace/shared` `assertServiceToServiceAccess` / `buildOutboundServiceAuthHeaders`; env `SERVICE_JWT_SECRET` only (no `INTERNAL_SERVICE_TOKEN`) |
 | TypeORM migration added/renamed | This skill (Schema Change Checklist), `coding-conventions.md`                                                                            |
 | Feature status                  | `docs/features.md`, `docs/mvp-demo-scope.md`                                                                                             |
 | Verify commands changed         | This skill or `local-dev-verify/SKILL.md`                                                                                                |

@@ -29,7 +29,7 @@ required=(
   GHCR_OWNER
   IMAGE_TAG
   JWT_SECRET
-  INTERNAL_SERVICE_TOKEN
+  SERVICE_JWT_SECRET
   POSTGRES_PASSWORD
   MONGO_PASSWORD
   REDIS_PASSWORD
@@ -67,7 +67,7 @@ replacements = {
     "REPLACE_ME_DOMAIN": os.environ["PROD_DOMAIN"],
     "REPLACE_ME_ERLANG_COOKIE": os.environ["RABBITMQ_ERLANG_COOKIE"],
     'jwtSecret: "REPLACE_ME"': f'jwtSecret: "{os.environ["JWT_SECRET"]}"',
-    'internalServiceToken: "REPLACE_ME"': f'internalServiceToken: "{os.environ["INTERNAL_SERVICE_TOKEN"]}"',
+    'serviceJwtSecret: "REPLACE_ME"': f'serviceJwtSecret: "{os.environ["SERVICE_JWT_SECRET"]}"',
     'postgresPassword: "REPLACE_ME"': f'postgresPassword: "{os.environ["POSTGRES_PASSWORD"]}"',
     'mongoPassword: "REPLACE_ME"': f'mongoPassword: "{os.environ["MONGO_PASSWORD"]}"',
     'redisPassword: "REPLACE_ME"': f'redisPassword: "{os.environ["REDIS_PASSWORD"]}"',

@@ -146,8 +146,7 @@ export class AuthGrpcService implements OnModuleInit {
 
   async verifyAccessToken(authorizationHeader?: string): Promise<AuthIdentity> {
     const response = await this.invokeVerify(
-      (authorization) =>
-        this.authService!.verifyAccessToken({ authorization }),
+      (authorization) => this.authService!.verifyAccessToken({ authorization }),
       authorizationHeader,
       'VerifyAccessToken',
     );

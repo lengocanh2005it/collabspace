@@ -2,7 +2,9 @@ import { ForbiddenException } from '@nestjs/common';
 import { UsersController } from './users.controller';
 
 describe('UsersController directory access', () => {
-  const controller = Object.create(UsersController.prototype) as UsersController;
+  const controller = Object.create(
+    UsersController.prototype,
+  ) as UsersController;
 
   it('requires a search query for non-admin users', () => {
     expect(() =>

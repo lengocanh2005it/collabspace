@@ -25,7 +25,7 @@ set -a
 source "$ENV_FILE"
 set +a
 
-required=(JWT_SECRET INTERNAL_SERVICE_TOKEN POSTGRES_PASSWORD MONGO_PASSWORD REDIS_PASSWORD RABBITMQ_PASSWORD RABBITMQ_USERNAME METRICS_AUTH_TOKEN AZURE_STORAGE_CONNECTION_STRING)
+required=(JWT_SECRET SERVICE_JWT_SECRET POSTGRES_PASSWORD MONGO_PASSWORD REDIS_PASSWORD RABBITMQ_PASSWORD RABBITMQ_USERNAME METRICS_AUTH_TOKEN AZURE_STORAGE_CONNECTION_STRING)
 for key in "${required[@]}"; do
   if [[ -z "${!key:-}" ]]; then
     echo "Missing $key in $ENV_FILE"
@@ -42,7 +42,7 @@ kubectl exec -n "$VAULT_NS" "$VAULT_POD" -- env \
   VAULT_TOKEN="$root_token" \
   KV_PATH="$KV_PATH" \
   JWT_SECRET="$JWT_SECRET" \
-  INTERNAL_SERVICE_TOKEN="$INTERNAL_SERVICE_TOKEN" \
+  SERVICE_JWT_SECRET="$SERVICE_JWT_SECRET" \
   POSTGRES_PASSWORD="$POSTGRES_PASSWORD" \
   MONGO_PASSWORD="$MONGO_PASSWORD" \
   REDIS_PASSWORD="$REDIS_PASSWORD" \
@@ -54,7 +54,7 @@ kubectl exec -n "$VAULT_NS" "$VAULT_POD" -- env \
     AZURE_STORAGE_CONNECTION_STRING="$(printf "%s" "$AZURE_B64" | base64 -d)"
     vault kv put "secret/${KV_PATH}" \
       jwt_secret="${JWT_SECRET}" \
-      internal_service_token="${INTERNAL_SERVICE_TOKEN}" \
+      service_jwt_secret="${SERVICE_JWT_SECRET}" \
       postgres_password="${POSTGRES_PASSWORD}" \
       mongo_username="admin" \
       mongo_password="${MONGO_PASSWORD}" \

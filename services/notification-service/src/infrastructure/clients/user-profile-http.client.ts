@@ -1,5 +1,11 @@
 import { Injectable, ServiceUnavailableException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
+import {
+  buildOutboundServiceAuthHeaders,
+  isOutboundServiceAuthConfigured,
+  SERVICE_IDS,
+  SERVICE_SCOPES,
+} from "@collabspace/shared";
 import { outboundRequestIdHeaders } from "../../common/http/request-id.context";
 
 export type RemoteUserReplica = {
@@ -21,7 +27,7 @@ export type UserReplicaLookupRequest = {
 export class UserProfileHttpClient {
   private readonly baseUrl: string;
   private readonly timeoutMs: number;
-  private readonly internalToken: string | undefined;
+  private readonly serviceJwtSecret: string | undefined;
 
   constructor(private readonly configService: ConfigService) {
     this.baseUrl =
@@ -30,8 +36,8 @@ export class UserProfileHttpClient {
     this.timeoutMs = Number(
       this.configService.get<string>("USER_SERVICE_TIMEOUT_MS") ?? 3000,
     );
-    this.internalToken = this.configService
-      .get<string>("INTERNAL_SERVICE_TOKEN")
+    this.serviceJwtSecret = this.configService
+      .get<string>("SERVICE_JWT_SECRET")
       ?.trim();
   }
 
@@ -45,7 +51,10 @@ export class UserProfileHttpClient {
 
     return (
       Boolean(this.baseUrl) &&
-      (Boolean(this.internalToken) || process.env.NODE_ENV === "development")
+      isOutboundServiceAuthConfigured({
+        serviceJwtSecret: this.serviceJwtSecret,
+        nodeEnv: process.env.NODE_ENV,
+      })
     );
   }
 
@@ -71,17 +80,23 @@ export class UserProfileHttpClient {
     return (await response.json()) as RemoteUserReplica[];
   }
 
+  private buildAuthHeaders(): Record<string, string> {
+    return buildOutboundServiceAuthHeaders({
+      iss: SERVICE_IDS.NOTIFICATION,
+      aud: SERVICE_IDS.USER,
+      scope: [SERVICE_SCOPES.USER_REPLICAS_READ],
+      serviceJwtSecret: this.serviceJwtSecret,
+    }).headers;
+  }
+
   private async post(path: string, body: unknown): Promise<Response> {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
       ...outboundRequestIdHeaders(),
+      ...this.buildAuthHeaders(),
     };
-
-    if (this.internalToken) {
-      headers["X-Internal-Service-Token"] = this.internalToken;
-    }
 
     try {
       return await fetch(`${this.baseUrl}${path}`, {

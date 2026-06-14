@@ -4,7 +4,7 @@ For dependency failures, timeouts, idempotency, and degradation behavior, see `r
 
 ## HTTP API Rules
 
-- **OpenAPI (Swagger UI):** each app service exposes **`GET /swagger`** on its HTTP port with **request/response schemas** (`@ApiOkResponse` / `@ApiCreatedResponse`, DTO `@ApiProperty`). K8s prod: Traefik `http://<HOST>/swagger/<service>` (`gateway.swagger.expose: true`). URL index: [service-urls.md](../../docs/service-urls.md); overview: [README.md](../../README.md#openapi-swagger-ui). Protected routes use Bearer user JWT; internal S2S HTTP routes use **Service JWT** (`Authorization: Bearer …`) per [Service-to-Service HTTP Authentication](#service-to-service-http-authentication-service-jwt), with `X-Internal-Service-Token` as migration fallback.
+- **OpenAPI (Swagger UI):** each app service exposes **`GET /swagger`** on its HTTP port with **request/response schemas** (`@ApiOkResponse` / `@ApiCreatedResponse`, DTO `@ApiProperty`). K8s prod: Traefik `http://<HOST>/swagger/<service>` (`gateway.swagger.expose: true`). URL index: [service-urls.md](../../docs/service-urls.md); overview: [README.md](../../README.md#openapi-swagger-ui). Protected routes use Bearer user JWT; internal S2S HTTP routes use **Service JWT** (`Authorization: Bearer …`) per [Service-to-Service HTTP Authentication](#service-to-service-http-authentication-service-jwt).
 - Implemented NestJS services use global prefix `/api/v1` (task and notification: global `api` + `v1/...` on `@Controller()`).
 - Controllers should use resource-oriented paths.
 - Auth-required endpoints should verify bearer tokens through auth-service, preferably via existing gRPC integration patterns.
@@ -247,13 +247,13 @@ Rules:
 
 ## Service-to-Service HTTP Authentication (Service JWT)
 
-**Status:** Phase 1 — `@collabspace/shared` helpers implemented; service wiring in phases 2–5. **Out of scope for this slice:** gRPC peer auth, mTLS mesh.
+**Status:** Phases 1–5 implemented. **Out of scope for this slice:** gRPC peer auth, mTLS mesh.
 
-### Problem
+### Problem (resolved)
 
-Internal HTTP routes today accept a single shared `X-Internal-Service-Token`. Any service that knows the secret can call any protected internal route. There is no caller identity, scope, or expiry.
+Internal HTTP routes previously accepted a single shared static token with no caller identity, scope, or expiry. **Removed** — callers must use Service JWT only.
 
-### Preferred credential
+### Credential
 
 Callers send a short-lived **service JWT** on internal HTTP:
 
@@ -263,21 +263,7 @@ Authorization: Bearer <service-jwt>
 
 Continue to forward `X-Request-Id` on the same request (see Correlation ID above).
 
-### Migration fallback
-
-During rollout, inbound services **also** accept the legacy header when fallback is enabled:
-
-```http
-X-Internal-Service-Token: <shared-secret>
-```
-
-| Environment | Fallback policy |
-| ----------- | ---------------- |
-| Local / dev | Allowed when `INTERNAL_SERVICE_TOKEN` is set or `NODE_ENV=development` (matches current behavior). |
-| Staging | Allowed until outbound callers emit Service JWT; log when fallback is used. |
-| Production (target) | `INTERNAL_SERVICE_TOKEN_FALLBACK_ENABLED=false` — Service JWT required; shared token not accepted. |
-
-`INTERNAL_SERVICE_TOKEN` remains documented for migration and local dev; production should not rely on it as the only S2S credential once Phase 5 is complete.
+In local `NODE_ENV=development` only, inbound services may allow requests without credentials when `SERVICE_JWT_SECRET` is unset (dev bypass for tests).
 
 ### Token format
 
@@ -288,7 +274,7 @@ X-Internal-Service-Token: <shared-secret>
 | TTL | **5 minutes** (`exp` − `iat` ≤ 300s) |
 | Clock skew | ±30 seconds when verifying `iat` / `exp` |
 
-**Trade-off (Phase 0):** one shared signing secret per environment, not per-service asymmetric keys or JWKS. Simpler for five NestJS services; rotation = dual-key deploy (future Phase 5+).
+**Trade-off (Phase 0):** one shared signing secret per environment, not per-service asymmetric keys or JWKS. Simpler for five NestJS services; rotation = dual-key deploy (future hardening).
 
 ### Required JWT claims
 
@@ -347,30 +333,26 @@ Notes:
 
 ### Inbound verification rules
 
-Services that expose internal HTTP routes verify in order:
+Services that expose internal HTTP routes:
 
 1. Extract `Authorization: Bearer <token>`.
-2. If present, verify signature with `SERVICE_JWT_SECRET`, then check `aud` matches **this** service, `iss` is in the route allow-list, `scope` contains the required scope, and `exp` / `iat` are valid.
-3. Else if fallback is enabled, validate `X-Internal-Service-Token` against `INTERNAL_SERVICE_TOKEN` (current behavior).
-4. Else `401` with stable error code (below).
+2. Verify signature with `SERVICE_JWT_SECRET`, then check `aud` matches **this** service, `iss` is in the route allow-list, `scope` contains the required scope, and `exp` / `iat` are valid.
+3. In `NODE_ENV=development` only, allow requests with no credentials when `SERVICE_JWT_SECRET` is unset (local test bypass).
+4. Otherwise `401` with stable error code (below).
 
-Inbound services need `SERVICE_JWT_SECRET` for step 2. They do not mint service JWTs unless they also act as outbound callers in this slice.
+Inbound services need `SERVICE_JWT_SECRET` for JWT verification. They do not mint service JWTs unless they also act as outbound callers in this slice.
 
 ### Outbound signing rules
 
-Outbound HTTP clients (Phase 3) sign a fresh service JWT per request (or reuse within TTL only inside the same process if caching is added later — default: **new token per outbound call**).
+Outbound HTTP clients sign a fresh service JWT per request (default: **new token per outbound call**).
 
-If `SERVICE_JWT_SECRET` is unset, callers fall back to `X-Internal-Service-Token` when `INTERNAL_SERVICE_TOKEN` is set (migration).
+`SERVICE_JWT_SECRET` is required in production; in development, outbound calls are skipped when unset unless dev bypass applies on the callee.
 
 ### Environment variables
 
 | Variable | Consumers | Purpose |
 | -------- | --------- | ------- |
 | `SERVICE_JWT_SECRET` | task-service, notification-service (sign); workspace-service, user-service (verify) | Sign and verify service JWTs. **Must match** across all services in the same environment. |
-| `INTERNAL_SERVICE_TOKEN` | Same four services (fallback / legacy) | Shared secret header during migration and local dev. |
-| `INTERNAL_SERVICE_TOKEN_FALLBACK_ENABLED` | workspace-service, user-service (inbound) | `true` (default during migration) or `false` (production target). |
-
-Env examples, Vault, and Helm wiring are added in **Phase 4**; this table is the contract.
 
 ### Error responses
 
@@ -378,7 +360,7 @@ HTTP status **401** for all S2S auth failures. JSON body uses existing Nest patt
 
 | `code` | When |
 | ------ | ---- |
-| `INTERNAL_ACCESS_DENIED` | Missing credentials, invalid shared token, invalid JWT signature, wrong `aud`, expired token, or `SERVICE_JWT_SECRET` / `INTERNAL_SERVICE_TOKEN` not configured in production. |
+| `INTERNAL_ACCESS_DENIED` | Missing credentials, invalid JWT signature, wrong `aud`, expired token, or `SERVICE_JWT_SECRET` not configured. |
 | `SERVICE_JWT_SCOPE_DENIED` | Valid JWT but `scope` does not include the route scope. |
 | `SERVICE_JWT_ISSUER_DENIED` | Valid JWT but `iss` not allowed for this route. |
 
@@ -397,20 +379,20 @@ Implementation in `@collabspace/shared` (`packages/shared/src/auth/`):
 - `verifyServiceJwt({ token, secret, expectedAud, requiredScopes, allowedIssuers, now? })` → `VerifiedServiceJwt`
 - `extractBearerToken(authorizationHeader)`
 - `SERVICE_IDS`, `SERVICE_SCOPES`, TTL/skew constants
-- `assertServiceToServiceAccess(options)` — Bearer JWT first, then fallback header; throws `ServiceAccessDeniedError` (map to Nest `UnauthorizedException` in Phase 2+)
-
-Phase 1 ✅ helpers + unit tests. Services unchanged until Phase 2+.
+- `assertServiceToServiceAccess(options)` — inbound Bearer JWT; throws `ServiceAccessDeniedError`
+- `buildOutboundServiceAuthHeaders({ iss, aud, scope, serviceJwtSecret? })` → `{ headers }`
+- `isOutboundServiceAuthConfigured({ serviceJwtSecret?, nodeEnv? })`
 
 ### Rollout phases
 
 | Phase | Deliverable |
 | ----- | ----------- |
 | **0** | This contract (no code). |
-| **1** | `@collabspace/shared` helpers + unit tests. |
-| **2** | Inbound verify on workspace-service + user-service; fallback retained. | ✅ |
-| **3** | Outbound clients (task → workspace/user, notification → user) send Service JWT. |
-| **4** | `.env.example`, Vault/Helm, doc sweep. |
-| **5** | Prod: disable fallback, warn on legacy token use, optional rotation runbook. |
+| **1** | `@collabspace/shared` helpers + unit tests. | ✅ |
+| **2** | Inbound verify on workspace-service + user-service. | ✅ |
+| **3** | Outbound clients (task → workspace/user, notification → user) send Service JWT. | ✅ |
+| **4** | `.env.example`, Vault/Helm, doc sweep. | ✅ |
+| **5** | Service JWT only for S2S HTTP. | ✅ |
 
 ## Event Contracts
 
@@ -435,7 +417,7 @@ Payload fields (both events):
 }
 ```
 
-Internal hydration (fallback when replica missing): `POST /api/v1/users/internal/replicas` with Service JWT (`user.replicas.read`) or migration header `X-Internal-Service-Token`. See [Service JWT](#service-to-service-http-authentication-service-jwt) and `.claude/docs/read-models.md`.
+Internal hydration (fallback when replica missing): `POST /api/v1/users/internal/replicas` with Service JWT (`user.replicas.read`). See [Service JWT](#service-to-service-http-authentication-service-jwt) and `.claude/docs/read-models.md`.
 
 ---
 
@@ -575,7 +557,7 @@ Authorization baseline:
 
 Internal service-to-service (not for browser clients):
 
-- `GET /workspaces/internal/{workspaceId}/membership?userId=` — Service JWT (`workspace.membership.read`, `aud=workspace-service`) or migration `X-Internal-Service-Token`; returns `{ workspaceId, userId, isMember, role }`; `404` when workspace missing.
+- `GET /workspaces/internal/{workspaceId}/membership?userId=` — Service JWT (`workspace.membership.read`, `aud=workspace-service`); returns `{ workspaceId, userId, isMember, role }`; `404` when workspace missing.
 - Used by `task-service` for membership guards instead of spoofable `X-User-Id` on public routes.
 - **Not exposed via Traefik** — call on cluster/service DNS only; gateway returns 503 for `/workspaces/internal/*` and `/users/internal/*`.
 - Auth details: [Service JWT](#service-to-service-http-authentication-service-jwt).
@@ -605,7 +587,7 @@ Statuses: `TODO`, `DOING`, `DONE`. Priorities: `LOW`, `MEDIUM`, `HIGH`.
 Rules:
 
 - Every task belongs to a `workspaceId`; `projectId` optional.
-- Workspace membership via internal HTTP + Service JWT or migration `X-Internal-Service-Token` (not client `X-User-Id`).
+- Workspace membership via internal HTTP + Service JWT (not client `X-User-Id`).
 - Assignment validates assignee via user replica (+ HTTP fallback).
 - Comment mentions parse `@username`, resolve via replica, publish `comment_created` / `comment_mentioned`.
 

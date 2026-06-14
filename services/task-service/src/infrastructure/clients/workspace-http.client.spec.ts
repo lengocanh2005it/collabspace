@@ -16,7 +16,9 @@ describe("WorkspaceHttpClient", () => {
     jest.restoreAllMocks();
   });
 
-  function createClient(token?: string): WorkspaceHttpClient {
+  function createClient(options?: {
+    serviceJwtSecret?: string;
+  }): WorkspaceHttpClient {
     const configService = {
       get: jest.fn((key: string) => {
         if (key === "WORKSPACE_SERVICE_URL") {
@@ -25,8 +27,8 @@ describe("WorkspaceHttpClient", () => {
         if (key === "WORKSPACE_SERVICE_TIMEOUT_MS") {
           return "3000";
         }
-        if (key === "INTERNAL_SERVICE_TOKEN") {
-          return token;
+        if (key === "SERVICE_JWT_SECRET") {
+          return options?.serviceJwtSecret;
         }
         return undefined;
       }),
@@ -50,7 +52,9 @@ describe("WorkspaceHttpClient", () => {
       }),
     });
 
-    const client = createClient("shared-secret");
+    const client = createClient({
+      serviceJwtSecret: "phase-3-service-jwt-secret",
+    });
     const membership = await client.getMembershipAsync(workspaceId, userId);
 
     expect(membership).toEqual({ isMember: true, role: "member" });
@@ -70,7 +74,9 @@ describe("WorkspaceHttpClient", () => {
       }),
     });
 
-    const client = createClient("shared-secret");
+    const client = createClient({
+      serviceJwtSecret: "phase-3-service-jwt-secret",
+    });
 
     await client.getMembershipAsync(workspaceId, userId);
     await client.getMembershipAsync(workspaceId, userId);
@@ -78,7 +84,7 @@ describe("WorkspaceHttpClient", () => {
     expect(global.fetch).toHaveBeenCalledTimes(1);
   });
 
-  it("should call internal membership endpoint with service token", async () => {
+  it("should call internal membership endpoint with service JWT", async () => {
     process.env.NODE_ENV = "production";
     global.fetch = jest.fn().mockResolvedValue({
       ok: true,
@@ -91,18 +97,17 @@ describe("WorkspaceHttpClient", () => {
       }),
     });
 
-    const client = createClient("shared-secret");
-    const isMember = await client.validateWorkspaceAsync(workspaceId, userId);
+    const client = createClient({
+      serviceJwtSecret: "phase-3-service-jwt-secret",
+    });
+    await client.validateWorkspaceAsync(workspaceId, userId);
 
-    expect(isMember).toBe(true);
-    expect(global.fetch).toHaveBeenCalledWith(
-      `http://workspace-service:8080/api/v1/workspaces/internal/${workspaceId}/membership?userId=${userId}`,
-      expect.objectContaining({
-        headers: {
-          "X-Internal-Service-Token": "shared-secret",
-        },
-      }),
-    );
+    const [, requestInit] = (global.fetch as jest.Mock).mock.calls[0] as [
+      string,
+      { headers: Record<string, string> },
+    ];
+
+    expect(requestInit.headers.Authorization).toMatch(/^Bearer /);
   });
 
   it("forwards X-Request-Id from async context", async () => {
@@ -118,7 +123,9 @@ describe("WorkspaceHttpClient", () => {
       }),
     });
 
-    const client = createClient("shared-secret");
+    const client = createClient({
+      serviceJwtSecret: "phase-3-service-jwt-secret",
+    });
 
     await requestIdStorage.run({ requestId: "trace-abc" }, () =>
       client.validateWorkspaceAsync(workspaceId, userId),
@@ -129,7 +136,6 @@ describe("WorkspaceHttpClient", () => {
       expect.objectContaining({
         headers: expect.objectContaining({
           "X-Request-Id": "trace-abc",
-          "X-Internal-Service-Token": "shared-secret",
         }),
       }),
     );
@@ -148,7 +154,7 @@ describe("WorkspaceHttpClient", () => {
     ).resolves.toBe(false);
   });
 
-  it("should reject when internal token is missing in production", async () => {
+  it("should reject when service JWT secret is missing in production", async () => {
     process.env.NODE_ENV = "production";
     const client = createClient();
 

@@ -53,7 +53,7 @@ $lines = @(
   "GHCR_TOKEN=$GhcrToken",
   "",
   "JWT_SECRET=$(New-RandomBase64)",
-  "INTERNAL_SERVICE_TOKEN=$(New-RandomBase64)",
+  "SERVICE_JWT_SECRET=$(New-RandomBase64)",
   "POSTGRES_PASSWORD=$(New-RandomBase64)",
   "MONGO_PASSWORD=$(New-RandomBase64)",
   "REDIS_PASSWORD=$(New-RandomBase64)",

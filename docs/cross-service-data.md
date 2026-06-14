@@ -98,7 +98,7 @@ Race phổ biến: user vừa register, event chưa tới → replica chưa có.
 Luồng `UserReplicaLookupService`:
 
 1. Đọc `user_replicas` local.
-2. Nếu thiếu / inactive → `POST /api/v1/users/internal/replicas` (user-service, header `X-Internal-Service-Token`).
+2. Nếu thiếu / inactive → `POST /api/v1/users/internal/replicas` (user-service) với Service JWT (`user.replicas.read`).
 3. Upsert replica → đọc lại.
 
 Env (consumer):
@@ -107,20 +107,20 @@ Env (consumer):
 USER_SERVICE_URL=http://user-service:3000
 USER_SERVICE_TIMEOUT_MS=3000
 USER_REPLICA_FALLBACK_ENABLED=true
-INTERNAL_SERVICE_TOKEN=
+SERVICE_JWT_SECRET=collabspace-dev-service-jwt-secret-change-me  # khớp trên user/workspace/task/notification
 ```
 
 ### 3.5b Workspace membership (không dùng replica)
 
 Task-service kiểm tra quyền workspace **đồng bộ** qua internal API (phải fresh):
 
-```
+```http
 GET /api/v1/workspaces/internal/{workspaceId}/membership?userId=
-Header: X-Internal-Service-Token
+Authorization: Bearer <service-jwt>
 ```
 
 - Gateway **chặn** path này (503) — chỉ gọi qua Docker/K8s service DNS.
-- `INTERNAL_SERVICE_TOKEN` phải **trùng** trên `workspace-service` và `task-service`.
+- `SERVICE_JWT_SECRET` phải **trùng** trên `workspace-service` và `task-service`.
 
 ### 3.6 Denormalize thêm trong aggregate Task
 

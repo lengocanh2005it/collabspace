@@ -43,7 +43,7 @@ pnpm run seed
 
 - Global prefix `/api/v1`; routes `/workspaces/*`, `/workspaces/:id/projects/*`, `/workspaces/:id/invitations`
 - Public routes: `AuthGuard` + auth gRPC → `@UserId()`; dev fallback `X-User-Id` when `ALLOW_DEV_IDENTITY_HEADERS=true`
-- Internal S2S: `GET /workspaces/internal/:id/membership` — Service JWT or migration `X-Internal-Service-Token` (not on Traefik)
+- Internal S2S: `GET /workspaces/internal/:id/membership` — Service JWT (`Authorization: Bearer …`, not on Traefik); env `SERVICE_JWT_SECRET`
 - ORM columns snake_case; multi-step writes use transactions
 - Events: `collabspace_exchange` + routing key from `domain/events/`
 - TypeORM migrations: `src/infrastructure/database/migrations/{timestamp}-{PascalCase}.ts` — class `{PascalCase}{timestamp}` (xem `nest-service-change` skill / auth-service `migrations/` cùng quy ước)

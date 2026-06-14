@@ -13,7 +13,7 @@ paths:
 - Match **double-quote** style used in this service.
 - Events: `eventId` + `occurredAt` in payloads; publish after successful DB write.
 - HTTP responses via `presentation/common/response/` (`ok`, `created`).
-- Protected routes: `AuthGuard` before `WorkspaceValidationGuard`; S2S workspace check uses `INTERNAL_SERVICE_TOKEN`.
+- Protected routes: `AuthGuard` before `WorkspaceValidationGuard`; S2S workspace check uses Service JWT.
 - Do **not** trust client `X-User-Id`; do **not** use mock `user-123` in guards.
 - Do **not** put Mongoose calls in controllers.
 - Do **not** copy legacy auth `modules/*` layout; auth-service uses clean/hexagonal use cases + ports (see `services/auth-service/CLAUDE.md`). Do not copy user-service use-case-only naming (`*.use-case.ts` → use `*.handler.ts` here).

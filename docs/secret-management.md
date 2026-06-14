@@ -17,7 +17,7 @@ Production:  Vault pod  →  ESO (1h)     →  K8s Secret       →  Pod envFrom
 | Vault key | Env var | Service dùng |
 |-----------|---------|--------------|
 | `jwt_secret` | `JWT_SECRET` | auth, notification |
-| `internal_service_token` | `INTERNAL_SERVICE_TOKEN` | user, workspace, task, notification |
+| `service_jwt_secret` | `SERVICE_JWT_SECRET` | user, workspace, task, notification |
 | `postgres_password` | trong `DATABASE_URL` | auth, user, workspace |
 | `mongo_username` / `mongo_password` | trong `MONGO_URI` | task, notification |
 | `redis_password` | `REDIS_PASSWORD` | auth, notification |
@@ -100,7 +100,7 @@ docker compose restart auth-service notification-service
 Vault pod (vault-0, namespace: vault)
   └── secret/collabspace/prod
         ├── jwt_secret
-        ├── internal_service_token
+        ├── service_jwt_secret
         ├── postgres_password
         ├── mongo_username / mongo_password
         ├── redis_password

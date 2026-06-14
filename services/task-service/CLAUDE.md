@@ -50,8 +50,8 @@ pnpm run test
 - Domain entities use factories and business methods; throw domain exceptions
 - Events: include `eventId` + `occurredAt` in `domain/events/` payloads
 - `@UseGuards(AuthGuard, WorkspaceValidationGuard)` — JWT via auth gRPC **Lite**, then workspace membership
-- `request.user` from `AuthGuard`; workspace check via internal API + `INTERNAL_SERVICE_TOKEN`
-- Env: `AUTH_SERVICE_GRPC_URL`, `ALLOW_DEV_IDENTITY_HEADERS`, `INTERNAL_SERVICE_TOKEN`, `WORKSPACE_CLIENT_MODE=http`
+- `request.user` from `AuthGuard`; workspace check via internal API + Service JWT
+- Env: `AUTH_SERVICE_GRPC_URL`, `ALLOW_DEV_IDENTITY_HEADERS`, `SERVICE_JWT_SECRET`, `WORKSPACE_CLIENT_MODE=http`
 - Attachment storage has two explicit modes:
   - Azure mode: set a real `AZURE_STORAGE_CONNECTION_STRING`; files persist in `AZURE_STORAGE_CONTAINER_NAME`.
   - Mock mode: missing/placeholder connection string returns a plausible Azure URL, but no file is persisted. Use only for local UI/demo work.

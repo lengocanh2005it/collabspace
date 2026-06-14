@@ -9,9 +9,7 @@ import { assertInternalServiceAccess } from './internal-service-access';
 
 describe('assertInternalServiceAccess (user-service)', () => {
   const originalEnv = {
-    internalToken: process.env.INTERNAL_SERVICE_TOKEN,
     serviceJwtSecret: process.env.SERVICE_JWT_SECRET,
-    fallbackEnabled: process.env.INTERNAL_SERVICE_TOKEN_FALLBACK_ENABLED,
     nodeEnv: process.env.NODE_ENV,
   };
 
@@ -20,16 +18,11 @@ describe('assertInternalServiceAccess (user-service)', () => {
 
   beforeEach(() => {
     process.env.NODE_ENV = 'test';
-    process.env.INTERNAL_SERVICE_TOKEN = 'legacy-internal-token';
     process.env.SERVICE_JWT_SECRET = 'phase-2-service-jwt-secret';
-    delete process.env.INTERNAL_SERVICE_TOKEN_FALLBACK_ENABLED;
   });
 
   afterEach(() => {
-    process.env.INTERNAL_SERVICE_TOKEN = originalEnv.internalToken;
     process.env.SERVICE_JWT_SECRET = originalEnv.serviceJwtSecret;
-    process.env.INTERNAL_SERVICE_TOKEN_FALLBACK_ENABLED =
-      originalEnv.fallbackEnabled;
     process.env.NODE_ENV = originalEnv.nodeEnv;
   });
 
@@ -63,14 +56,6 @@ describe('assertInternalServiceAccess (user-service)', () => {
     ).not.toThrow();
   });
 
-  it('accepts legacy X-Internal-Service-Token during migration', () => {
-    expect(() =>
-      assertInternalServiceAccess(
-        request({ 'x-internal-service-token': 'legacy-internal-token' }),
-      ),
-    ).not.toThrow();
-  });
-
   it('rejects service JWT with wrong scope', () => {
     const token = signServiceJwt({
       iss: SERVICE_IDS.TASK,
@@ -90,5 +75,13 @@ describe('assertInternalServiceAccess (user-service)', () => {
         }),
       }),
     );
+  });
+
+  it('rejects legacy X-Internal-Service-Token header', () => {
+    expect(() =>
+      assertInternalServiceAccess(
+        request({ 'x-internal-service-token': 'legacy-internal-token' }),
+      ),
+    ).toThrow(UnauthorizedException);
   });
 });

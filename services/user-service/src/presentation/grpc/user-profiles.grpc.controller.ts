@@ -50,10 +50,13 @@ export class UserProfilesGrpcController {
     request: CreatePendingProfileRequest,
   ): Promise<CreatePendingProfileResponse> {
     try {
-      const profile = await this.createPendingUserProfileUseCase.execute(request);
+      const profile =
+        await this.createPendingUserProfileUseCase.execute(request);
       return { success: true, userId: profile.userId };
     } catch (error) {
-      throw new RpcException(error instanceof Error ? error.message : 'CreatePendingProfile failed');
+      throw new RpcException(
+        error instanceof Error ? error.message : 'CreatePendingProfile failed',
+      );
     }
   }
 
@@ -67,7 +70,9 @@ export class UserProfilesGrpcController {
         username: profile.username ?? undefined,
       };
     } catch (error) {
-      throw new RpcException(error instanceof Error ? error.message : 'GetProfile failed');
+      throw new RpcException(
+        error instanceof Error ? error.message : 'GetProfile failed',
+      );
     }
   }
 
@@ -85,7 +90,9 @@ export class UserProfilesGrpcController {
         })),
       };
     } catch (error) {
-      throw new RpcException(error instanceof Error ? error.message : 'GetProfiles failed');
+      throw new RpcException(
+        error instanceof Error ? error.message : 'GetProfiles failed',
+      );
     }
   }
 }

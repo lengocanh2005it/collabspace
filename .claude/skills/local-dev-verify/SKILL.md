@@ -78,6 +78,8 @@ cd ../..
 .\infrastructure\vault\scripts\sync-env-from-vault.ps1
 ```
 
+Vault seeds `jwt_secret` + `service_jwt_secret` (và DB/RabbitMQ/Redis). **S2S HTTP:** cùng `SERVICE_JWT_SECRET` trên user, workspace, task, notification — xem `infrastructure/docker/.env.example`.
+
 See `infrastructure/vault/README.md`.
 
 Core Docker stack:

@@ -65,7 +65,9 @@ describe('UsersAdminController (http)', () => {
       .get('/api/v1/users/admin/all')
       .set('Authorization', 'Bearer admin')
       .expect(200)
-      .expect([{ email: 'jane@example.com', fullName: 'Jane Doe', id: 'user-1' }]);
+      .expect([
+        { email: 'jane@example.com', fullName: 'Jane Doe', id: 'user-1' },
+      ]);
   });
 
   afterAll(async () => {

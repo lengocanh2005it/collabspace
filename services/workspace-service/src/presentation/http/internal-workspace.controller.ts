@@ -19,7 +19,6 @@ import { assertInternalServiceAccess } from './internal-service-access';
 
 @ApiTags('workspaces-internal')
 @ApiSecurity('service-jwt')
-@ApiSecurity('internal-service-token')
 @Controller('workspaces/internal')
 export class InternalWorkspaceController {
   constructor(
@@ -30,7 +29,7 @@ export class InternalWorkspaceController {
   @ApiOperation({
     summary: 'Check workspace membership (S2S)',
     description:
-      'Requires Service JWT (workspace.membership.read, aud=workspace-service) or migration X-Internal-Service-Token. Not exposed via Traefik.',
+      'Requires Service JWT (workspace.membership.read, aud=workspace-service). Not exposed via Traefik.',
   })
   @ApiParam({ name: 'workspaceId', format: 'uuid' })
   @ApiQuery({ name: 'userId', format: 'uuid', required: true })

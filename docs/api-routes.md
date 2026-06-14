@@ -17,7 +17,7 @@ Header gateway thường gặp sau auth: `X-User-Id`, `X-User-Name`, `X-Username
 
 Client **không được** gửi header identity — Traefik xóa trước forward-auth.
 
-Route S2S nội bộ (`/users/internal/*`, `/workspaces/internal/*`) **bị chặn tại gateway**; gọi qua DNS service Docker/K8s. Auth: **Service JWT** (`Authorization: Bearer …`) — contract [service-contracts.md § Service JWT](../.claude/docs/service-contracts.md#service-to-service-http-authentication-service-jwt); migration fallback `X-Internal-Service-Token`.
+Route S2S nội bộ (`/users/internal/*`, `/workspaces/internal/*`) **bị chặn tại gateway**; gọi qua DNS service Docker/K8s. Auth: **Service JWT** (`Authorization: Bearer …`) — contract [service-contracts.md § Service JWT](../.claude/docs/service-contracts.md#service-to-service-http-authentication-service-jwt).
 
 ## OpenAPI (Swagger UI)
 
@@ -47,7 +47,7 @@ Ví dụ Droplet: `http://167.172.77.110/swagger/auth`
 | task | http://localhost:3003/swagger |
 | notification | http://localhost:3004/swagger |
 
-Dùng **Authorize** với Bearer JWT cho route protected. Route S2S nội bộ: Service JWT (ưu tiên) hoặc `X-Internal-Service-Token` (fallback migration) — xem service-contracts.
+Dùng **Authorize** với Bearer JWT cho route protected. Route S2S nội bộ: Service JWT — xem service-contracts.
 
 ---
 

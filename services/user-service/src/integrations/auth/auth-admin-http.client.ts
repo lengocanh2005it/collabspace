@@ -1,7 +1,4 @@
-import {
-  Injectable,
-  ServiceUnavailableException,
-} from '@nestjs/common';
+import { Injectable, ServiceUnavailableException } from '@nestjs/common';
 
 export type AuthAdminUser = {
   createdAt: string;
@@ -16,7 +13,10 @@ export type AuthAdminUser = {
 @Injectable()
 export class AuthAdminHttpClient {
   async listUsers(authorization: string): Promise<AuthAdminUser[]> {
-    return this.request<AuthAdminUser[]>('/api/v1/auth/admin/users', authorization);
+    return this.request<AuthAdminUser[]>(
+      '/api/v1/auth/admin/users',
+      authorization,
+    );
   }
 
   async deactivateUser(userId: string, authorization: string): Promise<void> {

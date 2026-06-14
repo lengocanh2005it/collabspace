@@ -146,7 +146,7 @@ Current status:
 
 - Core workspace/project/invite flows implemented.
 - Public routes: `AuthGuard` + auth gRPC; dev-only `ALLOW_DEV_IDENTITY_HEADERS`.
-- Internal membership API: `GET /workspaces/internal/:id/membership` + `X-Internal-Service-Token` (task-service client).
+- Internal membership API: `GET /workspaces/internal/:id/membership` + Service JWT (task-service client).
 
 ### task-service
 
@@ -179,7 +179,7 @@ Important source paths:
 Current status:
 
 - Task and comment flows implemented.
-- `AuthGuard` + `WorkspaceValidationGuard`; workspace membership via internal HTTP + `INTERNAL_SERVICE_TOKEN`.
+- `AuthGuard` + `WorkspaceValidationGuard`; workspace membership via internal HTTP + Service JWT.
 - `WORKSPACE_CLIENT_MODE=http` (mock only for local tests without workspace).
 
 ### notification-service
@@ -224,7 +224,7 @@ Traefik is the API Gateway. Static config: `traefik.yml`; dynamic: `api-gateway/
 Trust boundaries (Phase B):
 
 - `strip-identity-headers` → `forward-auth` → `auth-service` `/verify` on protected public routes.
-- Internal paths `/users/internal/*`, `/workspaces/internal/*` blocked at gateway (503); S2S uses cluster DNS + `X-Internal-Service-Token`.
+- Internal paths `/users/internal/*`, `/workspaces/internal/*` blocked at gateway (503); S2S uses cluster DNS + Service JWT.
 - K8s: `infrastructure/k8s/network-policies.yaml` (or Helm `networkPolicies`) — default deny + per-service allow lists.
 
 Correlation ID (Phase C):
@@ -239,9 +239,9 @@ Infra operations backlog: `docs/team/phan-phu-tho-infrastructure-backlog.md`.
 Path: `infrastructure/vault`
 
 - **Local dev:** `infrastructure/docker/docker-compose.vault.yml` (Vault `-dev` on port `8200`); seed/sync scripts under `infrastructure/vault/scripts/`.
-- **KV v2:** mount `secret/` — paths `collabspace/dev`, `collabspace/staging`, `collabspace/prod` (shared keys: `jwt_secret`, `internal_service_token`, datastore passwords).
+- **KV v2:** mount `secret/` — paths `collabspace/dev`, `collabspace/staging`, `collabspace/prod` (shared keys: `jwt_secret`, `service_jwt_secret`, datastore passwords).
 - **Kubernetes:** External Secrets Operator manifests in `infrastructure/vault/k8s/` sync Vault → `{app}-secrets`; Helm `global.externalSecrets.enabled: true` skips chart-rendered Secrets.
-- **Apps unchanged:** NestJS services read `JWT_SECRET`, `INTERNAL_SERVICE_TOKEN`, etc. from environment variables.
+- **Apps unchanged:** NestJS services read `JWT_SECRET`, `SERVICE_JWT_SECRET`, etc. from environment variables.
 
 Guide: `infrastructure/vault/README.md`.
 

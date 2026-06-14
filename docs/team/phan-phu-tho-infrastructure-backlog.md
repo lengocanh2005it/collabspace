@@ -80,7 +80,7 @@ P3  Chaos quarterly (staging)       →  chứng minh recovery
 - [ ] Chạy `k3s-bootstrap.sh` trên Droplet thật; `verify-phase1.sh` pass.
 - [ ] Tạo `values-staging.yaml` nếu cần môi trường staging riêng.
 - [ ] Document biến bắt buộc từ [production-hardening.md](../production-hardening.md#secrets-reference-never-commit-real-values).
-- [ ] Đồng bộ `INTERNAL_SERVICE_TOKEN`, `JWT_SECRET`, DB passwords giữa các service trong cùng môi trường (Compose `.env` vs Helm `global.secrets`).
+- [ ] Đồng bộ `SERVICE_JWT_SECRET`, `JWT_SECRET`, DB passwords giữa các service trong cùng môi trường (Compose `.env` vs Helm `global.secrets`).
 
 ### 2. Secret Manager & quản lý giá trị `.env`
 
@@ -97,7 +97,7 @@ P3  Chaos quarterly (staging)       →  chứng minh recovery
 
 | Loại | Ví dụ | Lưu ở đâu (staging/prod) | Trong Git? |
 |------|-------|---------------------------|------------|
-| **Secret** | `JWT_SECRET`, `POSTGRES_PASSWORD`, `MAIL_PASSWORD`, `INTERNAL_SERVICE_TOKEN`, `METRICS_AUTH_TOKEN`, `AZURE_STORAGE_CONNECTION_STRING` | Vault KV → ESO → K8s `Secret` | ❌ |
+| **Secret** | `JWT_SECRET`, `SERVICE_JWT_SECRET`, `POSTGRES_PASSWORD`, `MAIL_PASSWORD`, `METRICS_AUTH_TOKEN`, `AZURE_STORAGE_CONNECTION_STRING` | Vault KV → ESO → K8s `Secret` | ❌ |
 | **Config** | `PORT`, `GRPC_URL`, `RABBITMQ_QUEUE`, timeout ms, feature flags | Helm `ConfigMap` / `values.yaml` | ✅ |
 | **Connection string lẫn secret** | `DATABASE_URL`, `MONGO_URI`, `RABBITMQ_URL`, `REDIS_URL` | Build từ template + password từ Secret (Helm helper hiện có) | URL template ✅; password ❌ |
 
@@ -106,7 +106,7 @@ P3  Chaos quarterly (staging)       →  chứng minh recovery
 | Biến | Services dùng | Ghi chú |
 |------|---------------|---------|
 | `JWT_SECRET` | auth (ký token), user/workspace/task/notification (verify qua gRPC — auth giữ private key) | Chỉ auth cần trong `.env` local; các service khác verify qua gRPC, không cần duplicate trừ khi app đọc trực tiếp |
-| `INTERNAL_SERVICE_TOKEN` | user, workspace (inbound), task, notification (outbound S2S) | **Cùng một chuỗi** — xem [docker/.env.example](../../infrastructure/docker/.env.example) |
+| `SERVICE_JWT_SECRET` | user, workspace (inbound), task, notification (outbound S2S) | **Cùng một chuỗi** — xem [docker/.env.example](../../infrastructure/docker/.env.example) |
 | `POSTGRES_PASSWORD` | auth, user, workspace + Bitnami postgres subchart | Khớp `global.secrets.postgresPassword` |
 | `mongoPassword` | task, notification + Bitnami mongo | Khớp `global.secrets.mongoPassword` |
 | `rabbitmqPassword` | tất cả publisher/consumer + Bitnami rabbitmq | Khớp `global.secrets.rabbitmqPassword` |
@@ -121,7 +121,7 @@ LOCAL (qua Vault dev — khuyến nghị, khớp prod)
 
 LOCAL (thủ công — nhanh, không Vault)
   services/*/.env.example  ──copy──►  services/*/.env  (gitignored)
-  infrastructure/docker/.env.example  ──►  shared JWT + INTERNAL_SERVICE_TOKEN đồng bộ tay
+  infrastructure/docker/.env.example  ──►  shared JWT + SERVICE_JWT_SECRET đồng bộ tay
 
 STAGING / PROD (Phan Phú Thọ)
   HashiCorp Vault KV secret/collabspace/<env>
@@ -145,7 +145,7 @@ CONFIG (không nhạy cảm)
 | ESO manifests | ✅ `infrastructure/vault/k8s/` | Cài ESO trên cluster; đổi `remoteRef.key` theo env |
 | Helm `externalSecrets.enabled` | ✅ | Bật trong `values-staging.yaml` / `values-prod.yaml` |
 | Vault HA + K8s auth | 📋 | Không dùng root token prod; policy per service |
-| Rotation / drill | 📋 | `INTERNAL_SERVICE_TOKEN`, `JWT_SECRET` dual-key |
+| Rotation / drill | 📋 | `SERVICE_JWT_SECRET`, `JWT_SECRET` dual-key |
 
 #### 2.1 Inventory biến theo service (từ `.env.example`)
 
@@ -154,20 +154,20 @@ Dùng bảng này khi seed Vault KV (`secret/collabspace/staging`, …).
 | Service | Secret (đưa vào SM) | Config (Helm ConfigMap / values) |
 |---------|---------------------|----------------------------------|
 | **auth-service** | `JWT_SECRET`, `POSTGRES_PASSWORD`, `REDIS_PASSWORD`, `RABBITMQ_PASSWORD`, `MAIL_USER`, `MAIL_PASSWORD`, `METRICS_AUTH_TOKEN` | `PORT`, `GRPC_*`, `RABBITMQ_QUEUE`, OTP TTL, outbox tuning, `TRACING_*` |
-| **user-service** | `POSTGRES_PASSWORD`, `RABBITMQ_PASSWORD`, `INTERNAL_SERVICE_TOKEN`, `METRICS_AUTH_TOKEN`, `AZURE_STORAGE_CONNECTION_STRING` (avatar upload; optional local) | `AUTH_SERVICE_GRPC_URL`, `GRPC_URL`, `DATABASE_SCHEMA` |
-| **workspace-service** | `POSTGRES_PASSWORD`, `RABBITMQ_PASSWORD`, `INTERNAL_SERVICE_TOKEN`, `METRICS_AUTH_TOKEN` | `PORT=8080`, `AUTH_SERVICE_GRPC_URL`, `ALLOW_DEV_IDENTITY_HEADERS=false` |
-| **task-service** | `MONGO_URI` (hoặc password riêng + template URI), `RABBITMQ_PASSWORD`, `INTERNAL_SERVICE_TOKEN`, `AZURE_STORAGE_CONNECTION_STRING`, `METRICS_AUTH_TOKEN` | `WORKSPACE_SERVICE_URL`, `USER_SERVICE_URL`, `AZURE_STORAGE_CONTAINER_NAME`, `AZURE_STORAGE_MAX_FILE_SIZE`, outbox, `ALLOW_DEV_IDENTITY_HEADERS=false` |
-| **notification-service** | `JWT_SECRET` (nếu service đọc — hiện verify gRPC), `MONGO_URI`, `REDIS_PASSWORD`, `RABBITMQ_PASSWORD`, `INTERNAL_SERVICE_TOKEN`, `METRICS_AUTH_TOKEN` | `USER_SERVICE_URL`, `RABBITMQ_QUEUE` |
+| **user-service** | `POSTGRES_PASSWORD`, `RABBITMQ_PASSWORD`, `SERVICE_JWT_SECRET`, `METRICS_AUTH_TOKEN`, `AZURE_STORAGE_CONNECTION_STRING` (avatar upload; optional local) | `AUTH_SERVICE_GRPC_URL`, `GRPC_URL`, `DATABASE_SCHEMA` |
+| **workspace-service** | `POSTGRES_PASSWORD`, `RABBITMQ_PASSWORD`, `SERVICE_JWT_SECRET`, `METRICS_AUTH_TOKEN` | `PORT=8080`, `AUTH_SERVICE_GRPC_URL`, `ALLOW_DEV_IDENTITY_HEADERS=false` |
+| **task-service** | `MONGO_URI` (hoặc password riêng + template URI), `RABBITMQ_PASSWORD`, `SERVICE_JWT_SECRET`, `AZURE_STORAGE_CONNECTION_STRING`, `METRICS_AUTH_TOKEN` | `WORKSPACE_SERVICE_URL`, `USER_SERVICE_URL`, `AZURE_STORAGE_CONTAINER_NAME`, `AZURE_STORAGE_MAX_FILE_SIZE`, outbox, `ALLOW_DEV_IDENTITY_HEADERS=false` |
+| **notification-service** | `JWT_SECRET` (nếu service đọc — hiện verify gRPC), `MONGO_URI`, `REDIS_PASSWORD`, `RABBITMQ_PASSWORD`, `SERVICE_JWT_SECRET`, `METRICS_AUTH_TOKEN` | `USER_SERVICE_URL`, `RABBITMQ_QUEUE` |
 | **rabbitmq** (infra) | `RABBITMQ_DEFAULT_USER`, `RABBITMQ_DEFAULT_PASS` | vhost `collabspace` |
 | **Compose / Helm datastores** | Bitnami `postgresPassword`, `mongoPassword`, `redisPassword`, `rabbitmqPassword` | hostnames: `postgres`, `mongo`, `redis`, `rabbitmq` |
 
 #### 2.2 Công việc triển khai HashiCorp Vault + ESO
 
 - [x] **Chốt provider:** HashiCorp Vault + External Secrets Operator — [vault/README.md](../../infrastructure/vault/README.md).
-- [x] **Naming convention KV v2:** `secret/collabspace/<env>` — keys: `jwt_secret`, `internal_service_token`, `postgres_password`, `mongo_*`, `redis_password`, `rabbitmq_*`, `metrics_auth_token`, `azure_storage_connection_string`.
+- [x] **Naming convention KV v2:** `secret/collabspace/<env>` — keys: `jwt_secret`, `service_jwt_secret`, `postgres_password`, `mongo_*`, `redis_password`, `rabbitmq_*`, `metrics_auth_token`, `azure_storage_connection_string`.
 - [x] Scaffold local: `docker-compose.vault.yml`, `seed-dev-secrets`, `sync-env-from-vault`.
 - [x] Manifest ESO: `infrastructure/vault/k8s/external-secrets.yaml` → per-app `{app}-secrets`.
-- [x] Helm: `global.externalSecrets.enabled`, `global.secrets.internalServiceToken` trong [secret.yaml](../../infrastructure/helm/collabspace/templates/apps/secret.yaml).
+- [x] Helm: `global.externalSecrets.enabled`, `global.secrets.serviceJwtSecret` trong [secret.yaml](../../infrastructure/helm/collabspace/templates/apps/secret.yaml).
 - [ ] Cài **External Secrets Operator** trên cluster staging thật.
 - [ ] Deploy **Vault HA** + Kubernetes auth (không root token prod).
 - [ ] **Bổ sung gap:** `MAIL_*` cho auth email outbox trong Vault + ExternalSecret.
@@ -177,7 +177,7 @@ Dùng bảng này khi seed Vault KV (`secret/collabspace/staging`, …).
 #### 2.3 Quy trình `.env` cho developer (local)
 
 - [x] Document local env + Vault: [vault/README.md](../../infrastructure/vault/README.md), [development-workflows.md](../../.claude/docs/development-workflows.md), [README.md](../../README.md) Quick Start.
-  1. **Option A:** `cp services/*/.env.example` → `.env`; đồng bộ `JWT_SECRET` + `INTERNAL_SERVICE_TOKEN` theo [docker/.env.example](../../infrastructure/docker/.env.example).
+  1. **Option A:** `cp services/*/.env.example` → `.env`; đồng bộ `JWT_SECRET` + `SERVICE_JWT_SECRET` theo [docker/.env.example](../../infrastructure/docker/.env.example).
   2. **Option B (Vault):** `docker-compose.vault.yml` → `seed-dev-secrets` → `sync-env-from-vault`.
   3. `ALLOW_DEV_IDENTITY_HEADERS=true` chỉ local; **không** bật staging/prod.
 - [ ] Pre-commit hoặc CI grep: **fail** nếu commit file `.env` (không `.env.example`).
@@ -191,7 +191,7 @@ Dùng bảng này khi seed Vault KV (`secret/collabspace/staging`, …).
   1. Tạo giá trị mới trong SM.
   2. Rolling restart từng tier (datastore password cần đổi Bitnami + connection string đồng bộ).
   3. `JWT_SECRET` rotate = invalidate toàn bộ access token — thông báo maintenance hoặc chỉ staging.
-  4. `INTERNAL_SERVICE_TOKEN` rotate = deploy đồng thời user/workspace/task/notification.
+  4. `SERVICE_JWT_SECRET` rotate = deploy đồng thời user/workspace/task/notification.
 - [ ] Audit: bật CloudTrail / SM access log; ai đọc secret staging/prod.
 
 #### 2.5 Đồng bộ Compose ↔ Helm ↔ Secret Manager
@@ -199,7 +199,7 @@ Dùng bảng này khi seed Vault KV (`secret/collabspace/staging`, …).
 | Giá trị | Local Compose | Helm `global.secrets` | Vault KV key (`secret/collabspace/<env>`) |
 |---------|---------------|----------------------|-------------------------------------------|
 | JWT | `auth-service/.env` | `jwtSecret` | `jwt_secret` |
-| Internal S2S | 4 service `.env` | `internalServiceToken` | `internal_service_token` |
+| Service JWT S2S | 4 service `.env` | `serviceJwtSecret` | `service_jwt_secret` |
 | Postgres | URL trong `.env` | `postgresPassword` | `postgres_password` |
 | Mongo | `MONGO_URI` | `mongoPassword` | `mongo_username`, `mongo_password` |
 | Redis | `REDIS_PASSWORD` | `redisPassword` | `redis_password` |
@@ -311,7 +311,7 @@ Dùng bảng này khi seed Vault KV (`secret/collabspace/staging`, …).
 
 - [ ] Confirm CNI hỗ trợ `NetworkPolicy` — apply từ Helm `network-policies.yaml`.
 - [ ] Verify Phase B4: Traefik **503** khi gọi `/api/v1/workspaces/internal`, `/api/v1/users/internal` từ ngoài cluster.
-- [ ] Verify task pod → workspace internal API **200** với `X-Internal-Service-Token` (cluster DNS).
+- [ ] Verify task pod → workspace internal API **200** với Service JWT (cluster DNS).
 - [ ] TLS termination tại Traefik / Ingress (cert-manager Let's Encrypt hoặc cert nội bộ).
 - [ ] Rate limit Traefik — xác nhận cấu hình `api-gateway/dynamic/middlewares.yml` áp dụng trên K8s IngressRoute.
 
@@ -445,13 +445,13 @@ Infra **hỗ trợ** bằng: Compose profile Traefik, seed trong job, `demo-e2e`
 |---|-----------|---------|------------|
 | 1 | Chốt Vault + KV naming (`collabspace/<env>`) | P0 | ✅ scaffold |
 | 2 | ESO cài trên cluster + `ExternalSecret` staging live | P0 | ⬜ (YAML có sẵn) |
-| 3 | Helm: thêm `INTERNAL_SERVICE_TOKEN` + `MAIL_*` vào Secret template | P0 | ⬜ |
+| 3 | Helm: `SERVICE_JWT_SECRET` + `MAIL_*` trong Secret template | P0 | ✅ |
 | 4 | `values-staging.yaml.example` + map SM → K8s Secret | P0 | ⬜ |
-| 5 | Doc local `.env` setup + shared JWT/INTERNAL token | P0 | ⬜ |
+| 5 | Doc local `.env` setup + shared JWT/SERVICE_JWT_SECRET | P0 | ⬜ |
 | 6 | CI/pre-commit: chặn commit file `.env` | P0 | ⬜ |
 | 7 | `verify-env-parity.sh` (tên biến .env.example vs Helm) | P0 | ⬜ |
 | 8 | Metrics auth + Prometheus scrape | P0 | ✅ Helm prod |
-| 9 | Secret rotation runbook (JWT, INTERNAL, DB) | P0 | ⬜ |
+| 9 | Secret rotation runbook (JWT, SERVICE_JWT_SECRET, DB) | P0 | ⬜ |
 | 10 | `values-staging.yaml` + deploy Helm document | P0 | ⬜ |
 | 11 | Container registry + build pipeline | P1 | ⬜ |
 | 12 | GitHub Actions CI/CD (`pnpm -r` từ root, GHCR + Helm deploy) | P1 | ✅ |

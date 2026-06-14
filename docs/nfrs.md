@@ -70,7 +70,7 @@ Chi tiết kỹ thuật:
 | Authentication | JWT access + refresh | ✅ auth-service |
 | Authorization gateway | Protected routes qua forward-auth | ✅ Traefik `strip-identity-headers` → `/auth/verify` |
 | Service auth (workspace, task, notification) | Không tin header client giả | ✅ `AuthGuard` + auth gRPC; dev-only `X-User-Id` khi `ALLOW_DEV_IDENTITY_HEADERS=true` |
-| Service-to-service nội bộ | Token/mTLS giữa app | ✅ `INTERNAL_SERVICE_TOKEN` + NetworkPolicy ingress allow lists (B3–B4) |
+| Service-to-service nội bộ | Service JWT; NetworkPolicy | ✅ `SERVICE_JWT_SECRET` (B3.1) + NetworkPolicy (B3–B4) |
 | Secrets không trong Git | Prod secrets từ Vault | ⚠️ `.env.example` + Helm placeholders; **HashiCorp Vault** scaffold (`infrastructure/vault/`) + ESO manifests — chưa operational HA/rotation |
 | Metrics lockdown | `/metrics` không public | ✅ `METRICS_AUTH_TOKEN` khi set |
 | Input validation | DTO + validation pipe | ✅ NestJS `ValidationPipe` |

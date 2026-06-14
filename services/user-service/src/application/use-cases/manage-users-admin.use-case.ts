@@ -43,6 +43,8 @@ export class ManageUsersAdminUseCase {
   ): Promise<void> {
     await this.authAdminClient.deactivateUser(userId, authorization);
     await this.repository.anonymize(userId);
-    this.logger.log(`admin_action=anonymize_user actorId=${actorId} userId=${userId}`);
+    this.logger.log(
+      `admin_action=anonymize_user actorId=${actorId} userId=${userId}`,
+    );
   }
 }

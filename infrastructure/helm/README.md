@@ -89,7 +89,7 @@ Mẫu commit-safe: `values-prod.example.yaml`. File `values-prod.yaml` thật **
 global:
   secrets:
     jwtSecret: "<from-secret-manager>"
-    internalServiceToken: "<shared-s2s-token>"
+    serviceJwtSecret: "<shared-service-jwt-secret>"
     postgresPassword: "<strong-password>"
     mongoPassword: "<strong-password>"
     redisPassword: "<strong-password>"

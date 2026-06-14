@@ -22,7 +22,8 @@ export class UserSummaryResponseSchemaDto {
 }
 
 export class PaginatedUserSummaryResponseSchemaDto {
-  @ApiProperty({ type: [UserSummaryResponseSchemaDto] }) items: UserSummaryResponseSchemaDto[];
+  @ApiProperty({ type: [UserSummaryResponseSchemaDto] })
+  items: UserSummaryResponseSchemaDto[];
   @ApiProperty() limit: number;
   @ApiProperty() offset: number;
   @ApiProperty() total: number;
@@ -45,9 +46,13 @@ export class UserPreferencesResponseSchemaDto {
 }
 
 export class UserStatusResponseSchemaDto {
-  @ApiPropertyOptional({ nullable: true, format: 'date-time' }) clearAt: string | null;
+  @ApiPropertyOptional({ nullable: true, format: 'date-time' }) clearAt:
+    | string
+    | null;
   @ApiPropertyOptional({ nullable: true }) emoji: string | null;
-  @ApiPropertyOptional({ nullable: true, format: 'date-time' }) lastSeenAt: string | null;
+  @ApiPropertyOptional({ nullable: true, format: 'date-time' }) lastSeenAt:
+    | string
+    | null;
   @ApiProperty() status: string;
   @ApiPropertyOptional({ nullable: true }) statusText: string | null;
   @ApiProperty({ format: 'date-time' }) updatedAt: string;
@@ -55,9 +60,11 @@ export class UserStatusResponseSchemaDto {
 }
 
 export class UserPresenceListResponseSchemaDto {
-  @ApiProperty({ type: [UserStatusResponseSchemaDto] }) items: UserStatusResponseSchemaDto[];
+  @ApiProperty({ type: [UserStatusResponseSchemaDto] })
+  items: UserStatusResponseSchemaDto[];
 }
 
 export class BulkUserProfilesResponseSchemaDto {
-  @ApiProperty({ type: [UserProfileResponseSchemaDto] }) items: UserProfileResponseSchemaDto[];
+  @ApiProperty({ type: [UserProfileResponseSchemaDto] })
+  items: UserProfileResponseSchemaDto[];
 }

@@ -52,6 +52,8 @@ Read these files as needed:
 - Gateway routing: `api-gateway`.
 - Compose/K8s/Vault/observability/CI: `infrastructure` (`infrastructure/vault/` for secrets). **DO Droplet hands-on deploy:** Lê Ngọc Anh (phối hợp Phan Phú Thọ — infra backlog).
 
+**S2S HTTP (internal routes):** chỉ **Service JWT** — `SERVICE_JWT_SECRET` chung trên user/workspace/task/notification. Contract: `.claude/docs/service-contracts.md` → Service JWT.
+
 ## Output Style
 
 When answering architecture questions:

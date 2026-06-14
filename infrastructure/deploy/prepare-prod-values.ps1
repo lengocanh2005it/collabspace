@@ -29,7 +29,7 @@ Get-Content $EnvFile | ForEach-Object {
 }
 
 $required = @(
-  "GHCR_OWNER", "IMAGE_TAG", "JWT_SECRET", "INTERNAL_SERVICE_TOKEN",
+  "GHCR_OWNER", "IMAGE_TAG", "JWT_SECRET", "SERVICE_JWT_SECRET",
   "POSTGRES_PASSWORD", "MONGO_PASSWORD", "REDIS_PASSWORD", "RABBITMQ_PASSWORD",
   "RABBITMQ_USERNAME", "METRICS_AUTH_TOKEN", "RABBITMQ_ERLANG_COOKIE", "PROD_DOMAIN",
   "AZURE_STORAGE_CONNECTION_STRING"
@@ -45,7 +45,7 @@ $c = $c.Replace("REPLACE_ME_GHCR_OWNER", $vars["GHCR_OWNER"])
 $c = $c.Replace("REPLACE_ME_IMAGE_TAG", $vars["IMAGE_TAG"])
 $c = $c.Replace("REPLACE_ME_DOMAIN", $vars["PROD_DOMAIN"])
 $c = $c.Replace('jwtSecret: "REPLACE_ME"', "jwtSecret: `"$($vars['JWT_SECRET'])`"")
-$c = $c.Replace('internalServiceToken: "REPLACE_ME"', "internalServiceToken: `"$($vars['INTERNAL_SERVICE_TOKEN'])`"")
+$c = $c.Replace('serviceJwtSecret: "REPLACE_ME"', "serviceJwtSecret: `"$($vars['SERVICE_JWT_SECRET'])`"")
 $c = $c.Replace('postgresPassword: "REPLACE_ME"', "postgresPassword: `"$($vars['POSTGRES_PASSWORD'])`"")
 $c = $c.Replace('mongoPassword: "REPLACE_ME"', "mongoPassword: `"$($vars['MONGO_PASSWORD'])`"")
 $c = $c.Replace('redisPassword: "REPLACE_ME"', "redisPassword: `"$($vars['REDIS_PASSWORD'])`"")

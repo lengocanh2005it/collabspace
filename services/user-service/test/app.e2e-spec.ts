@@ -34,20 +34,22 @@ describe('AppController (e2e)', () => {
   beforeEach(async () => {
     jest.clearAllMocks();
     delete process.env.DATABASE_URL;
-    process.env.INTERNAL_SERVICE_TOKEN = 'test-internal-token';
+    process.env.SERVICE_JWT_SECRET = 'test-service-jwt-secret';
     const verifyIdentity = async (authorizationHeader?: string) => {
-        if (!authorizationHeader) {
-          throw new UnauthorizedException();
-        }
+      if (!authorizationHeader) {
+        throw new UnauthorizedException();
+      }
 
-        return {
-          role: 'member',
-          userId: 'user-1',
-          workspaceId: 'workspace-1',
-        };
+      return {
+        role: 'member',
+        userId: 'user-1',
+        workspaceId: 'workspace-1',
       };
+    };
     authGrpcServiceMock.verifyAccessToken.mockImplementation(verifyIdentity);
-    authGrpcServiceMock.verifyAccessTokenLite.mockImplementation(verifyIdentity);
+    authGrpcServiceMock.verifyAccessTokenLite.mockImplementation(
+      verifyIdentity,
+    );
     authGrpcServiceMock.ping.mockResolvedValue(undefined);
     userHealthServiceMock.getLiveness.mockReturnValue({
       service: 'user-service',
@@ -211,24 +213,6 @@ describe('AppController (e2e)', () => {
         userIds: [],
       })
       .expect(400);
-  });
-
-  it('POST /users/internal/replicas accepts internal service token', () => {
-    return request(app.getHttpServer())
-      .post('/api/v1/users/internal/replicas')
-      .set('X-Internal-Service-Token', 'test-internal-token')
-      .send({ username: 'jane.doe' })
-      .expect(201)
-      .expect((response) => {
-        expect(response.body).toEqual(
-          expect.arrayContaining([
-            expect.objectContaining({
-              userId: 'user-1',
-              username: 'jane.doe',
-            }),
-          ]),
-        );
-      });
   });
 
   it('POST /users/internal/replicas accepts service JWT', () => {

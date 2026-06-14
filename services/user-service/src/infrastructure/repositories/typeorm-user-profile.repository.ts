@@ -237,7 +237,8 @@ export class TypeOrmUserProfileRepository implements UserProfileRepository {
       });
     }
 
-    profile.avatarUrl = input.avatarUrl === undefined ? profile.avatarUrl : input.avatarUrl;
+    profile.avatarUrl =
+      input.avatarUrl === undefined ? profile.avatarUrl : input.avatarUrl;
     profile.bio = input.bio === undefined ? profile.bio : input.bio;
     profile.displayName =
       input.displayName === undefined ? profile.displayName : input.displayName;

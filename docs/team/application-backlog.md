@@ -65,10 +65,12 @@ Contract: [service-contracts.md § Service JWT](../../.claude/docs/service-contr
 |-------|------|------------|
 | 0 | Contract (claims, scope, env, rollout) | ✅ |
 | 1 | `@collabspace/shared` sign/verify helpers + tests | ✅ |
-| 2 | Inbound: workspace-service + user-service verify JWT + fallback | ✅ |
-| 3 | Outbound: task → workspace/user; notification → user | [ ] |
-| 4 | `.env.example`, Vault/Helm `SERVICE_JWT_SECRET`, doc sweep | [ ] |
-| 5 | Prod: `INTERNAL_SERVICE_TOKEN_FALLBACK_ENABLED=false`, cảnh báo fallback | [ ] |
+| 2 | Inbound verify on workspace-service + user-service | ✅ |
+| 3 | Outbound: task → workspace/user; notification → user | ✅ |
+| 4 | `.env.example`, Vault/Helm `SERVICE_JWT_SECRET`, doc sweep | ✅ |
+| 5 | Chỉ Service JWT; gỡ `INTERNAL_SERVICE_TOKEN` (code + env + Vault/ESO + docs) | ✅ |
+
+**Trạng thái slice:** Hoàn tất (Phase 0–5). S2S HTTP chỉ `Authorization: Bearer` + `SERVICE_JWT_SECRET`.
 
 **Owner gợi ý:** Phase 1–2 Tiến + Anh (inbound); Phase 3 Tín (callers); Phase 4 Phú Thọ + Anh (secrets).
 
@@ -118,7 +120,7 @@ Chi tiết infra: [phan-phu-tho-infrastructure-backlog.md](./phan-phu-tho-infras
 
 #### P2 — OpenAPI & polish
 
-- [x] Swagger **decorator** — `@ApiTags` / `@ApiOperation` / `@ApiBearerAuth` trên auth + user controllers; `@ApiProperty` trên DTO chính; internal API + `X-Internal-Service-Token` trong user Swagger
+- [x] Swagger **decorator** — `@ApiTags` / `@ApiOperation` / `@ApiBearerAuth` trên auth + user controllers; `@ApiProperty` trên DTO chính; internal API + Service JWT trong user Swagger
 - [x] **Response schemas** — `@ApiOkResponse` / `@ApiCreatedResponse` + swagger response DTOs
 - [x] Document flow OTP / resend cooldown — mô tả trong `auth-service` Swagger (`presentation/http/auth.controller.ts` + `main.ts`)
 
@@ -141,7 +143,7 @@ Chi tiết infra: [phan-phu-tho-infrastructure-backlog.md](./phan-phu-tho-infras
 - **`GET /workspaces/:workspaceId/invitations`** — liệt kê lời mời `pending` (member-only); `ListInvitationsUseCase`
 - Project CRUD trong workspace
 - Outbox `workspace_invited`, idempotency workspace/invite
-- Internal `GET /workspaces/internal/:id/membership` + `X-Internal-Service-Token`
+- Internal `GET /workspaces/internal/:id/membership` + Service JWT
 - `AuthGuard` JWT gRPC; 13/13 use case workspace có `*.use-case.spec.ts`
 - **Avatar upload** (`POST /users/me/avatar`) — implement trong `user-service`: `AzureBlobService` + mock fallback khi thiếu `AZURE_STORAGE_CONNECTION_STRING` (phối hợp vùng Anh)
 - **Task ↔ workspace dev bridge** — `WorkspaceMockService` auto-register workspace ID thật khi `WORKSPACE_CLIENT_MODE` ≠ `http` (chỉ local/demo; prod/staging dùng HTTP client — xem việc còn lại bên dưới)

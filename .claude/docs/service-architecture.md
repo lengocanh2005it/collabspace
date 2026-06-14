@@ -243,7 +243,7 @@ Register adapters + Symbol bindings in `app.module.ts`.
 - Global prefix `api/v1`; routes under `/workspaces`, `/workspaces/:id/projects`, etc.
 - Port **8080** (container), not 3000
 - Public routes: `AuthGuard` + auth gRPC → `@UserId()` from `request.user`; dev: `X-User-Id` header when `ALLOW_DEV_IDENTITY_HEADERS=true`
-- Internal S2S: `internal-workspace.controller.ts` + `assertInternalServiceAccess` + `INTERNAL_SERVICE_TOKEN`
+- Internal S2S: `internal-workspace.controller.ts` + `assertInternalServiceAccess` + `SERVICE_JWT_SECRET`
 - Use cases inject ports: `@Inject(WORKSPACE_REPOSITORY)` + `import { type IWorkspaceRepository, WORKSPACE_REPOSITORY }`
 - Transactions live **inside adapters** (`DataSource.transaction()`), not in use cases
 - ORM entities: snake_case columns; domain entities: plain TS classes, camelCase fields
@@ -324,7 +324,7 @@ Add new handlers to the `Handlers` array in `app.module.ts`.
 - Domain throws `BusinessRuleException`, `EntityNotFoundException`
 - User context from `AuthGuard` → `request.user` (`presentation/http/request-context.ts`)
 - `@UseGuards(AuthGuard, WorkspaceValidationGuard)` on task/comment controllers
-- Workspace membership: `WorkspaceHttpClient` → internal API + `INTERNAL_SERVICE_TOKEN`
+- Workspace membership: `WorkspaceHttpClient` → internal API + Service JWT
 - Auth integration: `src/integrations/auth/` (gRPC proto + `AuthGrpcService`)
 - Event payloads include `eventId` + `occurredAt`
 - Tests: `*.handler.spec.ts`
