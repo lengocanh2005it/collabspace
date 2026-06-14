@@ -96,6 +96,8 @@ bash infrastructure/deploy/helm-rollout.sh
 
 Vault/ESO (khi đổi secret keys): `infrastructure/vault/scripts/seed-vault-k3s-from-phase0.sh`, apply `external-secrets.prod.yaml`, force ESO sync — xem `infrastructure/vault/README.md`.
 
+**Reset data + migrate + seed (verbose):** `bash infrastructure/deploy/run-k8s-full-reset.sh` — wipe PG/Mongo/Redis, bootstrap auth/workspace schema, chạy migration Jobs với log mỗi 5s; fail thì in `kubectl logs` ngay. Chỉ migrate+seed: `SKIP_WIPE=true bash .../run-k8s-full-reset.sh`.
+
 **Migration fail không được để replicas=0:** `helm-rollout.sh` scale down auth/user/workspace trước migrate; nếu job fail, script vẫn **restore replicas** (EXIT trap + explicit restore). Cả 3 service Postgres dùng **TypeORM class migrations** (`services/<svc>/migrations/*.ts`) + `@collabspace/typeorm-migrate`; `CREATE INDEX CONCURRENTLY` cần `transaction = false` trên class migration. Tạo migration: `scripts/typeorm-migrate/create-migration.sh`; revert: `scripts/typeorm-migrate/revert-migration.sh`.
 
 ## Trước khi push thay đổi ảnh hưởng deploy

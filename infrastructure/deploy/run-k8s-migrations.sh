@@ -3,6 +3,10 @@
 # Gọi từ helm-deploy-phase3.sh sau khi PostgreSQL Ready.
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=lib/k8s-job-wait.sh
+source "$SCRIPT_DIR/lib/k8s-job-wait.sh"
+
 export KUBECONFIG="${KUBECONFIG:-/etc/rancher/k3s/k3s.yaml}"
 APP_NS="${APP_NS:-collabspace}"
 PHASE0_ENV="${PHASE0_ENV:-/opt/collabspace/infrastructure/deploy/phase0.env}"
@@ -64,7 +68,7 @@ apply_migration_job() {
         - name: ghcr-credentials"
   fi
 
-  echo "==> Migration Job: $deployment"
+  echo "==> Migration Job: $deployment (image=${image})"
   kubectl delete job -n "$APP_NS" -l "collabspace.dev/migration=${deployment}" --ignore-not-found >/dev/null 2>&1 || true
 
   cat <<EOF | kubectl apply -f -
@@ -94,9 +98,8 @@ ${pull_secret_block}
                 name: ${deployment}-secrets
 EOF
 
-  if ! kubectl wait --for=condition=complete "job/${job_name}" -n "$APP_NS" --timeout=300s; then
+  if ! wait_k8s_job "$APP_NS" "$job_name" 300 5; then
     echo "Migration job failed: $deployment"
-    kubectl logs -n "$APP_NS" "job/${job_name}" --tail=80 || true
     exit 1
   fi
   echo "OK  $deployment migration"
