@@ -6,10 +6,12 @@ import {
   UpdateDateColumn,
   ManyToOne,
   JoinColumn,
+  Index,
 } from 'typeorm';
 import { WorkspaceOrmEntity } from './workspace.orm-entity';
 
 @Entity('projects')
+@Index('IDX_projects_workspace_deleted', ['workspace_id', 'is_deleted'])
 export class ProjectOrmEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;

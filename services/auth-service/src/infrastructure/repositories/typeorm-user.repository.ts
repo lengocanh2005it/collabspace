@@ -188,7 +188,7 @@ export class TypeOrmUserRepository implements UserRepository {
   ): Promise<void> {
     const normalizedCurrentPassword = this.normalizePassword(currentPassword);
     const normalizedNewPassword = this.normalizePassword(newPassword);
-    const user = await this.loadUserById(userId);
+    const user = await this.loadUserByIdForWrite(userId);
     const isPasswordValid = await this.verifyPassword(
       normalizedCurrentPassword,
       user.passwordHash,
@@ -207,7 +207,7 @@ export class TypeOrmUserRepository implements UserRepository {
 
   async resetPassword(userId: string, newPassword: string): Promise<void> {
     const normalizedNewPassword = this.normalizePassword(newPassword);
-    const user = await this.loadUserById(userId);
+    const user = await this.loadUserByIdForWrite(userId);
     user.passwordHash = await this.hashPassword(normalizedNewPassword);
     await this.userRepository.save(user);
   }
@@ -269,6 +269,28 @@ export class TypeOrmUserRepository implements UserRepository {
     return manager
       ? manager.getRepository(UserOrmEntity)
       : this.userRepository;
+  }
+
+  private async loadUserByIdForWrite(userId: string): Promise<UserOrmEntity> {
+    const user = await this.userRepository.findOne({
+      select: {
+        id: true,
+        isActive: true,
+        emailVerifiedAt: true,
+        deletedAt: true,
+        passwordHash: true,
+      },
+      where: { id: userId },
+    });
+
+    if (!user || user.deletedAt) {
+      throw new NotFoundException({
+        code: 'USER_NOT_FOUND',
+        message: `User ${userId} was not found`,
+      });
+    }
+
+    return user;
   }
 
   private async loadUserById(

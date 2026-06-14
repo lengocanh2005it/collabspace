@@ -3,9 +3,11 @@ import { AppModule } from "./app.module";
 import { MicroserviceOptions, Transport } from "@nestjs/microservices";
 import { ConfigurationService } from "./configuration/configuration.service";
 import { ValidationPipe } from "@nestjs/common";
+import compression from "compression";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  app.use(compression());
 
   const configService = app.get(ConfigurationService);
   const rmqConfig = configService.getRabbitMqConfig();

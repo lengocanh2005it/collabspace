@@ -8,9 +8,11 @@ import { DatabaseService } from './infrastructure/database/database.service';
 import { MetricsService } from './metrics/metrics.service';
 import { registerRequestIdMiddleware } from './common/http/register-request-id.middleware';
 import { registerMetricsMiddleware } from './metrics/register-metrics.middleware';
+import compression from 'compression';
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
   const app = await NestFactory.create(AppModule);
+  app.use(compression());
 
   await app.get(DatabaseService).initialize();
 

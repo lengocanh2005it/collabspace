@@ -25,7 +25,12 @@ export class IdempotencyService {
       where: { userId, idempotencyKey },
     });
 
-    if (!record || record.expiresAt.getTime() <= Date.now()) {
+    if (!record) {
+      return null;
+    }
+
+    if (record.expiresAt.getTime() <= Date.now()) {
+      await this.recordRepo.delete({ userId, idempotencyKey }).catch(() => {});
       return null;
     }
 
@@ -33,6 +38,15 @@ export class IdempotencyService {
       body: record.responseBody,
       statusCode: record.statusCode,
     };
+  }
+
+  async pruneExpired(): Promise<number> {
+    const result = await this.recordRepo
+      .createQueryBuilder()
+      .delete()
+      .where('expires_at <= :now', { now: new Date() })
+      .execute();
+    return result.affected ?? 0;
   }
 
   async store(

@@ -14,3 +14,5 @@ export class ProcessedEvent {
 
 export const ProcessedEventSchema =
   SchemaFactory.createForClass(ProcessedEvent);
+
+ProcessedEventSchema.index({ processedAt: 1 }, { expireAfterSeconds: 604800 });

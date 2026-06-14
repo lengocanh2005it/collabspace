@@ -6,10 +6,8 @@ export interface IUserReplicaRepository {
   findByIdAsync(userId: string): Promise<UserReplica | null>;
   findByUsernameAsync(username: string): Promise<UserReplica | null>;
   findManyByIdsAsync(userIds: string[]): Promise<UserReplica[]>;
+  findManyByUsernamesAsync(usernames: string[]): Promise<UserReplica[]>;
 
-  // Dùng Partial để linh hoạt truyền data
   upsertAsync(data: Partial<UserReplica>): Promise<void>;
-
-  // Thêm hàm updateFieldsAsync dành riêng cho luồng Update Profile
   updateFieldsAsync(userId: string, data: Partial<UserReplica>): Promise<void>;
 }

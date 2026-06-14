@@ -84,6 +84,56 @@ export class UserReplicaLookupService {
     return record?.isActive ? record : null;
   }
 
+  async findActiveMapByUsernamesAsync(
+    usernames: string[],
+  ): Promise<Map<string, UserReplica>> {
+    const unique = [
+      ...new Set(usernames.map((u) => u.trim().toLowerCase()).filter(Boolean)),
+    ];
+    const result = new Map<string, UserReplica>();
+    if (unique.length === 0) return result;
+
+    const existing = await this.userReplicaRepo.findManyByUsernamesAsync(unique);
+    for (const r of existing) {
+      if (r.isActive && r.username) result.set(r.username.toLowerCase(), r);
+    }
+
+    const missing = unique.filter((u) => !result.has(u));
+    if (missing.length === 0 || !this.userProfileHttpClient.isFallbackEnabled()) {
+      return result;
+    }
+
+    for (const username of missing) {
+      const remote = await this.userProfileHttpClient.lookupReplicas({ username });
+      if (remote.length === 0) continue;
+      this.metricsService.recordReplicaFallback("findByUsername");
+      for (const r of remote) {
+        await this.userReplicaRepo.upsertAsync({
+          userId: r.userId,
+          email: r.email,
+          username: r.username?.toLowerCase() ?? null,
+          fullName: r.fullName,
+          displayName: r.displayName ?? r.fullName,
+          avatarUrl: r.avatarUrl ?? null,
+          isActive: r.isActive,
+        });
+        if (r.isActive && r.username) {
+          result.set(r.username.toLowerCase(), {
+            userId: r.userId,
+            email: r.email,
+            username: r.username,
+            fullName: r.fullName,
+            displayName: r.displayName,
+            avatarUrl: r.avatarUrl,
+            isActive: r.isActive,
+          });
+        }
+      }
+    }
+
+    return result;
+  }
+
   async findActiveMapByIdsAsync(
     userIds: string[],
   ): Promise<Map<string, UserReplica>> {

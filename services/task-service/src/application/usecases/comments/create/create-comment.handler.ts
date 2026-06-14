@@ -78,19 +78,20 @@ export class CreateCommentHandler implements ICommandHandler<
     );
 
     const mentionedUserIds: string[] = [];
-    for (const username of parseMentionUsernames(command.content)) {
-      const mentionedUser =
-        await this.userReplicaLookup.findActiveByUsernameAsync(username);
-      if (
-        mentionedUser &&
-        mentionedUser.isActive &&
-        mentionedUser.userId !== command.authorId
-      ) {
-        try {
-          comment.addMention(mentionedUser.userId);
-          mentionedUserIds.push(mentionedUser.userId);
-        } catch {
-          // Ignore duplicate mentions in the same comment.
+    const mentionUsernames = parseMentionUsernames(command.content);
+    if (mentionUsernames.length > 0) {
+      const mentionMap = await this.userReplicaLookup.findActiveMapByUsernamesAsync(
+        mentionUsernames,
+      );
+      for (const username of mentionUsernames) {
+        const mentionedUser = mentionMap.get(username.toLowerCase());
+        if (mentionedUser && mentionedUser.userId !== command.authorId) {
+          try {
+            comment.addMention(mentionedUser.userId);
+            mentionedUserIds.push(mentionedUser.userId);
+          } catch {
+            // Ignore duplicate mentions in the same comment.
+          }
         }
       }
     }

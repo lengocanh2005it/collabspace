@@ -57,11 +57,11 @@ export class NotificationRepository implements INotificationRepository {
    * Tìm notification theo ID
    */
   async findByIdAsync(id: string): Promise<NotificationEntity | null> {
-    const document = await this.notificationModel.findById(id);
+    const document = await this.notificationModel.findById(id).lean().exec();
     if (!document) {
       return null;
     }
-    return NotificationMapper.toDomain(document);
+    return NotificationMapper.toDomain(document as any);
   }
 
   /**
@@ -83,8 +83,8 @@ export class NotificationRepository implements INotificationRepository {
       query = query.limit(options.limit);
     }
 
-    const documents = await query.exec();
-    return documents.map((doc) => NotificationMapper.toDomain(doc));
+    const documents = await query.lean().exec();
+    return documents.map((doc) => NotificationMapper.toDomain(doc as any));
   }
 
   /**
@@ -99,9 +99,10 @@ export class NotificationRepository implements INotificationRepository {
         status: NotificationStatus.UNREAD,
       })
       .sort({ createdAt: -1 })
+      .lean()
       .exec();
 
-    return documents.map((doc) => NotificationMapper.toDomain(doc));
+    return documents.map((doc) => NotificationMapper.toDomain(doc as any));
   }
 
   /**
@@ -143,18 +144,30 @@ export class NotificationRepository implements INotificationRepository {
    * Đánh dấu tất cả notification của user là đã đọc
    */
   async markAllAsReadAsync(recipientId: string): Promise<number> {
-    const result = await this.notificationModel.updateMany(
-      {
-        recipientId,
-        status: NotificationStatus.UNREAD,
-      },
-      {
-        status: NotificationStatus.READ,
-        updatedAt: new Date(),
-      },
-    );
+    const BATCH_SIZE = 1000;
+    let totalModified = 0;
 
-    return result.modifiedCount;
+    while (true) {
+      const ids = await this.notificationModel
+        .find({ recipientId, status: NotificationStatus.UNREAD })
+        .select('_id')
+        .limit(BATCH_SIZE)
+        .lean()
+        .exec();
+
+      if (ids.length === 0) break;
+
+      const result = await this.notificationModel.updateMany(
+        { _id: { $in: ids.map((d: any) => d._id) } },
+        { status: NotificationStatus.READ, updatedAt: new Date() },
+      );
+
+      totalModified += result.modifiedCount;
+
+      if (ids.length < BATCH_SIZE) break;
+    }
+
+    return totalModified;
   }
 
   /**
@@ -170,9 +183,10 @@ export class NotificationRepository implements INotificationRepository {
         type: type,
       })
       .sort({ createdAt: -1 })
+      .lean()
       .exec();
 
-    return documents.map((doc) => NotificationMapper.toDomain(doc));
+    return documents.map((doc) => NotificationMapper.toDomain(doc as any));
   }
 
   /**

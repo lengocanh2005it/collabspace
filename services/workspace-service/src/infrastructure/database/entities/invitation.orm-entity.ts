@@ -6,11 +6,13 @@ import {
   ManyToOne,
   JoinColumn,
   Unique,
+  Index,
 } from 'typeorm';
 import { WorkspaceOrmEntity } from './workspace.orm-entity';
 
 @Entity('invitations')
 @Unique(['workspace_id', 'invitee_email', 'status'])
+@Index('IDX_invitations_workspace_status', ['workspace_id', 'status'])
 export class InvitationOrmEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;

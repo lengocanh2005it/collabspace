@@ -12,6 +12,7 @@ import { configureHttpApp } from './app.setup';
 import { UserHealthService } from './health/user-health.service';
 import { MetricsService } from './metrics/metrics.service';
 import { registerMetricsMiddleware } from './metrics/register-metrics.middleware';
+import compression from 'compression';
 
 const toBoolean = (value: string | undefined, fallback: boolean): boolean => {
   if (!value) {
@@ -23,6 +24,7 @@ const toBoolean = (value: string | undefined, fallback: boolean): boolean => {
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  app.use(compression());
 
   configureHttpApp(app);
   registerMetricsMiddleware(app, app.get(MetricsService));

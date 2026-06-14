@@ -563,6 +563,7 @@ apps:
     extraEnv:
       RABBITMQ_ENABLED: "true"
       RABBITMQ_QUEUE: notification-service
+      RABBITMQ_PREFETCH_COUNT: "50"
       REDIS_HOST: redis-master
       WS_ENABLED: "true"
       WS_PATH: /notifications/ws
