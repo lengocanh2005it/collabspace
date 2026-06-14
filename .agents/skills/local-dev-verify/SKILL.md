@@ -11,7 +11,7 @@ Use this skill to verify code changes and local runtime behavior.
 
 Read:
 
-- `.Codex/docs/development-workflows.md`
+- `.claude/docs/development-workflows.md`
 - Target service `package.json`
 - Relevant Docker Compose files under `infrastructure/docker`
 
@@ -23,8 +23,8 @@ For docs-only changes:
 
 When **code** changes verify commands, ports, compose files, or health URLs:
 
-- Update this `SKILL.md` and `.Codex/docs/development-workflows.md` in the same PR.
-- See `.Codex/rules/docs-and-skills-sync.md`.
+- Update this `SKILL.md` and `.claude/docs/development-workflows.md` in the same PR.
+- See `.claude/rules/docs-and-skills-sync.md`.
 
 For TypeScript compile/module changes:
 

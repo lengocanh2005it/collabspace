@@ -11,9 +11,9 @@ Use this skill for `services/auth-service` and `services/user-service`.
 
 Read as needed:
 
-- `.Codex/docs/coding-conventions.md`
-- `.Codex/docs/service-contracts.md`
-- `.Codex/docs/development-workflows.md`
+- `.claude/docs/coding-conventions.md`
+- `.claude/docs/service-contracts.md`
+- `.claude/docs/development-workflows.md`
 - Target service `package.json`
 - Target service `src/app.module.ts`
 - Nearby tests and migrations
@@ -43,7 +43,7 @@ Read as needed:
   - HTTP `verify`
   - gRPC auth controller/types
   - consumers
-  - `.Codex/docs/service-contracts.md`
+  - `.claude/docs/service-contracts.md`
 
 ## user-service Rules
 
@@ -110,7 +110,7 @@ Reference: `services/workspace-service/.../1718000000000-CreateWorkspaceActiviti
 3. Update provider controller.
 4. Update consumer client/service.
 5. Update tests for both provider and consumer where practical.
-6. Update `.Codex/docs/service-contracts.md`.
+6. Update `.claude/docs/service-contracts.md`.
 
 ## Verification
 
@@ -138,14 +138,14 @@ After code changes, update when **needed** (same PR):
 
 | Change | Update |
 |--------|--------|
-| HTTP/gRPC route or DTO contract | `.Codex/docs/service-contracts.md`, `docs/api-routes.md` |
+| HTTP/gRPC route or DTO contract | `.claude/docs/service-contracts.md`, `docs/api-routes.md` |
 | New/changed env / secret key | `services/*/.env.example`, `development-workflows.md`; if shared secret → `infrastructure/vault/` seed scripts + `external-secrets.yaml` |
-| Auth/verify behavior | `service-contracts.md`, `services/<service>/AGENTS.md`, `.Codex/rules/<service>.md` |
+| Auth/verify behavior | `service-contracts.md`, `services/<service>/CLAUDE.md`, `.claude/rules/<service>.md` |
 | TypeORM migration added/renamed | This skill (Schema Change Checklist), `coding-conventions.md` |
 | Feature status | `docs/features.md`, `docs/mvp-demo-scope.md` |
 | Verify commands changed | This skill or `local-dev-verify/SKILL.md` |
 
-Skip for internal refactors with no contract impact. Rule: `.Codex/rules/docs-and-skills-sync.md`.
+Skip for internal refactors with no contract impact. Rule: `.claude/rules/docs-and-skills-sync.md`.
 
 ## Completion Response
 

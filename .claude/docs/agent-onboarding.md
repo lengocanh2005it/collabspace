@@ -1,6 +1,6 @@
 # CollabSpace Agent Onboarding
 
-Hướng dẫn này dành cho AI agents (Claude Code, Cursor, v.v.) làm việc trên repo CollabSpace.
+Hướng dẫn này dành cho AI agents (Claude Code, Cursor, Codex, v.v.) làm việc trên repo CollabSpace.
 
 ## Bắt đầu nhanh
 
@@ -10,17 +10,23 @@ Hướng dẫn này dành cho AI agents (Claude Code, Cursor, v.v.) làm việc 
 4. Dùng skill phù hợp (`/collabspace-codebase`, `/nest-service-change`, …).
 5. Chỉnh code, chạy verify, **cập nhật agent docs + skills liên quan** nếu contract/MVP/vận hành đổi (xem [Docs & skills sync](#docs--skills-sync-khi-sửa-code)).
 
-## Cấu trúc agent docs
+## Cấu trúc agent docs (đa công cụ)
+
+**Nguồn chính (canonical):** `.claude/` — dùng chung cho Claude Code và Cursor. Codex đọc cùng docs nhưng load skills/subagents từ mirror riêng.
 
 ```text
-CLAUDE.md                    # Loaded mỗi session — giữ ngắn (<200 dòng)
-.claude/
+CLAUDE.md                    # Entry Claude/Cursor — giữ ngắn (<200 dòng)
+AGENTS.md                    # Entry cross-tool (Claude + Cursor + Codex)
+.claude/                     # CANONICAL — docs, rules, skills, subagents
 ├── settings.json            # Permissions, env (team-shared)
 ├── settings.local.json      # Override cá nhân (gitignore)
-├── agents/                  # Subagents chuyên biệt
+├── agents/                  # Subagents Claude/Cursor (*.md)
 ├── rules/                   # Rules theo path (auth, user, infra, docs-and-skills-sync)
 ├── skills/                  # Workflows tái sử dụng (/skill-name)
 └── docs/                    # Reference docs (đọc khi cần)
+.agents/skills/              # Codex mirror — sync từ .claude/skills/
+.codex/agents/               # Codex subagents (*.toml) — sync tay từ .claude/agents/
+scripts/sync-agent-docs.*    # Copy skills .claude → .agents
 services/
 ├── auth-service/CLAUDE.md
 ├── user-service/CLAUDE.md
@@ -28,6 +34,8 @@ services/
 ├── task-service/CLAUDE.md
 └── notification-service/CLAUDE.md
 ```
+
+**Không** tạo `.Codex/docs/` — path cũ đã bỏ; mọi shared doc nằm trong `.claude/docs/`.
 
 ## Service ownership
 
@@ -126,7 +134,17 @@ Invoke explicitly: *"Use the nest-reviewer agent to review my changes."*
 | `/mvp-feature-planner` | Slice template, default priority, checklist implement |
 | `/local-dev-verify` | Lệnh build/test/docker/health trong skill lệch thực tế |
 
-Nếu skill mô tả bước **không còn đúng** sau khi sửa code → sửa file `SKILL.md` tương ứng trong `.claude/skills/`.
+Nếu skill mô tả bước **không còn đúng** sau khi sửa code → sửa file `SKILL.md` trong `.claude/skills/`, rồi chạy `scripts/sync-agent-docs.sh` để cập nhật `.agents/skills/`.
+
+### Đồng bộ đa công cụ
+
+| Thay đổi | Cập nhật |
+|----------|----------|
+| Skill workflow | `.claude/skills/*/SKILL.md` → chạy `sync-agent-docs` |
+| Subagent prompt | `.claude/agents/*.md` + `.codex/agents/*.toml` (tay) |
+| Shared reference doc | `.claude/docs/*.md` (một bản, cả 3 tool đọc chung) |
+| Path rule theo service | `.claude/rules/*.md` |
+| Service cheat sheet | `services/*/CLAUDE.md` |
 
 ### Không bắt buộc
 
@@ -146,11 +164,12 @@ Sau khi sửa code:
 
 ## "Continue MVP" default
 
-Đọc `docs/features.md` trước — **backend MVP APIs đã Done** (board, mark-read, delete task, Phase B/C).
+Đọc `docs/features.md` trước — **backend MVP APIs đã Done** (board, activity feeds, mark-read, delete task, Admin Platform, password reset/sessions, Phase B/C).
 
 Ưu tiên còn lại (2026-06 sync):
 
-1. E2E per service (workspace, task, notification) + gắn `scripts/demo-e2e` vào CI
-2. Workspace-level activity feed (`GET /workspaces/:id/activity` — chưa có route)
-3. Contract test / chuẩn hóa logging-tracing — xem [application-backlog.md](../../docs/team/application-backlog.md) § Cross-cutting
-4. Infra vận hành → `docs/team/phan-phu-tho-infrastructure-backlog.md`
+1. Workspace E2E + gắn `scripts/demo-e2e` vào CI smoke (task/notification E2E Done)
+2. Contract test / Pact automation — backlog
+3. Admin UI integration — backend Done; verify UI contract khi UI đổi
+4. Frontend UI — ngoài scope repo
+5. Infra vận hành → `docs/team/phan-phu-tho-infrastructure-backlog.md`

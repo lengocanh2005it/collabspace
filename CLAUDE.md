@@ -33,7 +33,7 @@ Read before broad changes:
 
 Path-scoped rules load automatically from `.claude/rules/` when editing matching files.
 
-Subagents in `.claude/agents/`: `nest-reviewer`, `mvp-implementer`, `contract-guardian`.
+Subagents: `.claude/agents/` (`nest-reviewer`, `mvp-implementer`, `contract-guardian`); Codex mirror `.codex/agents/*.toml`. Cross-tool index: `AGENTS.md`.
 
 ## Repository Shape
 
@@ -74,7 +74,7 @@ Subagents in `.claude/agents/`: `nest-reviewer`, `mvp-implementer`, `contract-gu
   - `task-service` / `notification-service`: CQRS handlers, domain entities, Mongo repositories.
 - Service-local cheat sheets: `services/<service>/CLAUDE.md`.
 - Add focused tests for new use cases, service methods, repository behavior, gRPC integrations, and controller behavior when the change has user-visible behavior.
-- **Docs & skills sync:** when code changes routes, events, env, auth, resilience, or MVP status, update related agent docs (`.claude/docs/`, `services/*/CLAUDE.md`, `.claude/rules/`) and skills (`.claude/skills/`) in the same change when needed — see `.claude/docs/agent-onboarding.md` and `.claude/rules/docs-and-skills-sync.md`.
+- **Docs & skills sync:** when code changes routes, events, env, auth, resilience, or MVP status, update related agent docs (`.claude/docs/`, `services/*/CLAUDE.md`, `.claude/rules/`) and skills (`.claude/skills/` → run `scripts/sync-agent-docs.sh` for `.agents/skills/`) in the same change when needed — see `.claude/docs/agent-onboarding.md` and `.claude/rules/docs-and-skills-sync.md`.
 - Avoid broad rewrites, dependency churn, or formatting unrelated files.
 - Do not invent production secrets. Use `.env.example` patterns and document required variables.
 - **Secrets:** apps read env vars only. **Local:** Vault dev (`docker-compose.vault.yml` → `infrastructure/vault/scripts/`) hoặc `.env` tay. **K8s prod:** Vault + External Secrets Operator → `{app}-secrets`; Helm `global.externalSecrets.enabled: true`. See `infrastructure/vault/README.md`.

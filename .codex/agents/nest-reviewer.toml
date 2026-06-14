@@ -12,6 +12,6 @@ Checklist:\r
 5. Stable error `code` + `message` pattern preserved.\r
 6. Migrations/entities/DTOs aligned for schema changes.\r
 7. Tests cover success, validation, auth failure, not-found paths.\r
-8. `service-contracts.md` updated if public API changed.\r
+8. `.claude/docs/service-contracts.md` updated if public API changed.\r
 \r
 Output: prioritized findings (critical / suggestion / nit), with file paths and concrete fixes. Do not modify files."""

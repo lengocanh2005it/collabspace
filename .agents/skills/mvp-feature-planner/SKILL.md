@@ -13,20 +13,22 @@ Read:
 
 - `docs/features.md`
 - `docs/mvp-demo-scope.md`
-- `.Codex/docs/mvp-roadmap.md`
-- `.Codex/docs/project-architecture.md`
-- `.Codex/docs/service-contracts.md`
+- `.claude/docs/mvp-roadmap.md`
+- `.claude/docs/project-architecture.md`
+- `.claude/docs/service-contracts.md`
 
 ## Default Priority
 
 If the user says "continue MVP" without a target, read `docs/features.md` for **Planned** / **Partial** items first. Typical gaps (2026-06 sync):
 
-1. **E2E + CI** — `scripts/demo-e2e` Done; gắn CI + `*.e2e-spec.ts` workspace/task/notification.
-2. **Workspace activity feed** — task-level `GET /tasks/:id/activity` Done; workspace-level aggregate chưa có.
-3. **Contract test** — Pact/schema (backlog). **OpenAPI 5/5** ✅ — Swagger UI + `@ApiOkResponse` schemas trên 5 service.
-4. **Frontend UI** — out of scope repo; backend APIs largely Done.
+1. **E2E + CI** - task and notification E2E are Done; workspace E2E and CI demo smoke remain.
+2. **Contract test** - Pact/schema automation remains backlog. OpenAPI 5/5 is Done.
+3. **Admin UI integration** - backend Admin Platform APIs are Done; verify the external UI contract as it evolves.
+4. **Frontend UI** - out of scope for this repository.
 
-Do **not** re-implement: board API, task delete, mark-read, Phase B/C platform work — see `docs/features.md`.
+Do **not** re-implement: board API, task/workspace activity, task delete,
+mark-read, Admin Platform API, or Phase B/C platform work. See
+`docs/features.md` and `docs/team/admin-backlog.md`.
 
 ## Planning Rules
 
@@ -53,7 +55,7 @@ Implementation checklist:
 7. Add list members.
 8. Publish `WORKSPACE_INVITED`.
 9. Add unit/e2e tests.
-10. Update README and `.Codex/docs`.
+10. Update README and `.claude/docs`.
 
 ## Task Slice Template
 
@@ -116,9 +118,9 @@ When implementing:
 
 - Implement the first coherent slice end to end.
 - Update **tests, agent docs, human docs, and skills** in the same change when the slice changes contracts or MVP status:
-  - `docs/features.md`, `docs/mvp-demo-scope.md`, `.Codex/docs/mvp-roadmap.md`
-  - `.Codex/docs/service-contracts.md`, `docs/api-routes.md`
+  - `docs/features.md`, `docs/mvp-demo-scope.md`, `.claude/docs/mvp-roadmap.md`
+  - `.claude/docs/service-contracts.md`, `docs/api-routes.md`
   - `docs/team/application-backlog.md` if closing a backlog item
   - This skill or `nest-service-change` / `local-dev-verify` if workflow steps changed
-- See `.Codex/rules/docs-and-skills-sync.md`.
+- See `.claude/rules/docs-and-skills-sync.md`.
 

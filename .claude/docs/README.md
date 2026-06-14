@@ -1,6 +1,8 @@
-# Claude Code Docs For CollabSpace
+# Agent Docs For CollabSpace
 
-Detailed project context for AI agents. Keep root `CLAUDE.md` concise; put long procedures in skills or here.
+Detailed project context for AI agents (Claude Code, Cursor, Codex). Keep root `CLAUDE.md` concise; put long procedures in skills or here.
+
+**Canonical folder:** `.claude/docs/`. Codex loads skills from `.agents/skills/` (mirror) but reads the same docs. See `AGENTS.md` for the multi-tool map.
 
 ## Files
 
@@ -44,10 +46,12 @@ Detailed project context for AI agents. Keep root `CLAUDE.md` concise; put long 
 
 | Path | Purpose |
 |------|---------|
-| `CLAUDE.md` | Loaded every session |
-| `AGENTS.md` | Cross-tool agent index |
-| `.claude/skills/` | Invocable workflows (`/skill-name`) |
-| `.claude/agents/` | Subagents (`nest-reviewer`, `mvp-implementer`, `contract-guardian`) |
+| `CLAUDE.md` | Loaded every session (Claude/Cursor) |
+| `AGENTS.md` | Cross-tool agent index (Claude + Cursor + Codex) |
+| `.claude/skills/` | Invocable workflows (`/skill-name`) — **canonical** |
+| `.agents/skills/` | Codex mirror — run `scripts/sync-agent-docs.sh` after skill edits |
+| `.claude/agents/` | Subagents Claude/Cursor (`nest-reviewer`, `mvp-implementer`, `contract-guardian`) |
+| `.codex/agents/` | Codex subagents (`*.toml`) — sync prompts manually from `.claude/agents/` |
 | `.claude/rules/` | Path-scoped rules per service + `docs-and-skills-sync.md` (sync docs/skills when code changes) |
 | `.claude/settings.json` | Permissions and env defaults |
 | `.claudeignore` | Files excluded from agent context |

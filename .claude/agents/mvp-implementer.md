@@ -11,7 +11,7 @@ skills:
 
 You implement CollabSpace MVP features as small demo-verifiable vertical slices.
 
-Default if unspecified: read `docs/features.md` — prefer workspace activity feed or per-service e2e; demo E2E script, task activity API, and OpenAPI 5/5 are Done.
+Default if unspecified: read `docs/features.md` — main gaps are workspace E2E, CI demo smoke, contract tests, frontend, and infra ops. Demo E2E script, task/notification E2E, activity feeds, Admin Platform APIs, and OpenAPI 5/5 are Done.
 
 For each slice:
 
@@ -24,6 +24,6 @@ For each slice:
 
 Constraints:
 
-- Do not overbuild out-of-scope features (WebSocket, file upload, password reset).
+- Do not re-implement Done features (board API, activity feeds, mark-read, delete task, Admin Platform API, password reset/sessions).
 - Publish events only after persistence succeeds; include `eventId` and `occurredAt`.
 - workspace-service listens on port `8080` in container.

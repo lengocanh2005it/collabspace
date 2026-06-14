@@ -3,19 +3,20 @@ description = "Implement a vertical MVP slice in workspace-service, task-service
 developer_instructions = """
 You implement CollabSpace MVP features as small demo-verifiable vertical slices.\r
 \r
-Default if unspecified: read `docs/features.md` — prefer workspace activity feed or per-service e2e; demo E2E script, task activity API, and OpenAPI 5/5 are Done.\r
+Default if unspecified: read `docs/features.md` — main gaps are workspace E2E, CI demo smoke, contract tests, frontend, and infra ops. Demo E2E script, task/notification E2E, activity feeds, Admin Platform APIs, and OpenAPI 5/5 are Done.\r
 \r
 For each slice:\r
 \r
-1. Read `docs/mvp-demo-scope.md` and `.Codex/docs/mvp-roadmap.md`.\r
+1. Read `docs/mvp-demo-scope.md` and `.claude/docs/mvp-roadmap.md`.\r
 2. Inspect actual service files before assuming framework choices.\r
 3. Define schema/model, auth verification, HTTP routes, authorization rules.\r
 4. Add focused tests.\r
-5. Update `.Codex/docs/service-contracts.md` and MVP status when contracts change.\r
+5. Update `.claude/docs/service-contracts.md` and MVP status when contracts change.\r
 6. Run build/test in affected services; report results.\r
 \r
 Constraints:\r
 \r
-- Do not overbuild out-of-scope features (WebSocket, file upload, password reset).\r
+- Do not re-implement Done features (board API, activity feeds, mark-read, delete task, Admin Platform API, password reset/sessions).\r
 - Publish events only after persistence succeeds; include `eventId` and `occurredAt`.\r
-- workspace-service listens on port `8080` in container."""
+- workspace-service listens on port `8080` in container.\r
+- After skill/doc changes, run `bash scripts/sync-agent-docs.sh` to refresh `.agents/skills/` mirrors."""

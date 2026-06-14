@@ -27,7 +27,9 @@ Khi sửa code mà **ảnh hưởng hành vi, contract, hoặc cách vận hành
 | Port, global prefix, gateway route | `CLAUDE.md`, `api-gateway/`, `README.md` nếu quick start đổi |
 | Pattern lặp lại trong một service | `services/<service>/CLAUDE.md`, `.claude/rules/<service>.md` |
 | Workflow verify / migrate / seed đổi | `.claude/docs/development-workflows.md`, skill `/local-dev-verify` nếu bước verify đổi |
-| Quy trình implement NestJS đổi | `.claude/skills/nest-service-change/SKILL.md` (nếu áp dụng rộng) |
+| Quy trình implement NestJS đổi | `.claude/skills/nest-service-change/SKILL.md` (nếu áp dụng rộng) → chạy `scripts/sync-agent-docs.sh` |
+| Skill workflow đổi (bất kỳ) | `.claude/skills/*/SKILL.md` → `scripts/sync-agent-docs.sh` → `.agents/skills/` |
+| Subagent prompt đổi | `.claude/agents/*.md` + `.codex/agents/*.toml` (cùng PR, sync tay) |
 
 Chỉ refactor nội bộ (rename private helper, format) **không** đổi contract → không bắt buộc sync doc.
 
@@ -36,5 +38,6 @@ Chỉ refactor nội bộ (rename private helper, format) **không** đổi cont
 1. Sửa code + test.
 2. Rà bảng trên; cập nhật doc/skill **trong cùng thay đổi**.
 3. Trong completion message: liệt kê file doc/skill đã cập nhật (hoặc ghi "không cần — không đổi contract").
+4. Nếu sửa `.claude/skills/`: chạy `scripts/sync-agent-docs.sh` (hoặc `.ps1`) để mirror Codex `.agents/skills/`.
 
 Chi tiết: `.claude/docs/agent-onboarding.md` → **Docs & skills sync**.

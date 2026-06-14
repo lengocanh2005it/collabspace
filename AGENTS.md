@@ -1,6 +1,18 @@
 # CollabSpace Agent Instructions
 
-This repository uses **Claude Code**-style agent documentation. `CLAUDE.md` is the primary entry point.
+Cross-tool index for **Claude Code**, **Cursor**, and **Codex**. Canonical shared docs live in `.claude/`; `CLAUDE.md` is the primary entry point for Claude/Cursor.
+
+## Multi-tool layout
+
+| Tool | Entry | Skills | Subagents | Path rules |
+|------|-------|--------|-----------|------------|
+| Claude Code / Cursor | `CLAUDE.md` | `.claude/skills/` | `.claude/agents/*.md` | `.claude/rules/` |
+| Codex | `AGENTS.md` (this file) | `.agents/skills/` (mirror) | `.codex/agents/*.toml` | — (read `.claude/rules/` when relevant) |
+
+**Canonical source:** `.claude/docs/`, `.claude/rules/`, `.claude/skills/`, `.claude/agents/`.  
+**Do not** duplicate docs under `.Codex/docs/` — that path was removed.
+
+After editing `.claude/skills/`, run `bash scripts/sync-agent-docs.sh` (or `pwsh scripts/sync-agent-docs.ps1`) to refresh `.agents/skills/`. After editing `.claude/agents/*.md`, update matching `.codex/agents/*.toml` manually.
 
 ## Start here
 
@@ -48,9 +60,10 @@ Report which doc/skill files were updated in the completion summary (or state th
 
 ## Automation
 
-- **Skills** (`.claude/skills/`): `/collabspace-codebase`, `/nest-service-change`, `/mvp-feature-planner`, `/local-dev-verify`
-- **Subagents** (`.claude/agents/`): `nest-reviewer`, `mvp-implementer`, `contract-guardian`
+- **Skills** (`.claude/skills/`; Codex mirror `.agents/skills/`): `/collabspace-codebase`, `/nest-service-change`, `/mvp-feature-planner`, `/local-dev-verify`
+- **Subagents** — Claude/Cursor: `.claude/agents/`; Codex: `.codex/agents/` — `nest-reviewer`, `mvp-implementer`, `contract-guardian`
 - **Path rules** (`.claude/rules/`): auto-load when editing matching service paths (incl. `docs-and-skills-sync.md`)
+- **Sync script**: `scripts/sync-agent-docs.sh` / `.ps1` — copies skills `.claude/skills/` → `.agents/skills/`
 
 ## Service-local context
 

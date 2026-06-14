@@ -14,10 +14,10 @@ Read these files as needed:
 - `README.md`
 - `docs/features.md`
 - `docs/mvp-demo-scope.md`
-- `.Codex/docs/project-architecture.md`
-- `.Codex/docs/service-architecture.md` (per-service folder layout and patterns)
-- `.Codex/docs/service-contracts.md`
-- `.Codex/docs/mvp-roadmap.md`
+- `.claude/docs/project-architecture.md`
+- `.claude/docs/service-architecture.md` (per-service folder layout and patterns)
+- `.claude/docs/service-contracts.md`
+- `.claude/docs/mvp-roadmap.md`
 - `docs/team/phan-phu-tho-infrastructure-backlog.md` (infra/DevOps gaps)
 - `infrastructure/vault/README.md` (HashiCorp Vault — local dev + K8s ESO)
 - `docs/observability.md` (Grafana, Prometheus, Loki, k6 on K8s)
@@ -33,8 +33,11 @@ Read these files as needed:
    - notification/activity
    - infrastructure/observability/CI
 2. Map the request to the owning service.
-3. Check `docs/features.md` for Done / Planned — all five app services are implemented; main gaps: workspace activity feed, per-service e2e + CI smoke, contract tests, frontend, infra ops. **OpenAPI 5/5 Done** — `/swagger` + response schemas; prod URLs: `docs/service-urls.md`. Demo E2E: `scripts/demo-e2e.sh` / `.ps1`.
-4. Read `services/<service>/AGENTS.md` and `.Codex/docs/service-architecture.md` for that service's layering rules.
+3. Check `docs/features.md` for Done / Planned. All five app services,
+   workspace/task activity feeds, task/notification E2E, and the Admin Platform
+   APIs are implemented. Main gaps are workspace E2E, CI demo smoke, automated
+   contract tests, frontend, and infra operations. OpenAPI 5/5 is Done.
+4. Read `services/<service>/CLAUDE.md` and `.claude/docs/service-architecture.md` for that service's layering rules.
 5. Read the target service's `src/app.module.ts`, controllers, use cases/handlers, entities, repositories, migrations, and tests.
 6. For **TypeORM migrations** (auth, workspace): file `{timestamp}-{PascalCase}.ts`, class `{PascalCase}{timestamp}` — see `nest-service-change` skill. user-service uses `migrations/NNN_*.sql`.
 7. Summarize the current state before proposing cross-service work.
@@ -62,5 +65,5 @@ When implementing:
 
 - Do not stop at a high-level plan if the request asks for code.
 - Keep edits scoped to the owning service unless integration files must change.
-- **Docs & skills sync:** if contracts, ports, env vars, events, auth, resilience, or MVP status change, update related agent docs (`.Codex/docs/`, `services/*/AGENTS.md`, `docs/features.md`, …) and skills (this file, `nest-service-change`, `mvp-feature-planner`, `local-dev-verify`) in the **same change** when needed. See `.Codex/rules/docs-and-skills-sync.md`.
+- **Docs & skills sync:** if contracts, ports, env vars, events, auth, resilience, or MVP status change, update related agent docs (`.claude/docs/`, `services/*/CLAUDE.md`, `docs/features.md`, …) and skills (this file, `nest-service-change`, `mvp-feature-planner`, `local-dev-verify`) in the **same change** when needed. See `.claude/rules/docs-and-skills-sync.md`.
 
