@@ -18,4 +18,5 @@ export interface UserRepository {
     currentPassword: string,
     newPassword: string,
   ): Promise<void>;
+  resetPassword(userId: string, newPassword: string): Promise<void>;
 }

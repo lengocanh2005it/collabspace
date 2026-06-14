@@ -8,6 +8,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { createHash, randomBytes, randomUUID } from 'crypto';
 import { DataSource, IsNull, MoreThan, Repository } from 'typeorm';
 import { RefreshTokenRepository } from '@/domain/repositories/refresh-token.repository';
+import type { RefreshTokenSessionSummary } from '@/domain/types/refresh-token-session';
 import { RefreshTokenOrmEntity } from '@/infrastructure/database/entities/refresh-token.orm-entity';
 
 @Injectable()
@@ -33,7 +34,9 @@ export class TypeOrmRefreshTokenRepository implements RefreshTokenRepository {
     });
   }
 
-  async listSessionsByUserId(userId: string): Promise<RefreshTokenOrmEntity[]> {
+  async listSessionsByUserId(
+    userId: string,
+  ): Promise<RefreshTokenSessionSummary[]> {
     const tokens = await this.refreshTokenRepository.find({
       order: {
         createdAt: 'DESC',
@@ -50,9 +53,9 @@ export class TypeOrmRefreshTokenRepository implements RefreshTokenRepository {
       }
     }
 
-    return [...latestByFamily.values()].sort(
-      (left, right) => right.createdAt.getTime() - left.createdAt.getTime(),
-    );
+    return [...latestByFamily.values()]
+      .sort((left, right) => right.createdAt.getTime() - left.createdAt.getTime())
+      .map((token) => this.toSessionSummary(token));
   }
 
   async issue(input: IssueRefreshTokenInput): Promise<RefreshTokenPayload> {
@@ -285,6 +288,24 @@ export class TypeOrmRefreshTokenRepository implements RefreshTokenRepository {
 
   private hashToken(refreshToken: string): string {
     return createHash('sha256').update(refreshToken).digest('hex');
+  }
+
+  private toSessionSummary(token: RefreshTokenOrmEntity): RefreshTokenSessionSummary {
+    const now = Date.now();
+    const isActive =
+      !token.revokedAt && token.expiresAt.getTime() > now;
+
+    return {
+      tokenId: token.id,
+      familyId: token.familyId,
+      userId: token.userId,
+      workspaceId: token.workspaceId,
+      isActive,
+      lastUsedAt: token.lastUsedAt,
+      expiresAt: token.expiresAt,
+      createdAt: token.createdAt,
+      revokedAt: token.revokedAt,
+    };
   }
 
   private isExpired(token: RefreshTokenOrmEntity): boolean {

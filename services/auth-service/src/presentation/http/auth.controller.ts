@@ -1,11 +1,13 @@
 import {
   Body,
   Controller,
+  Delete,
   ForbiddenException,
   Get,
   HttpCode,
   Inject,
   NotFoundException,
+  Param,
   Post,
   Query,
   Req,
@@ -16,6 +18,7 @@ import {
   ApiCreatedResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiParam,
   ApiProduces,
   ApiResponse,
   ApiTags,
@@ -24,20 +27,29 @@ import {
 } from '@nestjs/swagger';
 import {
   ChangePasswordRequestDto,
+  ForgotPasswordRequestDto,
   LoginRequestDto,
+  LogoutOthersRequestDto,
   LogoutRequestDto,
   RefreshSessionRequestDto,
   RegisterRequestDto,
   ResendEmailVerificationOtpRequestDto,
+  ResetPasswordRequestDto,
   VerifyEmailOtpRequestDto,
 } from '@/application/dto/auth-request.dto';
 import { AuthSessionResponseDto } from '@/application/dto/auth-session-response.dto';
 import {
   ChangePasswordResponseDto,
+  ForgotPasswordResponseDto,
+  LogoutAllResponseDto,
+  LogoutOthersResponseDto,
   LogoutResponseDto,
   MeResponseDto,
+  RefreshTokenSessionResponseDto,
   RegisterPendingResponseDto,
   ResendEmailVerificationOtpResponseDto,
+  ResetPasswordResponseDto,
+  RevokeSessionResponseDto,
   VerifyAccessResponseDto,
   VerifyEmailOtpResponseDto,
 } from '@/application/dto/auth-response.dto';
@@ -46,12 +58,18 @@ import {
   ReadinessReportDto,
 } from '@/application/dto/health-response.dto';
 import { ChangePasswordUseCase } from '@/application/use-cases/change-password.use-case';
+import { ForgotPasswordUseCase } from '@/application/use-cases/forgot-password.use-case';
 import { GetCurrentUserUseCase } from '@/application/use-cases/get-current-user.use-case';
+import { ListSessionsUseCase } from '@/application/use-cases/list-sessions.use-case';
 import { LoginUseCase } from '@/application/use-cases/login.use-case';
+import { LogoutAllUseCase } from '@/application/use-cases/logout-all.use-case';
+import { LogoutOthersUseCase } from '@/application/use-cases/logout-others.use-case';
 import { LogoutUseCase } from '@/application/use-cases/logout.use-case';
 import { RefreshSessionUseCase } from '@/application/use-cases/refresh-session.use-case';
 import { RegisterUseCase } from '@/application/use-cases/register.use-case';
 import { ResendEmailVerificationOtpUseCase } from '@/application/use-cases/resend-email-verification-otp.use-case';
+import { ResetPasswordUseCase } from '@/application/use-cases/reset-password.use-case';
+import { RevokeSessionUseCase } from '@/application/use-cases/revoke-session.use-case';
 import { VerifyAccessTokenUseCase } from '@/application/use-cases/verify-access-token.use-case';
 import { VerifyEmailOtpUseCase } from '@/application/use-cases/verify-email-otp.use-case';
 import { AuthHealthService } from '@/health/auth-health.service';
@@ -75,6 +93,12 @@ export class AuthController {
     private readonly resendEmailVerificationOtpUseCase: ResendEmailVerificationOtpUseCase,
     private readonly verifyEmailOtpUseCase: VerifyEmailOtpUseCase,
     private readonly changePasswordUseCase: ChangePasswordUseCase,
+    private readonly forgotPasswordUseCase: ForgotPasswordUseCase,
+    private readonly resetPasswordUseCase: ResetPasswordUseCase,
+    private readonly listSessionsUseCase: ListSessionsUseCase,
+    private readonly revokeSessionUseCase: RevokeSessionUseCase,
+    private readonly logoutOthersUseCase: LogoutOthersUseCase,
+    private readonly logoutAllUseCase: LogoutAllUseCase,
     private readonly logoutUseCase: LogoutUseCase,
     private readonly refreshSessionUseCase: RefreshSessionUseCase,
     private readonly verifyAccessTokenUseCase: VerifyAccessTokenUseCase,
@@ -194,6 +218,80 @@ export class AuthController {
     );
   }
 
+  @Post('forgot-password')
+  @HttpCode(200)
+  @ApiOperation({
+    summary: 'Request password reset email',
+    description:
+      'Always returns success to avoid email enumeration. Reset email is sent only for verified accounts.',
+  })
+  @ApiOkResponse({ type: ForgotPasswordResponseDto })
+  async forgotPassword(@Body() body: ForgotPasswordRequestDto) {
+    return this.forgotPasswordUseCase.execute(body);
+  }
+
+  @Post('reset-password')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Reset password using emailed token' })
+  @ApiOkResponse({ type: ResetPasswordResponseDto })
+  @ApiUnauthorizedResponse({ description: 'Invalid or expired reset token' })
+  async resetPassword(@Body() body: ResetPasswordRequestDto) {
+    return this.resetPasswordUseCase.execute(body);
+  }
+
+  @Get('sessions')
+  @HttpCode(200)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'List refresh-token session families for current user' })
+  @ApiOkResponse({ type: RefreshTokenSessionResponseDto, isArray: true })
+  @ApiUnauthorizedResponse()
+  async listSessions(@Req() request: Request) {
+    return this.listSessionsUseCase.execute(request.header('authorization'));
+  }
+
+  @Delete('sessions/:familyId')
+  @HttpCode(200)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Revoke one refresh-token session family' })
+  @ApiParam({ name: 'familyId', format: 'uuid' })
+  @ApiOkResponse({ type: RevokeSessionResponseDto })
+  @ApiUnauthorizedResponse()
+  async revokeSession(
+    @Req() request: Request,
+    @Param('familyId') familyId: string,
+  ) {
+    return this.revokeSessionUseCase.execute(
+      request.header('authorization'),
+      familyId,
+    );
+  }
+
+  @Post('logout-others')
+  @HttpCode(200)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Revoke all refresh-token families except the current one' })
+  @ApiOkResponse({ type: LogoutOthersResponseDto })
+  @ApiUnauthorizedResponse()
+  async logoutOthers(
+    @Req() request: Request,
+    @Body() body: LogoutOthersRequestDto,
+  ) {
+    return this.logoutOthersUseCase.execute(
+      request.header('authorization'),
+      body,
+    );
+  }
+
+  @Post('logout-all')
+  @HttpCode(200)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Revoke all refresh-token families for current user' })
+  @ApiOkResponse({ type: LogoutAllResponseDto })
+  @ApiUnauthorizedResponse()
+  async logoutAll(@Req() request: Request) {
+    return this.logoutAllUseCase.execute(request.header('authorization'));
+  }
+
   @Post('logout')
   @HttpCode(200)
   @ApiOperation({ summary: 'Revoke refresh token session' })
@@ -228,6 +326,26 @@ export class AuthController {
       throw new NotFoundException(`No OTP found for ${email}`);
     }
     return { otp };
+  }
+
+  @Get('dev/reset-token')
+  @HttpCode(200)
+  @ApiOperation({
+    summary:
+      '[DEV ONLY] Get latest password reset token for email — requires ALLOW_DEV_OTP_ENDPOINT=true',
+  })
+  async getDevResetToken(@Query('email') email: string) {
+    if (!this.configurationService.isDevOtpEndpointEnabled()) {
+      throw new ForbiddenException('Dev reset token endpoint is disabled');
+    }
+    if (!email) {
+      throw new NotFoundException('email query param required');
+    }
+    const token = await this.emailOutbox.getDevPasswordResetToken(email);
+    if (!token) {
+      throw new NotFoundException(`No reset token found for ${email}`);
+    }
+    return { token };
   }
 
   @Get('verify')

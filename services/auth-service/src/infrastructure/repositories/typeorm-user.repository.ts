@@ -205,6 +205,13 @@ export class TypeOrmUserRepository implements UserRepository {
     await this.userRepository.save(user);
   }
 
+  async resetPassword(userId: string, newPassword: string): Promise<void> {
+    const normalizedNewPassword = this.normalizePassword(newPassword);
+    const user = await this.loadUserById(userId);
+    user.passwordHash = await this.hashPassword(normalizedNewPassword);
+    await this.userRepository.save(user);
+  }
+
   private async ensureRole(roleName: string): Promise<RoleOrmEntity> {
     const name = this.normalizeName(roleName, 'role');
     const existingRole = await this.roleRepository.findOne({
