@@ -78,6 +78,7 @@ replacements = {
     'erlangCookie: "REPLACE_ME_ERLANG_COOKIE"': f'erlangCookie: "{os.environ["RABBITMQ_ERLANG_COOKIE"]}"',
     "rabbitmqUsername: collabspace": f'rabbitmqUsername: {os.environ["RABBITMQ_USERNAME"]}',
     "username: collabspace": f'username: {os.environ["RABBITMQ_USERNAME"]}',
+    "MAIL_FROM: REPLACE_ME_MAIL_FROM": f'MAIL_FROM: {os.environ.get("MAIL_FROM") or os.environ.get("MAIL_USER", "no-reply@collabspace.local")}',
 }
 
 for old, new in replacements.items():
@@ -101,6 +102,13 @@ text = text.replace(
     f'password: "{os.environ["RABBITMQ_PASSWORD"]}"',
     1,
 )
+
+mail_from = os.environ.get("MAIL_FROM") or os.environ.get("MAIL_USER", "")
+if mail_from:
+    text = text.replace(
+        "MAIL_FROM: no-reply@collabspace.local",
+        f"MAIL_FROM: {mail_from}",
+    )
 
 open(dst, "w", encoding="utf-8", newline="\n").write(text)
 PY

@@ -53,5 +53,14 @@ echo "==> Restarting auth-service..."
 kubectl rollout restart deployment/auth-service -n "$APP_NS"
 kubectl rollout status deployment/auth-service -n "$APP_NS" --timeout=180s
 
+echo "==> SMTP connectivity check (port 587)..."
+if kubectl exec -n "$APP_NS" deploy/auth-service -- sh -c 'nc -zv -w5 smtp.gmail.com 587' >/dev/null 2>&1; then
+  echo "SMTP port 587 reachable from auth-service pod."
+else
+  echo "WARN: Cannot reach smtp.gmail.com:587 from the cluster."
+  echo "      DigitalOcean often blocks outbound SMTP (25/465/587)."
+  echo "      Open a DO support ticket to enable SMTP, or use an HTTP email API provider."
+fi
+
 echo "Gmail SMTP configured. MAIL_FROM=${MAIL_FROM}"
 echo "Test: register a new user and check inbox (or auth_outbox_events if delivery fails)."
