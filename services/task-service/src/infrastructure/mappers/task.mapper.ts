@@ -1,11 +1,7 @@
 // src/infrastructure/mappers/TaskMapper.ts
 
 import { Task as TaskDomain } from "../../domain/entities/Task";
-import type {
-  TaskDocument,
-  TaskPersistence,
-  TaskUserSnapshotPersistence,
-} from "../persistence/task.schema";
+import type { TaskPersistence, TaskUserSnapshotPersistence } from "../persistence/task.schema";
 import { TaskId } from "../../domain/value-objects/TaskId";
 import { UserSnapshot } from "../../domain/value-objects/UserSnapshot";
 import type { TaskResponseData, TaskUserResponse } from "../../presentation/dtos/task.response";
@@ -57,7 +53,7 @@ export class TaskMapper {
     };
   }
 
-  static toDomain(rawDoc: TaskDocument, streamVersion = 0): TaskDomain {
+  static toDomain(rawDoc: TaskPersistence, streamVersion = 0): TaskDomain {
     const taskId = new TaskId(rawDoc._id);
 
     // 👇 Truyền đủ 5 tham số từ DB lên để dựng lại Snapshot
