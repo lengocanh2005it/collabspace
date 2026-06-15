@@ -128,6 +128,7 @@ export const InboundNotificationEventMapper = {
         invitedByAvatarUrl: data.invitedByAvatarUrl,
         role: data.role,
         inviteEmail: data.inviteEmail,
+        invitationId: data.invitationId,
       },
       eventId,
     );
