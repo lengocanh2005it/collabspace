@@ -10,7 +10,7 @@ export KUBECONFIG="${KUBECONFIG:-/etc/rancher/k3s/k3s.yaml}"
 echo "==> Waiting for gateway readiness before demo E2E..."
 bash "$SCRIPT_DIR/verify-k8s-readiness.sh"
 echo "==> Brief stabilization for gRPC / RabbitMQ consumers..."
-sleep 10
+sleep "${E2E_STABILIZATION_SEC:-20}"
 
 # On the Droplet, Traefik is reachable on loopback. Avoid overwriting BASE_URL with raw
 # IPv6 node addresses (curl requires http://[ipv6]/...).

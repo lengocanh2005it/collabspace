@@ -50,6 +50,34 @@ assert_2xx() {
   dbg "$ctx → $code $body"
 }
 
+# Retry POST on 503 (transient S2S unavailability right after k8s rollout).
+curl_post_retry() {
+  local max_attempts="$1"
+  local wait_sec="$2"
+  local ctx="$3"
+  shift 3
+  local url="$1"
+  shift
+  local attempt=1
+  while true; do
+    local resp code body
+    resp=$(curl_post "$url" "$@")
+    code=$(echo "$resp" | cut -d' ' -f1)
+    body=$(echo "$resp" | cut -d' ' -f2-)
+    if [[ "$code" -ge 200 && "$code" -lt 300 ]]; then
+      echo "$resp"
+      return 0
+    fi
+    if [[ "$code" == "503" && "$attempt" -lt "$max_attempts" ]]; then
+      log "  $ctx returned 503 (attempt ${attempt}/${max_attempts}), retry in ${wait_sec}s..."
+      sleep "$wait_sec"
+      attempt=$((attempt + 1))
+    else
+      fail "$ctx — HTTP $code: $body"
+    fi
+  done
+}
+
 json_field() {
   echo "$1" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d$(echo "$2" | sed 's/\./"]["/g' | sed 's/^/["/' | sed 's/$/"]/'))" 2>/dev/null \
     || echo "$1" | python3 -c "import sys,json; d=json.load(sys.stdin); keys='$2'.split('.'); v=d; [(v:=v[k]) for k in keys]; print(v)" 2>/dev/null \
@@ -223,7 +251,7 @@ PROJECT_ID=$(extract_id "$body")
 log "  Project created: $PROJECT_ID"
 
 log "  Creating task..."
-resp=$(curl_post "$BASE/tasks" \
+resp=$(curl_post_retry 4 5 "create task" "$BASE/tasks" \
   -H "Authorization: Bearer $TOKEN_A" \
   -d "{\"title\":\"Demo Task ${TS}\",\"workspaceId\":\"$WORKSPACE_ID\",\"projectId\":\"$PROJECT_ID\"}")
 code=$(echo "$resp" | cut -d' ' -f1)

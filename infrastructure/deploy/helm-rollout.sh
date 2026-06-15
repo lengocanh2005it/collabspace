@@ -290,6 +290,9 @@ if kubectl get deployment notification-service -n "$APP_NS" >/dev/null 2>&1; the
   fi
 fi
 
+echo "==> Post-rollout stabilization (S2S clients)..."
+sleep "${POST_ROLLOUT_STABILIZATION_SEC:-8}"
+
 echo "==> Pruning unused container images..."
 crictl rmi --prune 2>/dev/null && echo "Image prune done." || echo "WARN: crictl prune failed (non-fatal)."
 

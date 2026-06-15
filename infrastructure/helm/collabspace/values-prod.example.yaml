@@ -191,6 +191,7 @@ apps:
       RABBITMQ_QUEUE: task-service
       WORKSPACE_CLIENT_MODE: http
       WORKSPACE_SERVICE_URL: http://workspace-service:8080
+      WORKSPACE_SERVICE_TIMEOUT_MS: "10000"
       TASK_OUTBOX_ENABLED: "true"
       ALLOW_DEV_IDENTITY_HEADERS: "false"
 
