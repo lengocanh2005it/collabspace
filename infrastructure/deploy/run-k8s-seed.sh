@@ -121,5 +121,12 @@ for svc in auth-service user-service workspace-service task-service notification
   apply_seed_job "$svc"
 done
 
+# user-service seed declares task/notification queues without DLX; app pods expect collabspace_dlx.
+echo "==> Removing seed-declared consumer queues (apps recreate with DLX on startup)..."
+for q in task-service notification-service; do
+  kubectl exec -n "$APP_NS" rabbitmq-0 -- \
+    rabbitmqctl delete_queue "$q" -p collabspace 2>/dev/null || true
+done
+
 echo "All demo seeds completed."
 echo "Demo users: ngocanh@collabspace.dev / quangtien@collabspace.dev — password collabspace123"
