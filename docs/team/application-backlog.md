@@ -38,7 +38,7 @@ Tài liệu này liệt kê **việc còn lại về logic code / API / test / d
 
 ```text
 P0  Gắn demo-e2e vào CI smoke              →  ✅ workflow docker-deploy.yml
-P1  E2E per service (workspace/task/notif) →  workspace e2e stub ✅; task/notif có spec
+P1  E2E per service (workspace/task/notif) →  workspace e2e invitation flow ✅; task/notif có spec
 P1  Workspace activity feed                →  ✅ `GET /api/v1/workspaces/:id/activity`
 P1  OpenAPI 5/5 + response schemas          →  ✅ Done (`/swagger`, gateway expose)
 P1  Contract test (Pact / event schema)     →  cross-team
@@ -153,13 +153,12 @@ Chi tiết infra: [phan-phu-tho-infrastructure-backlog.md](./phan-phu-tho-infras
 
 #### P1 — Test & an toàn tích hợp task
 
-- [ ] **E2E workspace-service** — có `test/jest-e2e.json`, **chưa có** `*.e2e-spec.ts`
-  - Flow: create workspace → invite → accept → list members
-- [ ] **`auth.guard.spec.ts`** — workspace JWT / dev header
+- [x] **E2E workspace-service** — `test/workspace-flow.e2e-spec.ts` (create → invite → accept → list members) + health stub `test/app.e2e-spec.ts`
+- [x] **`auth.guard.spec.ts`** — workspace JWT / dev header
   - `services/workspace-service/src/presentation/http/guards/auth.guard.ts`
-- [ ] **Outbox processor test** — `workspace-outbox.processor.ts`
+- [x] **Outbox processor test** — `workspace-outbox.processor.spec.ts`
   - `services/workspace-service/src/infrastructure/outbox/`
-- [ ] **Task-service: bắt buộc `WORKSPACE_CLIENT_MODE=http`** trên staging/prod — document + fail startup nếu mock mode trong `NODE_ENV=production`?
+- [x] **Task-service: bắt buộc `WORKSPACE_CLIENT_MODE=http`** trên staging/prod — `assertWorkspaceClientModeForProduction()` trong `main.ts` + `workspace-client-mode.spec.ts`
   - `services/task-service/src/app.module.ts` (factory `WorkspaceHttpClient` vs `WorkspaceMockService`)
   - `services/task-service/src/infrastructure/services/workspace.mock.service.ts` — mock **không** kiểm membership thật
 - [x] **Hỗ trợ Tín:** contract internal membership dùng trong `scripts/demo-e2e` bước 2–4
@@ -167,14 +166,14 @@ Chi tiết infra: [phan-phu-tho-infrastructure-backlog.md](./phan-phu-tho-infras
 #### P2 — OpenAPI & mở rộng (Planned)
 
 - [x] **Swagger** — `workspace-service/src/main.ts` → `/swagger` + `@ApiOkResponse` response DTOs
-- [ ] **`GET .../invitations` Swagger** — `@ApiOperation` / response DTO trên `invitation.controller.ts`
+- [x] **`GET .../invitations` Swagger** — `@ApiOperation` / `@ApiOkResponse` trên `invitation.controller.ts`
 - [ ] **Project-scoped board** (Planned trong [features.md](../features.md) §4) — tùy chọn; hiện board ở `GET /tasks/board` (task-service, owner Tín)
 
 #### P2 — API ngoài MVP (tùy product)
 
 - [ ] Remove member / đổi role member qua HTTP (chưa có — không block demo)
 
-**DoD giai đoạn Tiến:** workspace e2e green; guard + outbox có test; task-service không dùng workspace mock trên môi trường demo “giả prod”.
+**DoD giai đoạn Tiến:** ✅ workspace e2e green (invitation flow); guard + outbox có test; task-service không dùng workspace mock trên production (`WORKSPACE_CLIENT_MODE=http` guard + spec).
 
 ---
 
@@ -241,8 +240,8 @@ Chi tiết infra: [phan-phu-tho-infrastructure-backlog.md](./phan-phu-tho-infras
 |---------|-----------|-----------|--------|
 | auth-service | Done | — (repository specs + use-case integration + Swagger + e2e flow ✅) | Anh |
 | user-service | Done | — (12/12 use-case specs + internal/auth-events tests ✅) | Anh |
-| workspace-service | Done | outbox test, Swagger; e2e health stub ✅ | Tiến |
-| task-service | Done | Board test, e2e, prod guards (workspace http, blob, SERVICE_JWT) | Tín (+ Tiến integration) |
+| workspace-service | Done | — (e2e invitation flow, guard + outbox specs, invitations Swagger ✅) | Tiến |
+| task-service | Done | Board test, e2e, prod guards (workspace http ✅, blob, SERVICE_JWT) | Tín (+ Tiến integration) |
 | notification-service | Done | mark-all test, e2e, Kafka cleanup | Tín |
 
 ---
@@ -273,9 +272,9 @@ Chi tiết infra: [phan-phu-tho-infrastructure-backlog.md](./phan-phu-tho-infras
 | 4 | User use-case tests (batch 1: create/update/bulk) | Anh | P1 ✅ |
 | 5 | User use-case tests (batch 2: preferences/status) | Anh | P1 ✅ |
 | 6 | auth user repository + use-case integration specs | Anh | P1 ✅ |
-| 7 | workspace e2e spec | Tiến | P1 |
+| 7 | workspace e2e spec | Tiến | P1 ✅ |
 | 8 | workspace Swagger + response schemas | Tiến | P2 ✅ |
-| 9 | WORKSPACE_CLIENT_MODE=http enforce prod | Tiến | P1 |
+| 9 | WORKSPACE_CLIENT_MODE=http enforce prod | Tiến | P1 ✅ |
 | 10 | get-task-board unit test | Tín | P1 ✅ |
 | 11 | mark-all-read unit test | Tín | P1 ✅ |
 | 12 | notification e2e spec | Tín | P1 ✅ |
@@ -299,4 +298,4 @@ Chi tiết infra: [phan-phu-tho-infrastructure-backlog.md](./phan-phu-tho-infras
 
 ---
 
-*Cập nhật: 2026-06-13 — sync Ngô Quang Tiến (PR #19): avatar upload Azure Blob, list invitations, task mock bridge; merge perf phases Anh.*
+*Cập nhật: 2026-06-15 — đóng backlog Ngô Quang Tiến: workspace e2e invitation flow, auth guard spec, outbox processor spec, invitations Swagger, WORKSPACE_CLIENT_MODE prod guard + test.*

@@ -47,6 +47,9 @@ export class InvitationController {
   ) {}
 
   @Get('workspaces/:workspaceId/invitations')
+  @ApiOperation({ summary: 'List pending invitations for a workspace (members only)' })
+  @ApiParam({ name: 'workspaceId', format: 'uuid' })
+  @ApiOkResponse({ type: InvitationResponseSchemaDto, isArray: true })
   async listInvitations(
     @UserId() userId: string,
     @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
