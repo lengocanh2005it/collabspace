@@ -128,8 +128,22 @@ gateway:
     expose: true
   cors:
     allowOrigins:
-      - "https://REPLACE_ME_DOMAIN"
-      - "http://REPLACE_ME_DOMAIN"
+      - "*"
+    allowMethods:
+      - GET
+      - POST
+      - PUT
+      - PATCH
+      - DELETE
+      - OPTIONS
+    allowHeaders:
+      - Content-Type
+      - Authorization
+      - Accept
+      - Origin
+      - X-Requested-With
+      - X-Request-Id
+      - Cache-Control
 
 grafana:
   env:

@@ -66,4 +66,6 @@ spec:
     accessControlAllowHeaders:
       {{- toYaml .Values.gateway.cors.allowHeaders | nindent 6 }}
     accessControlMaxAge: 86400
+    accessControlAllowCredentials: false
+    addVaryHeader: true
 {{- end }}
