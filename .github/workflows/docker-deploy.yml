@@ -10,6 +10,11 @@ on:
         description: Image tag to build and deploy
         required: false
         default: latest
+      run_migrations:
+        description: Run Postgres migration Jobs after deploy
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -32,6 +37,7 @@ jobs:
       task-service: ${{ steps.filter.outputs.task-service }}
       notification-service: ${{ steps.filter.outputs.notification-service }}
       any-service: ${{ steps.filter.outputs.any-service }}
+      postgres-migrations: ${{ steps.filter.outputs.postgres-migrations }}
     steps:
       - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v3
@@ -73,6 +79,12 @@ jobs:
               - 'package.json'
               - 'pnpm-workspace.yaml'
               - 'pnpm-lock.yaml'
+            postgres-migrations:
+              - 'services/auth-service/migrations/**'
+              - 'services/user-service/migrations/**'
+              - 'services/workspace-service/migrations/**'
+              - 'packages/typeorm-migrate/**'
+              - 'infrastructure/deploy/run-k8s-migrations.sh'
 
   build-images:
     runs-on: ubuntu-latest
@@ -218,10 +230,26 @@ jobs:
             echo "tag=" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Compute run migrations
+        id: run-migrations
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            if [[ "${{ github.event.inputs.run_migrations }}" == "true" ]]; then
+              echo "value=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "value=false" >> "$GITHUB_OUTPUT"
+            fi
+          elif [[ "${{ needs.detect-changes.outputs.postgres-migrations }}" == "true" ]]; then
+            echo "value=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Deploy Helm on k3s over SSH
         uses: appleboy/ssh-action@v1.2.0
         env:
           IMAGE_TAG: ${{ steps.deploy-tag.outputs.tag }}
+          RUN_K8S_MIGRATIONS: ${{ steps.run-migrations.outputs.value }}
           GHCR_OWNER: ${{ github.repository_owner }}
           GHCR_USERNAME: ${{ secrets.GHCR_USERNAME }}
           GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
@@ -232,13 +260,14 @@ jobs:
           username: ${{ secrets.DROPLET_USER }}
           key: ${{ secrets.DROPLET_SSH_KEY }}
           command_timeout: 30m
-          envs: IMAGE_TAG,GHCR_OWNER,GHCR_USERNAME,GHCR_TOKEN,GITHUB_TOKEN,SKIP_HELM_DEP_UPDATE
+          envs: IMAGE_TAG,RUN_K8S_MIGRATIONS,GHCR_OWNER,GHCR_USERNAME,GHCR_TOKEN,GITHUB_TOKEN,SKIP_HELM_DEP_UPDATE
           script: |
             set -euo pipefail
             export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
             export APP_DIR=/opt/collabspace
             export PHASE0_ENV=/opt/collabspace/infrastructure/deploy/phase0.env
             export GITHUB_TOKEN="${GITHUB_TOKEN}"
+            export RUN_K8S_MIGRATIONS="${RUN_K8S_MIGRATIONS:-false}"
 
             # Deliberately no fallback. If git-sync-private-repo.sh fails, CI fails.
             # This is intentional: a partial deployment is worse than a visible CI failure.

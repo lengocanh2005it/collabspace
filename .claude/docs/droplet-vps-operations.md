@@ -91,14 +91,19 @@ cd /opt/collabspace
 git pull   # hoặc CI đã sync qua git-sync-private-repo.sh
 export IMAGE_TAG=<commit-sha>
 export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+export IMAGE_TAG=<commit-sha>
+# Chỉ khi có migration/schema mới:
+# export RUN_K8S_MIGRATIONS=true
 bash infrastructure/deploy/helm-rollout.sh
 ```
+
+**CI workflow:** mặc định **không** migrate, **không** seed. Migration Jobs chỉ chạy khi push đổi `migrations/**`, `packages/typeorm-migrate/**`, hoặc `run-k8s-migrations.sh`. Seed chỉ qua `run-k8s-seed.sh` / `run-k8s-full-reset.sh` (thủ công).
 
 Vault/ESO (khi đổi secret keys): `infrastructure/vault/scripts/seed-vault-k3s-from-phase0.sh`, apply `external-secrets.prod.yaml`, force ESO sync — xem `infrastructure/vault/README.md`.
 
 **Reset data + migrate + seed (verbose):** `bash infrastructure/deploy/run-k8s-full-reset.sh` — wipe PG/Mongo/Redis, bootstrap auth/workspace schema, chạy migration Jobs với log mỗi 5s; fail thì in `kubectl logs` ngay. Chỉ migrate+seed: `SKIP_WIPE=true bash .../run-k8s-full-reset.sh`.
 
-**Migration fail không được để replicas=0:** `helm-rollout.sh` scale down auth/user/workspace trước migrate; nếu job fail, script vẫn **restore replicas** (EXIT trap + explicit restore). Cả 3 service Postgres dùng **TypeORM class migrations** (`services/<svc>/migrations/*.ts`) + `@collabspace/typeorm-migrate`; `CREATE INDEX CONCURRENTLY` cần `transaction = false` trên class migration. Tạo migration: `scripts/typeorm-migrate/create-migration.sh`; revert: `scripts/typeorm-migrate/revert-migration.sh`.
+**Migration trong helm-rollout (tùy chọn):** `RUN_K8S_MIGRATIONS=true bash infrastructure/deploy/helm-rollout.sh` — scale down auth/user/workspace, chạy Jobs, restore replicas. Mặc định `false` (CI và deploy tay thường ngày).
 
 ## Trước khi push thay đổi ảnh hưởng deploy
 

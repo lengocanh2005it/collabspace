@@ -31,5 +31,5 @@ fi
 GHCR_OWNER="$(printf '%s' "$GHCR_OWNER" | tr '[:upper:]' '[:lower:]')"
 export GHCR_OWNER
 
-echo "==> Phase 4 CI deploy (IMAGE_TAG=${IMAGE_TAG}, GHCR_OWNER=${GHCR_OWNER})"
+echo "==> Phase 4 CI deploy (IMAGE_TAG=${IMAGE_TAG:-}, RUN_K8S_MIGRATIONS=${RUN_K8S_MIGRATIONS:-false})"
 bash "$SCRIPT_DIR/helm-rollout.sh"

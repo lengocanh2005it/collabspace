@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
-# Helm upgrade + migration + rollout (dùng chung Phase 3 tay và Phase 4 CI).
+# Helm upgrade + optional migration + rollout (dùng chung Phase 3 tay và Phase 4 CI).
 # Env: IMAGE_TAG (tùy chọn — nếu set sẽ override tag image qua helm --set)
+# Env: RUN_K8S_MIGRATIONS (mặc định false) — chỉ true khi cần chạy Postgres migration Jobs.
+# Seed không bao giờ chạy ở đây; dùng run-k8s-seed.sh hoặc run-k8s-full-reset.sh khi cần demo data.
 set -euo pipefail
 
 APP_DIR="${APP_DIR:-/opt/collabspace}"
@@ -193,32 +195,37 @@ restore_app_replicas() {
   done
 }
 
-echo "==> Scaling down Postgres app deployments (migration window)..."
-trap restore_app_replicas EXIT
-for dep in auth-service user-service workspace-service; do
-  if kubectl get deployment "$dep" -n "$APP_NS" >/dev/null 2>&1; then
-    kubectl scale deployment "$dep" -n "$APP_NS" --replicas=0
+if [[ "${RUN_K8S_MIGRATIONS:-false}" == "true" ]]; then
+  echo "==> Scaling down Postgres app deployments (migration window)..."
+  trap restore_app_replicas EXIT
+  for dep in auth-service user-service workspace-service; do
+    if kubectl get deployment "$dep" -n "$APP_NS" >/dev/null 2>&1; then
+      kubectl scale deployment "$dep" -n "$APP_NS" --replicas=0
+    fi
+  done
+
+  echo "==> Waiting for data stores..."
+  kubectl wait --for=condition=Ready pod -l app.kubernetes.io/name=postgresql -n "$APP_NS" --timeout=300s || true
+  kubectl wait --for=condition=Ready pod -l app.kubernetes.io/name=mongodb -n "$APP_NS" --timeout=300s || true
+  kubectl wait --for=condition=Ready pod -l app.kubernetes.io/name=redis -n "$APP_NS" --timeout=300s || true
+  kubectl wait --for=condition=Ready pod -l app.kubernetes.io/name=rabbitmq -n "$APP_NS" --timeout=300s || true
+
+  echo "==> Running database migrations..."
+  migration_failed=0
+  if ! PHASE0_ENV="$PHASE0_ENV" VALUES_PROD="$VALUES_PROD" APP_NS="$APP_NS" IMAGE_TAG="${IMAGE_TAG:-}" \
+    bash "$SCRIPT_DIR/run-k8s-migrations.sh"; then
+    migration_failed=1
+    echo "ERROR: database migrations failed — restoring replicas before exit."
   fi
-done
 
-echo "==> Waiting for data stores..."
-kubectl wait --for=condition=Ready pod -l app.kubernetes.io/name=postgresql -n "$APP_NS" --timeout=300s || true
-kubectl wait --for=condition=Ready pod -l app.kubernetes.io/name=mongodb -n "$APP_NS" --timeout=300s || true
-kubectl wait --for=condition=Ready pod -l app.kubernetes.io/name=redis -n "$APP_NS" --timeout=300s || true
-kubectl wait --for=condition=Ready pod -l app.kubernetes.io/name=rabbitmq -n "$APP_NS" --timeout=300s || true
+  restore_app_replicas
 
-echo "==> Running database migrations..."
-migration_failed=0
-if ! PHASE0_ENV="$PHASE0_ENV" VALUES_PROD="$VALUES_PROD" APP_NS="$APP_NS" IMAGE_TAG="${IMAGE_TAG:-}" \
-  bash "$SCRIPT_DIR/run-k8s-migrations.sh"; then
-  migration_failed=1
-  echo "ERROR: database migrations failed — restoring replicas before exit."
-fi
-
-restore_app_replicas
-
-if [[ "$migration_failed" -eq 1 ]]; then
-  exit 1
+  if [[ "$migration_failed" -eq 1 ]]; then
+    exit 1
+  fi
+else
+  echo "==> Skipping Postgres migrations (RUN_K8S_MIGRATIONS=false)."
+  echo "    To migrate manually: RUN_K8S_MIGRATIONS=true bash infrastructure/deploy/helm-rollout.sh"
 fi
 
 prune_stuck_terminating_pods() {
