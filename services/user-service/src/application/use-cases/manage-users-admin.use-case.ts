@@ -3,7 +3,7 @@ import {
   USER_PROFILE_REPOSITORY,
   type UserProfileRepository,
 } from '../../domain/repositories/user-profile.repository';
-import type { AuthAdminHttpClient } from '../../integrations/auth/auth-admin-http.client';
+import { AuthAdminHttpClient } from '../../integrations/auth/auth-admin-http.client';
 
 @Injectable()
 export class ManageUsersAdminUseCase {

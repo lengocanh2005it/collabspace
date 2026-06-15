@@ -3,7 +3,7 @@ import { ConfigurationService } from '@/configuration/configuration.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
-import { type DataSource, IsNull, MoreThan, type Repository } from 'typeorm';
+import { DataSource, IsNull, MoreThan, type Repository } from 'typeorm';
 import type { RefreshTokenRepository } from '@/domain/repositories/refresh-token.repository';
 import type { RefreshTokenSessionSummary } from '@/domain/types/refresh-token-session';
 import { RefreshTokenOrmEntity } from '@/infrastructure/database/entities/refresh-token.orm-entity';

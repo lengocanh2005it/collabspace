@@ -32,7 +32,9 @@ $injectableTypes = @(
   'WorkspaceOutboxService',
   'WorkspaceCacheService',
   'DatabaseService',
-  'ConfigurationService'
+  'UserProfileCacheService',
+  'AuthAdminHttpClient',
+  'DataSource'
 )
 
 Get-ChildItem -Path "$PSScriptRoot\..\services" -Recurse -Filter *.ts |
@@ -50,6 +52,7 @@ Get-ChildItem -Path "$PSScriptRoot\..\services" -Recurse -Filter *.ts |
       $updated = $updated -replace "import type \{ $type,", "import { $type,"
       $updated = $updated -replace ", type $type \}", ", $type }"
       $updated = $updated -replace ", type $type,", ", $type,"
+      $updated = $updated -replace "\{ type $type,", "{ $type,"
     }
     if ($updated -ne $content) {
       Set-Content -Path $_.FullName -Value $updated -NoNewline

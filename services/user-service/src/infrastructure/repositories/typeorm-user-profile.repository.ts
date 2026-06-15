@@ -17,7 +17,7 @@ import type {
 import { UserProfileOrmEntity } from '../database/entities/user-profile.orm-entity';
 import { UserPreferencesOrmEntity } from '../database/entities/user-preferences.orm-entity';
 import { UserStatusOrmEntity } from '../database/entities/user-status.orm-entity';
-import type { UserProfileCacheService } from '../cache/user-profile-cache.service';
+import { UserProfileCacheService } from '../cache/user-profile-cache.service';
 
 @Injectable()
 export class TypeOrmUserProfileRepository implements UserProfileRepository {
