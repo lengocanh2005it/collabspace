@@ -51,6 +51,8 @@ export type DatabaseConfig = {
 
 export type EmailConfig = {
   deliveryTimeoutMs: number;
+  queueTimeoutMs: number;
+  jobMaxAttempts: number;
 };
 
 export type BrevoConfig = {
@@ -214,7 +216,11 @@ export class ConfigurationService {
   getEmailConfig(): EmailConfig {
     return {
       deliveryTimeoutMs:
-        this.configService.get<number>('email.deliveryTimeoutMs') ?? 5000,
+        this.configService.get<number>('email.deliveryTimeoutMs') ?? 15000,
+      queueTimeoutMs:
+        this.configService.get<number>('email.queueTimeoutMs') ?? 5000,
+      jobMaxAttempts:
+        this.configService.get<number>('email.jobMaxAttempts') ?? 5,
     };
   }
 

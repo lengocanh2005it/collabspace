@@ -10,6 +10,8 @@ describe('EmailsService', () => {
   const configurationServiceMock = {
     getEmailConfig: jest.fn(() => ({
       deliveryTimeoutMs: 5000,
+      queueTimeoutMs: 3000,
+      jobMaxAttempts: 5,
     })),
     getGraphileWorkerConfig: jest.fn(() => ({
       concurrency: 5,
@@ -66,6 +68,7 @@ describe('EmailsService', () => {
         to: 'user@example.com',
       },
       {
+        maxAttempts: 5,
         queueName: 'emails',
       },
     );
@@ -88,6 +91,7 @@ describe('EmailsService', () => {
         to: 'user@example.com',
       },
       {
+        maxAttempts: 5,
         queueName: 'emails',
       },
     );
@@ -111,9 +115,28 @@ describe('EmailsService', () => {
         to: ['user@example.com'],
       },
       {
+        maxAttempts: 5,
         queueName: 'emails',
       },
     );
+  });
+
+  it('enqueueMail queues through graphile worker without waiting for Brevo', async () => {
+    await emailsService.enqueueMail({
+      subject: 'Verify',
+      text: 'code',
+      to: 'user@example.com',
+    });
+
+    expect(addJobMock).toHaveBeenCalledWith(
+      'emails.send',
+      expect.objectContaining({
+        subject: 'Verify',
+        to: 'user@example.com',
+      }),
+      { maxAttempts: 5, queueName: 'emails' },
+    );
+    expect(sendMock).not.toHaveBeenCalled();
   });
 
   it('falls back to direct Brevo send when graphile worker is disabled', async () => {
@@ -155,6 +178,8 @@ describe('EmailsService', () => {
       configurationServiceMock.getEmailConfig as jest.Mock
     ).mockReturnValue({
       deliveryTimeoutMs: 1,
+      jobMaxAttempts: 5,
+      queueTimeoutMs: 1,
     });
     sendMock.mockImplementation(
       () => new Promise(() => undefined),

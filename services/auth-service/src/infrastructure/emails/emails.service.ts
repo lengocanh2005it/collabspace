@@ -55,6 +55,22 @@ export class EmailsService {
     return this.sendMailNow(normalizedOptions);
   }
 
+  /**
+   * Enqueue email for background delivery (Graphile Worker). Outbox and HTTP
+   * handlers should prefer this over sendMailNow so Brevo I/O does not block
+   * the poll cycle.
+   */
+  async enqueueMail(options: SendEmailJobPayload): Promise<void> {
+    const normalizedOptions = this.normalizeOptions(options);
+
+    if (this.shouldQueueEmails()) {
+      await this.queueMail(normalizedOptions);
+      return;
+    }
+
+    await this.sendMailNow(normalizedOptions);
+  }
+
   async sendMailNow(options: SendEmailJobPayload): Promise<EmailSendResult> {
     try {
       return await withTimeout(
@@ -94,10 +110,11 @@ export class EmailsService {
     try {
       return await withTimeout(
         this.graphileWorkerService.addJob('emails.send', options, {
+          maxAttempts: this.getJobMaxAttempts(),
           queueName: 'emails',
         }),
-        this.getDeliveryTimeoutMs(),
-        'Queued email delivery',
+        this.getQueueTimeoutMs(),
+        'Enqueue email job',
       );
     } catch (error) {
       this.rethrowDeliveryError(error);
@@ -117,6 +134,14 @@ export class EmailsService {
 
   private getDeliveryTimeoutMs(): number {
     return this.configurationService.getEmailConfig().deliveryTimeoutMs;
+  }
+
+  private getQueueTimeoutMs(): number {
+    return this.configurationService.getEmailConfig().queueTimeoutMs;
+  }
+
+  private getJobMaxAttempts(): number {
+    return this.configurationService.getEmailConfig().jobMaxAttempts;
   }
 
   private rethrowDeliveryError(error: unknown): never {

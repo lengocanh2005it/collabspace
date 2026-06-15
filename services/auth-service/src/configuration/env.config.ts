@@ -73,6 +73,8 @@ export default () => ({
       process.env.EMAIL_DELIVERY_TIMEOUT_MS ?? process.env.MAIL_DELIVERY_TIMEOUT_MS,
       15000,
     ),
+    queueTimeoutMs: toNumber(process.env.EMAIL_QUEUE_TIMEOUT_MS, 5000),
+    jobMaxAttempts: toNumber(process.env.EMAIL_JOB_MAX_ATTEMPTS, 5),
   },
   brevo: {
     apiKey: process.env.BREVO_API_KEY,
@@ -81,7 +83,10 @@ export default () => ({
   },
   graphileWorker: {
     concurrency: toNumber(process.env.GRAPHILE_WORKER_CONCURRENCY, 5),
-    enabled: toBoolean(process.env.GRAPHILE_WORKER_ENABLED, false),
+    enabled: toBoolean(
+      process.env.GRAPHILE_WORKER_ENABLED,
+      Boolean(process.env.DATABASE_URL),
+    ),
     pollInterval: toNumber(process.env.GRAPHILE_WORKER_POLL_INTERVAL, 2000),
     schema: process.env.GRAPHILE_WORKER_SCHEMA ?? 'graphile_worker',
   },

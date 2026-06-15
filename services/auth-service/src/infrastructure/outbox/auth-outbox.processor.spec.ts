@@ -30,7 +30,7 @@ describe('AuthOutboxProcessor', () => {
     isInitialized: true,
   } as unknown as DataSource;
   const emailsServiceMock = {
-    sendMailNow: jest.fn(),
+    enqueueMail: jest.fn(),
   } as unknown as EmailsService;
 
   let processor: AuthOutboxProcessor;
@@ -48,7 +48,7 @@ describe('AuthOutboxProcessor', () => {
     );
   });
 
-  it('delivers verification otp emails through the outbox processor', async () => {
+  it('enqueues verification otp emails through the outbox processor', async () => {
     jest.spyOn(authOutboxServiceMock, 'claimPendingBatch').mockResolvedValue([
       {
         attemptCount: 1,
@@ -62,12 +62,12 @@ describe('AuthOutboxProcessor', () => {
         },
       },
     ]);
-    jest.spyOn(emailsServiceMock, 'sendMailNow').mockResolvedValue({} as never);
+    jest.spyOn(emailsServiceMock, 'enqueueMail').mockResolvedValue(undefined);
     jest.spyOn(authOutboxServiceMock, 'markProcessed').mockResolvedValue(undefined);
 
     await processor.processPendingEvents();
 
-    expect(emailsServiceMock.sendMailNow).toHaveBeenCalledWith({
+    expect(emailsServiceMock.enqueueMail).toHaveBeenCalledWith({
       subject: 'Verify your CollabSpace email',
       text:
         'Your CollabSpace verification code is 123456. This code expires in 600 seconds.',
@@ -76,7 +76,7 @@ describe('AuthOutboxProcessor', () => {
     expect(authOutboxServiceMock.markProcessed).toHaveBeenCalledWith('event-otp-1');
   });
 
-  it('delivers password reset emails through the outbox processor', async () => {
+  it('enqueues password reset emails through the outbox processor', async () => {
     jest.spyOn(authOutboxServiceMock, 'claimPendingBatch').mockResolvedValue([
       {
         attemptCount: 1,
@@ -90,12 +90,12 @@ describe('AuthOutboxProcessor', () => {
         },
       },
     ]);
-    jest.spyOn(emailsServiceMock, 'sendMailNow').mockResolvedValue({} as never);
+    jest.spyOn(emailsServiceMock, 'enqueueMail').mockResolvedValue(undefined);
     jest.spyOn(authOutboxServiceMock, 'markProcessed').mockResolvedValue(undefined);
 
     await processor.processPendingEvents();
 
-    expect(emailsServiceMock.sendMailNow).toHaveBeenCalledWith({
+    expect(emailsServiceMock.enqueueMail).toHaveBeenCalledWith({
       subject: 'Reset your CollabSpace password',
       text:
         'Use this password reset token: reset-token-123. It expires in 1800 seconds.',
