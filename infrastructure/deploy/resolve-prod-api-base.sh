@@ -63,8 +63,10 @@ install_prod_api_curl_wrapper() {
   fi
   local domain
   domain="$(prod_api_domain_from_base "$base")" || return 0
+  # Exported functions cannot close over local vars in child shells (demo-e2e uses set -u).
+  export PROD_API_CURL_RESOLVE_DOMAIN="$domain"
   curl() {
-    command curl -skS --resolve "${domain}:443:127.0.0.1" "$@"
+    command curl -skS --resolve "${PROD_API_CURL_RESOLVE_DOMAIN}:443:127.0.0.1" "$@"
   }
   export -f curl
 }
