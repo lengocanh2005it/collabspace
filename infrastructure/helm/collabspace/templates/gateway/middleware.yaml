@@ -66,6 +66,7 @@ spec:
     accessControlAllowHeaders:
       {{- toYaml .Values.gateway.cors.allowHeaders | nindent 6 }}
     accessControlMaxAge: 86400
+    # Must stay false when allowOrigins includes "*". Use explicit origins + true for cookie auth.
     accessControlAllowCredentials: false
     addVaryHeader: true
 {{- end }}

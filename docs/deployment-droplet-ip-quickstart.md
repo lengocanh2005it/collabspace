@@ -135,7 +135,7 @@ Chi tiết: [deployment-k3s-phases.md](./deployment-k3s-phases.md) (Phase 4 — 
 | `ImagePullBackOff` | Tag sai; package private thiếu `GHCR_TOKEN`; hoặc bỏ `imagePullSecrets` nếu public |
 | SSH refused | Firewall DO mở port 22; đúng SSH key |
 | Vault sealed sau reboot | `vault operator unseal` với key trong `.vault-k3s-init.json` |
-| CORS từ frontend | Thêm origin vào `gateway.cors.allowOrigins` trong `values-prod.yaml` |
+| CORS từ frontend (`localhost:5173` → prod API) | Thêm `http://localhost:5173` vào `gateway.cors.allowOrigins` (hoặc `*`). **Route có `forward-auth`:** middleware `cors-headers` phải đứng **trước** `forward-auth` — nếu không, OPTIONS preflight trả `401` không có header CORS. Kiểm tra: `curl -X OPTIONS -H "Origin: http://localhost:5173" -H "Access-Control-Request-Method: GET" https://<domain>/api/v1/auth/me -D -` phải thấy `Access-Control-Allow-Origin`. |
 | HTTPS không chạy | Bình thường khi chỉ dùng IP — dùng `http://` |
 
 ---

@@ -18,11 +18,11 @@ http:
       entryPoints:
         - web
       middlewares:
+        - cors-headers
         - strip-identity-headers
         - forward-auth
         - auth-header
         - rate-limit
-        - cors-headers
         - security-headers
         - retry-policy
         - circuit-breaker
@@ -33,8 +33,8 @@ http:
       entryPoints:
         - web
       middlewares:
-        - rate-limit
         - cors-headers
+        - rate-limit
         - security-headers
         - retry-policy
         - circuit-breaker
@@ -48,10 +48,10 @@ http:
       entryPoints:
         - web
       middlewares:
+        - cors-headers
         - strip-identity-headers
         - forward-auth
         - rate-limit
-        - cors-headers
         - security-headers
         - retry-policy
         - circuit-breaker
@@ -65,10 +65,10 @@ http:
       entryPoints:
         - web
       middlewares:
+        - cors-headers
         - strip-identity-headers
         - forward-auth
         - rate-limit
-        - cors-headers
         - security-headers
         - retry-policy
         - circuit-breaker
@@ -79,10 +79,10 @@ http:
       entryPoints:
         - web
       middlewares:
+        - cors-headers
         - strip-identity-headers
         - forward-auth
         - rate-limit
-        - cors-headers
         - security-headers
         - retry-policy
         - circuit-breaker
@@ -96,10 +96,10 @@ http:
       entryPoints:
         - web
       middlewares:
+        - cors-headers
         - strip-identity-headers
         - forward-auth
         - rate-limit
-        - cors-headers
         - security-headers
         - retry-policy
         - circuit-breaker
@@ -119,10 +119,10 @@ http:
       entryPoints:
         - web
       middlewares:
+        - cors-headers
         - strip-identity-headers
         - forward-auth
         - rate-limit
-        - cors-headers
         - security-headers
         - retry-policy
         - circuit-breaker
