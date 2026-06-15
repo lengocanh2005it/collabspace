@@ -17,6 +17,10 @@ describe('AuthOutboxService', () => {
       getRepository: jest.fn(() => repositoryMock),
     },
     query: jest.fn(),
+    transaction: jest.fn(
+      async (runInTransaction: (manager: { query: jest.Mock }) => unknown) =>
+        runInTransaction({ query: jest.fn() }),
+    ),
   } as unknown as DataSource;
   const configurationServiceMock = {
     getOutboxConfig: jest.fn(() => ({
@@ -110,16 +114,26 @@ describe('AuthOutboxService', () => {
   });
 
   it('normalizes pg QueryResult rows when claiming pending events', async () => {
-    jest.spyOn(dataSourceMock, 'query').mockResolvedValue({
-      rows: [
-        {
-          attemptCount: 1,
-          eventType: 'auth.email_verification_otp',
-          id: 'event-5',
-          payload: { email: 'member@example.com', otp: '123456' },
-        },
-      ],
-    });
+    const managerQuery = jest
+      .fn()
+      .mockResolvedValueOnce({ rows: [{ id: 'event-5' }] })
+      .mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            attemptCount: 1,
+            eventType: 'auth.email_verification_otp',
+            id: 'event-5',
+            payload: { email: 'member@example.com', otp: '123456' },
+          },
+        ],
+      });
+    jest
+      .spyOn(dataSourceMock, 'transaction')
+      .mockImplementation(
+        async (runInTransaction: (manager: { query: jest.Mock }) => unknown) =>
+          runInTransaction({ query: managerQuery }),
+      );
 
     await expect(service.claimPendingBatch(1)).resolves.toEqual([
       {

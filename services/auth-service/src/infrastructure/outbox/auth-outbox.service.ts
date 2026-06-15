@@ -128,55 +128,61 @@ export class AuthOutboxService {
     const batchSize = limit ?? this.configurationService.getOutboxConfig().batchSize;
     const tablePath = this.dataSource.getMetadata(AuthOutboxEventOrmEntity).tablePath;
 
-    const rawRows = unwrapQueryRows<Record<string, unknown>>(
-      await this.dataSource.query(
+    return this.dataSource.transaction(async (manager) => {
+      const candidates = unwrapQueryRows<{ id: string }>(
+        await manager.query(
+          `
+            SELECT id
+            FROM ${tablePath}
+            WHERE processed_at IS NULL
+              AND failed_at IS NULL
+              AND claimed_at IS NULL
+              AND event_type IS NOT NULL
+              AND event_type <> ''
+              AND available_at <= NOW()
+            ORDER BY created_at ASC
+            LIMIT $1
+            FOR UPDATE SKIP LOCKED
+          `,
+          [batchSize],
+        ),
+      );
+
+      if (candidates.length === 0) {
+        return [];
+      }
+
+      const ids = candidates.map((row) => row.id);
+
+      await manager.query(
         `
-        WITH candidate_events AS (
-          SELECT id
-          FROM ${tablePath}
-          WHERE processed_at IS NULL
-            AND failed_at IS NULL
-            AND claimed_at IS NULL
-            AND event_type IS NOT NULL
-            AND event_type <> ''
-            AND available_at <= NOW()
-          ORDER BY created_at ASC
-          LIMIT $1
-          FOR UPDATE SKIP LOCKED
-        )
-        UPDATE ${tablePath} AS outbox
-        SET claimed_at = NOW(),
-            attempt_count = outbox.attempt_count + 1,
-            updated_at = NOW()
-        FROM candidate_events
-        WHERE outbox.id = candidate_events.id
-        RETURNING outbox.id, outbox.event_type AS "eventType", outbox.payload, outbox.attempt_count AS "attemptCount"
-      `,
-        [batchSize],
-      ),
-    );
+          UPDATE ${tablePath}
+          SET claimed_at = NOW(),
+              attempt_count = attempt_count + 1,
+              updated_at = NOW()
+          WHERE id = ANY($1::uuid[])
+        `,
+        [ids],
+      );
 
-    const claimed: ClaimedOutboxEvent[] = [];
-    const orphanClaimIds: string[] = [];
+      const rows = unwrapQueryRows<Record<string, unknown>>(
+        await manager.query(
+          `
+            SELECT id,
+                   event_type AS "eventType",
+                   payload,
+                   attempt_count AS "attemptCount"
+            FROM ${tablePath}
+            WHERE id = ANY($1::uuid[])
+          `,
+          [ids],
+        ),
+      );
 
-    for (const row of rawRows) {
-      const normalized = normalizeClaimedOutboxRow(row);
-      if (normalized) {
-        claimed.push(normalized);
-        continue;
-      }
-
-      const rawId = row.id;
-      if (rawId != null) {
-        orphanClaimIds.push(String(rawId));
-      }
-    }
-
-    if (orphanClaimIds.length > 0) {
-      await this.releaseClaimsByIds(orphanClaimIds);
-    }
-
-    return claimed;
+      return rows
+        .map((row) => normalizeClaimedOutboxRow(row))
+        .filter((row): row is ClaimedOutboxEvent => row !== null);
+    });
   }
 
   async releaseClaimsByIds(ids: string[]): Promise<void> {
@@ -364,7 +370,6 @@ export class AuthOutboxService {
             updated_at = NOW()
         WHERE processed_at IS NULL
           AND failed_at IS NULL
-          AND claimed_at IS NULL
           AND attempt_count >= $2
         RETURNING id
       `,
