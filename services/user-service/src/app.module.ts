@@ -10,7 +10,6 @@ import { LookupUserReplicasUseCase } from './application/use-cases/lookup-user-r
 import { UpdateUserPreferencesUseCase } from './application/use-cases/update-user-preferences.use-case';
 import { UpdateUserProfileUseCase } from './application/use-cases/update-user-profile.use-case';
 import { UpdateUserStatusUseCase } from './application/use-cases/update-user-status.use-case';
-import { VerifyUserProfileEmailUseCase } from './application/use-cases/verify-user-profile-email.use-case';
 import { USER_PROFILE_REPOSITORY } from './domain/repositories/user-profile.repository';
 import { ConfigurationModule } from './configuration/configuration.module';
 import { RedisModule } from './infrastructure/cache/redis.module';
@@ -25,7 +24,6 @@ import { MetricsModule } from './metrics/metrics.module';
 import { UsersController } from './presentation/http/users.controller';
 import { InternalUsersController } from './presentation/http/internal-users.controller';
 import { UserProfilesGrpcController } from './presentation/grpc/user-profiles.grpc.controller';
-import { AuthEventsController } from './presentation/rabbitmq/auth-events.controller';
 import { AzureBlobService } from './infrastructure/services/azure-blob.service';
 import { UsersAdminController } from './presentation/http/users-admin.controller';
 import { ManageUsersAdminUseCase } from './application/use-cases/manage-users-admin.use-case';
@@ -47,7 +45,6 @@ import { AuthGuard } from './presentation/http/guards/auth.guard';
     UsersAdminController,
     InternalUsersController,
     UserProfilesGrpcController,
-    AuthEventsController,
   ],
   providers: [
     AzureBlobService,
@@ -70,7 +67,6 @@ import { AuthGuard } from './presentation/http/guards/auth.guard';
     UpdateUserPreferencesUseCase,
     UpdateUserProfileUseCase,
     UpdateUserStatusUseCase,
-    VerifyUserProfileEmailUseCase,
     {
       provide: USER_PROFILE_REPOSITORY,
       inject: [TypeOrmUserProfileRepository, InMemoryUserProfileRepository],

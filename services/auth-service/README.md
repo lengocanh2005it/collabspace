@@ -34,7 +34,7 @@ pnpm test
 2. **Session Management:** Issues and revokes Access Tokens (short-lived) and Refresh Tokens (long-lived, rotatable).
 3. **RBAC:** Manages Roles and Permissions. Injects `X-Role`, `X-Roles`, and `X-Permissions` into headers during validation.
 4. **Token Validation:** Exposes a `/verify` endpoint used by Traefik's `ForwardAuth` middleware to authenticate all inbound requests.
-5. **Event Publisher:** Publishes `AUTH_EMAIL_VERIFIED_EVENT` to RabbitMQ upon successful email verification to trigger downstream hydration in `user-service`.
+5. **Profile Bootstrap:** Calls `user-service` over gRPC during registration to create the pending user profile; email verification is kept in auth state.
 
 ## Architecture
 

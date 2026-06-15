@@ -116,7 +116,7 @@ Chi tiết infra: [phan-phu-tho-infrastructure-backlog.md](./phan-phu-tho-infras
 - [x] **auth user repository spec** — `services/auth-service/src/infrastructure/repositories/typeorm-user.repository.spec.ts` + `auth-use-cases.integration.spec.ts`
 - [x] **E2E** — `register → login → me` flow trong `auth-service/test/app.e2e-spec.ts`; user e2e ổn định in-memory (`delete DATABASE_URL` trong test); internal replicas e2e
 - [x] **Internal replica API** — `internal-users.controller.spec.ts` + e2e `POST /api/v1/users/internal/replicas`
-- [x] **RabbitMQ consumer** `auth-events` — `auth-events.controller.spec.ts`
+- [x] **RabbitMQ user replica events** — `user_registered` / `user_profile_updated`; legacy `auth-events` consumer removed after auth outbox cleanup
 
 #### P2 — OpenAPI & polish
 

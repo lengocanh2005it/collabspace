@@ -256,13 +256,34 @@ wait_deployment_rollout() {
   local timeout="${2:-420}"
   local poll=15
   local waited=0
+  local last_report=-30
 
   prune_stuck_terminating_pods "$dep"
 
   while [[ "$waited" -lt "$timeout" ]]; do
-    if kubectl rollout status "deployment/${dep}" -n "$APP_NS" --timeout="${poll}s"; then
+    local status desired updated available generation observed
+    status="$(kubectl get deployment "$dep" -n "$APP_NS" \
+      -o jsonpath='{.spec.replicas} {.status.updatedReplicas} {.status.availableReplicas} {.metadata.generation} {.status.observedGeneration}' \
+      2>/dev/null || true)"
+    read -r desired updated available generation observed <<<"$status"
+
+    desired="${desired:-0}"
+    updated="${updated:-0}"
+    available="${available:-0}"
+    generation="${generation:-0}"
+    observed="${observed:-0}"
+
+    if [[ -n "$status" && "$observed" -ge "$generation" && "$updated" -ge "$desired" && "$available" -ge "$desired" ]]; then
+      echo "deployment/${dep} successfully rolled out (${available}/${desired} available)."
       return 0
     fi
+
+    if [[ "$waited" -eq 0 || $((waited - last_report)) -ge 30 ]]; then
+      echo "Waiting for deployment/${dep}: ${available}/${desired} available, ${updated}/${desired} updated (${waited}s/${timeout}s)"
+      last_report="$waited"
+    fi
+
+    sleep "$poll"
     prune_stuck_terminating_pods "$dep"
     waited=$((waited + poll))
   done

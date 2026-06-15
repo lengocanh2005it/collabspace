@@ -51,7 +51,7 @@ All endpoints are prefixed with `/api/v1/users`.
 
 ## Internal Contracts
 - **gRPC Server:** Exposes `UserProfilesService.CreatePendingProfile`, `GetProfile`, and `GetProfiles` for inter-service communication (primarily consumed by `auth-service`).
-- **RabbitMQ Consumer:** Listens for `AUTH_EMAIL_VERIFIED_EVENT` to automatically update the profile's verified status.
+- **RabbitMQ Publisher:** Emits `user_registered` and `user_profile_updated` to keep downstream user replicas fresh.
 
 ## Environment Variables
 
