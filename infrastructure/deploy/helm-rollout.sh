@@ -53,13 +53,28 @@ fi
 
 GHCR_OWNER="${GHCR_OWNER:-}"
 
+# Returns "true" when a service had its image rebuilt in this CI run.
+# Defaults to "true" when CHANGED_* vars are not set (manual / local runs).
+service_was_changed() {
+  case "$1" in
+    auth-service)         echo "${CHANGED_AUTH:-true}" ;;
+    user-service)         echo "${CHANGED_USER:-true}" ;;
+    workspace-service)    echo "${CHANGED_WORKSPACE:-true}" ;;
+    task-service)         echo "${CHANGED_TASK:-true}" ;;
+    notification-service) echo "${CHANGED_NOTIFICATION:-true}" ;;
+    *) echo "true" ;;
+  esac
+}
+
 helm_image_tag_sets() {
   if [[ -z "${IMAGE_TAG:-}" ]]; then
     return
   fi
   local svc
   for svc in auth-service user-service workspace-service task-service notification-service; do
-    printf '%s\n' "--set" "apps.${svc}.image.tag=${IMAGE_TAG}"
+    if [[ "$(service_was_changed "$svc")" == "true" ]]; then
+      printf '%s\n' "--set" "apps.${svc}.image.tag=${IMAGE_TAG}"
+    fi
   done
 }
 
@@ -164,19 +179,24 @@ helm upgrade --install "$RELEASE" "$CHART_DIR" \
 # subsequent helm-only deploys (no IMAGE_TAG) don't revert to an old tag.
 # Only when CI/workflow explicitly passed a non-empty IMAGE_TAG.
 if [[ -n "${ci_image_tag:-}" ]]; then
-  echo "==> Persisting image tag ${IMAGE_TAG} into values-prod.yaml..."
-  python3 - <<PYEOF
-import re, sys
+  changed_svcs=()
+  for _svc in auth-service user-service workspace-service task-service notification-service; do
+    [[ "$(service_was_changed "$_svc")" == "true" ]] && changed_svcs+=("$_svc")
+  done
+
+  if [[ ${#changed_svcs[@]} -gt 0 ]]; then
+    echo "==> Persisting image tag ${IMAGE_TAG} for: ${changed_svcs[*]}..."
+    services_py="[$(printf '"%s",' "${changed_svcs[@]}" | sed 's/,$//')]"
+    python3 - <<PYEOF
+import re
 
 tag = "${IMAGE_TAG}"
-services = ["auth-service", "user-service", "workspace-service", "task-service", "notification-service"]
+services = ${services_py}
 
 with open("${VALUES_PROD}", "r") as f:
     content = f.read()
 
 for svc in services:
-    # Match the service block and replace its image.tag value.
-    # Pattern: "  <svc>:\n    ...\n      tag: <anything>"
     pattern = r'(  ' + re.escape(svc) + r':.*?image:\s*\n\s+repository:[^\n]+\n\s+tag:\s*)\S+'
     replacement = r'\g<1>' + tag
     content = re.sub(pattern, replacement, content, flags=re.DOTALL)
@@ -184,8 +204,9 @@ for svc in services:
 with open("${VALUES_PROD}", "w") as f:
     f.write(content)
 
-print(f"Updated image tags to {tag}")
+print(f"Updated image tags to {tag} for: {', '.join(services)}")
 PYEOF
+  fi
 fi
 
 echo "==> Reconciling RabbitMQ consumer queues (DLX)..."
@@ -297,12 +318,17 @@ wait_deployment_rollout() {
 echo "==> Waiting for application rollouts..."
 # Roll core services in parallel; notification-service last (RabbitMQ consumer often
 # leaves old pods stuck in Terminating on small single-node clusters).
+# Skip wait for services whose image was not rebuilt in this CI run.
 core_deps=(auth-service user-service workspace-service task-service)
 rollout_pids=()
 for dep in "${core_deps[@]}"; do
   if kubectl get deployment "$dep" -n "$APP_NS" >/dev/null 2>&1; then
-    wait_deployment_rollout "$dep" 420 &
-    rollout_pids+=($!)
+    if [[ "$(service_was_changed "$dep")" == "true" ]]; then
+      wait_deployment_rollout "$dep" 420 &
+      rollout_pids+=($!)
+    else
+      echo "deployment/${dep} unchanged — skipping rollout wait"
+    fi
   fi
 done
 rollout_failed=0
@@ -315,9 +341,13 @@ if [[ "$rollout_failed" -gt 0 ]]; then
 fi
 
 if kubectl get deployment notification-service -n "$APP_NS" >/dev/null 2>&1; then
-  if ! wait_deployment_rollout notification-service 600; then
-    echo "ERROR: notification-service failed to roll out."
-    exit 1
+  if [[ "$(service_was_changed notification-service)" == "true" ]]; then
+    if ! wait_deployment_rollout notification-service 600; then
+      echo "ERROR: notification-service failed to roll out."
+      exit 1
+    fi
+  else
+    echo "deployment/notification-service unchanged — skipping rollout wait"
   fi
 fi
 
