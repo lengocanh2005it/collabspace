@@ -24,6 +24,7 @@ import { WorkspaceOutboxService } from './workspace-outbox.service';
 export class WorkspaceOutboxProcessor implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(WorkspaceOutboxProcessor.name);
   private isProcessing = false;
+  private pendingWake = false;
   private timer: NodeJS.Timeout | null = null;
 
   constructor(
@@ -46,7 +47,19 @@ export class WorkspaceOutboxProcessor implements OnModuleInit, OnModuleDestroy {
       pollIntervalMs,
     );
     this.timer.unref();
-    void this.processPendingEvents();
+    void this.bootstrapOutboxProcessing();
+  }
+
+  private async bootstrapOutboxProcessing(): Promise<void> {
+    const released =
+      await this.workspaceOutboxService.releaseInFlightClaimsOnStartup();
+    if (released > 0) {
+      this.logger.warn(
+        `Released ${released} in-flight workspace outbox event(s) on startup`,
+      );
+    }
+
+    await this.processPendingEvents();
   }
 
   onModuleDestroy(): void {
@@ -57,26 +70,57 @@ export class WorkspaceOutboxProcessor implements OnModuleInit, OnModuleDestroy {
   }
 
   async processPendingEvents(): Promise<void> {
-    if (this.isProcessing || !this.dataSource.isInitialized) return;
+    if (!this.dataSource.isInitialized) {
+      return;
+    }
+
+    this.pendingWake = true;
+    if (this.isProcessing) {
+      return;
+    }
+
     this.isProcessing = true;
     try {
-      await runOutboxPollCycle(
-        {
-          reclaimStaleClaims: () =>
-            this.workspaceOutboxService.reclaimStaleClaims(),
-          claimPendingBatch: () =>
-            this.workspaceOutboxService.claimPendingBatch(),
-          publish: (event) => this.publishEvent(event.eventType, event.payload),
-          markProcessed: (id) => this.workspaceOutboxService.markProcessed(id),
-          markFailed: (id, attemptCount, message) =>
-            this.workspaceOutboxService.markFailed(id, attemptCount, message),
-          logLabel: 'workspace outbox',
-          safeMarkFailed: true,
-        },
-        this.logger,
+      while (this.pendingWake) {
+        this.pendingWake = false;
+
+        const exhaustedCount =
+          await this.workspaceOutboxService.markExhaustedClaims();
+        if (exhaustedCount > 0) {
+          this.logger.warn(
+            `Marked ${exhaustedCount} exhausted workspace outbox event(s) as failed`,
+          );
+        }
+
+        await runOutboxPollCycle(
+          {
+            reclaimStaleClaims: () =>
+              this.workspaceOutboxService.reclaimStaleClaims(),
+            claimPendingBatch: () =>
+              this.workspaceOutboxService.claimPendingBatch(),
+            publish: (event) =>
+              this.publishEvent(event.eventType, event.payload),
+            markProcessed: (id) =>
+              this.workspaceOutboxService.markProcessed(id),
+            markFailed: (id, attemptCount, message) =>
+              this.workspaceOutboxService.markFailed(id, attemptCount, message),
+            logLabel: 'workspace outbox',
+            safeMarkFailed: true,
+          },
+          this.logger,
+        );
+      }
+    } catch (error) {
+      this.logger.error(
+        `Workspace outbox processing failed: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`,
       );
     } finally {
       this.isProcessing = false;
+      if (this.pendingWake) {
+        void this.processPendingEvents();
+      }
     }
   }
 

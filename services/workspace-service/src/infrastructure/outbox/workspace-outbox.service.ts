@@ -16,11 +16,35 @@ type ClaimedOutboxEvent = {
   payload: Record<string, unknown>;
 };
 
+function unwrapQueryRows<T extends Record<string, unknown>>(
+  result: unknown,
+): T[] {
+  if (Array.isArray(result)) {
+    return result as T[];
+  }
+
+  if (
+    typeof result === 'object' &&
+    result !== null &&
+    Array.isArray((result as { rows?: unknown }).rows)
+  ) {
+    return (result as { rows: T[] }).rows;
+  }
+
+  return [];
+}
+
 function normalizeClaimedOutboxRow(
   row: Record<string, unknown>,
 ): ClaimedOutboxEvent | null {
-  const id = row.id;
-  if (typeof id !== 'string' || id.length === 0) {
+  const rawId = row.id;
+  const id =
+    typeof rawId === 'string'
+      ? rawId
+      : rawId != null
+        ? String(rawId)
+        : '';
+  if (id.length === 0) {
     return null;
   }
 
@@ -78,35 +102,61 @@ export class WorkspaceOutboxService {
       WorkspaceOutboxEventEntity,
     ).tablePath;
 
-    const rows = await this.dataSource.query(
-      `
-        WITH candidate_events AS (
-          SELECT id
-          FROM ${tablePath}
-          WHERE processed_at IS NULL
-            AND failed_at IS NULL
-            AND claimed_at IS NULL
-            AND event_type IS NOT NULL
-            AND event_type <> ''
-            AND available_at <= NOW()
-          ORDER BY created_at ASC
-          LIMIT $1
-          FOR UPDATE SKIP LOCKED
-        )
-        UPDATE ${tablePath} AS outbox
-        SET claimed_at = NOW(),
-            attempt_count = outbox.attempt_count + 1,
-            updated_at = NOW()
-        FROM candidate_events
-        WHERE outbox.id = candidate_events.id
-        RETURNING outbox.id, outbox.event_type AS "eventType", outbox.payload, outbox.attempt_count AS "attemptCount"
-      `,
-      [limit ?? batchSize],
-    );
+    return this.dataSource.transaction(async (manager) => {
+      const candidates = unwrapQueryRows<{ id: string }>(
+        await manager.query(
+          `
+            SELECT id
+            FROM ${tablePath}
+            WHERE processed_at IS NULL
+              AND failed_at IS NULL
+              AND claimed_at IS NULL
+              AND event_type IS NOT NULL
+              AND event_type <> ''
+              AND available_at <= NOW()
+            ORDER BY created_at ASC
+            LIMIT $1
+            FOR UPDATE SKIP LOCKED
+          `,
+          [limit ?? batchSize],
+        ),
+      );
 
-    return rows
-      .map((row) => normalizeClaimedOutboxRow(row))
-      .filter((row): row is ClaimedOutboxEvent => row !== null);
+      if (candidates.length === 0) {
+        return [];
+      }
+
+      const ids = candidates.map((row) => row.id);
+
+      await manager.query(
+        `
+          UPDATE ${tablePath}
+          SET claimed_at = NOW(),
+              attempt_count = attempt_count + 1,
+              updated_at = NOW()
+          WHERE id = ANY($1::uuid[])
+        `,
+        [ids],
+      );
+
+      const rows = unwrapQueryRows<Record<string, unknown>>(
+        await manager.query(
+          `
+            SELECT id,
+                   event_type AS "eventType",
+                   payload,
+                   attempt_count AS "attemptCount"
+            FROM ${tablePath}
+            WHERE id = ANY($1::uuid[])
+          `,
+          [ids],
+        ),
+      );
+
+      return rows
+        .map((row) => normalizeClaimedOutboxRow(row))
+        .filter((row): row is ClaimedOutboxEvent => row !== null);
+    });
   }
 
   async markProcessed(id: string): Promise<void> {
@@ -155,20 +205,75 @@ export class WorkspaceOutboxService {
     ).tablePath;
     const { staleClaimThresholdMs } = getWorkspaceOutboxConfig();
 
-    const rows = await this.dataSource.query(
-      `
-        UPDATE ${tablePath}
-        SET claimed_at = NULL,
-            available_at = NOW(),
-            last_error = $2,
-            updated_at = NOW()
-        WHERE processed_at IS NULL
-          AND failed_at IS NULL
-          AND claimed_at IS NOT NULL
-          AND claimed_at <= NOW() - (($1::bigint || ' milliseconds')::interval)
-        RETURNING id
-      `,
-      [staleClaimThresholdMs, 'stale claim recovered for retry'],
+    const rows = unwrapQueryRows<{ id: string }>(
+      await this.dataSource.query(
+        `
+          UPDATE ${tablePath}
+          SET claimed_at = NULL,
+              available_at = NOW(),
+              last_error = $2,
+              updated_at = NOW()
+          WHERE processed_at IS NULL
+            AND failed_at IS NULL
+            AND claimed_at IS NOT NULL
+            AND claimed_at <= NOW() - (($1::bigint || ' milliseconds')::interval)
+          RETURNING id
+        `,
+        [staleClaimThresholdMs, 'stale claim recovered for retry'],
+      ),
+    );
+
+    return rows.length;
+  }
+
+  async markExhaustedClaims(): Promise<number> {
+    const tablePath = this.dataSource.getMetadata(
+      WorkspaceOutboxEventEntity,
+    ).tablePath;
+    const { maxAttempts } = getWorkspaceOutboxConfig();
+
+    const rows = unwrapQueryRows<{ id: string }>(
+      await this.dataSource.query(
+        `
+          UPDATE ${tablePath}
+          SET claimed_at = NULL,
+              failed_at = NOW(),
+              last_error = $1,
+              updated_at = NOW()
+          WHERE processed_at IS NULL
+            AND failed_at IS NULL
+            AND attempt_count >= $2
+          RETURNING id
+        `,
+        [
+          `outbox publish exceeded max attempts (${maxAttempts})`,
+          maxAttempts,
+        ],
+      ),
+    );
+
+    return rows.length;
+  }
+
+  async releaseInFlightClaimsOnStartup(): Promise<number> {
+    const tablePath = this.dataSource.getMetadata(
+      WorkspaceOutboxEventEntity,
+    ).tablePath;
+
+    const rows = unwrapQueryRows<{ id: string }>(
+      await this.dataSource.query(
+        `
+          UPDATE ${tablePath}
+          SET claimed_at = NULL,
+              available_at = NOW(),
+              last_error = 'startup claim release',
+              updated_at = NOW()
+          WHERE processed_at IS NULL
+            AND failed_at IS NULL
+            AND claimed_at IS NOT NULL
+          RETURNING id
+        `,
+      ),
     );
 
     return rows.length;
