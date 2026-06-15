@@ -89,10 +89,10 @@ Contract: [service-contracts.md § Service JWT](../../.claude/docs/service-contr
 - [x] CI **Build Images And Deploy** — GHCR build + `helm-deploy-ci.sh` qua SSH
 - [x] API gateway `/api/v1`, Swagger `/swagger/<service>`, Grafana `/grafana/` — [service-urls.md](../service-urls.md)
 - [x] Script local: `infrastructure/deploy/deploy-droplet-from-local.ps1`, `prepare-prod-values.ps1`
+- [x] **Phase 5 — Domain + HTTPS/TLS** — `collabspace.ngocanh2005it.site` trỏ Droplet; Traefik ACME HTTP-01 (Let's Encrypt); cert tự động issue + renew; HTTP→HTTPS redirect 301; CORS mở đầy đủ (`*`, tất cả method + header); `www` SAN cho apex domain
 
 ### Việc còn lại — Droplet (shared với infra backlog Phú Thọ)
 
-- [ ] Phase 5 — TLS/domain (`cert-manager`, HTTPS)
 - [x] Gắn `scripts/demo-e2e` vào CI smoke sau deploy (`run-demo-e2e-prod.sh`)
 - [ ] Backup/snapshot Droplet + restore drill — [backup-policy.md](../backup-policy.md)
 - [ ] Alertmanager routing (Slack/email)
