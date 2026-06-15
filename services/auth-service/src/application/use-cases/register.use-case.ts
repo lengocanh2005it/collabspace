@@ -7,7 +7,7 @@ import {
 } from '@/domain/ports/user-profile-client.port';
 import { USER_REPOSITORY, type UserRepository } from '@/domain/repositories/user.repository';
 import { ConflictException, Inject, Injectable, Logger } from '@nestjs/common';
-import type { EmailVerificationOtpService } from '../services/email-verification-otp.service';
+import { EmailVerificationOtpService } from '../services/email-verification-otp.service';
 
 @Injectable()
 export class RegisterUseCase {

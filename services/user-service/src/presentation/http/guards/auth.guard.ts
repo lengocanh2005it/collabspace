@@ -4,7 +4,7 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import type { AuthGrpcService } from '../../../integrations/auth/auth-grpc.service';
+import { AuthGrpcService } from '../../../integrations/auth/auth-grpc.service';
 import type { AuthenticatedRequest } from '../authenticated-request';
 
 @Injectable()

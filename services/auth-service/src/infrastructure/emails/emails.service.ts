@@ -15,7 +15,7 @@ import {
   forwardRef,
 } from '@nestjs/common';
 import type { Job } from 'graphile-worker';
-import type { EmailSendResult, EmailsSenderService } from './emails-sender.service';
+import { type EmailSendResult, EmailsSenderService } from './emails-sender.service';
 
 @Injectable()
 export class EmailsService {

@@ -5,7 +5,7 @@ import {
   type RefreshTokenRepository,
 } from '@/domain/repositories/refresh-token.repository';
 import { Inject, Injectable } from '@nestjs/common';
-import type { JwtTokenService } from './jwt-token.service';
+import { JwtTokenService } from './jwt-token.service';
 
 @Injectable()
 export class SessionIssuanceService {

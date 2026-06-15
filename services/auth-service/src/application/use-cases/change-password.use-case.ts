@@ -6,7 +6,7 @@ import {
 } from '@/domain/repositories/refresh-token.repository';
 import { USER_REPOSITORY, type UserRepository } from '@/domain/repositories/user.repository';
 import { Inject, Injectable } from '@nestjs/common';
-import type { JwtTokenService } from '../services/jwt-token.service';
+import { JwtTokenService } from '../services/jwt-token.service';
 
 @Injectable()
 export class ChangePasswordUseCase {

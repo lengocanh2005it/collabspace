@@ -1,5 +1,5 @@
 import type { Logger } from "@nestjs/common";
-import type { CommandBus } from "@nestjs/cqrs";
+import { CommandBus } from "@nestjs/cqrs";
 import type { Channel, ConsumeMessage } from "amqplib";
 import { handleRmqConsumerFailure } from "@collabspace/shared";
 import type { RmqChannel, RmqConsumeMessage } from "@collabspace/shared";

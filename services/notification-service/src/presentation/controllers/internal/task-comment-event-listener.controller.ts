@@ -1,6 +1,6 @@
 import { Controller, Logger } from "@nestjs/common";
 import { Ctx, EventPattern, Payload, type RmqContext } from "@nestjs/microservices";
-import type { CommandBus } from "@nestjs/cqrs";
+import { CommandBus } from "@nestjs/cqrs";
 import type { Channel, ConsumeMessage } from "amqplib";
 import { TASK_COMMENTED_EVENT } from "../../../domain/events/comment-events";
 import type { TaskCommentedEventPayload } from "../../../domain/events/comment-events";

@@ -6,7 +6,7 @@ import type {
   TaskCommentedEventPayload,
 } from "../../domain/events/comment.events";
 import { RabbitMqEventsService } from "../messaging/rabbitmq/rabbitmq-events.service";
-import type { TaskOutboxService } from "./task-outbox.service";
+import { TaskOutboxService } from "./task-outbox.service";
 import {
   TASK_OUTBOX_EVENT_COMMENT_MENTIONED,
   TASK_OUTBOX_EVENT_TASK_ASSIGNED,

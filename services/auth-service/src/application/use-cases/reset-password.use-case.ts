@@ -6,7 +6,7 @@ import {
 } from '@/domain/repositories/refresh-token.repository';
 import { USER_REPOSITORY, type UserRepository } from '@/domain/repositories/user.repository';
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
-import type { PasswordResetTokenService } from '../services/password-reset-token.service';
+import { PasswordResetTokenService } from '../services/password-reset-token.service';
 
 @Injectable()
 export class ResetPasswordUseCase {

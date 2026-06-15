@@ -3,7 +3,7 @@ import { unwrapQueryRows } from '@collabspace/shared';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { randomUUID } from 'node:crypto';
-import type { DataSource, EntityManager } from 'typeorm';
+import { DataSource, type EntityManager } from 'typeorm';
 import {
   AUTH_OUTBOX_EVENT_EMAIL_VERIFICATION_OTP,
   AUTH_OUTBOX_EVENT_PASSWORD_RESET_EMAIL,

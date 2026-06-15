@@ -1,11 +1,11 @@
 import { Inject, Injectable } from "@nestjs/common";
-import type { UserProfileHttpClient } from "../../infrastructure/clients/user-profile-http.client";
+import { UserProfileHttpClient } from "../../infrastructure/clients/user-profile-http.client";
 import {
   type IUserReplicaRepository,
   USER_REPLICA_REPOSITORY_TOKEN,
 } from "../ports/IUserReplicaRepository";
 import type { UserReplica } from "../../infrastructure/database/schemas/user-replica.schema";
-import type { MetricsService } from "../../metrics/metrics.service";
+import { MetricsService } from "../../metrics/metrics.service";
 
 export const USER_REPLICA_LOOKUP_TOKEN = Symbol("USER_REPLICA_LOOKUP");
 

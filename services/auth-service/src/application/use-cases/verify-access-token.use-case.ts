@@ -1,8 +1,8 @@
 import type { AuthIdentity } from '@/domain/types/jwt';
 import { Injectable } from '@nestjs/common';
-import type { JwtTokenService } from '../services/jwt-token.service';
+import { JwtTokenService } from '../services/jwt-token.service';
 import { readFirstString } from '../services/jwt-payload.util';
-import type { UserProfileResolverService } from '../services/user-profile-resolver.service';
+import { UserProfileResolverService } from '../services/user-profile-resolver.service';
 
 @Injectable()
 export class VerifyAccessTokenUseCase {

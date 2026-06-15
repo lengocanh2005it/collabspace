@@ -4,7 +4,7 @@ import { Inject } from "@nestjs/common";
 import { DeleteAttachmentCommand } from "../commands/delete-attachment.command";
 import { ITaskRepository as ITaskRepositoryToken } from "../ports/ITaskRepository";
 import type { ITaskRepository } from "../ports/ITaskRepository";
-import type { AzureBlobService } from "../../infrastructure/services/azure-blob.service";
+import { AzureBlobService } from "../../infrastructure/services/azure-blob.service";
 import { TaskId } from "../../domain/value-objects/TaskId";
 import { EntityNotFoundException } from "../../domain/exceptions/EntityNotFoundException";
 

@@ -23,15 +23,15 @@ import {
   MessageResponseSchemaDto,
 } from "../dtos/notification-swagger-response.dto";
 import type { Request, Response } from "express";
-import type { CommandBus, QueryBus } from "@nestjs/cqrs";
+import { CommandBus, QueryBus } from "@nestjs/cqrs";
 
 import { GetNotificationsQuery } from "../../application/usecases/get-notifications/get-notifications.query";
 import { MarkNotificationReadCommand } from "../../application/usecases/mark-notification-read/mark-notification-read.command";
 import { MarkAllNotificationsReadCommand } from "../../application/usecases/mark-all-notifications-read/mark-all-notifications-read.command";
 
-import type { NotificationHealthService } from "../../health/notification-health.service";
+import { NotificationHealthService } from "../../health/notification-health.service";
 import { assertMetricsAccess } from "../../metrics/metrics-access";
-import type { MetricsService } from "../../metrics/metrics.service";
+import { MetricsService } from "../../metrics/metrics.service";
 import { AuthGuard } from "../guards/auth.guard";
 import type { AuthenticatedRequest } from "../http/authenticated-request";
 

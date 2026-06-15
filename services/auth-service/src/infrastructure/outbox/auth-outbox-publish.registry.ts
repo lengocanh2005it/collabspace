@@ -1,4 +1,4 @@
-import type { EmailsService } from '@/infrastructure/emails/emails.service';
+import { EmailsService } from '@/infrastructure/emails/emails.service';
 import {
   AUTH_OUTBOX_EVENT_EMAIL_VERIFICATION_OTP,
   AUTH_OUTBOX_EVENT_PASSWORD_RESET_EMAIL,

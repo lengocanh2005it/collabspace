@@ -1,9 +1,9 @@
 import { Controller, Get, HttpCode, Req, Res } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { Request, Response } from 'express';
-import type { WorkspaceHealthService } from '../../health/workspace-health.service';
+import { WorkspaceHealthService } from '../../health/workspace-health.service';
 import { assertMetricsAccess } from '../../metrics/metrics-access';
-import type { MetricsService } from '../../metrics/metrics.service';
+import { MetricsService } from '../../metrics/metrics.service';
 
 @ApiTags('health')
 @Controller('workspaces')

@@ -13,7 +13,7 @@ import {
   Req,
 } from "@nestjs/common";
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiQuery, ApiTags } from "@nestjs/swagger";
-import type { CommandBus, QueryBus } from "@nestjs/cqrs";
+import { CommandBus, QueryBus } from "@nestjs/cqrs";
 import type { CreateCommentRequest } from "../dtos/create-comment.request";
 import type { EditCommentRequest } from "../dtos/edit-comment.request";
 import { CommentResponse, GetCommentsResponse } from "../dtos/comment.response";

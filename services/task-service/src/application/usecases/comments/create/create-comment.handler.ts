@@ -14,7 +14,7 @@ import { ITaskRepository as ITaskRepositoryToken } from "../../../ports/ITaskRep
 import type { ITaskRepository } from "../../../ports/ITaskRepository";
 import { Comment } from "../../../../domain/entities/comment.entity";
 import { TaskId } from "../../../../domain/value-objects/TaskId";
-import type { TaskCommentNotificationPublisher } from "../../../services/task-comment-notification.publisher";
+import { TaskCommentNotificationPublisher } from "../../../services/task-comment-notification.publisher";
 import { ITaskActivityRepository as ITaskActivityRepositoryToken } from "../../../ports/ITaskActivityRepository";
 import type { ITaskActivityRepository } from "../../../ports/ITaskActivityRepository";
 import { parseMentionUsernames } from "../../../../domain/utils/mention-parser";

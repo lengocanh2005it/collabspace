@@ -1,5 +1,5 @@
 import type { OtpStore } from '@/domain/ports/otp-store.port';
-import type { RedisService } from '@/infrastructure/redis/redis.service';
+import { RedisService } from '@/infrastructure/redis/redis.service';
 import { Injectable } from '@nestjs/common';
 
 @Injectable()

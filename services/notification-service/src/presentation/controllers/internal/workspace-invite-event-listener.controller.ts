@@ -1,6 +1,6 @@
 import { Controller, Logger } from "@nestjs/common";
 import { Ctx, EventPattern, Payload, type RmqContext } from "@nestjs/microservices";
-import type { CommandBus } from "@nestjs/cqrs";
+import { CommandBus } from "@nestjs/cqrs";
 import type { Channel, ConsumeMessage } from "amqplib";
 import { WORKSPACE_INVITED_EVENT } from "../../../domain/events/workspace-events";
 import type { WorkspaceInvitedEventPayload } from "../../../domain/events/workspace-events";

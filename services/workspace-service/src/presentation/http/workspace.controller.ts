@@ -38,7 +38,7 @@ import { UpdateWorkspaceUseCase } from '../../application/use-cases/workspace/up
 import { DeleteWorkspaceUseCase } from '../../application/use-cases/workspace/delete-workspace.use-case';
 import { ListMembersUseCase } from '../../application/use-cases/workspace/list-members.use-case';
 import { GetWorkspaceActivityUseCase } from '../../application/use-cases/workspace/get-workspace-activity.use-case';
-import type { IdempotencyService } from '../../infrastructure/idempotency/idempotency.service';
+import { IdempotencyService } from '../../infrastructure/idempotency/idempotency.service';
 import { AuthGuard } from './guards/auth.guard';
 
 @ApiTags('workspaces')

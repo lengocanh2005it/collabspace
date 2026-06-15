@@ -29,7 +29,7 @@ import type { InviteMemberDto } from '../../application/dto/invite-member.dto';
 import { InviteMemberUseCase } from '../../application/use-cases/invitation/invite-member.use-case';
 import { AcceptInvitationUseCase } from '../../application/use-cases/invitation/accept-invitation.use-case';
 import { RejectInvitationUseCase } from '../../application/use-cases/invitation/reject-invitation.use-case';
-import type { IdempotencyService } from '../../infrastructure/idempotency/idempotency.service';
+import { IdempotencyService } from '../../infrastructure/idempotency/idempotency.service';
 import { AuthGuard } from './guards/auth.guard';
 import { ListInvitationsUseCase } from '../../application/use-cases/invitation/list-invitations.use-case';
 

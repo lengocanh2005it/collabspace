@@ -2,7 +2,7 @@ import type { ForgotPasswordRequestDto } from '@/application/dto/auth-request.dt
 import type { ForgotPasswordResult } from '@/application/dto/auth-use-case-results';
 import { USER_REPOSITORY, type UserRepository } from '@/domain/repositories/user.repository';
 import { Inject, Injectable } from '@nestjs/common';
-import type { PasswordResetTokenService } from '../services/password-reset-token.service';
+import { PasswordResetTokenService } from '../services/password-reset-token.service';
 
 @Injectable()
 export class ForgotPasswordUseCase {

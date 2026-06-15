@@ -39,7 +39,7 @@ import {
   ApiSuccessTaskResponseSchemaDto,
 } from "../dtos/task-swagger-response.dto";
 import { FileInterceptor } from "@nestjs/platform-express";
-import type { CommandBus, QueryBus } from "@nestjs/cqrs";
+import { CommandBus, QueryBus } from "@nestjs/cqrs";
 import type { UploadedFile as TaskUploadedFile } from "../../common/types/uploaded-file";
 import type { CreateTaskRequest } from "../dtos/create-task.request";
 import type { UpdateTaskDetailsRequest } from "../dtos/update-task-details.request";
@@ -66,7 +66,7 @@ import { created, ok } from "../common/response/api-response.wrapper";
 import type { ApiResponse } from "../common/response/api-response.interface";
 import { WorkspaceValidationGuard } from "../guards/workspace-validation.guard";
 import { AuthGuard } from "../guards/auth.guard";
-import type { IdempotencyService } from "../../infrastructure/idempotency/idempotency.service";
+import { IdempotencyService } from "../../infrastructure/idempotency/idempotency.service";
 import { getHeaderValue } from "../http/request-context";
 import type { AppRequest } from "../http/request-context";
 

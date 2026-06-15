@@ -69,9 +69,9 @@ import { ResetPasswordUseCase } from '@/application/use-cases/reset-password.use
 import { RevokeSessionUseCase } from '@/application/use-cases/revoke-session.use-case';
 import { VerifyAccessTokenUseCase } from '@/application/use-cases/verify-access-token.use-case';
 import { VerifyEmailOtpUseCase } from '@/application/use-cases/verify-email-otp.use-case';
-import type { AuthHealthService } from '@/health/auth-health.service';
+import { AuthHealthService } from '@/health/auth-health.service';
 import { assertMetricsAccess } from '@/metrics/metrics-access';
-import type { MetricsService } from '@/metrics/metrics.service';
+import { MetricsService } from '@/metrics/metrics.service';
 import type { RequestWithId } from '@/common/http/request-id.middleware';
 import type { Request, Response } from 'express';
 import { EMAIL_OUTBOX, type EmailOutbox } from '@/domain/ports/email-outbox.port';

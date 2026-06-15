@@ -5,7 +5,7 @@ import type {
   PasswordResetEmailEnqueuePayload,
 } from '@/domain/ports/email-outbox.port';
 import { AuthOutboxProcessor } from '@/infrastructure/outbox/auth-outbox.processor';
-import type { AuthOutboxService } from '@/infrastructure/outbox/auth-outbox.service';
+import { AuthOutboxService } from '@/infrastructure/outbox/auth-outbox.service';
 import { Inject, Injectable, forwardRef } from '@nestjs/common';
 
 @Injectable()

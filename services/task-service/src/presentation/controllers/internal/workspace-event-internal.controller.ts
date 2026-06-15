@@ -2,7 +2,7 @@ import { Controller, Logger } from "@nestjs/common";
 import { Ctx, EventPattern, Payload, type RmqContext } from "@nestjs/microservices";
 import { WORKSPACE_DELETED_EVENT, type WorkspaceDeletedEventPayload } from "@collabspace/shared";
 import type { Channel, ConsumeMessage } from "amqplib";
-import type { WorkspaceDeletionService } from "../../../application/services/workspace-deletion.service";
+import { WorkspaceDeletionService } from "../../../application/services/workspace-deletion.service";
 
 @Controller()
 export class WorkspaceEventController {

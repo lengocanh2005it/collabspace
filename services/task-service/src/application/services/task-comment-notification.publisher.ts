@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { Injectable } from "@nestjs/common";
 import { CommentNotificationPolicy } from "../../domain/policies/comment-notification.policy";
 import { CommentPreview } from "../../domain/value-objects/CommentPreview";
-import type { TaskOutboxService } from "../../infrastructure/outbox/task-outbox.service";
+import { TaskOutboxService } from "../../infrastructure/outbox/task-outbox.service";
 
 export type PublishCommentNotificationsInput = {
   taskId: string;

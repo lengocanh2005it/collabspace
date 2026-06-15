@@ -5,7 +5,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import type { Request } from 'express';
-import type { AuthGrpcService } from '../../../integrations/auth/auth-grpc.service';
+import { AuthGrpcService } from '../../../integrations/auth/auth-grpc.service';
 
 @Injectable()
 export class AuthGuard implements CanActivate {

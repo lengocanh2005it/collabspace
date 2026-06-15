@@ -1,5 +1,5 @@
 import type { INestApplication } from '@nestjs/common';
-import type { MetricsService } from './metrics.service';
+import { MetricsService } from './metrics.service';
 
 export function registerMetricsMiddleware(
   app: INestApplication,

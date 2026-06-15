@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { DatabaseService } from '../infrastructure/database/database.service';
-import type { AuthGrpcService } from '../integrations/auth/auth-grpc.service';
+import { AuthGrpcService } from '../integrations/auth/auth-grpc.service';
 
 type CheckStatus = 'up' | 'down' | 'disabled';
 type OverallStatus = 'ok' | 'degraded' | 'error';

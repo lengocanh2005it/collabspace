@@ -1,6 +1,6 @@
 import type { AuthLiteIdentity } from '@/domain/types/jwt';
-import type { JwtTokenService } from '@/application/services/jwt-token.service';
-import type { AccessTokenVerifyLiteCacheService } from '@/infrastructure/redis/access-token-verify-lite-cache.service';
+import { JwtTokenService } from '@/application/services/jwt-token.service';
+import { AccessTokenVerifyLiteCacheService } from '@/infrastructure/redis/access-token-verify-lite-cache.service';
 import { Injectable } from '@nestjs/common';
 
 @Injectable()

@@ -13,7 +13,7 @@ import type {
   WorkspaceMembershipSnapshot,
 } from "../../application/ports/IWorkspaceClient";
 import { meetsWorkspaceRole } from "./workspace-membership.util";
-import type { WorkspaceMembershipCacheService } from "../cache/workspace-membership-cache.service";
+import { WorkspaceMembershipCacheService } from "../cache/workspace-membership-cache.service";
 
 type WorkspaceMembershipResponse = {
   workspaceId: string;

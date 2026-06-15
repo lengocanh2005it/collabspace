@@ -5,7 +5,7 @@ import {
   TASK_ASSIGNED_EVENT,
   type TaskAssignedEventPayload,
 } from "../../../domain/events/task-events";
-import type { CommandBus } from "@nestjs/cqrs";
+import { CommandBus } from "@nestjs/cqrs";
 import { InboundNotificationEventMapper } from "../../../application/mappers/inbound-notification-event.mapper";
 import { consumeNotificationEvent } from "../../helpers/rmq-notification-consumer.helper";
 

@@ -2,7 +2,7 @@ import type { ResendEmailVerificationOtpResult } from '@/application/dto/auth-us
 import type { ResendEmailVerificationOtpRequestDto } from '@/application/dto/auth-request.dto';
 import { USER_REPOSITORY, type UserRepository } from '@/domain/repositories/user.repository';
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
-import type { EmailVerificationOtpService } from '../services/email-verification-otp.service';
+import { EmailVerificationOtpService } from '../services/email-verification-otp.service';
 
 @Injectable()
 export class ResendEmailVerificationOtpUseCase {

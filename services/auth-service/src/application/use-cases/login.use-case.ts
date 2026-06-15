@@ -3,7 +3,7 @@ import type { AuthSessionResponseDto } from '@/application/dto/auth-session-resp
 import { User } from '@/domain/entities/user.entity';
 import { USER_REPOSITORY, type UserRepository } from '@/domain/repositories/user.repository';
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import type { SessionIssuanceService } from '../services/session-issuance.service';
+import { SessionIssuanceService } from '../services/session-issuance.service';
 import {
   AUTH_ADMIN_REPOSITORY,
   type AuthAdminRepository,

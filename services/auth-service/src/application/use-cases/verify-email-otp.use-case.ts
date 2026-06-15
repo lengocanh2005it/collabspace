@@ -7,7 +7,7 @@ import {
 } from '@/domain/ports/otp-store.port';
 import { USER_REPOSITORY, type UserRepository } from '@/domain/repositories/user.repository';
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
-import type { EmailVerificationOtpService } from '../services/email-verification-otp.service';
+import { EmailVerificationOtpService } from '../services/email-verification-otp.service';
 
 @Injectable()
 export class VerifyEmailOtpUseCase {
