@@ -29,7 +29,8 @@ pnpm run format:check    # Biome format only
 pnpm run biome:check     # Biome format + lint
 pnpm run biome:fix       # Biome format + lint with safe fixes
 pnpm run lint:types      # ESLint type-checked (per package)
-pnpm run lint:ci         # CI gate: format:check + biome:check + lint:types
+pnpm run lint:deps       # build @collabspace/shared + nest-auth (required before lint:types)
+pnpm run lint:ci         # CI gate: lint:deps + format:check + biome:check + lint:types
 pnpm run lint            # alias of lint:ci
 ```
 
