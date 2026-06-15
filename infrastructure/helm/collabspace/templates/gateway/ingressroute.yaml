@@ -124,4 +124,18 @@ spec:
         - name: forward-auth
         - name: rate-limit
         - name: cors-headers
+  {{- if and .Values.gateway.tls .Values.gateway.tls.enabled }}
+  tls:
+    certResolver: {{ .Values.gateway.tls.certResolver | default "letsencrypt" }}
+    {{- if .Values.gateway.publicHost }}
+    domains:
+      - main: {{ .Values.gateway.publicHost }}
+        {{- if .Values.gateway.tls.sans }}
+        sans:
+          {{- range .Values.gateway.tls.sans }}
+          - {{ . }}
+          {{- end }}
+        {{- end }}
+    {{- end }}
+  {{- end }}
 {{- end }}

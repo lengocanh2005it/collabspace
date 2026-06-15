@@ -100,12 +100,29 @@ rabbitmq:
 traefik:
   deployment:
     replicas: 1
-  # Droplet single-node: LoadBalancer (k3s klipper) hoặc NodePort nếu không có LB
   service:
     type: LoadBalancer
+  ports:
+    web:
+      redirectTo:
+        port: websecure
+        permanent: true
+  additionalArguments:
+    - "--certificatesresolvers.letsencrypt.acme.httpchallenge=true"
+    - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
+    - "--certificatesresolvers.letsencrypt.acme.email=REPLACE_ME_ACME_EMAIL"
+    - "--certificatesresolvers.letsencrypt.acme.storage=/data/acme.json"
+  persistence:
+    enabled: true
+    size: 128Mi
 
 gateway:
   publicHost: REPLACE_ME_DOMAIN
+  tls:
+    enabled: true
+    certResolver: letsencrypt
+    sans:
+      - "www.REPLACE_ME_DOMAIN"
   grafana:
     expose: true
   swagger:
@@ -113,11 +130,12 @@ gateway:
   cors:
     allowOrigins:
       - "https://REPLACE_ME_DOMAIN"
+      - "https://www.REPLACE_ME_DOMAIN"
       - "http://REPLACE_ME_DOMAIN"
 
 grafana:
   env:
-    GF_SERVER_ROOT_URL: "http://REPLACE_ME_DOMAIN/grafana/"
+    GF_SERVER_ROOT_URL: "https://REPLACE_ME_DOMAIN/grafana/"
     GF_SERVER_SERVE_FROM_SUB_PATH: "true"
 
 networkPolicies:

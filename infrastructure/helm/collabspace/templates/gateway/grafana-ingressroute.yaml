@@ -19,4 +19,12 @@ spec:
       services:
         - name: grafana
           port: 80
+  {{- if and .Values.gateway.tls .Values.gateway.tls.enabled }}
+  tls:
+    certResolver: {{ .Values.gateway.tls.certResolver | default "letsencrypt" }}
+    {{- if .Values.gateway.publicHost }}
+    domains:
+      - main: {{ .Values.gateway.publicHost }}
+    {{- end }}
+  {{- end }}
 {{- end }}

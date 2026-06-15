@@ -67,6 +67,7 @@ replacements = {
     "REPLACE_ME_GHCR_OWNER": os.environ["GHCR_OWNER"],
     "REPLACE_ME_IMAGE_TAG": os.environ["IMAGE_TAG"],
     "REPLACE_ME_DOMAIN": os.environ["PROD_DOMAIN"],
+    "REPLACE_ME_ACME_EMAIL": os.environ.get("ACME_EMAIL") or os.environ.get("BREVO_SENDER_EMAIL", "admin@example.com"),
     "REPLACE_ME_ERLANG_COOKIE": os.environ["RABBITMQ_ERLANG_COOKIE"],
     'jwtSecret: "REPLACE_ME"': f'jwtSecret: "{os.environ["JWT_SECRET"]}"',
     'serviceJwtSecret: "REPLACE_ME"': f'serviceJwtSecret: "{os.environ["SERVICE_JWT_SECRET"]}"',

@@ -218,6 +218,10 @@ gateway:
   enabled: true
   # Public host/IP for Grafana root_url (override in values-prod via PROD_DOMAIN).
   publicHost: ""
+  tls:
+    enabled: false          # set true in values-prod when domain + cert are ready
+    certResolver: letsencrypt
+    sans: []                # e.g. ["www.ngocanh2005it.site"]
   grafana:
     expose: true
   swagger:
