@@ -22,8 +22,9 @@ Hướng dẫn cho AI agents khi debug/deploy **production k3s trên DigitalOcea
 
 1. Push `main` → `.github/workflows/docker-deploy.yml`
 2. Build 5 images (`infrastructure/docker/Dockerfile.service`) → GHCR tag = commit SHA
-3. SSH Droplet → `git-sync-private-repo.sh` → `helm-deploy-ci.sh` → `verify-k8s-readiness.sh`
-4. Rollout chờ: `infrastructure/deploy/helm-rollout.sh` (timeout ~420s/service, notification 600s)
+3. SSH Droplet step 1 → `git-sync-private-repo.sh`
+4. SSH Droplet step 2 → `helm-deploy-ci.sh` → `helm-rollout.sh` (timeout ~420s/service, notification 600s)
+5. SSH Droplet step 3 → `run-demo-e2e-prod.sh` (includes `verify-k8s-readiness.sh`)
 
 GitHub secrets cần có: `DROPLET_HOST`, `DROPLET_USER`, `DROPLET_SSH_KEY`, `GHCR_USERNAME`, `GHCR_TOKEN`.
 

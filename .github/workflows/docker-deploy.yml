@@ -220,6 +220,30 @@ jobs:
             echo "value=false" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Sync repo on Droplet
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          GHCR_OWNER: ${{ github.repository_owner }}
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          host: ${{ secrets.DROPLET_HOST }}
+          username: ${{ secrets.DROPLET_USER }}
+          key: ${{ secrets.DROPLET_SSH_KEY }}
+          command_timeout: 5m
+          envs: GHCR_OWNER,GHCR_TOKEN,GITHUB_TOKEN
+          script: |
+            set -euo pipefail
+            export APP_DIR=/opt/collabspace
+            export PHASE0_ENV=/opt/collabspace/infrastructure/deploy/phase0.env
+            export GITHUB_TOKEN="${GITHUB_TOKEN}"
+
+            # Deliberately no fallback. If git-sync-private-repo.sh fails, CI fails.
+            # This is intentional: a partial deployment is worse than a visible CI failure.
+            start=$SECONDS
+            bash /opt/collabspace/infrastructure/deploy/git-sync-private-repo.sh
+            echo "Repo sync finished in $((SECONDS - start))s"
+
       - name: Deploy Helm on k3s over SSH
         uses: appleboy/ssh-action@v1.2.0
         env:
@@ -228,34 +252,42 @@ jobs:
           GHCR_OWNER: ${{ github.repository_owner }}
           GHCR_USERNAME: ${{ secrets.GHCR_USERNAME }}
           GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SKIP_HELM_DEP_UPDATE: "true"
         with:
           host: ${{ secrets.DROPLET_HOST }}
           username: ${{ secrets.DROPLET_USER }}
           key: ${{ secrets.DROPLET_SSH_KEY }}
-          command_timeout: 30m
-          envs: IMAGE_TAG,RUN_K8S_MIGRATIONS,GHCR_OWNER,GHCR_USERNAME,GHCR_TOKEN,GITHUB_TOKEN,SKIP_HELM_DEP_UPDATE
+          command_timeout: 25m
+          envs: IMAGE_TAG,RUN_K8S_MIGRATIONS,GHCR_OWNER,GHCR_USERNAME,GHCR_TOKEN,SKIP_HELM_DEP_UPDATE
           script: |
             set -euo pipefail
             export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
-            export APP_DIR=/opt/collabspace
-            export PHASE0_ENV=/opt/collabspace/infrastructure/deploy/phase0.env
-            export GITHUB_TOKEN="${GITHUB_TOKEN}"
-            export RUN_K8S_MIGRATIONS="${RUN_K8S_MIGRATIONS:-false}"
-
-            # Deliberately no fallback. If git-sync-private-repo.sh fails, CI fails.
-            # This is intentional: a partial deployment is worse than a visible CI failure.
-            bash /opt/collabspace/infrastructure/deploy/git-sync-private-repo.sh
-
             cd /opt/collabspace
             export APP_DIR=/opt/collabspace
+            export PHASE0_ENV=/opt/collabspace/infrastructure/deploy/phase0.env
+            export RUN_K8S_MIGRATIONS="${RUN_K8S_MIGRATIONS:-false}"
             export IMAGE_TAG
             export GHCR_OWNER
             export GHCR_USERNAME
             export GHCR_TOKEN
             export SKIP_HELM_DEP_UPDATE
+            start=$SECONDS
             bash infrastructure/deploy/helm-deploy-ci.sh
+            echo "Helm deploy finished in $((SECONDS - start))s"
+
+      - name: Run MVP demo E2E smoke over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DROPLET_HOST }}
+          username: ${{ secrets.DROPLET_USER }}
+          key: ${{ secrets.DROPLET_SSH_KEY }}
+          command_timeout: 10m
+          script: |
+            set -euo pipefail
+            export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+            cd /opt/collabspace
             echo "==> MVP demo E2E smoke (7 steps via Traefik)..."
             export PHASE0_ENV=/opt/collabspace/infrastructure/deploy/phase0.env
+            start=$SECONDS
             bash infrastructure/deploy/run-demo-e2e-prod.sh
+            echo "Demo E2E smoke finished in $((SECONDS - start))s"
