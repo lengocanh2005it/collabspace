@@ -93,7 +93,7 @@ Contract: [service-contracts.md § Service JWT](../../.claude/docs/service-contr
 ### Việc còn lại — Droplet (shared với infra backlog Phú Thọ)
 
 - [ ] Phase 5 — TLS/domain (`cert-manager`, HTTPS)
-- [ ] Gắn `scripts/demo-e2e` vào CI smoke sau deploy
+- [x] Gắn `scripts/demo-e2e` vào CI smoke sau deploy (`run-demo-e2e-prod.sh`)
 - [ ] Backup/snapshot Droplet + restore drill — [backup-policy.md](../backup-policy.md)
 - [ ] Alertmanager routing (Slack/email)
 

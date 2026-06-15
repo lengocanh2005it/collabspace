@@ -1,6 +1,7 @@
 import { NestFactory } from "@nestjs/core";
 import { AppModule } from "./app.module";
 import { MicroserviceOptions, Transport } from "@nestjs/microservices";
+import { buildConsumerQueueOptions } from "@collabspace/shared";
 import { ConfigurationService } from "./configuration/configuration.service";
 import { ValidationPipe } from "@nestjs/common";
 import compression from "compression";
@@ -14,12 +15,21 @@ async function bootstrap() {
 
   // 1. Cấu hình RabbitMQ Consumer
   if (rmqConfig.enabled) {
+    const dlxExchange =
+      process.env.RABBITMQ_DLX_EXCHANGE ?? "collabspace_dlx";
+    const dlxRoutingKey =
+      process.env.RABBITMQ_DLX_ROUTING_KEY ?? `${rmqConfig.queue}.dlq`;
+
     app.connectMicroservice<MicroserviceOptions>({
       transport: Transport.RMQ,
       options: {
         urls: [rmqConfig.url],
         queue: rmqConfig.queue,
-        queueOptions: { durable: rmqConfig.queueDurable },
+        queueOptions: buildConsumerQueueOptions({
+          durable: rmqConfig.queueDurable,
+          deadLetterExchange: dlxExchange,
+          deadLetterRoutingKey: dlxRoutingKey,
+        }),
         noAck: rmqConfig.noAck,
         prefetchCount: rmqConfig.prefetchCount,
       },

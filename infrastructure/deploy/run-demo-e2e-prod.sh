@@ -7,6 +7,11 @@ ROOT_DIR=$(CDPATH= cd -- "$SCRIPT_DIR/../.." && pwd)
 
 export KUBECONFIG="${KUBECONFIG:-/etc/rancher/k3s/k3s.yaml}"
 
+echo "==> Waiting for gateway readiness before demo E2E..."
+bash "$SCRIPT_DIR/verify-k8s-readiness.sh"
+echo "==> Brief stabilization for gRPC / RabbitMQ consumers..."
+sleep 10
+
 # Guard on empty IP resolution
 DROPLET_IP=$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="ExternalIP")].address}' 2>/dev/null || true)
 if [[ -z "$DROPLET_IP" ]]; then

@@ -33,3 +33,4 @@ export GHCR_OWNER
 
 echo "==> Phase 4 CI deploy (IMAGE_TAG=${IMAGE_TAG:-}, RUN_K8S_MIGRATIONS=${RUN_K8S_MIGRATIONS:-false})"
 bash "$SCRIPT_DIR/helm-rollout.sh"
+# Post-deploy smoke: verify-k8s-readiness.sh + run-demo-e2e-prod.sh (also invoked from GitHub Actions SSH step).

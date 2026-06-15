@@ -43,7 +43,7 @@ API đã có; còn thiếu **chứng minh tự động** và client:
 - [x] Script demo E2E 7 bước (`scripts/demo-e2e.sh` + `scripts/demo-e2e.ps1`)
 - [x] Smoke qua Traefik gateway (`BASE_URL=http://localhost/api/v1` mặc định)
 - [ ] Frontend / UI client trong repo
-- [ ] Gắn `demo-e2e` vào CI smoke sau deploy production
+- [x] Gắn `demo-e2e` vào CI smoke sau deploy production (`run-demo-e2e-prod.sh` sau `helm-deploy-ci.sh`)
 
 ## Ngoài phạm vi
 
