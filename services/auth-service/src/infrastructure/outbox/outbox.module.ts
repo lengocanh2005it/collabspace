@@ -13,6 +13,6 @@ import { AuthOutboxEventOrmEntity } from '@/infrastructure/database/entities/aut
     EmailsModule,
   ],
   providers: [AuthOutboxService, AuthOutboxProcessor],
-  exports: [AuthOutboxService],
+  exports: [AuthOutboxService, AuthOutboxProcessor],
 })
 export class OutboxModule {}

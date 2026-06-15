@@ -39,7 +39,19 @@ export class AuthOutboxProcessor implements OnModuleInit, OnModuleDestroy {
       void this.processPendingEvents();
     }, pollIntervalMs);
     this.timer.unref();
-    void this.processPendingEvents();
+    void this.bootstrapOutboxProcessing();
+  }
+
+  private async bootstrapOutboxProcessing(): Promise<void> {
+    const released =
+      await this.authOutboxService.releaseInFlightClaimsOnStartup();
+    if (released > 0) {
+      this.logger.warn(
+        `Released ${released} in-flight auth outbox event(s) on startup`,
+      );
+    }
+
+    await this.processPendingEvents();
   }
 
   async onModuleDestroy(): Promise<void> {

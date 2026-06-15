@@ -257,26 +257,8 @@ export class AuthOutboxService {
 
   async reclaimStaleClaims(): Promise<number> {
     const tablePath = this.dataSource.getMetadata(AuthOutboxEventOrmEntity).tablePath;
-    const { maxAttempts, staleClaimThresholdMs } =
+    const { staleClaimThresholdMs } =
       this.configurationService.getOutboxConfig();
-
-    const exhaustedRows = (await this.dataSource.query(
-      `
-        UPDATE ${tablePath}
-        SET claimed_at = NULL,
-            failed_at = NOW(),
-            last_error = $1,
-            updated_at = NOW()
-        WHERE processed_at IS NULL
-          AND failed_at IS NULL
-          AND attempt_count >= $2
-        RETURNING id
-      `,
-      [
-        `outbox publish exceeded max attempts (${maxAttempts})`,
-        maxAttempts,
-      ],
-    )) as Array<{ id: string }>;
 
     const rows = (await this.dataSource.query(
       `
@@ -320,6 +302,25 @@ export class AuthOutboxService {
     )) as Array<{ id: string }>;
 
     return exhaustedRows.length;
+  }
+
+  async releaseInFlightClaimsOnStartup(): Promise<number> {
+    const tablePath = this.dataSource.getMetadata(AuthOutboxEventOrmEntity).tablePath;
+    const rows = (await this.dataSource.query(
+      `
+        UPDATE ${tablePath}
+        SET claimed_at = NULL,
+            available_at = NOW(),
+            last_error = 'startup claim release',
+            updated_at = NOW()
+        WHERE processed_at IS NULL
+          AND failed_at IS NULL
+          AND claimed_at IS NOT NULL
+        RETURNING id
+      `,
+    )) as Array<{ id: string }>;
+
+    return rows.length;
   }
 
   async replayFailedEvent(id: string): Promise<void> {

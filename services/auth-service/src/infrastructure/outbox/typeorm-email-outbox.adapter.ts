@@ -4,23 +4,30 @@ import {
   EmailVerificationOtpEnqueuePayload,
   PasswordResetEmailEnqueuePayload,
 } from '@/domain/ports/email-outbox.port';
+import { AuthOutboxProcessor } from '@/infrastructure/outbox/auth-outbox.processor';
 import { AuthOutboxService } from '@/infrastructure/outbox/auth-outbox.service';
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, forwardRef } from '@nestjs/common';
 
 @Injectable()
 export class TypeOrmEmailOutboxAdapter implements EmailOutbox {
-  constructor(private readonly authOutboxService: AuthOutboxService) {}
+  constructor(
+    private readonly authOutboxService: AuthOutboxService,
+    @Inject(forwardRef(() => AuthOutboxProcessor))
+    private readonly authOutboxProcessor: AuthOutboxProcessor,
+  ) {}
 
-  enqueueEmailVerificationOtp(
+  async enqueueEmailVerificationOtp(
     payload: EmailVerificationOtpEnqueuePayload,
   ): Promise<void> {
-    return this.authOutboxService.enqueueEmailVerificationOtp(payload);
+    await this.authOutboxService.enqueueEmailVerificationOtp(payload);
+    await this.authOutboxProcessor.processPendingEvents();
   }
 
-  enqueuePasswordResetEmail(
+  async enqueuePasswordResetEmail(
     payload: PasswordResetEmailEnqueuePayload,
   ): Promise<void> {
-    return this.authOutboxService.enqueuePasswordResetEmail(payload);
+    await this.authOutboxService.enqueuePasswordResetEmail(payload);
+    await this.authOutboxProcessor.processPendingEvents();
   }
 
   getStats(): Promise<EmailOutboxStats> {
