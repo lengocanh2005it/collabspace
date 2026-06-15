@@ -18,7 +18,7 @@ export class AuthOutboxPublishRegistry {
     this.handlers.set(
       AUTH_OUTBOX_EVENT_EMAIL_VERIFICATION_OTP,
       async (payload) => {
-        await emailsService.enqueueMail({
+        await emailsService.sendMailNow({
           subject: 'Verify your CollabSpace email',
           text: [
             `Your CollabSpace verification code is ${String(payload.otp)}.`,
@@ -32,7 +32,7 @@ export class AuthOutboxPublishRegistry {
     this.handlers.set(
       AUTH_OUTBOX_EVENT_PASSWORD_RESET_EMAIL,
       async (payload) => {
-        await emailsService.enqueueMail({
+        await emailsService.sendMailNow({
           subject: 'Reset your CollabSpace password',
           text: [
             `Use this password reset token: ${String(payload.token)}.`,

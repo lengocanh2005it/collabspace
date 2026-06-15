@@ -294,7 +294,32 @@ export class AuthOutboxService {
       [staleClaimThresholdMs, 'stale claim recovered for retry'],
     )) as Array<{ id: string }>;
 
-    return rows.length + exhaustedRows.length;
+    return rows.length;
+  }
+
+  async markExhaustedClaims(): Promise<number> {
+    const tablePath = this.dataSource.getMetadata(AuthOutboxEventOrmEntity).tablePath;
+    const { maxAttempts } = this.configurationService.getOutboxConfig();
+
+    const exhaustedRows = (await this.dataSource.query(
+      `
+        UPDATE ${tablePath}
+        SET claimed_at = NULL,
+            failed_at = NOW(),
+            last_error = $1,
+            updated_at = NOW()
+        WHERE processed_at IS NULL
+          AND failed_at IS NULL
+          AND attempt_count >= $2
+        RETURNING id
+      `,
+      [
+        `outbox publish exceeded max attempts (${maxAttempts})`,
+        maxAttempts,
+      ],
+    )) as Array<{ id: string }>;
+
+    return exhaustedRows.length;
   }
 
   async replayFailedEvent(id: string): Promise<void> {

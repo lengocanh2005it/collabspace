@@ -11,6 +11,7 @@ import {
 describe('AuthOutboxProcessor', () => {
   const authOutboxServiceMock = {
     claimPendingBatch: jest.fn(),
+    markExhaustedClaims: jest.fn(),
     markFailed: jest.fn(),
     markProcessed: jest.fn(),
     reclaimStaleClaims: jest.fn(),
@@ -23,6 +24,7 @@ describe('AuthOutboxProcessor', () => {
       enabled: true,
       maxAttempts: 10,
       pollIntervalMs: 5000,
+      publishTimeoutMs: 30000,
       staleClaimThresholdMs: 60000,
     })),
   } as unknown as ConfigurationService;
@@ -30,13 +32,16 @@ describe('AuthOutboxProcessor', () => {
     isInitialized: true,
   } as unknown as DataSource;
   const emailsServiceMock = {
-    enqueueMail: jest.fn(),
+    sendMailNow: jest.fn(),
   } as unknown as EmailsService;
 
   let processor: AuthOutboxProcessor;
 
   beforeEach(() => {
     jest.clearAllMocks();
+    jest
+      .spyOn(authOutboxServiceMock, 'markExhaustedClaims')
+      .mockResolvedValue(0);
     jest
       .spyOn(authOutboxServiceMock, 'reclaimStaleClaims')
       .mockResolvedValue(0);
@@ -48,7 +53,7 @@ describe('AuthOutboxProcessor', () => {
     );
   });
 
-  it('enqueues verification otp emails through the outbox processor', async () => {
+  it('sends verification otp emails through the outbox processor', async () => {
     jest.spyOn(authOutboxServiceMock, 'claimPendingBatch').mockResolvedValue([
       {
         attemptCount: 1,
@@ -62,12 +67,15 @@ describe('AuthOutboxProcessor', () => {
         },
       },
     ]);
-    jest.spyOn(emailsServiceMock, 'enqueueMail').mockResolvedValue(undefined);
+    jest.spyOn(emailsServiceMock, 'sendMailNow').mockResolvedValue({
+      accepted: ['member@example.com'],
+      messageId: 'brevo-sent',
+    });
     jest.spyOn(authOutboxServiceMock, 'markProcessed').mockResolvedValue(undefined);
 
     await processor.processPendingEvents();
 
-    expect(emailsServiceMock.enqueueMail).toHaveBeenCalledWith({
+    expect(emailsServiceMock.sendMailNow).toHaveBeenCalledWith({
       subject: 'Verify your CollabSpace email',
       text:
         'Your CollabSpace verification code is 123456. This code expires in 600 seconds.',
@@ -76,7 +84,7 @@ describe('AuthOutboxProcessor', () => {
     expect(authOutboxServiceMock.markProcessed).toHaveBeenCalledWith('event-otp-1');
   });
 
-  it('enqueues password reset emails through the outbox processor', async () => {
+  it('sends password reset emails through the outbox processor', async () => {
     jest.spyOn(authOutboxServiceMock, 'claimPendingBatch').mockResolvedValue([
       {
         attemptCount: 1,
@@ -90,12 +98,15 @@ describe('AuthOutboxProcessor', () => {
         },
       },
     ]);
-    jest.spyOn(emailsServiceMock, 'enqueueMail').mockResolvedValue(undefined);
+    jest.spyOn(emailsServiceMock, 'sendMailNow').mockResolvedValue({
+      accepted: ['member@example.com'],
+      messageId: 'brevo-sent',
+    });
     jest.spyOn(authOutboxServiceMock, 'markProcessed').mockResolvedValue(undefined);
 
     await processor.processPendingEvents();
 
-    expect(emailsServiceMock.enqueueMail).toHaveBeenCalledWith({
+    expect(emailsServiceMock.sendMailNow).toHaveBeenCalledWith({
       subject: 'Reset your CollabSpace password',
       text:
         'Use this password reset token: reset-token-123. It expires in 1800 seconds.',

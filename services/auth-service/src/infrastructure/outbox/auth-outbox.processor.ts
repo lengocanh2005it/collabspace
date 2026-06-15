@@ -59,7 +59,17 @@ export class AuthOutboxProcessor implements OnModuleInit, OnModuleDestroy {
     try {
       await runOutboxPollCycle(
         {
-          reclaimStaleClaims: () => this.authOutboxService.reclaimStaleClaims(),
+          reclaimStaleClaims: async () => {
+            const exhaustedCount =
+              await this.authOutboxService.markExhaustedClaims();
+            if (exhaustedCount > 0) {
+              this.logger.warn(
+                `Marked ${exhaustedCount} exhausted auth outbox event(s) as failed`,
+              );
+            }
+
+            return this.authOutboxService.reclaimStaleClaims();
+          },
           claimPendingBatch: () => this.authOutboxService.claimPendingBatch(),
           publish: async (event) => {
             const { publishTimeoutMs } =
@@ -80,7 +90,7 @@ export class AuthOutboxProcessor implements OnModuleInit, OnModuleDestroy {
                 `Auth outbox publish ${event.id}`,
               );
               this.logger.log(
-                `Auth outbox event ${event.id} (${event.eventType}) queued for delivery`,
+                `Auth outbox event ${event.id} (${event.eventType}) delivered via Brevo`,
               );
             } catch (error) {
               if (isOperationTimeoutError(error)) {

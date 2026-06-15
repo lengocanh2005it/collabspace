@@ -41,6 +41,13 @@ kubectl exec -n "$APP_NS" postgres-0 -- env PGPASSWORD="$PGPASS" psql -U postgre
      AND claimed_at IS NOT NULL
      AND payload->>'email' NOT LIKE 'demo-%@example.com';"
 
+echo "==> Purging permanently failed outbox rows (optional backlog)..."
+kubectl exec -n "$APP_NS" postgres-0 -- env PGPASSWORD="$PGPASS" psql -U postgres -d collabspace_auth -c \
+  "DELETE FROM auth_outbox_events
+   WHERE processed_at IS NULL
+     AND failed_at IS NOT NULL
+     AND payload->>'email' NOT LIKE 'demo-%@example.com';"
+
 if [[ -n "$ORPHAN_EMAIL" ]]; then
   EMAIL_ESC="${ORPHAN_EMAIL//\'/\'\'}"
   USER_ID="$(kubectl exec -n "$APP_NS" postgres-0 -- env PGPASSWORD="$PGPASS" psql -U postgres -d collabspace_auth -tAc \
