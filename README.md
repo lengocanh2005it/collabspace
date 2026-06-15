@@ -210,7 +210,7 @@ Details: [docs/mvp-demo-scope.md](docs/mvp-demo-scope.md). CI integration: [infr
 | Member | Name | Role | Responsibilities | Backlog |
 |--------|------|------|------------------|---------|
 | Member 1 | Phan Phú Thọ | Infrastructure Engineer | Docker, K8s, CI/CD, secrets, backup, monitoring | [infra backlog](docs/team/phan-phu-tho-infrastructure-backlog.md) |
-| Member 2 | Lê Ngọc Anh | Auth & User · DO Deploy | JWT auth, OTP, profile, user directory, gRPC; **DigitalOcean Droplet deploy** (k3s, Helm, Vault+ESO, verify prod) | [app backlog § Anh](docs/team/application-backlog.md#lê-ngọc-anh--auth-user-do-droplet) |
+| Member 2 | Lê Ngọc Anh | Auth & User · DO Deploy · HTTPS | JWT auth, OTP, profile, user directory, gRPC; **DigitalOcean Droplet deploy** (k3s, Helm, Vault+ESO, verify prod); **Domain + HTTPS/TLS** (`collabspace.ngocanh2005it.site`, Let's Encrypt ACME, HTTP→HTTPS redirect, CORS) | [app backlog § Anh](docs/team/application-backlog.md#lê-ngọc-anh--auth-user-do-droplet) |
 | Member 3 | Ngô Quang Tiến | Workspace Service | Workspace, project, invite, membership, task↔workspace integration | [app backlog § Tiến](docs/team/application-backlog.md#ngô-quang-tiến--workspace--task-integration) |
 | Member 4 | Võ Trung Tín | Task & Notification Service | Task, board, activity feed, comments, notifications; lead `demo-e2e` (Done) | [app backlog § Tín](docs/team/application-backlog.md#võ-trung-tín--task--notification--demo) |
 
@@ -228,11 +228,11 @@ Request/response contracts and event payloads: [`.claude/docs/service-contracts.
 
 | Service | Swagger URL |
 |---------|---------------|
-| auth-service | `http://<HOST>/swagger/auth` |
-| user-service | `http://<HOST>/swagger/user` |
-| workspace-service | `http://<HOST>/swagger/workspace` |
-| task-service | `http://<HOST>/swagger/task` |
-| notification-service | `http://<HOST>/swagger/notification` |
+| auth-service | https://collabspace.ngocanh2005it.site/swagger/auth |
+| user-service | https://collabspace.ngocanh2005it.site/swagger/user |
+| workspace-service | https://collabspace.ngocanh2005it.site/swagger/workspace |
+| task-service | https://collabspace.ngocanh2005it.site/swagger/task |
+| notification-service | https://collabspace.ngocanh2005it.site/swagger/notification |
 
 **Docker local** (trực tiếp cổng mapped):
 
@@ -267,7 +267,7 @@ Log trên Compose: container `stdout` + tùy chọn profile ELK. **Không** dùn
 
 | Tool | URL | Purpose |
 |------|-----|---------|
-| Grafana | `http://<HOST>/grafana/` | Folder **CollabSpace**: Service Health, App Logs, Load Test Run |
+| Grafana | https://collabspace.ngocanh2005it.site/grafana/ | Folder **CollabSpace**: Service Health, App Logs, Load Test Run |
 | Prometheus | in-cluster `:9090` | Scrape app + Traefik (`metricsAuthToken`) |
 | Loki | in-cluster `:3100` | Logs — tail/search qua **Grafana Explore** |
 
@@ -411,8 +411,8 @@ This project is for educational purposes.
 ---
 
 **Infrastructure Engineer**: Phan Phu Tho  
-**Auth & DO Deploy**: Lê Ngọc Anh  
-**Last Updated**: 2026-06-13
+**Auth & DO Deploy & HTTPS**: Lê Ngọc Anh  
+**Last Updated**: 2026-06-15
 
 ---
 
