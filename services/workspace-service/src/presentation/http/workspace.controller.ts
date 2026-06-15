@@ -29,8 +29,8 @@ import {
 } from '../../application/dto/swagger-response.dto';
 import type { Response } from 'express';
 import { UserId } from './decorators/user-id.decorator';
-import type { CreateWorkspaceDto } from '../../application/dto/create-workspace.dto';
-import type { UpdateWorkspaceDto } from '../../application/dto/update-workspace.dto';
+import { CreateWorkspaceDto } from '../../application/dto/create-workspace.dto';
+import { UpdateWorkspaceDto } from '../../application/dto/update-workspace.dto';
 import { CreateWorkspaceUseCase } from '../../application/use-cases/workspace/create-workspace.use-case';
 import { GetWorkspaceUseCase } from '../../application/use-cases/workspace/get-workspace.use-case';
 import { ListWorkspacesUseCase } from '../../application/use-cases/workspace/list-workspaces.use-case';

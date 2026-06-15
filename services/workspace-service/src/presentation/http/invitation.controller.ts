@@ -25,7 +25,7 @@ import {
 } from '../../application/dto/swagger-response.dto';
 import type { Response } from 'express';
 import { UserId } from './decorators/user-id.decorator';
-import type { InviteMemberDto } from '../../application/dto/invite-member.dto';
+import { InviteMemberDto } from '../../application/dto/invite-member.dto';
 import { InviteMemberUseCase } from '../../application/use-cases/invitation/invite-member.use-case';
 import { AcceptInvitationUseCase } from '../../application/use-cases/invitation/accept-invitation.use-case';
 import { RejectInvitationUseCase } from '../../application/use-cases/invitation/reject-invitation.use-case';

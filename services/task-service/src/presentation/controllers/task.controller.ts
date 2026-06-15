@@ -41,10 +41,10 @@ import {
 import { FileInterceptor } from "@nestjs/platform-express";
 import { CommandBus, QueryBus } from "@nestjs/cqrs";
 import type { UploadedFile as TaskUploadedFile } from "../../common/types/uploaded-file";
-import type { CreateTaskRequest } from "../dtos/create-task.request";
-import type { UpdateTaskDetailsRequest } from "../dtos/update-task-details.request";
-import type { ChangeTaskStatusRequest } from "../dtos/change-task-status.request";
-import type { AssignTaskRequest } from "../dtos/assign-task.request";
+import { CreateTaskRequest } from "../dtos/create-task.request";
+import { UpdateTaskDetailsRequest } from "../dtos/update-task-details.request";
+import { ChangeTaskStatusRequest } from "../dtos/change-task-status.request";
+import { AssignTaskRequest } from "../dtos/assign-task.request";
 import type { TaskResponseData } from "../dtos/task.response";
 import { GetTasksResponse } from "../dtos/get-tasks.response";
 import { CreateTaskCommand } from "../../application/commands/create-task.command";

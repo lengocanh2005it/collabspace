@@ -25,7 +25,7 @@ import {
   ApiUnauthorizedResponse,
   ApiTooManyRequestsResponse,
 } from '@nestjs/swagger';
-import type {
+import {
   ChangePasswordRequestDto,
   ForgotPasswordRequestDto,
   LoginRequestDto,

@@ -20,6 +20,15 @@ export class WorkspaceInviteEventListenerController {
   ) {
     const channel = context.getChannelRef() as Channel;
     const originalMessage = context.getMessage() as ConsumeMessage;
+    const command = InboundNotificationEventMapper.toWorkspaceInvitedCommand(data);
+
+    if (!command) {
+      this.logger.warn(
+        `Skipping workspace_invited notification without recipient user id for workspaceId=${data.workspaceId} inviteEmail=${data.inviteEmail ?? "unknown"}`,
+      );
+      channel.ack(originalMessage);
+      return;
+    }
 
     await consumeNotificationEvent(
       {
@@ -29,7 +38,7 @@ export class WorkspaceInviteEventListenerController {
         logger: this.logger,
         eventLabel: "workspace_invited",
       },
-      InboundNotificationEventMapper.toWorkspaceInvitedCommand(data),
+      command,
     );
   }
 }

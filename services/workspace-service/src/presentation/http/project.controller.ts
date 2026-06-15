@@ -22,8 +22,8 @@ import {
   ProjectResponseSchemaDto,
 } from '../../application/dto/swagger-response.dto';
 import { UserId } from './decorators/user-id.decorator';
-import type { CreateProjectDto } from '../../application/dto/create-project.dto';
-import type { UpdateProjectDto } from '../../application/dto/update-project.dto';
+import { CreateProjectDto } from '../../application/dto/create-project.dto';
+import { UpdateProjectDto } from '../../application/dto/update-project.dto';
 import { CreateProjectUseCase } from '../../application/use-cases/project/create-project.use-case';
 import { GetProjectUseCase } from '../../application/use-cases/project/get-project.use-case';
 import { ListProjectsUseCase } from '../../application/use-cases/project/list-projects.use-case';

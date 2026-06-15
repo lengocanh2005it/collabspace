@@ -32,7 +32,7 @@ describe("WorkspaceInviteEventListenerController", () => {
     const payload = {
       workspaceId: "workspace-123",
       workspaceName: "Core Team",
-      invitedUserId: "user-123",
+      recipientId: "user-123",
       invitedById: "user-456",
       invitedByName: "Alice",
       invitedByAvatarUrl: "https://example.com/avatar.png",
@@ -44,5 +44,20 @@ describe("WorkspaceInviteEventListenerController", () => {
 
     expect(mockCommandBus.execute).toHaveBeenCalledTimes(1);
     expect(mockChannel.ack).toHaveBeenCalledWith(mockMessage);
+  });
+
+  it("should ack and skip email-only workspace_invited events", async () => {
+    const payload = {
+      workspaceId: "workspace-123",
+      workspaceName: "Core Team",
+      invitedById: "user-456",
+      inviteEmail: "user@example.com",
+    };
+
+    await controller.handleWorkspaceInvited(payload, mockRmqContext);
+
+    expect(mockCommandBus.execute).not.toHaveBeenCalled();
+    expect(mockChannel.ack).toHaveBeenCalledWith(mockMessage);
+    expect(mockChannel.nack).not.toHaveBeenCalled();
   });
 });

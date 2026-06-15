@@ -2,7 +2,7 @@ import { Body, Controller, Post, Req } from '@nestjs/common';
 import { ApiOperation, ApiSecurity, ApiTags } from '@nestjs/swagger';
 import type { Request } from 'express';
 import { LookupUserReplicasUseCase } from '../../application/use-cases/lookup-user-replicas.use-case';
-import type { LookupUserReplicasRequestDto } from './dto/lookup-user-replicas-request.dto';
+import { LookupUserReplicasRequestDto } from './dto/lookup-user-replicas-request.dto';
 import { assertInternalServiceAccess } from './internal-service-access';
 
 @ApiTags('users-internal')

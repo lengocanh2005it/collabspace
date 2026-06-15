@@ -14,8 +14,8 @@ import {
 } from "@nestjs/common";
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiQuery, ApiTags } from "@nestjs/swagger";
 import { CommandBus, QueryBus } from "@nestjs/cqrs";
-import type { CreateCommentRequest } from "../dtos/create-comment.request";
-import type { EditCommentRequest } from "../dtos/edit-comment.request";
+import { CreateCommentRequest } from "../dtos/create-comment.request";
+import { EditCommentRequest } from "../dtos/edit-comment.request";
 import { CommentResponse, GetCommentsResponse } from "../dtos/comment.response";
 import { CreateCommentCommand } from "../../application/usecases/comments/create/create-comment.command";
 import { EditCommentCommand } from "../../application/usecases/comments/edit/edit-comment.command";
