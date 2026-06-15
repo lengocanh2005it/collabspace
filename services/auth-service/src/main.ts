@@ -19,7 +19,13 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.use(compression());
   app.setGlobalPrefix('api/v1');
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true, forbidNonWhitelisted: true }));
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      transform: true,
+      forbidNonWhitelisted: true,
+    }),
+  );
   registerRequestIdMiddleware(app);
   registerMetricsMiddleware(app, app.get(MetricsService));
 
@@ -82,6 +88,9 @@ async function bootstrap() {
   const port = configurationService.getAppConfig().port;
   await app.listen(port);
   Logger.log(`HTTP Server: http://localhost:${port}`, 'Bootstrap');
-  Logger.log(`Swagger Docs: http://localhost:${port}/${swaggerPath}`, 'Bootstrap');
+  Logger.log(
+    `Swagger Docs: http://localhost:${port}/${swaggerPath}`,
+    'Bootstrap',
+  );
 }
 bootstrap();

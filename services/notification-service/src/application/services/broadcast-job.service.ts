@@ -100,7 +100,7 @@ export class BroadcastJobService implements OnModuleInit, OnModuleDestroy {
               status: "processing",
             },
           },
-          { new: true, sort: { createdAt: 1 } },
+          { returnDocument: "after", sort: { createdAt: 1 } },
         )
         .exec();
       if (!job) return;

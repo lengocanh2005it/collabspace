@@ -23,9 +23,7 @@ import { UserProfileResolverService } from '@/application/services/user-profile-
 import { ConfigurationModule } from '@/configuration/configuration.module';
 import { EMAIL_OUTBOX } from '@/domain/ports/email-outbox.port';
 import { OTP_STORE } from '@/domain/ports/otp-store.port';
-import {
-  REFRESH_TOKEN_REPOSITORY,
-} from '@/domain/repositories/refresh-token.repository';
+import { REFRESH_TOKEN_REPOSITORY } from '@/domain/repositories/refresh-token.repository';
 import { USER_REPOSITORY } from '@/domain/repositories/user.repository';
 import { UserProfilesModule } from '@/integrations/user-profiles/user-profiles.module';
 import { TypeOrmEmailOutboxAdapter } from '@/infrastructure/outbox/typeorm-email-outbox.adapter';

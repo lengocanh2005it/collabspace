@@ -33,8 +33,13 @@ export class ManageAuthAdminUseCase {
 
   async assignRole(actorId: string, userId: string, roleId: string) {
     const result = await this.adminRepository.assignRoleToUser(userId, roleId);
-    await this.refreshTokenRepository.revokeAllForUser(userId, 'admin_role_changed');
-    this.logger.log(`admin_action=assign_role actorId=${actorId} userId=${userId} roleId=${roleId}`);
+    await this.refreshTokenRepository.revokeAllForUser(
+      userId,
+      'admin_role_changed',
+    );
+    this.logger.log(
+      `admin_action=assign_role actorId=${actorId} userId=${userId} roleId=${roleId}`,
+    );
     return result;
   }
 
@@ -58,17 +63,15 @@ export class ManageAuthAdminUseCase {
     return this.adminRepository.deleteRole(roleId);
   }
 
-  async setUserActive(
-    actorId: string,
-    userId: string,
-    isActive: boolean,
-  ) {
+  async setUserActive(actorId: string, userId: string, isActive: boolean) {
     const result = await this.adminRepository.setUserActive(userId, isActive);
     await this.refreshTokenRepository.revokeAllForUser(
       userId,
       isActive ? 'admin_account_reactivated' : 'admin_account_disabled',
     );
-    this.logger.log(`admin_action=set_active actorId=${actorId} userId=${userId} isActive=${isActive}`);
+    this.logger.log(
+      `admin_action=set_active actorId=${actorId} userId=${userId} isActive=${isActive}`,
+    );
     return result;
   }
 }

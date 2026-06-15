@@ -83,12 +83,14 @@ Vault seeds `jwt_secret` + `service_jwt_secret` (và DB/RabbitMQ/Redis). **S2S H
 
 See `infrastructure/vault/README.md`.
 
-Core Docker stack:
+Core Docker stack (app + DB + Prometheus + Grafana — monitoring via `override.yml` include):
 
 ```sh
 cd infrastructure/docker
 docker-compose -f docker-compose.yml -f docker-compose.db.yml -f docker-compose.override.yml up -d
 ```
+
+Grafana: `http://localhost:3005` (admin / `collabspace`). Prometheus: `http://localhost:9090`.
 
 Health checks:
 

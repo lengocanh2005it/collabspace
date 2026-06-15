@@ -209,9 +209,9 @@ describe('Auth use cases (integration)', () => {
   });
 
   it('rejects requests without bearer token', async () => {
-    await expect(harness.verifyAccessTokenUseCase.execute(undefined)).rejects.toThrow(
-      UnauthorizedException,
-    );
+    await expect(
+      harness.verifyAccessTokenUseCase.execute(undefined),
+    ).rejects.toThrow(UnauthorizedException);
   });
 
   it('issues access and refresh tokens on login', async () => {
@@ -324,15 +324,15 @@ describe('Auth use cases (integration)', () => {
       roles: ['user'],
       userId: 'user-3',
     });
+    jest.spyOn(userProfileClientMock, 'createPendingProfile').mockRejectedValue(
+      new ServiceUnavailableException({
+        code: 'USER_SERVICE_GRPC_UNAVAILABLE',
+        message: 'User profiles gRPC client is not initialized',
+      }),
+    );
     jest
-      .spyOn(userProfileClientMock, 'createPendingProfile')
-      .mockRejectedValue(
-        new ServiceUnavailableException({
-          code: 'USER_SERVICE_GRPC_UNAVAILABLE',
-          message: 'User profiles gRPC client is not initialized',
-        }),
-      );
-    jest.spyOn(identityServiceMock, 'rollbackNewRegistration').mockResolvedValue();
+      .spyOn(identityServiceMock, 'rollbackNewRegistration')
+      .mockResolvedValue();
 
     await expect(
       harness.registerUseCase.execute({
@@ -342,7 +342,9 @@ describe('Auth use cases (integration)', () => {
       }),
     ).rejects.toBeInstanceOf(ServiceUnavailableException);
 
-    expect(identityServiceMock.rollbackNewRegistration).toHaveBeenCalledWith('user-3');
+    expect(identityServiceMock.rollbackNewRegistration).toHaveBeenCalledWith(
+      'user-3',
+    );
     expect(emailOutboxMock.enqueueEmailVerificationOtp).not.toHaveBeenCalled();
   });
 
@@ -362,15 +364,15 @@ describe('Auth use cases (integration)', () => {
       roles: ['user'],
       userId: 'user-3',
     });
+    jest.spyOn(userProfileClientMock, 'createPendingProfile').mockRejectedValue(
+      new ServiceUnavailableException({
+        code: 'USER_SERVICE_GRPC_UNAVAILABLE',
+        message: 'User service unavailable',
+      }),
+    );
     jest
-      .spyOn(userProfileClientMock, 'createPendingProfile')
-      .mockRejectedValue(
-        new ServiceUnavailableException({
-          code: 'USER_SERVICE_GRPC_UNAVAILABLE',
-          message: 'User service unavailable',
-        }),
-      );
-    jest.spyOn(identityServiceMock, 'rollbackNewRegistration').mockResolvedValue();
+      .spyOn(identityServiceMock, 'rollbackNewRegistration')
+      .mockResolvedValue();
 
     await expect(
       harness.registerUseCase.execute({
@@ -396,15 +398,15 @@ describe('Auth use cases (integration)', () => {
     jest
       .spyOn(userProfileClientMock, 'createPendingProfile')
       .mockResolvedValue(undefined);
+    jest.spyOn(otpStoreMock, 'assertAvailable').mockRejectedValue(
+      new ServiceUnavailableException({
+        code: 'REDIS_UNAVAILABLE',
+        message: 'Redis is unavailable',
+      }),
+    );
     jest
-      .spyOn(otpStoreMock, 'assertAvailable')
-      .mockRejectedValue(
-        new ServiceUnavailableException({
-          code: 'REDIS_UNAVAILABLE',
-          message: 'Redis is unavailable',
-        }),
-      );
-    jest.spyOn(identityServiceMock, 'rollbackNewRegistration').mockResolvedValue();
+      .spyOn(identityServiceMock, 'rollbackNewRegistration')
+      .mockResolvedValue();
 
     await expect(
       harness.registerUseCase.execute({
@@ -416,7 +418,9 @@ describe('Auth use cases (integration)', () => {
       response: { code: 'REDIS_UNAVAILABLE' },
     });
 
-    expect(identityServiceMock.rollbackNewRegistration).toHaveBeenCalledWith('user-3');
+    expect(identityServiceMock.rollbackNewRegistration).toHaveBeenCalledWith(
+      'user-3',
+    );
     expect(emailOutboxMock.enqueueEmailVerificationOtp).not.toHaveBeenCalled();
   });
 
@@ -654,8 +658,12 @@ describe('Auth use cases (integration)', () => {
       roles: ['member'],
       userId: 'user-2',
     });
-    jest.spyOn(identityServiceMock, 'changePassword').mockResolvedValue(undefined);
-    jest.spyOn(refreshTokenRepositoryMock, 'revokeAllForUser').mockResolvedValue(2);
+    jest
+      .spyOn(identityServiceMock, 'changePassword')
+      .mockResolvedValue(undefined);
+    jest
+      .spyOn(refreshTokenRepositoryMock, 'revokeAllForUser')
+      .mockResolvedValue(2);
     const token = await harness.jwtTokenService.signAccessToken({
       role: 'member',
       roles: ['member'],

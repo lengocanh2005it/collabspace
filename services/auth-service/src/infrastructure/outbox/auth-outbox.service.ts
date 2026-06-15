@@ -3,10 +3,7 @@ import { unwrapQueryRows } from '@collabspace/shared';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { randomUUID } from 'node:crypto';
-import {
-  DataSource,
-  EntityManager,
-} from 'typeorm';
+import { DataSource, EntityManager } from 'typeorm';
 import {
   AUTH_OUTBOX_EVENT_EMAIL_VERIFICATION_OTP,
   AUTH_OUTBOX_EVENT_PASSWORD_RESET_EMAIL,
@@ -39,11 +36,7 @@ function normalizeClaimedOutboxRow(
 ): ClaimedOutboxEvent | null {
   const rawId = row.id;
   const id =
-    typeof rawId === 'string'
-      ? rawId
-      : rawId != null
-        ? String(rawId)
-        : '';
+    typeof rawId === 'string' ? rawId : rawId != null ? String(rawId) : '';
   if (id.length === 0) {
     return null;
   }
@@ -108,8 +101,11 @@ export class AuthOutboxService {
   }
 
   async claimPendingBatch(limit?: number): Promise<ClaimedOutboxEvent[]> {
-    const batchSize = limit ?? this.configurationService.getOutboxConfig().batchSize;
-    const tablePath = this.dataSource.getMetadata(AuthOutboxEventOrmEntity).tablePath;
+    const batchSize =
+      limit ?? this.configurationService.getOutboxConfig().batchSize;
+    const tablePath = this.dataSource.getMetadata(
+      AuthOutboxEventOrmEntity,
+    ).tablePath;
 
     return this.dataSource.transaction(async (manager) => {
       const candidates = unwrapQueryRows<{ id: string }>(
@@ -173,7 +169,9 @@ export class AuthOutboxService {
       return;
     }
 
-    const tablePath = this.dataSource.getMetadata(AuthOutboxEventOrmEntity).tablePath;
+    const tablePath = this.dataSource.getMetadata(
+      AuthOutboxEventOrmEntity,
+    ).tablePath;
     await this.dataSource.query(
       `
         UPDATE ${tablePath}
@@ -190,8 +188,11 @@ export class AuthOutboxService {
   }
 
   async getStats(): Promise<AuthOutboxStats> {
-    const tablePath = this.dataSource.getMetadata(AuthOutboxEventOrmEntity).tablePath;
-    const { staleClaimThresholdMs } = this.configurationService.getOutboxConfig();
+    const tablePath = this.dataSource.getMetadata(
+      AuthOutboxEventOrmEntity,
+    ).tablePath;
+    const { staleClaimThresholdMs } =
+      this.configurationService.getOutboxConfig();
     const rows = unwrapQueryRows<{
       failedCount: number;
       oldestFailedAt: Date | string | null;
@@ -264,7 +265,9 @@ export class AuthOutboxService {
   }
 
   async markProcessed(id: string): Promise<void> {
-    const tablePath = this.dataSource.getMetadata(AuthOutboxEventOrmEntity).tablePath;
+    const tablePath = this.dataSource.getMetadata(
+      AuthOutboxEventOrmEntity,
+    ).tablePath;
     const rows = unwrapQueryRows<{ id: string }>(
       await this.dataSource.query(
         `
@@ -282,7 +285,9 @@ export class AuthOutboxService {
     );
 
     if (rows.length === 0) {
-      throw new Error(`Outbox event ${id} was not found when marking processed`);
+      throw new Error(
+        `Outbox event ${id} was not found when marking processed`,
+      );
     }
   }
 
@@ -314,7 +319,9 @@ export class AuthOutboxService {
   }
 
   async reclaimStaleClaims(): Promise<number> {
-    const tablePath = this.dataSource.getMetadata(AuthOutboxEventOrmEntity).tablePath;
+    const tablePath = this.dataSource.getMetadata(
+      AuthOutboxEventOrmEntity,
+    ).tablePath;
     const { staleClaimThresholdMs } =
       this.configurationService.getOutboxConfig();
 
@@ -340,7 +347,9 @@ export class AuthOutboxService {
   }
 
   async markExhaustedClaims(): Promise<number> {
-    const tablePath = this.dataSource.getMetadata(AuthOutboxEventOrmEntity).tablePath;
+    const tablePath = this.dataSource.getMetadata(
+      AuthOutboxEventOrmEntity,
+    ).tablePath;
     const { maxAttempts } = this.configurationService.getOutboxConfig();
 
     const exhaustedRows = unwrapQueryRows<{ id: string }>(
@@ -356,10 +365,7 @@ export class AuthOutboxService {
           AND attempt_count >= $2
         RETURNING id
       `,
-        [
-          `outbox publish exceeded max attempts (${maxAttempts})`,
-          maxAttempts,
-        ],
+        [`outbox publish exceeded max attempts (${maxAttempts})`, maxAttempts],
       ),
     );
 
@@ -367,7 +373,9 @@ export class AuthOutboxService {
   }
 
   async releaseInFlightClaimsOnStartup(): Promise<number> {
-    const tablePath = this.dataSource.getMetadata(AuthOutboxEventOrmEntity).tablePath;
+    const tablePath = this.dataSource.getMetadata(
+      AuthOutboxEventOrmEntity,
+    ).tablePath;
     const rows = unwrapQueryRows<{ id: string }>(
       await this.dataSource.query(
         `
@@ -419,7 +427,9 @@ export class AuthOutboxService {
   }
 
   private getRepository(manager?: EntityManager) {
-    return (manager ?? this.dataSource.manager).getRepository(AuthOutboxEventOrmEntity);
+    return (manager ?? this.dataSource.manager).getRepository(
+      AuthOutboxEventOrmEntity,
+    );
   }
 
   private async enqueueEvent(

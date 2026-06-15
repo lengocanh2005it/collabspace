@@ -18,7 +18,9 @@ export class ListSessionsUseCase {
     authorizationHeader: string | undefined,
   ): Promise<AuthSessionSummaryResult[]> {
     const { userId } =
-      await this.jwtTokenService.resolveVerifiedUserContext(authorizationHeader);
+      await this.jwtTokenService.resolveVerifiedUserContext(
+        authorizationHeader,
+      );
     const sessions =
       await this.refreshTokenRepository.listSessionsByUserId(userId);
 

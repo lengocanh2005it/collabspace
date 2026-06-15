@@ -21,8 +21,7 @@ async function bootstrap() {
 
   // 1. Cấu hình RabbitMQ Consumer
   if (rmqConfig.enabled) {
-    const dlxExchange =
-      process.env.RABBITMQ_DLX_EXCHANGE ?? "collabspace_dlx";
+    const dlxExchange = process.env.RABBITMQ_DLX_EXCHANGE ?? "collabspace_dlx";
     const dlxRoutingKey =
       process.env.RABBITMQ_DLX_ROUTING_KEY ?? `${rmqConfig.queue}.dlq`;
 

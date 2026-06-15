@@ -21,7 +21,9 @@ describe('VerifyAccessTokenLiteUseCase', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    (jwtTokenService.extractBearerToken as jest.Mock).mockReturnValue('token-1');
+    (jwtTokenService.extractBearerToken as jest.Mock).mockReturnValue(
+      'token-1',
+    );
   });
 
   it('returns cached identity without resolving JWT again', async () => {
@@ -35,13 +37,17 @@ describe('VerifyAccessTokenLiteUseCase', () => {
     const result = await useCase.execute('Bearer token-1');
 
     expect(result.userId).toBe('user-1');
-    expect(jwtTokenService.resolveVerifiedLiteUserContext).not.toHaveBeenCalled();
+    expect(
+      jwtTokenService.resolveVerifiedLiteUserContext,
+    ).not.toHaveBeenCalled();
     expect(verifyLiteCache.write).not.toHaveBeenCalled();
   });
 
   it('resolves lite context and writes cache on miss', async () => {
     (verifyLiteCache.read as jest.Mock).mockResolvedValue(null);
-    (jwtTokenService.resolveVerifiedLiteUserContext as jest.Mock).mockResolvedValue({
+    (
+      jwtTokenService.resolveVerifiedLiteUserContext as jest.Mock
+    ).mockResolvedValue({
       userId: 'user-2',
       roles: ['member'],
       role: 'member',
@@ -69,7 +75,9 @@ describe('VerifyAccessTokenLiteUseCase', () => {
 
   it('propagates inactive user errors', async () => {
     (verifyLiteCache.read as jest.Mock).mockResolvedValue(null);
-    (jwtTokenService.resolveVerifiedLiteUserContext as jest.Mock).mockRejectedValue(
+    (
+      jwtTokenService.resolveVerifiedLiteUserContext as jest.Mock
+    ).mockRejectedValue(
       new UnauthorizedException({
         code: 'USER_INACTIVE',
         message: 'User account is inactive',

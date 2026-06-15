@@ -116,7 +116,10 @@ export class GetNotificationsHandler implements IQueryHandler<
     const cached = await this.countCache.getUnreadCount(recipientId);
     if (cached !== null) return cached;
 
-    const count = await this.notificationRepository.countUnreadByRecipientIdAsync(recipientId);
+    const count =
+      await this.notificationRepository.countUnreadByRecipientIdAsync(
+        recipientId,
+      );
     await this.countCache.setUnreadCount(recipientId, count);
     return count;
   }

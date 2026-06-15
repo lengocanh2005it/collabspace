@@ -88,18 +88,14 @@ export class PasswordResetTokenService {
     }
 
     const lookupKey = this.buildLookupKey(normalizedToken);
-    const payload = await this.otpStore.getJson<PasswordResetTokenPayload>(
-      lookupKey,
-    );
+    const payload =
+      await this.otpStore.getJson<PasswordResetTokenPayload>(lookupKey);
 
     if (!payload) {
       return null;
     }
 
-    await this.otpStore.delete([
-      lookupKey,
-      this.buildUserKey(payload.userId),
-    ]);
+    await this.otpStore.delete([lookupKey, this.buildUserKey(payload.userId)]);
 
     return payload;
   }

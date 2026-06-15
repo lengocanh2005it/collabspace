@@ -28,7 +28,9 @@ export class DeleteWorkspaceUseCase {
       userId,
     );
     if (!member || member.role !== 'owner') {
-      throw new ForbiddenException('Only workspace owners can delete a workspace');
+      throw new ForbiddenException(
+        'Only workspace owners can delete a workspace',
+      );
     }
 
     const workspace = await this.workspaceRepo.findById(workspaceId);

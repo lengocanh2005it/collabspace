@@ -47,7 +47,11 @@ export class AccessTokenVerifyLiteCacheService {
     }
 
     try {
-      await this.redisService.setJson(this.cacheKey(token), identity, ttlSeconds);
+      await this.redisService.setJson(
+        this.cacheKey(token),
+        identity,
+        ttlSeconds,
+      );
     } catch (error) {
       this.logger.debug(
         `Verify lite cache write skipped: ${

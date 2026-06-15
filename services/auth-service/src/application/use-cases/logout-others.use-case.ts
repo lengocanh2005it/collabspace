@@ -21,7 +21,9 @@ export class LogoutOthersUseCase {
     input: LogoutOthersRequestDto,
   ): Promise<LogoutOthersResult> {
     const { userId } =
-      await this.jwtTokenService.resolveVerifiedUserContext(authorizationHeader);
+      await this.jwtTokenService.resolveVerifiedUserContext(
+        authorizationHeader,
+      );
     assertRefreshTokenPresent(input.refreshToken);
     const revokedSessionCount =
       await this.refreshTokenRepository.revokeOtherFamiliesForUser(

@@ -34,11 +34,7 @@ export class RedisOtpStoreAdapter implements OtpStore {
     return this.redisService.ping();
   }
 
-  set(
-    key: string,
-    value: string,
-    ttlSeconds?: number,
-  ): Promise<'OK' | null> {
+  set(key: string, value: string, ttlSeconds?: number): Promise<'OK' | null> {
     return this.redisService.set(key, value, ttlSeconds);
   }
 

@@ -26,16 +26,19 @@ export class ChangePasswordUseCase {
     input: ChangePasswordRequestDto,
   ): Promise<ChangePasswordResult> {
     const { userId } =
-      await this.jwtTokenService.resolveVerifiedUserContext(authorizationHeader);
+      await this.jwtTokenService.resolveVerifiedUserContext(
+        authorizationHeader,
+      );
     await this.userRepository.changePassword(
       userId,
       input.currentPassword,
       input.newPassword,
     );
-    const revokedSessionCount = await this.refreshTokenRepository.revokeAllForUser(
-      userId,
-      'password_changed',
-    );
+    const revokedSessionCount =
+      await this.refreshTokenRepository.revokeAllForUser(
+        userId,
+        'password_changed',
+      );
 
     return {
       changed: true,

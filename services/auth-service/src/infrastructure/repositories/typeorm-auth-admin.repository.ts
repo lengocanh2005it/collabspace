@@ -56,7 +56,9 @@ export class TypeOrmAuthAdminRepository implements AuthAdminRepository {
     name: string;
   }): Promise<AdminPermission> {
     const name = this.normalizeName(input.name);
-    const existing = await this.permissionRepository.findOne({ where: { name } });
+    const existing = await this.permissionRepository.findOne({
+      where: { name },
+    });
     if (existing) {
       throw new ConflictException({
         code: 'PERMISSION_ALREADY_EXISTS',
@@ -87,16 +89,19 @@ export class TypeOrmAuthAdminRepository implements AuthAdminRepository {
         message: `Permission ${permissionId} was not found`,
       });
     }
-    await this.rolePermissionRepository.upsert(
-      { permissionId, roleId },
-      ['roleId', 'permissionId'],
-    );
+    await this.rolePermissionRepository.upsert({ permissionId, roleId }, [
+      'roleId',
+      'permissionId',
+    ]);
     return this.toAdminRole(await this.loadRole(roleId));
   }
 
   async assignRoleToUser(userId: string, roleId: string): Promise<AdminUser> {
     await Promise.all([this.loadUser(userId), this.loadRole(roleId)]);
-    await this.userRoleRepository.upsert({ roleId, userId }, ['userId', 'roleId']);
+    await this.userRoleRepository.upsert({ roleId, userId }, [
+      'userId',
+      'roleId',
+    ]);
     return this.toAdminUser(await this.loadUser(userId));
   }
 
@@ -150,7 +155,9 @@ export class TypeOrmAuthAdminRepository implements AuthAdminRepository {
 
   async deleteRole(roleId: string): Promise<void> {
     const role = await this.loadRole(roleId);
-    const assignedUsers = await this.userRoleRepository.count({ where: { roleId } });
+    const assignedUsers = await this.userRoleRepository.count({
+      where: { roleId },
+    });
     if (PROTECTED_ROLES.has(role.name) || assignedUsers > 0) {
       throw new ConflictException({
         code: 'ROLE_IN_USE',
@@ -161,7 +168,10 @@ export class TypeOrmAuthAdminRepository implements AuthAdminRepository {
   }
 
   async recordLogin(userId: string): Promise<void> {
-    await this.userRepository.update({ id: userId }, { lastLoginAt: new Date() });
+    await this.userRepository.update(
+      { id: userId },
+      { lastLoginAt: new Date() },
+    );
   }
 
   private async assertRoleNameAvailable(name: string): Promise<void> {

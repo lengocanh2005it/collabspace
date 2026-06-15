@@ -43,10 +43,11 @@ export class ResetPasswordUseCase {
     }
 
     await this.userRepository.resetPassword(payload.userId, input.newPassword);
-    const revokedSessionCount = await this.refreshTokenRepository.revokeAllForUser(
-      payload.userId,
-      'password_reset',
-    );
+    const revokedSessionCount =
+      await this.refreshTokenRepository.revokeAllForUser(
+        payload.userId,
+        'password_reset',
+      );
 
     return {
       message: 'Password reset successfully',

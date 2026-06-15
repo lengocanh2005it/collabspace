@@ -25,7 +25,8 @@ export class RegisterUseCase {
   ) {}
 
   async execute(input: RegisterRequestDto): Promise<RegisterPendingResult> {
-    const { user, newlyCreated } = await this.registerOrRecoverPendingUser(input);
+    const { user, newlyCreated } =
+      await this.registerOrRecoverPendingUser(input);
 
     try {
       await this.userProfileClient.createPendingProfile({
@@ -59,9 +60,15 @@ export class RegisterUseCase {
         throw error;
       }
 
-      const existingUser = await this.userRepository.findUserByEmail(input.email);
+      const existingUser = await this.userRepository.findUserByEmail(
+        input.email,
+      );
 
-      if (!existingUser || existingUser.emailVerified || !existingUser.isActive) {
+      if (
+        !existingUser ||
+        existingUser.emailVerified ||
+        !existingUser.isActive
+      ) {
         throw error;
       }
 

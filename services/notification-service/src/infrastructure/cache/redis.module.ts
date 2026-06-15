@@ -18,12 +18,17 @@ import { REDIS_CLIENT } from "./redis-client.token";
         }
 
         const logger = new Logger("RedisClient[notification]");
-        const password = configService.get<string>("REDIS_PASSWORD") || undefined;
+        const password =
+          configService.get<string>("REDIS_PASSWORD") || undefined;
         const port = Number(configService.get<string>("REDIS_PORT") ?? 6379);
         const db = Number(configService.get<string>("REDIS_DB") ?? 0);
 
         const client = url
-          ? new Redis(url, { keyPrefix: "notif:", lazyConnect: false, maxRetriesPerRequest: 1 })
+          ? new Redis(url, {
+              keyPrefix: "notif:",
+              lazyConnect: false,
+              maxRetriesPerRequest: 1,
+            })
           : new Redis({
               host,
               port,
@@ -35,7 +40,9 @@ import { REDIS_CLIENT } from "./redis-client.token";
             });
 
         client.on("connect", () => logger.log("Redis connection established"));
-        client.on("error", (err: Error) => logger.warn(`Redis error: ${err.message}`));
+        client.on("error", (err: Error) =>
+          logger.warn(`Redis error: ${err.message}`),
+        );
         client.on("ready", () => logger.log("Redis client ready"));
 
         return client;

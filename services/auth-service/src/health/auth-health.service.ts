@@ -4,10 +4,7 @@ import {
   EMAIL_OUTBOX,
   type EmailOutbox,
 } from '@/domain/ports/email-outbox.port';
-import {
-  OTP_STORE,
-  type OtpStore,
-} from '@/domain/ports/otp-store.port';
+import { OTP_STORE, type OtpStore } from '@/domain/ports/otp-store.port';
 import {
   USER_PROFILE_CLIENT,
   type UserProfileClient,
@@ -69,24 +66,23 @@ export class AuthHealthService {
       database: await this.runCheck(true, async () => {
         await this.databaseService.ping();
       }),
-      outbox:
-        outboxConfig.enabled
-          ? await this.runCheck(false, async () => {
-              const stats = await this.emailOutbox.getStats();
+      outbox: outboxConfig.enabled
+        ? await this.runCheck(false, async () => {
+            const stats = await this.emailOutbox.getStats();
 
-              if (
-                stats.failedCount >= outboxConfig.degradedFailedThreshold ||
-                stats.pendingCount >= outboxConfig.degradedPendingThreshold ||
-                stats.staleProcessingCount > 0
-              ) {
-                throw new Error(this.buildOutboxHealthDetail(stats));
-              }
-            })
-          : {
-              detail: 'Auth outbox processor is disabled',
-              required: false,
-              status: 'disabled',
-            },
+            if (
+              stats.failedCount >= outboxConfig.degradedFailedThreshold ||
+              stats.pendingCount >= outboxConfig.degradedPendingThreshold ||
+              stats.staleProcessingCount > 0
+            ) {
+              throw new Error(this.buildOutboxHealthDetail(stats));
+            }
+          })
+        : {
+            detail: 'Auth outbox processor is disabled',
+            required: false,
+            status: 'disabled',
+          },
       redis: await this.runCheck(true, async () => {
         const isAlive = await this.otpStore.ping();
 
@@ -158,7 +154,8 @@ export class AuthHealthService {
       };
     } catch (error) {
       return {
-        detail: error instanceof Error ? error.message : 'Unknown dependency error',
+        detail:
+          error instanceof Error ? error.message : 'Unknown dependency error',
         required,
         responseTimeMs: Date.now() - startedAt,
         status: 'down',

@@ -142,12 +142,10 @@ export class ConfigurationService {
   getVerifyLiteCacheConfig(): VerifyLiteCacheConfig {
     return {
       enabled:
-        this.configService.get<boolean>('auth.verifyLiteCache.enabled') ??
-        true,
+        this.configService.get<boolean>('auth.verifyLiteCache.enabled') ?? true,
       maxTtlSeconds:
-        this.configService.get<number>(
-          'auth.verifyLiteCache.maxTtlSeconds',
-        ) ?? 300,
+        this.configService.get<number>('auth.verifyLiteCache.maxTtlSeconds') ??
+        300,
     };
   }
 
@@ -228,8 +226,7 @@ export class ConfigurationService {
   getBrevoConfig(): BrevoConfig {
     return {
       apiKey: this.configService.get<string>('brevo.apiKey') || undefined,
-      senderEmail:
-        this.configService.get<string>('brevo.senderEmail') ?? '',
+      senderEmail: this.configService.get<string>('brevo.senderEmail') ?? '',
       senderName:
         this.configService.get<string>('brevo.senderName') ?? 'CollabSpace',
     };

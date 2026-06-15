@@ -19,7 +19,9 @@ export class ManageWorkspacesAdminUseCase {
 
   async forceDelete(actorId: string, workspaceId: string): Promise<void> {
     await this.repository.adminForceDelete(workspaceId, actorId);
-    this.logger.warn(`admin_action=force_delete_workspace actorId=${actorId} workspaceId=${workspaceId}`);
+    this.logger.warn(
+      `admin_action=force_delete_workspace actorId=${actorId} workspaceId=${workspaceId}`,
+    );
   }
 
   async forceJoin(
@@ -29,6 +31,8 @@ export class ManageWorkspacesAdminUseCase {
     reason: string,
   ): Promise<void> {
     await this.repository.adminForceJoin(workspaceId, actorId, role);
-    this.logger.warn(`admin_action=force_join_workspace actorId=${actorId} workspaceId=${workspaceId} role=${role} reason=${JSON.stringify(reason)}`);
+    this.logger.warn(
+      `admin_action=force_join_workspace actorId=${actorId} workspaceId=${workspaceId} role=${role} reason=${JSON.stringify(reason)}`,
+    );
   }
 }

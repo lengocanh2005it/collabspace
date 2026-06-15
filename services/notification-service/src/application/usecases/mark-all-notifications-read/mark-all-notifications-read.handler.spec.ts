@@ -12,7 +12,10 @@ describe("MarkAllNotificationsReadHandler", () => {
     const repository = {
       markAllAsReadAsync: jest.fn().mockResolvedValue(4),
     } as unknown as jest.Mocked<INotificationRepository>;
-    const handler = new MarkAllNotificationsReadHandler(repository, noopCountCache);
+    const handler = new MarkAllNotificationsReadHandler(
+      repository,
+      noopCountCache,
+    );
 
     await expect(
       handler.execute(new MarkAllNotificationsReadCommand("user-1")),

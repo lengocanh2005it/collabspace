@@ -38,10 +38,7 @@ describe('AuthOutboxService', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    service = new AuthOutboxService(
-      configurationServiceMock,
-      dataSourceMock,
-    );
+    service = new AuthOutboxService(configurationServiceMock, dataSourceMock);
   });
 
   it('returns normalized outbox stats', async () => {
@@ -69,13 +66,27 @@ describe('AuthOutboxService', () => {
   });
 
   it('reclaims stale claims and returns the reclaimed count', async () => {
-    jest.spyOn(dataSourceMock, 'query').mockResolvedValueOnce([{ id: 'event-1' }]);
+    jest
+      .spyOn(dataSourceMock, 'query')
+      .mockResolvedValueOnce([[{ id: 'event-1' }], 1]);
 
     await expect(service.reclaimStaleClaims()).resolves.toBe(1);
   });
 
+  it('returns zero when TypeORM pg driver yields [rows, rowCount] with no matches', async () => {
+    const queryMock = jest
+      .spyOn(dataSourceMock, 'query')
+      .mockResolvedValue([[], 0]);
+
+    await expect(service.reclaimStaleClaims()).resolves.toBe(0);
+    await expect(service.markExhaustedClaims()).resolves.toBe(0);
+    expect(queryMock).toHaveBeenCalledTimes(2);
+  });
+
   it('marks exhausted claims separately', async () => {
-    jest.spyOn(dataSourceMock, 'query').mockResolvedValueOnce([{ id: 'event-9' }]);
+    jest
+      .spyOn(dataSourceMock, 'query')
+      .mockResolvedValueOnce([[{ id: 'event-9' }], 1]);
 
     await expect(service.markExhaustedClaims()).resolves.toBe(1);
   });

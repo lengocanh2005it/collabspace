@@ -40,7 +40,9 @@ export class RedisService implements OnModuleDestroy {
   }
 
   async expire(key: string, ttlSeconds: number): Promise<boolean> {
-    return this.run(async () => (await this.redisClient.expire(key, ttlSeconds)) === 1);
+    return this.run(
+      async () => (await this.redisClient.expire(key, ttlSeconds)) === 1,
+    );
   }
 
   async get(key: string): Promise<string | null> {

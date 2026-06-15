@@ -178,7 +178,7 @@ export class JwtTokenService {
     try {
       const { jwtVerify } = await loadJose();
       const verified = await jwtVerify(token, secret, verificationOptions);
-      return verified.payload as JwtPayload;
+      return verified.payload;
     } catch (error) {
       throw this.mapVerifyError(error);
     }

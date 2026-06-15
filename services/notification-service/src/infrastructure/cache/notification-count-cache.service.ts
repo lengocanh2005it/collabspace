@@ -9,7 +9,9 @@ export class NotificationCountCacheService {
 
   constructor(
     private readonly configService: ConfigService,
-    @Optional() @Inject(REDIS_CLIENT) private readonly redis: Redis | null = null,
+    @Optional()
+    @Inject(REDIS_CLIENT)
+    private readonly redis: Redis | null = null,
   ) {}
 
   async getUnreadCount(recipientId: string): Promise<number | null> {
@@ -18,7 +20,10 @@ export class NotificationCountCacheService {
       const raw = await this.redis.get(this.unreadKey(recipientId));
       return raw !== null ? Number(raw) : null;
     } catch (err) {
-      this.logger.warn("Cache read error (unreadCount)", err instanceof Error ? err.message : String(err));
+      this.logger.warn(
+        "Cache read error (unreadCount)",
+        err instanceof Error ? err.message : String(err),
+      );
       return null;
     }
   }
@@ -26,9 +31,16 @@ export class NotificationCountCacheService {
   async setUnreadCount(recipientId: string, count: number): Promise<void> {
     if (!this.redis) return;
     try {
-      await this.redis.setex(this.unreadKey(recipientId), this.unreadTtl(), String(count));
+      await this.redis.setex(
+        this.unreadKey(recipientId),
+        this.unreadTtl(),
+        String(count),
+      );
     } catch (err) {
-      this.logger.warn("Cache write error (unreadCount)", err instanceof Error ? err.message : String(err));
+      this.logger.warn(
+        "Cache write error (unreadCount)",
+        err instanceof Error ? err.message : String(err),
+      );
     }
   }
 
@@ -37,7 +49,10 @@ export class NotificationCountCacheService {
     try {
       await this.redis.del(this.unreadKey(recipientId));
     } catch (err) {
-      this.logger.warn("Cache invalidate error (unreadCount)", err instanceof Error ? err.message : String(err));
+      this.logger.warn(
+        "Cache invalidate error (unreadCount)",
+        err instanceof Error ? err.message : String(err),
+      );
     }
   }
 
@@ -48,7 +63,11 @@ export class NotificationCountCacheService {
   private unreadTtl(): number {
     return Math.max(
       1,
-      Number(this.configService.get<string>("NOTIFICATION_UNREAD_CACHE_TTL_SECONDS") ?? 30),
+      Number(
+        this.configService.get<string>(
+          "NOTIFICATION_UNREAD_CACHE_TTL_SECONDS",
+        ) ?? 30,
+      ),
     );
   }
 }

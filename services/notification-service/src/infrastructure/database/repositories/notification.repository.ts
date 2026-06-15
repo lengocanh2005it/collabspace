@@ -61,7 +61,7 @@ export class NotificationRepository implements INotificationRepository {
     if (!document) {
       return null;
     }
-    return NotificationMapper.toDomain(document as any);
+    return NotificationMapper.toDomain(document);
   }
 
   /**
@@ -150,7 +150,7 @@ export class NotificationRepository implements INotificationRepository {
     while (true) {
       const ids = await this.notificationModel
         .find({ recipientId, status: NotificationStatus.UNREAD })
-        .select('_id')
+        .select("_id")
         .limit(BATCH_SIZE)
         .lean()
         .exec();

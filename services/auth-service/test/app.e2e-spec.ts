@@ -159,12 +159,8 @@ describe('AuthController (e2e)', () => {
       userId: 'user-123',
       username: 'member.example',
     });
-    userProfileClientMock.createPendingProfile.mockResolvedValue(
-      undefined,
-    );
-    emailOutboxMock.enqueueEmailVerificationOtp.mockResolvedValue(
-      undefined,
-    );
+    userProfileClientMock.createPendingProfile.mockResolvedValue(undefined);
+    emailOutboxMock.enqueueEmailVerificationOtp.mockResolvedValue(undefined);
 
     authHealthServiceMock.getLiveness.mockReturnValue({
       service: 'auth-service',

@@ -5,8 +5,8 @@ import { UserProfilesGrpcService } from './user-profiles-grpc.service';
 describe('UserProfilesGrpcService', () => {
   const createPendingProfileMock = jest.fn();
   const getProfileMock = jest.fn();
-  const waitForReadyMock = jest.fn((_: number, callback: (error?: Error | null) => void) =>
-    callback(null),
+  const waitForReadyMock = jest.fn(
+    (_: number, callback: (error?: Error | null) => void) => callback(null),
   );
   const configurationServiceMock = {
     getUserServiceConfig: jest.fn(() => ({
@@ -28,10 +28,7 @@ describe('UserProfilesGrpcService', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    service = new UserProfilesGrpcService(
-      configurationServiceMock,
-      clientMock as unknown,
-    );
+    service = new UserProfilesGrpcService(configurationServiceMock, clientMock);
     service.onModuleInit();
   });
 
@@ -56,9 +53,7 @@ describe('UserProfilesGrpcService', () => {
   });
 
   it('maps user-service timeout errors to USER_SERVICE_GRPC_TIMEOUT', async () => {
-    getProfileMock.mockReturnValue(
-      throwError(() => new TimeoutError()),
-    );
+    getProfileMock.mockReturnValue(throwError(() => new TimeoutError()));
 
     await expect(
       service.getProfile({

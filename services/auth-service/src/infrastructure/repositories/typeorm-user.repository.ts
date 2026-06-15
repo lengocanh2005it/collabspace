@@ -265,10 +265,10 @@ export class TypeOrmUserRepository implements UserRepository {
     return user;
   }
 
-  private getUserRepository(manager?: EntityManager): Repository<UserOrmEntity> {
-    return manager
-      ? manager.getRepository(UserOrmEntity)
-      : this.userRepository;
+  private getUserRepository(
+    manager?: EntityManager,
+  ): Repository<UserOrmEntity> {
+    return manager ? manager.getRepository(UserOrmEntity) : this.userRepository;
   }
 
   private async loadUserByIdForWrite(userId: string): Promise<UserOrmEntity> {

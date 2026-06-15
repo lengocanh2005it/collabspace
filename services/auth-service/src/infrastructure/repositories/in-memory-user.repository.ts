@@ -58,7 +58,8 @@ export class InMemoryUserRepository implements UserRepository {
   async findUserByEmail(email: string): Promise<AuthUser | null> {
     const normalizedEmail = this.normalizeEmail(email);
     const user = [...this.users.values()].find(
-      (candidate) => candidate.email === normalizedEmail && !candidate.deletedAt,
+      (candidate) =>
+        candidate.email === normalizedEmail && !candidate.deletedAt,
     );
 
     return user ? this.toAuthUser(user) : null;
@@ -134,7 +135,10 @@ export class InMemoryUserRepository implements UserRepository {
       });
     }
 
-    const isPasswordValid = await this.verifyPassword(password, user.passwordHash);
+    const isPasswordValid = await this.verifyPassword(
+      password,
+      user.passwordHash,
+    );
 
     if (!isPasswordValid) {
       throw new UnauthorizedException({

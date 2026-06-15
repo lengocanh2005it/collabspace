@@ -18,11 +18,11 @@ export class LogoutAllUseCase {
     authorizationHeader: string | undefined,
   ): Promise<LogoutAllResult> {
     const { userId } =
-      await this.jwtTokenService.resolveVerifiedUserContext(authorizationHeader);
-    const revokedSessionCount = await this.refreshTokenRepository.revokeAllForUser(
-      userId,
-      'logout_all',
-    );
+      await this.jwtTokenService.resolveVerifiedUserContext(
+        authorizationHeader,
+      );
+    const revokedSessionCount =
+      await this.refreshTokenRepository.revokeAllForUser(userId, 'logout_all');
 
     return {
       revoked: true,

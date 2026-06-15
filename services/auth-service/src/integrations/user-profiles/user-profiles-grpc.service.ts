@@ -54,7 +54,9 @@ type ReadyGrpcClient = {
 };
 
 @Injectable()
-export class UserProfilesGrpcService implements OnModuleInit, UserProfileClient {
+export class UserProfilesGrpcService
+  implements OnModuleInit, UserProfileClient
+{
   private readonly logger = new Logger(UserProfilesGrpcService.name);
   private readonly client: ClientGrpc;
   private userProfilesClient?: ReadyGrpcClient;
@@ -72,9 +74,10 @@ export class UserProfilesGrpcService implements OnModuleInit, UserProfileClient 
     this.userProfilesService = this.client.getService<UserProfilesGrpcClient>(
       'UserProfilesService',
     );
-    this.userProfilesClient = this.client.getClientByServiceName<ReadyGrpcClient>(
-      'UserProfilesService',
-    );
+    this.userProfilesClient =
+      this.client.getClientByServiceName<ReadyGrpcClient>(
+        'UserProfilesService',
+      );
   }
 
   async ping(): Promise<void> {
@@ -160,7 +163,9 @@ export class UserProfilesGrpcService implements OnModuleInit, UserProfileClient 
         error instanceof Error
           ? error.message
           : `User service gRPC request failed via ${grpcUrl}`;
-      this.logger.warn(`UserProfilesService.CreatePendingProfile failed: ${message}`);
+      this.logger.warn(
+        `UserProfilesService.CreatePendingProfile failed: ${message}`,
+      );
       throw new ServiceUnavailableException({
         code: 'USER_SERVICE_GRPC_REQUEST_FAILED',
         message,
@@ -271,13 +276,17 @@ export class UserProfilesGrpcService implements OnModuleInit, UserProfileClient 
         message?: unknown;
       };
 
-      if (typeof parsed.code !== 'string' && typeof parsed.message !== 'string') {
+      if (
+        typeof parsed.code !== 'string' &&
+        typeof parsed.message !== 'string'
+      ) {
         return null;
       }
 
       return {
         code: typeof parsed.code === 'string' ? parsed.code : undefined,
-        message: typeof parsed.message === 'string' ? parsed.message : undefined,
+        message:
+          typeof parsed.message === 'string' ? parsed.message : undefined,
       };
     } catch {
       return null;

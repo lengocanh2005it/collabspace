@@ -15,17 +15,20 @@ export class ForgotPasswordUseCase {
     private readonly passwordResetTokenService: PasswordResetTokenService,
   ) {}
 
-  async execute(input: ForgotPasswordRequestDto): Promise<ForgotPasswordResult> {
+  async execute(
+    input: ForgotPasswordRequestDto,
+  ): Promise<ForgotPasswordResult> {
     const email = input.email?.trim().toLowerCase();
-    const user = email ? await this.userRepository.findUserByEmail(email) : null;
+    const user = email
+      ? await this.userRepository.findUserByEmail(email)
+      : null;
 
     if (user?.emailVerified) {
       await this.passwordResetTokenService.send(user);
     }
 
     return {
-      message:
-        'If the account exists, password reset instructions were sent.',
+      message: 'If the account exists, password reset instructions were sent.',
       sent: true,
     };
   }

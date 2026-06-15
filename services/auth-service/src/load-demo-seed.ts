@@ -8,7 +8,15 @@ function resolveLoaderPath(): string {
   const candidates = [
     process.env.DEMO_SEED_LOADER_PATH,
     join(__dirname, '..', '..', '..', 'scripts', 'load-demo-seed-data.js'),
-    join(__dirname, '..', '..', '..', '..', 'scripts', 'load-demo-seed-data.js'),
+    join(
+      __dirname,
+      '..',
+      '..',
+      '..',
+      '..',
+      'scripts',
+      'load-demo-seed-data.js',
+    ),
     '/app/scripts/load-demo-seed-data.js',
   ].filter((p): p is string => Boolean(p));
 

@@ -33,12 +33,17 @@ describe("BroadcastJobService", () => {
     jobModel.findOneAndUpdate.mockReturnValue({
       exec: jest.fn().mockResolvedValue(job),
     });
-    userRepository.listActiveUserIdsAsync.mockResolvedValue(["user-1", "user-2"]);
+    userRepository.listActiveUserIdsAsync.mockResolvedValue([
+      "user-1",
+      "user-2",
+    ]);
     notificationRepository.createBroadcastAsync.mockResolvedValue(undefined);
 
     await service.processNext();
 
-    expect(notificationRepository.createBroadcastAsync).toHaveBeenCalledTimes(2);
+    expect(notificationRepository.createBroadcastAsync).toHaveBeenCalledTimes(
+      2,
+    );
     expect(notificationRepository.createBroadcastAsync).toHaveBeenCalledWith(
       expect.any(Notification),
       "job-1:user-1",

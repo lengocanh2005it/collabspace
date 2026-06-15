@@ -27,7 +27,10 @@ export class LoginUseCase {
   async execute(input: LoginRequestDto): Promise<AuthSessionResponseDto> {
     const authUser = await this.userRepository.validateCredentials(input);
     User.fromAuthUser(authUser).assertCanLogin();
-    const session = await this.sessionIssuanceService.issue(authUser, input.workspaceId);
+    const session = await this.sessionIssuanceService.issue(
+      authUser,
+      input.workspaceId,
+    );
     try {
       await this.authAdminRepository.recordLogin(authUser.userId);
     } catch (error) {

@@ -26,7 +26,9 @@ describe("AuthGuard", () => {
 
   it("should verify JWT and attach recipient id", async () => {
     const authGrpcService = {
-      verifyAccessTokenLite: jest.fn().mockResolvedValue({ userId: "user-abc" }),
+      verifyAccessTokenLite: jest
+        .fn()
+        .mockResolvedValue({ userId: "user-abc" }),
       verifyAccessToken: jest.fn(),
     } as unknown as AuthGrpcService;
     const guard = new AuthGuard(authGrpcService);

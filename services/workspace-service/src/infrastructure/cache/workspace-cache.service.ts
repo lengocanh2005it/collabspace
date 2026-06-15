@@ -10,7 +10,9 @@ export class WorkspaceCacheService {
 
   constructor(
     private readonly configService: ConfigService,
-    @Optional() @Inject(REDIS_CLIENT) private readonly redis: Redis | null = null,
+    @Optional()
+    @Inject(REDIS_CLIENT)
+    private readonly redis: Redis | null = null,
   ) {}
 
   // ── workspace by ID ───────────────────────────────────────────────────────
@@ -20,7 +22,11 @@ export class WorkspaceCacheService {
   }
 
   async setWorkspace(workspace: Workspace): Promise<void> {
-    await this.set(this.workspaceKey(workspace.id), workspace, this.workspaceTtl());
+    await this.set(
+      this.workspaceKey(workspace.id),
+      workspace,
+      this.workspaceTtl(),
+    );
   }
 
   async deleteWorkspace(id: string): Promise<void> {
@@ -34,7 +40,10 @@ export class WorkspaceCacheService {
     return result === null ? undefined : result;
   }
 
-  async setWorkspaceList(userId: string, workspaces: Workspace[]): Promise<void> {
+  async setWorkspaceList(
+    userId: string,
+    workspaces: Workspace[],
+  ): Promise<void> {
     await this.set(this.listKey(userId), workspaces, this.listTtl());
   }
 
@@ -51,7 +60,10 @@ export class WorkspaceCacheService {
       if (raw === null) return undefined;
       return JSON.parse(raw) as T;
     } catch (err) {
-      this.logger.warn(`Cache read error (${key})`, err instanceof Error ? err.message : String(err));
+      this.logger.warn(
+        `Cache read error (${key})`,
+        err instanceof Error ? err.message : String(err),
+      );
       return undefined;
     }
   }
@@ -61,7 +73,10 @@ export class WorkspaceCacheService {
     try {
       await this.redis.setex(key, ttl, JSON.stringify(value));
     } catch (err) {
-      this.logger.warn(`Cache write error (${key})`, err instanceof Error ? err.message : String(err));
+      this.logger.warn(
+        `Cache write error (${key})`,
+        err instanceof Error ? err.message : String(err),
+      );
     }
   }
 
@@ -70,7 +85,10 @@ export class WorkspaceCacheService {
     try {
       await this.redis.del(key);
     } catch (err) {
-      this.logger.warn(`Cache delete error (${key})`, err instanceof Error ? err.message : String(err));
+      this.logger.warn(
+        `Cache delete error (${key})`,
+        err instanceof Error ? err.message : String(err),
+      );
     }
   }
 
@@ -83,10 +101,21 @@ export class WorkspaceCacheService {
   }
 
   private workspaceTtl(): number {
-    return Math.max(1, Number(this.configService.get<string>('WORKSPACE_CACHE_TTL_SECONDS') ?? 300));
+    return Math.max(
+      1,
+      Number(
+        this.configService.get<string>('WORKSPACE_CACHE_TTL_SECONDS') ?? 300,
+      ),
+    );
   }
 
   private listTtl(): number {
-    return Math.max(1, Number(this.configService.get<string>('WORKSPACE_LIST_CACHE_TTL_SECONDS') ?? 120));
+    return Math.max(
+      1,
+      Number(
+        this.configService.get<string>('WORKSPACE_LIST_CACHE_TTL_SECONDS') ??
+          120,
+      ),
+    );
   }
 }

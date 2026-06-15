@@ -23,7 +23,10 @@ export type UserReplicaLookupRequest = {
   username?: string;
 };
 
-async function fetchWithRetry(fn: () => Promise<Response>, maxAttempts = 3): Promise<Response> {
+async function fetchWithRetry(
+  fn: () => Promise<Response>,
+  maxAttempts = 3,
+): Promise<Response> {
   let lastError: unknown;
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {

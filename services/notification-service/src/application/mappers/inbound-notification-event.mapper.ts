@@ -66,8 +66,7 @@ export const InboundNotificationEventMapper = {
     data: CommentMentionedNotificationPayload,
   ): CreateNotificationCommand {
     const eventId =
-      data.eventId ??
-      `comment_mentioned:${data.commentId}:${data.recipientId}`;
+      data.eventId ?? `comment_mentioned:${data.commentId}:${data.recipientId}`;
 
     return new CreateNotificationCommand(
       data.recipientId,

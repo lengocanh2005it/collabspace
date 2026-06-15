@@ -34,9 +34,7 @@ function buildAuthUserOrmEntity(
       {
         role: {
           name: 'member',
-          rolePermissions: [
-            { permission: { name: 'users.read' } },
-          ],
+          rolePermissions: [{ permission: { name: 'users.read' } }],
         },
       },
     ],
@@ -105,13 +103,14 @@ describe('TypeOrmUserRepository', () => {
       buildAuthUserOrmEntity(),
     );
 
-    await expect(userRepository.getAuthUserById('user-1')).resolves
-      .toMatchObject({
-        userId: 'user-1',
-        email: 'member@example.com',
-        emailVerified: true,
-        role: 'member',
-      });
+    await expect(
+      userRepository.getAuthUserById('user-1'),
+    ).resolves.toMatchObject({
+      userId: 'user-1',
+      email: 'member@example.com',
+      emailVerified: true,
+      role: 'member',
+    });
   });
 
   it('throws when auth user is not found', async () => {
@@ -180,13 +179,16 @@ describe('TypeOrmUserRepository', () => {
   it('marks email verified when pending verification', async () => {
     const user = buildAuthUserOrmEntity({ emailVerifiedAt: null });
     (userRepositoryMock.findOne as jest.Mock).mockResolvedValue(user);
-    (userRepositoryMock.save as jest.Mock).mockImplementation(async (value) => value);
+    (userRepositoryMock.save as jest.Mock).mockImplementation(
+      async (value) => value,
+    );
 
-    await expect(userRepository.markEmailVerified('user-1')).resolves
-      .toMatchObject({
-        userId: 'user-1',
-        emailVerified: true,
-      });
+    await expect(
+      userRepository.markEmailVerified('user-1'),
+    ).resolves.toMatchObject({
+      userId: 'user-1',
+      emailVerified: true,
+    });
     expect(userRepositoryMock.save).toHaveBeenCalled();
   });
 
@@ -199,7 +201,11 @@ describe('TypeOrmUserRepository', () => {
 
     await userRepository.rollbackNewRegistration('user-1');
 
-    expect(userRoleRepositoryMock.delete).toHaveBeenCalledWith({ userId: 'user-1' });
-    expect(userRepositoryMock.softDelete).toHaveBeenCalledWith({ id: 'user-1' });
+    expect(userRoleRepositoryMock.delete).toHaveBeenCalledWith({
+      userId: 'user-1',
+    });
+    expect(userRepositoryMock.softDelete).toHaveBeenCalledWith({
+      id: 'user-1',
+    });
   });
 });

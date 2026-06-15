@@ -16,7 +16,8 @@ export class VerifyAccessTokenUseCase {
       await this.jwtTokenService.resolveVerifiedUserContext(
         authorizationHeader,
       );
-    const profileIdentity = await this.userProfileResolverService.resolve(userId);
+    const profileIdentity =
+      await this.userProfileResolverService.resolve(userId);
 
     return {
       emailVerified: user.emailVerified,

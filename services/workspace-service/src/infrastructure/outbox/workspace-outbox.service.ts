@@ -22,11 +22,7 @@ function normalizeClaimedOutboxRow(
 ): ClaimedOutboxEvent | null {
   const rawId = row.id;
   const id =
-    typeof rawId === 'string'
-      ? rawId
-      : rawId != null
-        ? String(rawId)
-        : '';
+    typeof rawId === 'string' ? rawId : rawId != null ? String(rawId) : '';
   if (id.length === 0) {
     return null;
   }
@@ -228,10 +224,7 @@ export class WorkspaceOutboxService {
             AND attempt_count >= $2
           RETURNING id
         `,
-        [
-          `outbox publish exceeded max attempts (${maxAttempts})`,
-          maxAttempts,
-        ],
+        [`outbox publish exceeded max attempts (${maxAttempts})`, maxAttempts],
       ),
     );
 

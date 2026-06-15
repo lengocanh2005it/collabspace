@@ -2,7 +2,7 @@ import {
   PLATFORM_IDENTITY_RESOLVER,
   PlatformAdminGuard,
   createBearerIdentityResolver,
-} from '@collabspace/nest-auth';
+} from "@collabspace/nest-auth";
 import { AuthGrpcService } from "../../integrations/auth/auth-grpc.service";
 
 export const platformAdminAuthProviders = [

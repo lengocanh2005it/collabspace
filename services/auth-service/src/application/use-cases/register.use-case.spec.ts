@@ -5,10 +5,7 @@ import { OtpStore } from '@/domain/ports/otp-store.port';
 import { UserProfileClient } from '@/domain/ports/user-profile-client.port';
 import { InMemoryUserRepository } from '@/infrastructure/repositories/in-memory-user.repository';
 import { ConfigurationService } from '@/configuration/configuration.service';
-import {
-  ConflictException,
-  ServiceUnavailableException,
-} from '@nestjs/common';
+import { ConflictException, ServiceUnavailableException } from '@nestjs/common';
 
 describe('RegisterUseCase', () => {
   const configurationServiceMock = {
@@ -64,11 +61,15 @@ describe('RegisterUseCase', () => {
     );
     jest.spyOn(otpStoreMock, 'assertAvailable').mockResolvedValue(undefined);
     jest.spyOn(otpStoreMock, 'setJson').mockResolvedValue('OK');
-    jest.spyOn(emailOutboxMock, 'enqueueEmailVerificationOtp').mockResolvedValue(undefined);
+    jest
+      .spyOn(emailOutboxMock, 'enqueueEmailVerificationOtp')
+      .mockResolvedValue(undefined);
   });
 
   it('registers a new user and queues verification email', async () => {
-    jest.spyOn(userProfileClientMock, 'createPendingProfile').mockResolvedValue(undefined);
+    jest
+      .spyOn(userProfileClientMock, 'createPendingProfile')
+      .mockResolvedValue(undefined);
 
     const result = await registerUseCase.execute({
       email: 'new@collabspace.dev',

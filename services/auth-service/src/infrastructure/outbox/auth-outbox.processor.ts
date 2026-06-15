@@ -1,4 +1,9 @@
-import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  OnModuleDestroy,
+  OnModuleInit,
+} from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import { runOutboxPollCycle } from '@collabspace/shared';
@@ -35,7 +40,8 @@ export class AuthOutboxProcessor implements OnModuleInit, OnModuleDestroy {
       return;
     }
 
-    const pollIntervalMs = this.configurationService.getOutboxConfig().pollIntervalMs;
+    const pollIntervalMs =
+      this.configurationService.getOutboxConfig().pollIntervalMs;
     this.timer = setInterval(() => {
       void this.processPendingEvents();
     }, pollIntervalMs);
@@ -92,38 +98,38 @@ export class AuthOutboxProcessor implements OnModuleInit, OnModuleDestroy {
               this.authOutboxService.reclaimStaleClaims(),
             claimPendingBatch: () => this.authOutboxService.claimPendingBatch(),
             publish: async (event) => {
-            const { publishTimeoutMs } =
-              this.configurationService.getOutboxConfig();
-            const recipient =
-              typeof event.payload.email === 'string'
-                ? event.payload.email
-                : 'unknown';
+              const { publishTimeoutMs } =
+                this.configurationService.getOutboxConfig();
+              const recipient =
+                typeof event.payload.email === 'string'
+                  ? event.payload.email
+                  : 'unknown';
 
-            this.logger.log(
-              `Publishing auth outbox event ${event.id} (${event.eventType}) attempt=${event.attemptCount} to=${recipient}`,
-            );
-
-            try {
-              await withTimeout(
-                this.publishRegistry.publish(event.eventType, event.payload),
-                publishTimeoutMs,
-                `Auth outbox publish ${event.id}`,
-              );
               this.logger.log(
-                `Auth outbox event ${event.id} (${event.eventType}) delivered via Brevo`,
+                `Publishing auth outbox event ${event.id} (${event.eventType}) attempt=${event.attemptCount} to=${recipient}`,
               );
-            } catch (error) {
-              if (isOperationTimeoutError(error)) {
-                this.logger.warn(
-                  `Auth outbox publish timed out for ${event.id} (${event.eventType}) after ${publishTimeoutMs}ms`,
+
+              try {
+                await withTimeout(
+                  this.publishRegistry.publish(event.eventType, event.payload),
+                  publishTimeoutMs,
+                  `Auth outbox publish ${event.id}`,
                 );
+                this.logger.log(
+                  `Auth outbox event ${event.id} (${event.eventType}) delivered via Brevo`,
+                );
+              } catch (error) {
+                if (isOperationTimeoutError(error)) {
+                  this.logger.warn(
+                    `Auth outbox publish timed out for ${event.id} (${event.eventType}) after ${publishTimeoutMs}ms`,
+                  );
+                }
+                throw error;
               }
-              throw error;
-            }
-          },
-          markProcessed: (id) => this.authOutboxService.markProcessed(id),
-          markFailed: (id, attemptCount, message) =>
-            this.authOutboxService.markFailed(id, attemptCount, message),
+            },
+            markProcessed: (id) => this.authOutboxService.markProcessed(id),
+            markFailed: (id, attemptCount, message) =>
+              this.authOutboxService.markFailed(id, attemptCount, message),
             logLabel: 'auth outbox',
             safeMarkFailed: true,
           },

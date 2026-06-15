@@ -1,8 +1,13 @@
+# Local dev overlay: hot-reload services + Prometheus/Grafana (exporters + monitoring).
+include:
+  - path: docker-compose.exporters.yml
+  - path: docker-compose.monitoring.yml
+
 services:
   auth-service:
     image: node:20-alpine
     working_dir: /monorepo
-    command: sh -c "corepack enable && pnpm install --no-frozen-lockfile && cd services/auth-service && pnpm run start:dev"
+    command: sh -c "corepack enable && corepack prepare pnpm@9.15.9 --activate && pnpm install --no-frozen-lockfile --ignore-scripts && cd services/auth-service && pnpm run start:dev"
     volumes:
       - ../../:/monorepo
       - /monorepo/node_modules
@@ -14,7 +19,7 @@ services:
   user-service:
     image: node:20-alpine
     working_dir: /monorepo
-    command: sh -c "corepack enable && pnpm install --no-frozen-lockfile && cd services/user-service && pnpm run start:dev"
+    command: sh -c "corepack enable && corepack prepare pnpm@9.15.9 --activate && pnpm install --no-frozen-lockfile --ignore-scripts && cd services/user-service && pnpm run start:dev"
     volumes:
       - ../../:/monorepo
       - /monorepo/node_modules
@@ -27,7 +32,7 @@ services:
   workspace-service:
     image: node:20-alpine
     working_dir: /monorepo
-    command: sh -c "corepack enable && pnpm install --no-frozen-lockfile && cd services/workspace-service && npm run start:dev"
+    command: sh -c "corepack enable && corepack prepare pnpm@9.15.9 --activate && pnpm install --no-frozen-lockfile --ignore-scripts && cd services/workspace-service && pnpm run start:dev"
     volumes:
       - ../../:/monorepo
       - /monorepo/node_modules
@@ -39,7 +44,7 @@ services:
   task-service:
     image: node:20-alpine
     working_dir: /monorepo
-    command: sh -c "corepack enable && pnpm install --no-frozen-lockfile && cd services/task-service && pnpm run start:dev"
+    command: sh -c "corepack enable && corepack prepare pnpm@9.15.9 --activate && pnpm install --no-frozen-lockfile --ignore-scripts && cd services/task-service && pnpm run start:dev"
     volumes:
       - ../../:/monorepo
       - /monorepo/node_modules
@@ -51,8 +56,11 @@ services:
   notification-service:
     image: node:20-alpine
     working_dir: /monorepo
-    command: sh -c "corepack enable && pnpm install --no-frozen-lockfile && cd services/notification-service && pnpm run start:dev"
+    command: sh -c "corepack enable && corepack prepare pnpm@9.15.9 --activate && pnpm install --no-frozen-lockfile --ignore-scripts && cd services/notification-service && pnpm exec nest build --webpack && node dist/main.js"
     volumes:
       - ../../:/monorepo
+      - /monorepo/node_modules
+      - /monorepo/services/notification-service/node_modules
+      - /monorepo/packages/shared/node_modules
     ports:
       - "3004:3000"

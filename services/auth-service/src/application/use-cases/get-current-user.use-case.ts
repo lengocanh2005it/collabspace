@@ -20,7 +20,9 @@ export class GetCurrentUserUseCase {
     }
   > {
     const { payload, user } =
-      await this.jwtTokenService.resolveVerifiedUserContext(authorizationHeader);
+      await this.jwtTokenService.resolveVerifiedUserContext(
+        authorizationHeader,
+      );
     const profileIdentity = await this.userProfileResolverService.resolve(
       user.userId,
     );

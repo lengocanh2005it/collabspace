@@ -59,6 +59,20 @@ http:
     # ============================================================
     # Workspace Service — prefix: /api/v1/workspaces
     # ============================================================
+    workspace-invitations-router:
+      rule: "PathPrefix(`/api/v1/invitations`)"
+      service: workspace-service
+      entryPoints:
+        - web
+      middlewares:
+        - strip-identity-headers
+        - forward-auth
+        - rate-limit
+        - cors-headers
+        - security-headers
+        - retry-policy
+        - circuit-breaker
+
     workspace-router:
       rule: "PathPrefix(`/api/v1/workspaces`)"
       service: workspace-service

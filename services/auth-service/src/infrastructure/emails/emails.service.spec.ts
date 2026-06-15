@@ -174,16 +174,12 @@ describe('EmailsService', () => {
       pollInterval: 2000,
       schema: 'graphile_worker',
     });
-    (
-      configurationServiceMock.getEmailConfig as jest.Mock
-    ).mockReturnValue({
+    (configurationServiceMock.getEmailConfig as jest.Mock).mockReturnValue({
       deliveryTimeoutMs: 1,
       jobMaxAttempts: 5,
       queueTimeoutMs: 1,
     });
-    sendMock.mockImplementation(
-      () => new Promise(() => undefined),
-    );
+    sendMock.mockImplementation(() => new Promise(() => undefined));
 
     await expect(
       emailsService.sendText({

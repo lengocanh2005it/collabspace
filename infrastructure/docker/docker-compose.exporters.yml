@@ -28,7 +28,7 @@ services:
       - collabspace-network
 
   mongodb-exporter:
-    image: percona/mongodb_exporter:latest
+    image: percona/mongodb_exporter:0.51.0
     container_name: mongodb-exporter
     restart: unless-stopped
     command:
@@ -40,7 +40,3 @@ services:
         condition: service_healthy
     networks:
       - collabspace-network
-
-networks:
-  collabspace-network:
-    external: true

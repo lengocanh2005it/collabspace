@@ -19,7 +19,9 @@ export class RevokeSessionUseCase {
     familyId: string,
   ): Promise<RevokeSessionResult> {
     const { userId } =
-      await this.jwtTokenService.resolveVerifiedUserContext(authorizationHeader);
+      await this.jwtTokenService.resolveVerifiedUserContext(
+        authorizationHeader,
+      );
     const revokedCount = await this.refreshTokenRepository.revokeFamilyForUser(
       userId,
       familyId,

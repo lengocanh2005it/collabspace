@@ -70,7 +70,8 @@ export default () => ({
   },
   email: {
     deliveryTimeoutMs: toNumber(
-      process.env.EMAIL_DELIVERY_TIMEOUT_MS ?? process.env.MAIL_DELIVERY_TIMEOUT_MS,
+      process.env.EMAIL_DELIVERY_TIMEOUT_MS ??
+        process.env.MAIL_DELIVERY_TIMEOUT_MS,
       15000,
     ),
     queueTimeoutMs: toNumber(process.env.EMAIL_QUEUE_TIMEOUT_MS, 5000),

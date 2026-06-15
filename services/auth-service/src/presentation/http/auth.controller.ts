@@ -148,9 +148,13 @@ export class AuthController {
 
   @Post('login')
   @HttpCode(200)
-  @ApiOperation({ summary: 'Login with email and password (verified email required)' })
+  @ApiOperation({
+    summary: 'Login with email and password (verified email required)',
+  })
   @ApiOkResponse({ type: AuthSessionResponseDto })
-  @ApiUnauthorizedResponse({ description: 'Invalid credentials or email not verified' })
+  @ApiUnauthorizedResponse({
+    description: 'Invalid credentials or email not verified',
+  })
   async login(@Body() body: LoginRequestDto) {
     return this.loginUseCase.execute(body);
   }
@@ -158,7 +162,10 @@ export class AuthController {
   @Get('me')
   @HttpCode(200)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Current authenticated user (profile hydrated when user-service is up)' })
+  @ApiOperation({
+    summary:
+      'Current authenticated user (profile hydrated when user-service is up)',
+  })
   @ApiOkResponse({ type: MeResponseDto })
   @ApiUnauthorizedResponse()
   async me(@Req() request: Request) {
@@ -185,8 +192,12 @@ export class AuthController {
       'Subject to resend cooldown and max attempts per window (see EMAIL_VERIFICATION_RESEND_* env vars). Returns 429 when rate limited.',
   })
   @ApiOkResponse({ type: ResendEmailVerificationOtpResponseDto })
-  @ApiTooManyRequestsResponse({ description: 'Resend cooldown or max attempts exceeded' })
-  async resendVerificationOtp(@Body() body: ResendEmailVerificationOtpRequestDto) {
+  @ApiTooManyRequestsResponse({
+    description: 'Resend cooldown or max attempts exceeded',
+  })
+  async resendVerificationOtp(
+    @Body() body: ResendEmailVerificationOtpRequestDto,
+  ) {
     return this.resendEmailVerificationOtpUseCase.execute(body);
   }
 
@@ -194,7 +205,8 @@ export class AuthController {
   @HttpCode(200)
   @ApiOperation({
     summary: 'Verify email with OTP',
-    description: 'OTP is hashed at rest in Redis. Invalid or expired OTP returns 401.',
+    description:
+      'OTP is hashed at rest in Redis. Invalid or expired OTP returns 401.',
   })
   @ApiOkResponse({ type: VerifyEmailOtpResponseDto })
   @ApiUnauthorizedResponse({ description: 'Invalid or expired OTP' })
@@ -242,7 +254,9 @@ export class AuthController {
   @Get('sessions')
   @HttpCode(200)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'List refresh-token session families for current user' })
+  @ApiOperation({
+    summary: 'List refresh-token session families for current user',
+  })
   @ApiOkResponse({ type: RefreshTokenSessionResponseDto, isArray: true })
   @ApiUnauthorizedResponse()
   async listSessions(@Req() request: Request) {
@@ -269,7 +283,9 @@ export class AuthController {
   @Post('logout-others')
   @HttpCode(200)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Revoke all refresh-token families except the current one' })
+  @ApiOperation({
+    summary: 'Revoke all refresh-token families except the current one',
+  })
   @ApiOkResponse({ type: LogoutOthersResponseDto })
   @ApiUnauthorizedResponse()
   async logoutOthers(
@@ -285,7 +301,9 @@ export class AuthController {
   @Post('logout-all')
   @HttpCode(200)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Revoke all refresh-token families for current user' })
+  @ApiOperation({
+    summary: 'Revoke all refresh-token families for current user',
+  })
   @ApiOkResponse({ type: LogoutAllResponseDto })
   @ApiUnauthorizedResponse()
   async logoutAll(@Req() request: Request) {
@@ -312,7 +330,8 @@ export class AuthController {
   @Get('dev/otp')
   @HttpCode(200)
   @ApiOperation({
-    summary: '[DEV ONLY] Get latest OTP for email — requires ALLOW_DEV_OTP_ENDPOINT=true',
+    summary:
+      '[DEV ONLY] Get latest OTP for email — requires ALLOW_DEV_OTP_ENDPOINT=true',
   })
   async getDevOtp(@Query('email') email: string) {
     if (!this.configurationService.isDevOtpEndpointEnabled()) {

@@ -54,7 +54,9 @@ export class TypeOrmRefreshTokenRepository implements RefreshTokenRepository {
     }
 
     return [...latestByFamily.values()]
-      .sort((left, right) => right.createdAt.getTime() - left.createdAt.getTime())
+      .sort(
+        (left, right) => right.createdAt.getTime() - left.createdAt.getTime(),
+      )
       .map((token) => this.toSessionSummary(token));
   }
 
@@ -290,10 +292,11 @@ export class TypeOrmRefreshTokenRepository implements RefreshTokenRepository {
     return createHash('sha256').update(refreshToken).digest('hex');
   }
 
-  private toSessionSummary(token: RefreshTokenOrmEntity): RefreshTokenSessionSummary {
+  private toSessionSummary(
+    token: RefreshTokenOrmEntity,
+  ): RefreshTokenSessionSummary {
     const now = Date.now();
-    const isActive =
-      !token.revokedAt && token.expiresAt.getTime() > now;
+    const isActive = !token.revokedAt && token.expiresAt.getTime() > now;
 
     return {
       tokenId: token.id,

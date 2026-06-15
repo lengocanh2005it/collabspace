@@ -69,6 +69,9 @@ async function bootstrap() {
   const port = process.env.PORT || 8080;
   await app.listen(port);
   logger.log(`Workspace service is running on port ${port}`);
-  logger.log(`Swagger Docs: http://localhost:${port}/${swaggerPath}`, 'Bootstrap');
+  logger.log(
+    `Swagger Docs: http://localhost:${port}/${swaggerPath}`,
+    'Bootstrap',
+  );
 }
 void bootstrap();

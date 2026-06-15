@@ -62,7 +62,7 @@ K8s staging/prod: Vault + External Secrets Operator — `infrastructure/vault/RE
 
 ## Docker Compose
 
-Run core local stack from `infrastructure/docker`:
+Run core local stack from `infrastructure/docker` (includes hot-reload **and** Prometheus + Grafana via `docker-compose.override.yml` → `include` exporters + monitoring):
 
 ```sh
 docker-compose -f docker-compose.yml -f docker-compose.db.yml -f docker-compose.override.yml up -d
@@ -74,13 +74,13 @@ Add Traefik:
 docker-compose -f docker-compose.yml -f docker-compose.db.yml -f docker-compose.override.yml -f docker-compose.traefik.yml up -d
 ```
 
-Add monitoring (Prometheus + Alertmanager + Grafana):
+Monitoring-only overlay (skip when using `override.yml` — already included):
 
 ```sh
-docker-compose -f docker-compose.yml -f docker-compose.db.yml -f docker-compose.override.yml -f docker-compose.exporters.yml -f docker-compose.monitoring.yml up -d
+docker-compose -f docker-compose.yml -f docker-compose.db.yml -f docker-compose.exporters.yml -f docker-compose.monitoring.yml up -d
 ```
 
-Full local stack:
+Full local stack (logging + tracing + gateway):
 
 ```sh
 docker-compose -f docker-compose.yml -f docker-compose.db.yml -f docker-compose.override.yml -f docker-compose.exporters.yml -f docker-compose.monitoring.yml -f docker-compose.logging.yml -f docker-compose.tracing.yml -f docker-compose.traefik.yml up -d

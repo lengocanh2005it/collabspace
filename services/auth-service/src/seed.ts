@@ -126,10 +126,7 @@ const SEED_ROLES: SeedRole[] = [
 const demoData = loadDemoSeedData();
 const DEFAULT_PASSWORD = demoData.defaultPassword;
 
-const SEED_USERS: SeedUser[] = mapDemoUsers(
-  demoData.users,
-  DEFAULT_PASSWORD,
-);
+const SEED_USERS: SeedUser[] = mapDemoUsers(demoData.users, DEFAULT_PASSWORD);
 
 function loadEnvFile(): void {
   const envPath = join(process.cwd(), '.env');
@@ -245,8 +242,9 @@ async function seedRolePermissions(
   rolesByName: Map<string, RoleOrmEntity>,
   permissionsByName: Map<string, PermissionOrmEntity>,
 ): Promise<void> {
-  const rolePermissionRepository =
-    dataSource.getRepository(RolePermissionOrmEntity);
+  const rolePermissionRepository = dataSource.getRepository(
+    RolePermissionOrmEntity,
+  );
 
   for (const seedRole of SEED_ROLES) {
     const role = rolesByName.get(seedRole.name);

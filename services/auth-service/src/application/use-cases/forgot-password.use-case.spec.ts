@@ -38,8 +38,7 @@ describe('ForgotPasswordUseCase', () => {
     await expect(
       useCase.execute({ email: 'missing@collabspace.dev' }),
     ).resolves.toEqual({
-      message:
-        'If the account exists, password reset instructions were sent.',
+      message: 'If the account exists, password reset instructions were sent.',
       sent: true,
     });
     expect(passwordResetTokenService.send).not.toHaveBeenCalled();
@@ -53,11 +52,8 @@ describe('ForgotPasswordUseCase', () => {
       userId: user.userId,
     });
 
-    await expect(
-      useCase.execute({ email: user.email }),
-    ).resolves.toEqual({
-      message:
-        'If the account exists, password reset instructions were sent.',
+    await expect(useCase.execute({ email: user.email })).resolves.toEqual({
+      message: 'If the account exists, password reset instructions were sent.',
       sent: true,
     });
     expect(passwordResetTokenService.send).toHaveBeenCalledWith(user);

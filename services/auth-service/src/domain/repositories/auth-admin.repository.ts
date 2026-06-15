@@ -24,16 +24,16 @@ export type AdminUser = {
 };
 
 export interface AuthAdminRepository {
-  assignPermissionToRole(roleId: string, permissionId: string): Promise<AdminRole>;
+  assignPermissionToRole(
+    roleId: string,
+    permissionId: string,
+  ): Promise<AdminRole>;
   assignRoleToUser(userId: string, roleId: string): Promise<AdminUser>;
   createPermission(input: {
     description: string;
     name: string;
   }): Promise<AdminPermission>;
-  createRole(input: {
-    description: string;
-    name: string;
-  }): Promise<AdminRole>;
+  createRole(input: { description: string; name: string }): Promise<AdminRole>;
   deleteRole(roleId: string): Promise<void>;
   listPermissions(): Promise<AdminPermission[]>;
   listRoles(): Promise<AdminRole[]>;

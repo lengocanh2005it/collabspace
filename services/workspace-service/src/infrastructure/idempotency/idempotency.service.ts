@@ -33,7 +33,10 @@ export class IdempotencyService {
 
     if (record.expiresAt.getTime() <= Date.now()) {
       await this.recordRepo.delete({ userId, idempotencyKey }).catch((err) => {
-        this.logger.warn('Failed to delete expired idempotency record', err instanceof Error ? err.message : String(err));
+        this.logger.warn(
+          'Failed to delete expired idempotency record',
+          err instanceof Error ? err.message : String(err),
+        );
       });
       return null;
     }

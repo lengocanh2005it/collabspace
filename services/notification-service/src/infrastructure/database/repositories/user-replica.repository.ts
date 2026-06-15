@@ -50,7 +50,7 @@ export class UserReplicaRepository implements IUserReplicaRepository {
       .findOneAndUpdate(
         { userId: data.userId },
         { $set: data },
-        { upsert: true, new: true },
+        { upsert: true, returnDocument: "after" },
       )
       .exec();
   }

@@ -48,11 +48,6 @@ export class WorkspaceAdminController {
     @Param('id') workspaceId: string,
     @Body() body: ForceJoinWorkspaceDto,
   ): Promise<void> {
-    await this.useCase.forceJoin(
-      actorId,
-      workspaceId,
-      body.role,
-      body.reason,
-    );
+    await this.useCase.forceJoin(actorId, workspaceId, body.role, body.reason);
   }
 }

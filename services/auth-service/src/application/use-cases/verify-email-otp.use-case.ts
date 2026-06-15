@@ -22,7 +22,9 @@ export class VerifyEmailOtpUseCase {
     private readonly emailVerificationOtpService: EmailVerificationOtpService,
   ) {}
 
-  async execute(input: VerifyEmailOtpRequestDto): Promise<VerifyEmailOtpResult> {
+  async execute(
+    input: VerifyEmailOtpRequestDto,
+  ): Promise<VerifyEmailOtpResult> {
     const otp = input.otp?.trim();
 
     if (!input.userId || input.userId.trim().length === 0 || !otp) {
@@ -32,7 +34,9 @@ export class VerifyEmailOtpUseCase {
       });
     }
 
-    const existingUser = await this.userRepository.getAuthUserById(input.userId);
+    const existingUser = await this.userRepository.getAuthUserById(
+      input.userId,
+    );
 
     if (existingUser.emailVerified) {
       return {

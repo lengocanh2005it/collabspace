@@ -55,7 +55,10 @@ export class TypeOrmWorkspaceRepository implements IWorkspaceRepository {
     await this.softDeleteWorkspace(id, actorId);
   }
 
-  private async softDeleteWorkspace(id: string, actorId: string): Promise<void> {
+  private async softDeleteWorkspace(
+    id: string,
+    actorId: string,
+  ): Promise<void> {
     await this.dataSource.transaction(async (manager) => {
       const workspace = await manager.findOne(WorkspaceOrmEntity, {
         where: { id },
@@ -63,7 +66,11 @@ export class TypeOrmWorkspaceRepository implements IWorkspaceRepository {
       if (!workspace) {
         throw new NotFoundException('Workspace not found');
       }
-      await manager.update(ProjectOrmEntity, { workspace_id: id }, { is_deleted: true });
+      await manager.update(
+        ProjectOrmEntity,
+        { workspace_id: id },
+        { is_deleted: true },
+      );
       await manager.delete(WorkspaceMemberOrmEntity, { workspace_id: id });
       await manager.softDelete(WorkspaceOrmEntity, { id });
       await this.outboxService.enqueueWorkspaceDeleted(

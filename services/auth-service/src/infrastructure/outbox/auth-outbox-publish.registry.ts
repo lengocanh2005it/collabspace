@@ -44,7 +44,10 @@ export class AuthOutboxPublishRegistry {
     );
   }
 
-  async publish(eventType: string, payload: Record<string, unknown>): Promise<void> {
+  async publish(
+    eventType: string,
+    payload: Record<string, unknown>,
+  ): Promise<void> {
     const handler = this.handlers.get(eventType);
     if (!handler) {
       throw new Error(`Unsupported auth outbox event type: ${eventType}`);
