@@ -5,7 +5,7 @@ import {
   NOTIFICATION_REPOSITORY_TOKEN,
   type INotificationRepository,
 } from "../../../domain/repositories/INotificationRepository";
-import type { NotificationCountCacheService } from "../../../infrastructure/cache/notification-count-cache.service";
+import { NotificationCountCacheService } from "../../../infrastructure/cache/notification-count-cache.service";
 
 @CommandHandler(MarkAllNotificationsReadCommand)
 export class MarkAllNotificationsReadHandler

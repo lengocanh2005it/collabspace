@@ -1,5 +1,5 @@
 import type { AuthUser } from '@/domain/entities/auth-user';
-import type { ConfigurationService } from '@/configuration/configuration.service';
+import { ConfigurationService } from '@/configuration/configuration.service';
 import { EMAIL_OUTBOX, type EmailOutbox } from '@/domain/ports/email-outbox.port';
 import { OTP_STORE, type OtpStore } from '@/domain/ports/otp-store.port';
 import type { PasswordResetTokenPayload } from '@/domain/types/password-reset-token';

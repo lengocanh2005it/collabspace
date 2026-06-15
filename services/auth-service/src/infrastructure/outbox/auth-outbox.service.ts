@@ -1,4 +1,4 @@
-import type { ConfigurationService } from '@/configuration/configuration.service';
+import { ConfigurationService } from '@/configuration/configuration.service';
 import { unwrapQueryRows } from '@collabspace/shared';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';

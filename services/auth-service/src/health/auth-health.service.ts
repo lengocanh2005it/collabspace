@@ -1,4 +1,4 @@
-import type { ConfigurationService } from '@/configuration/configuration.service';
+import { ConfigurationService } from '@/configuration/configuration.service';
 import type { EmailOutboxStats } from '@/domain/ports/email-outbox.port';
 import { EMAIL_OUTBOX, type EmailOutbox } from '@/domain/ports/email-outbox.port';
 import { OTP_STORE, type OtpStore } from '@/domain/ports/otp-store.port';
@@ -6,7 +6,7 @@ import {
   USER_PROFILE_CLIENT,
   type UserProfileClient,
 } from '@/domain/ports/user-profile-client.port';
-import type { DatabaseService } from '@/infrastructure/database/database.service';
+import { DatabaseService } from '@/infrastructure/database/database.service';
 import { Inject, Injectable } from '@nestjs/common';
 
 type CheckStatus = 'up' | 'down' | 'disabled';

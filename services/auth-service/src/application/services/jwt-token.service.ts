@@ -1,6 +1,6 @@
 import type { AuthUser } from '@/domain/entities/auth-user';
 import type { JwtPayload, SignAccessTokenInput } from '@/domain/types/jwt';
-import type { ConfigurationService } from '@/configuration/configuration.service';
+import { ConfigurationService } from '@/configuration/configuration.service';
 import { USER_REPOSITORY, type UserRepository } from '@/domain/repositories/user.repository';
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { createSecretKey } from 'node:crypto';

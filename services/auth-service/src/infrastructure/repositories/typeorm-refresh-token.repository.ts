@@ -1,5 +1,5 @@
 import type { IssueRefreshTokenInput, RefreshTokenPayload } from '@/domain/types/refresh-token';
-import type { ConfigurationService } from '@/configuration/configuration.service';
+import { ConfigurationService } from '@/configuration/configuration.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { createHash, randomBytes, randomUUID } from 'node:crypto';

@@ -75,7 +75,7 @@ import type { MetricsService } from '@/metrics/metrics.service';
 import type { RequestWithId } from '@/common/http/request-id.middleware';
 import type { Request, Response } from 'express';
 import { EMAIL_OUTBOX, type EmailOutbox } from '@/domain/ports/email-outbox.port';
-import type { ConfigurationService } from '@/configuration/configuration.service';
+import { ConfigurationService } from '@/configuration/configuration.service';
 
 @ApiTags('auth')
 @Controller('auth')

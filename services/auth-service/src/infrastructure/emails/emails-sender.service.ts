@@ -1,5 +1,5 @@
 import type { SendEmailJobPayload } from '@/infrastructure/emails/email-job.types';
-import type { ConfigurationService } from '@/configuration/configuration.service';
+import { ConfigurationService } from '@/configuration/configuration.service';
 import { BrevoEmailClient } from '@/infrastructure/emails/brevo-email.client';
 import { isNodeProduction } from '@collabspace/shared';
 import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';

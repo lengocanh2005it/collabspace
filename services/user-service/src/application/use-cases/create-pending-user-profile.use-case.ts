@@ -8,7 +8,7 @@ import {
   type UserProfileResponseDto,
   toUserProfileResponseDto,
 } from '../dto/user-profile-response.dto';
-import type { RabbitMqEventsService } from '../../infrastructure/messaging/rabbitmq/rabbitmq-events.service';
+import { RabbitMqEventsService } from '../../infrastructure/messaging/rabbitmq/rabbitmq-events.service';
 
 @Injectable()
 export class CreatePendingUserProfileUseCase {

@@ -4,7 +4,7 @@ import type {
   SendTextEmailInput,
 } from '@/infrastructure/emails/email-job.types';
 import { isOperationTimeoutError, withTimeout } from '@/common/utils/timeout.util';
-import type { ConfigurationService } from '@/configuration/configuration.service';
+import { ConfigurationService } from '@/configuration/configuration.service';
 import { GraphileWorkerService } from '@/infrastructure/graphile-worker/graphile-worker.service';
 import {
   Inject,

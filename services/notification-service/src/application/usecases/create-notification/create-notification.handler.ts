@@ -11,7 +11,7 @@ import {
   type IProcessedEventRepository,
   PROCESSED_EVENT_REPOSITORY_TOKEN,
 } from "../../../domain/repositories/IProcessedEventRepository";
-import type { NotificationCountCacheService } from "../../../infrastructure/cache/notification-count-cache.service";
+import { NotificationCountCacheService } from "../../../infrastructure/cache/notification-count-cache.service";
 
 export interface CreateNotificationResponse {
   notificationId: string;

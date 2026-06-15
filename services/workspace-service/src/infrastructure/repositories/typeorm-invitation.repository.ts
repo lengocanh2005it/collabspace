@@ -5,7 +5,7 @@ import type { DataSource, Repository } from 'typeorm';
 import { Invitation } from '../../domain/entities/invitation.entity';
 import { InvitationInvalidStateError } from '../../domain/exceptions/invitation.exceptions';
 import type { IInvitationRepository } from '../../domain/repositories/invitation.repository';
-import type { WorkspaceOutboxService } from '../outbox/workspace-outbox.service';
+import { WorkspaceOutboxService } from '../outbox/workspace-outbox.service';
 import { InvitationOrmEntity } from '../database/entities/invitation.orm-entity';
 import { WorkspaceMemberOrmEntity } from '../database/entities/workspace-member.orm-entity';
 

@@ -1,5 +1,5 @@
 import type { AuthUser } from '@/domain/entities/auth-user';
-import type { ConfigurationService } from '@/configuration/configuration.service';
+import { ConfigurationService } from '@/configuration/configuration.service';
 import { EMAIL_OUTBOX, type EmailOutbox } from '@/domain/ports/email-outbox.port';
 import {
   type EmailVerificationOtpPayload,

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import type { DatabaseService } from '../infrastructure/database/database.service';
+import { DatabaseService } from '../infrastructure/database/database.service';
 
 type CheckStatus = 'up' | 'down' | 'disabled';
 type OverallStatus = 'ok' | 'degraded' | 'error';

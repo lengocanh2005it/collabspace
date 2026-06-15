@@ -2,7 +2,7 @@ import { Injectable, type OnModuleDestroy } from '@nestjs/common';
 import { type ClientProxy, ClientProxyFactory, Transport } from '@nestjs/microservices';
 import { buildConsumerQueueOptionsForQueue } from '@collabspace/shared';
 import { lastValueFrom } from 'rxjs';
-import type { ConfigurationService } from '../../../configuration/configuration.service';
+import { ConfigurationService } from '../../../configuration/configuration.service';
 import {
   USER_REGISTERED_EVENT,
   type UserRegisteredEventPayload,

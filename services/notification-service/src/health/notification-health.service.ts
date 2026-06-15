@@ -2,7 +2,7 @@ import { Injectable } from "@nestjs/common";
 import { InjectConnection } from "@nestjs/mongoose";
 import type { Connection } from "mongoose";
 import * as amqp from "amqplib";
-import type { ConfigurationService } from "../configuration/configuration.service";
+import { ConfigurationService } from "../configuration/configuration.service";
 
 type CheckStatus = "up" | "down" | "disabled";
 type OverallStatus = "ok" | "degraded" | "error";

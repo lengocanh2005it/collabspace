@@ -1,5 +1,5 @@
 import type { AuthLiteIdentity } from '@/domain/types/jwt';
-import type { ConfigurationService } from '@/configuration/configuration.service';
+import { ConfigurationService } from '@/configuration/configuration.service';
 import type { RedisService } from '@/infrastructure/redis/redis.service';
 import { Injectable, Logger } from '@nestjs/common';
 import { createHash } from 'node:crypto';

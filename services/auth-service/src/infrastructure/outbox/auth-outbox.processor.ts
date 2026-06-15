@@ -1,9 +1,9 @@
 import { Injectable, Logger, type OnModuleDestroy, type OnModuleInit } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
-import type { DataSource } from 'typeorm';
+import { DataSource } from 'typeorm';
 import { runOutboxPollCycle } from '@collabspace/shared';
 import { isOperationTimeoutError, withTimeout } from '@/common/utils/timeout.util';
-import type { ConfigurationService } from '@/configuration/configuration.service';
+import { ConfigurationService } from '@/configuration/configuration.service';
 import type { EmailsService } from '@/infrastructure/emails/emails.service';
 import type { AuthOutboxService } from './auth-outbox.service';
 import { AuthOutboxPublishRegistry } from './auth-outbox-publish.registry';

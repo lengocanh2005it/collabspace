@@ -1,4 +1,4 @@
-import type { ConfigurationService } from '@/configuration/configuration.service';
+import { ConfigurationService } from '@/configuration/configuration.service';
 import type {
   CreatePendingProfileInput,
   UserProfileClient,

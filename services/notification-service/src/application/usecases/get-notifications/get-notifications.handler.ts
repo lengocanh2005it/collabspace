@@ -14,7 +14,7 @@ import {
   USER_REPLICA_LOOKUP_TOKEN,
   type UserReplicaLookupService,
 } from "../../services/user-replica-lookup.service";
-import type { NotificationCountCacheService } from "../../../infrastructure/cache/notification-count-cache.service";
+import { NotificationCountCacheService } from "../../../infrastructure/cache/notification-count-cache.service";
 
 export interface NotificationResponseDto {
   id: string;

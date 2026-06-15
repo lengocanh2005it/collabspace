@@ -6,8 +6,8 @@ import type { IWorkspaceRepository } from '../../domain/repositories/workspace.r
 import { WorkspaceOrmEntity } from '../database/entities/workspace.orm-entity';
 import { WorkspaceMemberOrmEntity } from '../database/entities/workspace-member.orm-entity';
 import { ProjectOrmEntity } from '../database/entities/project.orm-entity';
-import type { WorkspaceOutboxService } from '../outbox/workspace-outbox.service';
-import type { WorkspaceCacheService } from '../cache/workspace-cache.service';
+import { WorkspaceOutboxService } from '../outbox/workspace-outbox.service';
+import { WorkspaceCacheService } from '../cache/workspace-cache.service';
 import { randomUUID } from 'node:crypto';
 
 @Injectable()

@@ -8,7 +8,7 @@ import {
 import { InjectDataSource } from '@nestjs/typeorm';
 import { runOutboxPollCycle } from '@collabspace/shared';
 import type * as amqp from 'amqplib';
-import type { DataSource } from 'typeorm';
+import { DataSource } from 'typeorm';
 import {
   WORKSPACE_DELETED_EVENT,
   WORKSPACE_INVITED_EVENT,
@@ -18,7 +18,7 @@ import {
   WORKSPACE_OUTBOX_EVENT_WORKSPACE_INVITED,
 } from './entities/workspace-outbox-event.entity';
 import { getWorkspaceOutboxConfig } from './workspace-outbox.config';
-import type { WorkspaceOutboxService } from './workspace-outbox.service';
+import { WorkspaceOutboxService } from './workspace-outbox.service';
 
 @Injectable()
 export class WorkspaceOutboxProcessor implements OnModuleInit, OnModuleDestroy {
