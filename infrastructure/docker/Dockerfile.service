@@ -21,10 +21,13 @@ ARG SERVICE_NAME
 COPY packages packages
 COPY scripts scripts
 COPY services/${SERVICE_NAME} services/${SERVICE_NAME}
-RUN pnpm --filter @collabspace/shared run build \
-  && pnpm --filter @collabspace/nest-auth run build \
-  && pnpm --filter @collabspace/typeorm-migrate run build \
-  && pnpm --filter ${SERVICE_NAME} run build
+# shared first — nest-auth depends on it
+RUN pnpm --filter @collabspace/shared run build
+# nest-auth and typeorm-migrate are independent of each other → build in parallel
+RUN pnpm --filter @collabspace/nest-auth run build & \
+    pnpm --filter @collabspace/typeorm-migrate run build & \
+    wait
+RUN pnpm --filter ${SERVICE_NAME} run build
 
 # --- Stage 3: Production deps only ---
 FROM node:20-alpine AS prod-deps
