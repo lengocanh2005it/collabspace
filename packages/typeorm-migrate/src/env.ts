@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs';
-import { basename, join } from 'node:path';
+import { basename, join, resolve } from 'node:path';
 
 /** Load `.env` from cwd when keys are not already set. */
 export function loadEnvFile(cwd = process.cwd()): void {
@@ -54,11 +54,11 @@ export function toBoolean(
   return ['1', 'true', 'yes', 'on'].includes(value.toLowerCase());
 }
 
-/** Build glob for TypeORM migrations next to compiled migrate output. */
+/** Build absolute glob for TypeORM migrations next to migrate output. */
 export function migrationsGlobFromMigrateDir(migrateDirname: string): string {
-  const migrationsDir = join(migrateDirname, '..', 'migrations');
-  const parentDir = basename(join(migrateDirname, '..'));
+  const migrationsDir = resolve(migrateDirname, '..', 'migrations');
+  const parentName = basename(resolve(migrateDirname, '..'));
   const runningFromSource =
-    basename(migrateDirname) === 'src' && parentDir !== 'dist';
+    basename(migrateDirname) === 'src' && parentName !== 'dist';
   return join(migrationsDir, runningFromSource ? '*.{ts,js}' : '*.js');
 }

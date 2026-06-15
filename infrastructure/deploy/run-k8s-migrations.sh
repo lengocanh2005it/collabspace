@@ -90,7 +90,7 @@ ${pull_secret_block}
         - name: migrate
           image: ${image}
           imagePullPolicy: Always
-          command: ["/bin/sh", "-c", "${cmd}"]
+          command: ["/bin/sh", "-c", "rm -rf migrations && ${cmd}"]
           envFrom:
             - configMapRef:
                 name: ${deployment}-config

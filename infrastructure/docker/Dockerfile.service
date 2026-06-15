@@ -68,11 +68,7 @@ RUN if [ ! -f "./services/${SERVICE_NAME}/dist/main.js" ] && [ -f "./services/${
       ln -s src/main.js "./services/${SERVICE_NAME}/dist/main.js"; \
     fi
 RUN --mount=from=builder,source=/app/services/${SERVICE_NAME},target=/svc,ro \
-    if [ -d /svc/migrations ]; then \
-      mkdir -p "./services/${SERVICE_NAME}/migrations" && \
-      cp -a /svc/migrations/. "./services/${SERVICE_NAME}/migrations/"; \
-    fi \
-    && if [ -d /svc/proto ]; then \
+    if [ -d /svc/proto ]; then \
       mkdir -p "./services/${SERVICE_NAME}/proto" && \
       cp -a /svc/proto/. "./services/${SERVICE_NAME}/proto/"; \
     fi
