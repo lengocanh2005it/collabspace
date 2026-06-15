@@ -80,18 +80,18 @@ docker compose "${COMPOSE_FILES[@]}" up -d --no-build postgres mongo redis rabbi
 
 if [[ "${RUN_MIGRATIONS:-true}" == "true" ]]; then
   echo "Running database migrations..."
-  docker compose "${COMPOSE_FILES[@]}" run --rm auth-service pnpm run migrate
-  docker compose "${COMPOSE_FILES[@]}" run --rm user-service pnpm run migrate
-  docker compose "${COMPOSE_FILES[@]}" run --rm workspace-service pnpm run migrate
+  docker compose "${COMPOSE_FILES[@]}" run --rm auth-service pnpm run migrate:prod
+  docker compose "${COMPOSE_FILES[@]}" run --rm user-service pnpm run migrate:prod
+  docker compose "${COMPOSE_FILES[@]}" run --rm workspace-service pnpm run migrate:prod
 fi
 
 if [[ "${RUN_SEED:-false}" == "true" ]]; then
   echo "Running seed pipeline..."
-  docker compose "${COMPOSE_FILES[@]}" run --rm auth-service pnpm run seed
-  docker compose "${COMPOSE_FILES[@]}" run --rm user-service pnpm run seed
-  docker compose "${COMPOSE_FILES[@]}" run --rm workspace-service pnpm run seed
-  docker compose "${COMPOSE_FILES[@]}" run --rm task-service pnpm run seed
-  docker compose "${COMPOSE_FILES[@]}" run --rm notification-service pnpm run seed
+  docker compose "${COMPOSE_FILES[@]}" run --rm auth-service pnpm run seed:prod
+  docker compose "${COMPOSE_FILES[@]}" run --rm user-service pnpm run seed:prod
+  docker compose "${COMPOSE_FILES[@]}" run --rm workspace-service pnpm run seed:prod
+  docker compose "${COMPOSE_FILES[@]}" run --rm task-service pnpm run seed:prod
+  docker compose "${COMPOSE_FILES[@]}" run --rm notification-service pnpm run seed:prod
 fi
 
 docker compose "${COMPOSE_FILES[@]}" up -d --no-build

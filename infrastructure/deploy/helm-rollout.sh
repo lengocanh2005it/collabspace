@@ -195,6 +195,9 @@ restore_app_replicas() {
   done
 }
 
+# reconcile-rabbitmq may scale consumer deployments to 0 — always restore before rollouts.
+restore_app_replicas
+
 if [[ "${RUN_K8S_MIGRATIONS:-false}" == "true" ]]; then
   echo "==> Scaling down Postgres app deployments (migration window)..."
   trap restore_app_replicas EXIT

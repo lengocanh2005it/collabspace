@@ -115,7 +115,27 @@ EOF
   echo "OK  $deployment seed"
 }
 
+scale_seed_writers_to_zero() {
+  echo "==> Scaling app deployments to 0 (seed window — avoid RabbitMQ queue conflicts)..."
+  for dep in auth-service user-service workspace-service task-service notification-service; do
+    kubectl scale deployment "$dep" -n "$APP_NS" --replicas=0 2>/dev/null || true
+  done
+  sleep 8
+}
+
+restore_seed_replicas() {
+  echo "==> Restoring app replica counts after seed..."
+  for dep in auth-service user-service workspace-service task-service notification-service; do
+    local replicas
+    replicas="$(grep -A20 "^  ${dep}:" "$VALUES_PROD" | grep -m1 'replicas:' | awk '{print $2}' || echo 1)"
+    if kubectl get deployment "$dep" -n "$APP_NS" >/dev/null 2>&1; then
+      kubectl scale deployment "$dep" -n "$APP_NS" --replicas="${replicas:-1}"
+    fi
+  done
+}
+
 wait_datastores
+scale_seed_writers_to_zero
 
 for svc in auth-service user-service workspace-service task-service notification-service; do
   apply_seed_job "$svc"
@@ -127,6 +147,8 @@ for q in task-service notification-service; do
   kubectl exec -n "$APP_NS" rabbitmq-0 -- \
     rabbitmqctl delete_queue "$q" -p collabspace 2>/dev/null || true
 done
+
+restore_seed_replicas
 
 echo "All demo seeds completed."
 echo "Demo users: ngocanh@collabspace.dev / quangtien@collabspace.dev — password collabspace123"
