@@ -40,12 +40,13 @@ Phase 0 ──► Phase 1 ──► Phase 2 ──► Phase 3 ──► Phase 4 
 ```bash
 # 1. Copy biến môi trường Phase 0
 cp infrastructure/deploy/phase0.env.example infrastructure/deploy/phase0.env
-# Điền DROPLET_HOST, PROD_DOMAIN, GHCR_OWNER, IMAGE_TAG, secret mạnh
+# Điền DROPLET_HOST, PROD_DOMAIN, GHCR_OWNER, secret mạnh (IMAGE_TAG có thể để latest — script tự lấy origin/main)
 
 # 2. Sinh values-prod.yaml (gitignored)
 chmod +x infrastructure/deploy/prepare-prod-values.sh
 ./infrastructure/deploy/prepare-prod-values.sh
 # Windows: ./infrastructure/deploy/prepare-prod-values.ps1
+# prepare-prod-values / helm-rollout tự refresh IMAGE_TAG từ git origin/main (hoặc HEAD) và sync vào phase0.env
 ```
 
 ### Artifact trong repo

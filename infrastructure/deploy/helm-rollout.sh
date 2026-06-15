@@ -27,7 +27,12 @@ fi
 
 if [[ -f "$PHASE0_ENV" ]]; then
   echo "==> Refreshing values-prod.yaml from phase0.env..."
-  bash "$SCRIPT_DIR/prepare-prod-values.sh"
+  ci_image_tag="${IMAGE_TAG:-}"
+  if [[ -n "$ci_image_tag" ]]; then
+    IMAGE_TAG="$ci_image_tag" bash "$SCRIPT_DIR/prepare-prod-values.sh"
+  else
+    bash "$SCRIPT_DIR/prepare-prod-values.sh"
+  fi
 fi
 
 cd "$APP_DIR"

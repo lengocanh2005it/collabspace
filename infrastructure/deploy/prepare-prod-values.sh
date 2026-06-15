@@ -8,6 +8,7 @@ HELM_DIR="$ROOT_DIR/infrastructure/helm/collabspace"
 ENV_FILE="$SCRIPT_DIR/phase0.env"
 EXAMPLE="$HELM_DIR/values-prod.example.yaml"
 OUTPUT="$HELM_DIR/values-prod.yaml"
+RESOLVE_TAG_SCRIPT="$SCRIPT_DIR/resolve-image-tag.sh"
 
 if [[ ! -f "$EXAMPLE" ]]; then
   echo "Missing $EXAMPLE"
@@ -20,10 +21,30 @@ if [[ ! -f "$ENV_FILE" ]]; then
   exit 1
 fi
 
+caller_image_tag="${IMAGE_TAG:-}"
+
 set -a
 # shellcheck disable=SC1090
 source "$ENV_FILE"
 set +a
+
+phase0_image_tag="${IMAGE_TAG:-}"
+PHASE0_IMAGE_TAG="$phase0_image_tag"
+if [[ -n "$caller_image_tag" ]]; then
+  IMAGE_TAG="$caller_image_tag"
+fi
+
+# shellcheck disable=SC1090
+source "$RESOLVE_TAG_SCRIPT"
+IMAGE_TAG="$RESOLVED_IMAGE_TAG"
+
+if [[ "$IMAGE_TAG" != "$phase0_image_tag" ]]; then
+  echo "IMAGE_TAG: ${phase0_image_tag:-<empty>} -> ${IMAGE_TAG} (${RESOLVED_IMAGE_TAG_SOURCE})"
+  if [[ "${SKIP_PHASE0_IMAGE_TAG_SYNC:-}" != "1" ]] && grep -q '^IMAGE_TAG=' "$ENV_FILE"; then
+    sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=${IMAGE_TAG}/" "$ENV_FILE"
+    echo "Synced IMAGE_TAG into $ENV_FILE"
+  fi
+fi
 
 required=(
   GHCR_OWNER

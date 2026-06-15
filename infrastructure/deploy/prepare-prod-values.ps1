@@ -8,11 +8,48 @@ $EnvFile = Join-Path $ScriptDir "phase0.env"
 $Example = Join-Path $HelmDir "values-prod.example.yaml"
 $Output = Join-Path $HelmDir "values-prod.yaml"
 
+function Resolve-ImageTag {
+  param(
+    [string]$CallerImageTag,
+    [string]$Phase0ImageTag
+  )
+
+  if (-not [string]::IsNullOrWhiteSpace($CallerImageTag)) {
+    return @{ Tag = $CallerImageTag; Source = "explicit IMAGE_TAG" }
+  }
+
+  if ($env:REFRESH_IMAGE_TAG_FROM_GIT -ne "false") {
+    Push-Location $RootDir
+    try {
+      $null = git rev-parse --verify origin/main 2>$null
+      if ($LASTEXITCODE -eq 0) {
+        $gitTag = (git rev-parse origin/main).Trim()
+        return @{ Tag = $gitTag; Source = "git (origin/main)" }
+      }
+      $null = git rev-parse HEAD 2>$null
+      if ($LASTEXITCODE -eq 0) {
+        $gitTag = (git rev-parse HEAD).Trim()
+        return @{ Tag = $gitTag; Source = "git (HEAD)" }
+      }
+    } finally {
+      Pop-Location
+    }
+  }
+
+  if (-not [string]::IsNullOrWhiteSpace($Phase0ImageTag)) {
+    return @{ Tag = $Phase0ImageTag; Source = "phase0.env" }
+  }
+
+  throw "Could not resolve IMAGE_TAG (set IMAGE_TAG, phase0.env, or run from a git checkout)."
+}
+
 if (-not (Test-Path $Example)) { throw "Missing $Example" }
 if (-not (Test-Path $EnvFile)) {
   Write-Host "Create $EnvFile from phase0.env.example first."
   exit 1
 }
+
+$callerImageTag = $env:IMAGE_TAG
 
 $vars = @{}
 Get-Content $EnvFile | ForEach-Object {
@@ -26,6 +63,20 @@ Get-Content $EnvFile | ForEach-Object {
     $value = $value.Substring(1, $value.Length - 2)
   }
   $vars[$key] = $value
+}
+
+$phase0ImageTag = $vars["IMAGE_TAG"]
+$resolved = Resolve-ImageTag -CallerImageTag $callerImageTag -Phase0ImageTag $phase0ImageTag
+$vars["IMAGE_TAG"] = $resolved.Tag
+
+if ($resolved.Tag -ne $phase0ImageTag) {
+  Write-Host "IMAGE_TAG: $phase0ImageTag -> $($resolved.Tag) ($($resolved.Source))"
+  if ($env:SKIP_PHASE0_IMAGE_TAG_SYNC -ne "1") {
+    $envContent = Get-Content $EnvFile -Raw
+    $updated = [regex]::Replace($envContent, '(?m)^IMAGE_TAG=.*$', "IMAGE_TAG=$($resolved.Tag)")
+    Set-Content -Path $EnvFile -Value $updated -NoNewline
+    Write-Host "Synced IMAGE_TAG into $EnvFile"
+  }
 }
 
 $required = @(
