@@ -65,7 +65,7 @@ bootstrap_auth_schema_sql() {
     k8s_job_log "WARN: auth SQL baseline missing — expect CreateAuthFoundation migration in image"
     return 0
   fi
-  k8s_job_log "Bootstrap auth schema from SQL (fallback for images without foundation migration)..."
+  k8s_job_log "Bootstrap auth schema from SQL (fallback until foundation migration is in deployed image)..."
   cat "$sql_file" | psql_exec -d collabspace_auth
   k8s_job_log "OK  auth SQL baseline applied"
 }

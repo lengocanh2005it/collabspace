@@ -88,6 +88,10 @@ spec:
 ${pull_secret_block}
       containers:
         - name: migrate
+          securityContext:
+            runAsUser: 0
+            runAsGroup: 0
+            runAsNonRoot: false
           image: ${image}
           imagePullPolicy: Always
           command: ["/bin/sh", "-c", "rm -rf migrations && ${cmd}"]
