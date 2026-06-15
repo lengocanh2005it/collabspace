@@ -25,6 +25,7 @@ import { UserId } from './decorators/user-id.decorator';
 import { CreateProjectDto } from '../../application/dto/create-project.dto';
 import { UpdateProjectDto } from '../../application/dto/update-project.dto';
 import { CreateProjectUseCase } from '../../application/use-cases/project/create-project.use-case';
+import { GetProjectUseCase } from '../../application/use-cases/project/get-project.use-case';
 import { ListProjectsUseCase } from '../../application/use-cases/project/list-projects.use-case';
 import { UpdateProjectUseCase } from '../../application/use-cases/project/update-project.use-case';
 import { DeleteProjectUseCase } from '../../application/use-cases/project/delete-project.use-case';
@@ -37,6 +38,7 @@ import { AuthGuard } from './guards/auth.guard';
 export class ProjectController {
   constructor(
     private readonly createProjectUseCase: CreateProjectUseCase,
+    private readonly getProjectUseCase: GetProjectUseCase,
     private readonly listProjectsUseCase: ListProjectsUseCase,
     private readonly updateProjectUseCase: UpdateProjectUseCase,
     private readonly deleteProjectUseCase: DeleteProjectUseCase,
@@ -63,6 +65,19 @@ export class ProjectController {
     @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
   ) {
     return this.listProjectsUseCase.execute(userId, workspaceId);
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Get project by id' })
+  @ApiParam({ name: 'workspaceId', format: 'uuid' })
+  @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiOkResponse({ type: ProjectResponseSchemaDto })
+  async getProject(
+    @UserId() userId: string,
+    @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
+    @Param('id', ParseUUIDPipe) projectId: string,
+  ) {
+    return this.getProjectUseCase.execute(userId, workspaceId, projectId);
   }
 
   @Patch(':id')

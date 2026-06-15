@@ -76,6 +76,7 @@ export type OutboxConfig = {
   enabled: boolean;
   maxAttempts: number;
   pollIntervalMs: number;
+  publishTimeoutMs: number;
   staleClaimThresholdMs: number;
 };
 
@@ -274,8 +275,12 @@ export class ConfigurationService {
       maxAttempts: this.configService.get<number>('outbox.maxAttempts') ?? 10,
       pollIntervalMs:
         this.configService.get<number>('outbox.pollIntervalMs') ?? 5000,
-      staleClaimThresholdMs:
+      publishTimeoutMs:
+        this.configService.get<number>('outbox.publishTimeoutMs') ?? 30000,
+      staleClaimThresholdMs: Math.max(
         this.configService.get<number>('outbox.staleClaimThresholdMs') ?? 60000,
+        5000,
+      ),
     };
   }
 

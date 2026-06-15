@@ -63,7 +63,9 @@ export class TypeOrmUserProfileRepository implements UserProfileRepository {
 
     let dbProfiles: UserProfile[] = [];
     if (missing.length > 0) {
-      const orms = await this.repository.find({ where: { userId: In(missing) } });
+      const orms = await this.repository.find({
+        where: { userId: In(missing) },
+      });
       dbProfiles = orms.map((p) => this.toDomainProfile(p));
       await this.cache.setManyProfiles(dbProfiles);
     }
@@ -77,7 +79,9 @@ export class TypeOrmUserProfileRepository implements UserProfileRepository {
     const cached = await this.cache.getPreferences(userId);
     if (cached !== undefined && cached !== null) return cached;
 
-    const existingPreferences = await this.preferencesRepository.findOne({ where: { userId } });
+    const existingPreferences = await this.preferencesRepository.findOne({
+      where: { userId },
+    });
 
     if (existingPreferences) {
       const result = this.toDomainPreferences(existingPreferences);
@@ -100,7 +104,9 @@ export class TypeOrmUserProfileRepository implements UserProfileRepository {
       weekStartsOn: 'monday',
     });
 
-    const result = this.toDomainPreferences(await this.preferencesRepository.save(defaults));
+    const result = this.toDomainPreferences(
+      await this.preferencesRepository.save(defaults),
+    );
     await this.cache.setPreferences(userId, result);
     return result;
   }
@@ -109,7 +115,9 @@ export class TypeOrmUserProfileRepository implements UserProfileRepository {
     const cached = await this.cache.getStatus(userId);
     if (cached !== undefined && cached !== null) return cached;
 
-    const existingStatus = await this.statusRepository.findOne({ where: { userId } });
+    const existingStatus = await this.statusRepository.findOne({
+      where: { userId },
+    });
 
     if (existingStatus) {
       const result = this.toDomainStatus(existingStatus);
@@ -127,7 +135,9 @@ export class TypeOrmUserProfileRepository implements UserProfileRepository {
       userId,
     });
 
-    const result = this.toDomainStatus(await this.statusRepository.save(defaults));
+    const result = this.toDomainStatus(
+      await this.statusRepository.save(defaults),
+    );
     await this.cache.setStatus(userId, result);
     return result;
   }
@@ -219,7 +229,8 @@ export class TypeOrmUserProfileRepository implements UserProfileRepository {
         id: existingProfile?.id ?? randomUUID(),
         userId: input.userId,
         username:
-          existingProfile?.username ?? this.createUsername(input.fullName),
+          existingProfile?.username ??
+          (await this.resolveAvailableUsername(input.fullName, input.userId)),
       }),
     );
 
@@ -287,7 +298,9 @@ export class TypeOrmUserProfileRepository implements UserProfileRepository {
     existingPreferences.weekStartsOn =
       input.weekStartsOn ?? existingPreferences.weekStartsOn;
 
-    const result = this.toDomainPreferences(await this.preferencesRepository.save(existingPreferences));
+    const result = this.toDomainPreferences(
+      await this.preferencesRepository.save(existingPreferences),
+    );
     await this.cache.deletePreferences(userId);
     return result;
   }
@@ -311,7 +324,9 @@ export class TypeOrmUserProfileRepository implements UserProfileRepository {
         ? existingStatus.statusText
         : input.statusText;
 
-    const result = this.toDomainStatus(await this.statusRepository.save(existingStatus));
+    const result = this.toDomainStatus(
+      await this.statusRepository.save(existingStatus),
+    );
     await this.cache.deleteStatus(userId);
     return result;
   }
@@ -415,7 +430,25 @@ export class TypeOrmUserProfileRepository implements UserProfileRepository {
   }
 
   private createUsername(fullName: string): string {
-    return fullName.trim().toLowerCase().replace(/\s+/g, '.');
+    const username = fullName.trim().toLowerCase().replace(/\s+/g, '.');
+    return username.length > 0 ? username : 'user';
+  }
+
+  private async resolveAvailableUsername(
+    fullName: string,
+    userId: string,
+  ): Promise<string> {
+    const base = this.createUsername(fullName);
+
+    for (let suffix = 0; suffix < 100; suffix += 1) {
+      const candidate = suffix === 0 ? base : `${base}-${suffix + 1}`;
+      const taken = await this.findByUsername(candidate);
+      if (!taken || taken.userId === userId) {
+        return candidate;
+      }
+    }
+
+    return `${base}-${userId.slice(0, 8)}`;
   }
 
   async anonymize(userId: string): Promise<void> {

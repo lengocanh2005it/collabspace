@@ -62,8 +62,7 @@ export class UserHealthService {
             detail:
               'DATABASE_URL not configured; using in-memory repository mode',
             required: process.env.NODE_ENV === 'production',
-            status:
-              process.env.NODE_ENV === 'production' ? 'down' : 'disabled',
+            status: process.env.NODE_ENV === 'production' ? 'down' : 'disabled',
           },
     };
 

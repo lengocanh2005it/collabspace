@@ -116,7 +116,19 @@ export class UsersController {
     @Body() body: UpdateCurrentUserProfileDto,
     @Req() request: AuthenticatedRequest,
   ) {
-    return this.updateUserProfileUseCase.execute(request.user.id, body);
+    const { preferredLanguage, ...profileInput } = body;
+    const profile = await this.updateUserProfileUseCase.execute(
+      request.user.id,
+      profileInput,
+    );
+
+    if (preferredLanguage) {
+      await this.updateUserPreferencesUseCase.execute(request.user.id, {
+        language: preferredLanguage,
+      });
+    }
+
+    return profile;
   }
 
   @Post('me/avatar')

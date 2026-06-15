@@ -6,12 +6,14 @@ import {
   UserProfileSnapshot,
 } from '@/domain/ports/user-profile-client.port';
 import {
+  ConflictException,
   Inject,
   Injectable,
   Logger,
   OnModuleInit,
   ServiceUnavailableException,
 } from '@nestjs/common';
+import { status } from '@grpc/grpc-js';
 import type { ClientGrpc } from '@nestjs/microservices';
 import { TimeoutError, firstValueFrom, Observable, timeout } from 'rxjs';
 
@@ -149,6 +151,11 @@ export class UserProfilesGrpcService implements OnModuleInit, UserProfileClient 
         });
       }
 
+      const conflict = this.asGrpcConflictException(error);
+      if (conflict) {
+        throw conflict;
+      }
+
       const message =
         error instanceof Error
           ? error.message
@@ -198,6 +205,82 @@ export class UserProfilesGrpcService implements OnModuleInit, UserProfileClient 
         code: 'USER_SERVICE_GRPC_REQUEST_FAILED',
         message,
       });
+    }
+  }
+
+  private asGrpcConflictException(error: unknown): ConflictException | null {
+    const grpcCode = this.getGrpcStatusCode(error);
+    const message = this.getGrpcErrorMessage(error);
+    const payload = this.parseGrpcConflictPayload(message);
+
+    if (grpcCode === status.ALREADY_EXISTS || payload !== null) {
+      return new ConflictException({
+        code: payload?.code ?? 'USER_ALREADY_EXISTS',
+        message: payload?.message ?? 'User already exists',
+      });
+    }
+
+    if (
+      message.includes('duplicate key') &&
+      (message.includes('UQ_users_email') || message.includes('users_email'))
+    ) {
+      return new ConflictException({
+        code: 'USER_ALREADY_EXISTS',
+        message: 'User already exists',
+      });
+    }
+
+    return null;
+  }
+
+  private getGrpcStatusCode(error: unknown): number | undefined {
+    if (typeof error !== 'object' || error === null || !('code' in error)) {
+      return undefined;
+    }
+
+    const code = (error as { code?: unknown }).code;
+    return typeof code === 'number' ? code : undefined;
+  }
+
+  private getGrpcErrorMessage(error: unknown): string {
+    if (error instanceof Error) {
+      return error.message;
+    }
+
+    if (typeof error === 'object' && error !== null && 'message' in error) {
+      const message = (error as { message?: unknown }).message;
+      if (typeof message === 'string') {
+        return message;
+      }
+    }
+
+    return String(error);
+  }
+
+  private parseGrpcConflictPayload(
+    message: string,
+  ): { code?: string; message?: string } | null {
+    const jsonStart = message.indexOf('{');
+    if (jsonStart === -1) {
+      return null;
+    }
+
+    try {
+      const parsed = JSON.parse(message.slice(jsonStart)) as {
+        code?: unknown;
+        message?: unknown;
+      };
+
+      if (typeof parsed.code !== 'string' && typeof parsed.message !== 'string') {
+        return null;
+      }
+
+      return {
+        code: typeof parsed.code === 'string' ? parsed.code : undefined,
+        message: typeof parsed.message === 'string' ? parsed.message : undefined,
+      };
+    } catch {
+      return null;
     }
   }
 }

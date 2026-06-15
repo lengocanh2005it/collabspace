@@ -3,6 +3,7 @@ import { Workspace } from '../entities/workspace.entity';
 export const WORKSPACE_REPOSITORY = Symbol('WORKSPACE_REPOSITORY');
 
 export interface IWorkspaceRepository {
+  deleteByOwner(id: string, actorId: string): Promise<void>;
   adminForceDelete(id: string, actorId: string): Promise<void>;
   adminForceJoin(
     id: string,

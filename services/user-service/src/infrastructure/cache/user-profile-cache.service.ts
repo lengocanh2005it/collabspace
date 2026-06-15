@@ -12,7 +12,9 @@ export class UserProfileCacheService {
 
   constructor(
     private readonly configService: ConfigService,
-    @Optional() @Inject(REDIS_CLIENT) private readonly redis: Redis | null = null,
+    @Optional()
+    @Inject(REDIS_CLIENT)
+    private readonly redis: Redis | null = null,
   ) {}
 
   // ── profile ──────────────────────────────────────────────────────────────
@@ -43,7 +45,10 @@ export class UserProfileCacheService {
         }
       }
     } catch (err) {
-      this.logger.warn('Cache mget error (profiles)', err instanceof Error ? err.message : String(err));
+      this.logger.warn(
+        'Cache mget error (profiles)',
+        err instanceof Error ? err.message : String(err),
+      );
     }
     return result;
   }
@@ -53,16 +58,23 @@ export class UserProfileCacheService {
     try {
       const ttl = this.profileTtl();
       await Promise.all(
-        profiles.map((p) => this.redis!.setex(this.profileKey(p.userId), ttl, JSON.stringify(p))),
+        profiles.map((p) =>
+          this.redis!.setex(this.profileKey(p.userId), ttl, JSON.stringify(p)),
+        ),
       );
     } catch (err) {
-      this.logger.warn('Cache set error (profiles)', err instanceof Error ? err.message : String(err));
+      this.logger.warn(
+        'Cache set error (profiles)',
+        err instanceof Error ? err.message : String(err),
+      );
     }
   }
 
   // ── preferences ──────────────────────────────────────────────────────────
 
-  async getPreferences(userId: string): Promise<UserPreferences | null | undefined> {
+  async getPreferences(
+    userId: string,
+  ): Promise<UserPreferences | null | undefined> {
     return this.get<UserPreferences>(this.prefsKey(userId));
   }
 
@@ -97,7 +109,10 @@ export class UserProfileCacheService {
       if (raw === null) return undefined;
       return JSON.parse(raw) as T;
     } catch (err) {
-      this.logger.warn(`Cache read error (${key})`, err instanceof Error ? err.message : String(err));
+      this.logger.warn(
+        `Cache read error (${key})`,
+        err instanceof Error ? err.message : String(err),
+      );
       return undefined;
     }
   }
@@ -107,7 +122,10 @@ export class UserProfileCacheService {
     try {
       await this.redis.setex(key, ttl, JSON.stringify(value));
     } catch (err) {
-      this.logger.warn(`Cache write error (${key})`, err instanceof Error ? err.message : String(err));
+      this.logger.warn(
+        `Cache write error (${key})`,
+        err instanceof Error ? err.message : String(err),
+      );
     }
   }
 
@@ -116,7 +134,10 @@ export class UserProfileCacheService {
     try {
       await this.redis.del(key);
     } catch (err) {
-      this.logger.warn(`Cache delete error (${key})`, err instanceof Error ? err.message : String(err));
+      this.logger.warn(
+        `Cache delete error (${key})`,
+        err instanceof Error ? err.message : String(err),
+      );
     }
   }
 
@@ -133,14 +154,29 @@ export class UserProfileCacheService {
   }
 
   private profileTtl(): number {
-    return Math.max(1, Number(this.configService.get<string>('USER_PROFILE_CACHE_TTL_SECONDS') ?? 300));
+    return Math.max(
+      1,
+      Number(
+        this.configService.get<string>('USER_PROFILE_CACHE_TTL_SECONDS') ?? 300,
+      ),
+    );
   }
 
   private prefsTtl(): number {
-    return Math.max(1, Number(this.configService.get<string>('USER_PREFS_CACHE_TTL_SECONDS') ?? 600));
+    return Math.max(
+      1,
+      Number(
+        this.configService.get<string>('USER_PREFS_CACHE_TTL_SECONDS') ?? 600,
+      ),
+    );
   }
 
   private statusTtl(): number {
-    return Math.max(1, Number(this.configService.get<string>('USER_STATUS_CACHE_TTL_SECONDS') ?? 60));
+    return Math.max(
+      1,
+      Number(
+        this.configService.get<string>('USER_STATUS_CACHE_TTL_SECONDS') ?? 60,
+      ),
+    );
   }
 }

@@ -103,9 +103,10 @@ export default () => ({
     enabled: toBoolean(process.env.OUTBOX_ENABLED, true),
     maxAttempts: toNumber(process.env.OUTBOX_MAX_ATTEMPTS, 10),
     pollIntervalMs: toNumber(process.env.OUTBOX_POLL_INTERVAL_MS, 5000),
-    staleClaimThresholdMs: toNumber(
-      process.env.OUTBOX_STALE_CLAIM_THRESHOLD_MS,
-      60000,
+    publishTimeoutMs: toNumber(process.env.OUTBOX_PUBLISH_TIMEOUT_MS, 30000),
+    staleClaimThresholdMs: Math.max(
+      toNumber(process.env.OUTBOX_STALE_CLAIM_THRESHOLD_MS, 60000),
+      5000,
     ),
   },
   dev: {

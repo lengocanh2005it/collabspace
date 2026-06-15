@@ -2,6 +2,10 @@ import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/commo
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import { runOutboxPollCycle } from '@collabspace/shared';
+import {
+  isOperationTimeoutError,
+  withTimeout,
+} from '@/common/utils/timeout.util';
 import { ConfigurationService } from '@/configuration/configuration.service';
 import { EmailsService } from '@/infrastructure/emails/emails.service';
 import { AuthOutboxService } from './auth-outbox.service';
@@ -57,8 +61,36 @@ export class AuthOutboxProcessor implements OnModuleInit, OnModuleDestroy {
         {
           reclaimStaleClaims: () => this.authOutboxService.reclaimStaleClaims(),
           claimPendingBatch: () => this.authOutboxService.claimPendingBatch(),
-          publish: (event) =>
-            this.publishRegistry.publish(event.eventType, event.payload),
+          publish: async (event) => {
+            const { publishTimeoutMs } =
+              this.configurationService.getOutboxConfig();
+            const recipient =
+              typeof event.payload.email === 'string'
+                ? event.payload.email
+                : 'unknown';
+
+            this.logger.log(
+              `Publishing auth outbox event ${event.id} (${event.eventType}) attempt=${event.attemptCount} to=${recipient}`,
+            );
+
+            try {
+              await withTimeout(
+                this.publishRegistry.publish(event.eventType, event.payload),
+                publishTimeoutMs,
+                `Auth outbox publish ${event.id}`,
+              );
+              this.logger.log(
+                `Auth outbox event ${event.id} (${event.eventType}) queued for delivery`,
+              );
+            } catch (error) {
+              if (isOperationTimeoutError(error)) {
+                this.logger.warn(
+                  `Auth outbox publish timed out for ${event.id} (${event.eventType}) after ${publishTimeoutMs}ms`,
+                );
+              }
+              throw error;
+            }
+          },
           markProcessed: (id) => this.authOutboxService.markProcessed(id),
           markFailed: (id, attemptCount, message) =>
             this.authOutboxService.markFailed(id, attemptCount, message),

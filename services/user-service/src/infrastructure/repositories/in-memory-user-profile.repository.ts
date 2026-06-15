@@ -183,7 +183,8 @@ export class InMemoryUserProfileRepository implements UserProfileRepository {
     const profile = new UserProfile(
       existingProfile?.id ?? randomUUID(),
       input.userId,
-      existingProfile?.username ?? this.createUsername(input.fullName),
+      existingProfile?.username ??
+        (await this.resolveAvailableUsername(input.fullName, input.userId)),
       input.fullName,
       existingProfile?.displayName ?? null,
       existingProfile?.avatarUrl ?? null,
@@ -329,7 +330,25 @@ export class InMemoryUserProfileRepository implements UserProfileRepository {
   }
 
   private createUsername(fullName: string): string {
-    return fullName.trim().toLowerCase().replace(/\s+/g, '.');
+    const username = fullName.trim().toLowerCase().replace(/\s+/g, '.');
+    return username.length > 0 ? username : 'user';
+  }
+
+  private async resolveAvailableUsername(
+    fullName: string,
+    userId: string,
+  ): Promise<string> {
+    const base = this.createUsername(fullName);
+
+    for (let suffix = 0; suffix < 100; suffix += 1) {
+      const candidate = suffix === 0 ? base : `${base}-${suffix + 1}`;
+      const taken = await this.findByUsername(candidate);
+      if (!taken || taken.userId === userId) {
+        return candidate;
+      }
+    }
+
+    return `${base}-${userId.slice(0, 8)}`;
   }
 
   async anonymize(userId: string): Promise<void> {

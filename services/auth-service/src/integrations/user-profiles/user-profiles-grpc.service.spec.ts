@@ -87,4 +87,26 @@ describe('UserProfilesGrpcService', () => {
       }),
     });
   });
+
+  it('maps gRPC ALREADY_EXISTS to USER_ALREADY_EXISTS conflict', async () => {
+    createPendingProfileMock.mockReturnValue(
+      throwError(() =>
+        Object.assign(new Error('6 ALREADY_EXISTS: User already exists'), {
+          code: 6,
+        }),
+      ),
+    );
+
+    await expect(
+      service.createPendingProfile({
+        fullName: 'Member Example',
+        userId: 'user-1',
+      }),
+    ).rejects.toMatchObject({
+      response: expect.objectContaining({
+        code: 'USER_ALREADY_EXISTS',
+        message: 'User already exists',
+      }),
+    });
+  });
 });

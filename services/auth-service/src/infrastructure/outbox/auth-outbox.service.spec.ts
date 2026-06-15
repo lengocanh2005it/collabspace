@@ -65,10 +65,10 @@ describe('AuthOutboxService', () => {
   });
 
   it('reclaims stale claims and returns the reclaimed count', async () => {
-    jest.spyOn(dataSourceMock, 'query').mockResolvedValue([
-      { id: 'event-1' },
-      { id: 'event-2' },
-    ]);
+    jest
+      .spyOn(dataSourceMock, 'query')
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([{ id: 'event-1' }, { id: 'event-2' }]);
 
     await expect(service.reclaimStaleClaims()).resolves.toBe(2);
   });

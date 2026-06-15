@@ -117,6 +117,14 @@ export class EmailsService {
         'Enqueue email job',
       );
     } catch (error) {
+      const recipient = Array.isArray(options.to)
+        ? options.to.join(',')
+        : (options.to ?? 'unknown');
+      this.logger.warn(
+        `Failed to enqueue emails.send for ${recipient}: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
       this.rethrowDeliveryError(error);
     }
   }

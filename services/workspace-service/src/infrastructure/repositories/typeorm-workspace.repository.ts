@@ -47,7 +47,15 @@ export class TypeOrmWorkspaceRepository implements IWorkspaceRepository {
     );
   }
 
+  async deleteByOwner(id: string, actorId: string): Promise<void> {
+    await this.softDeleteWorkspace(id, actorId);
+  }
+
   async adminForceDelete(id: string, actorId: string): Promise<void> {
+    await this.softDeleteWorkspace(id, actorId);
+  }
+
+  private async softDeleteWorkspace(id: string, actorId: string): Promise<void> {
     await this.dataSource.transaction(async (manager) => {
       const workspace = await manager.findOne(WorkspaceOrmEntity, {
         where: { id },
@@ -68,6 +76,7 @@ export class TypeOrmWorkspaceRepository implements IWorkspaceRepository {
         manager,
       );
     });
+    await this.cache.deleteWorkspace(id);
   }
 
   async adminForceJoin(

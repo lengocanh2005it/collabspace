@@ -3,6 +3,7 @@ import {
   Post,
   Get,
   Patch,
+  Delete,
   Param,
   Query,
   Body,
@@ -10,6 +11,7 @@ import {
   UseGuards,
   Headers,
   Res,
+  HttpCode,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -33,6 +35,7 @@ import { CreateWorkspaceUseCase } from '../../application/use-cases/workspace/cr
 import { GetWorkspaceUseCase } from '../../application/use-cases/workspace/get-workspace.use-case';
 import { ListWorkspacesUseCase } from '../../application/use-cases/workspace/list-workspaces.use-case';
 import { UpdateWorkspaceUseCase } from '../../application/use-cases/workspace/update-workspace.use-case';
+import { DeleteWorkspaceUseCase } from '../../application/use-cases/workspace/delete-workspace.use-case';
 import { ListMembersUseCase } from '../../application/use-cases/workspace/list-members.use-case';
 import { GetWorkspaceActivityUseCase } from '../../application/use-cases/workspace/get-workspace-activity.use-case';
 import { IdempotencyService } from '../../infrastructure/idempotency/idempotency.service';
@@ -48,6 +51,7 @@ export class WorkspaceController {
     private readonly getWorkspaceUseCase: GetWorkspaceUseCase,
     private readonly listWorkspacesUseCase: ListWorkspacesUseCase,
     private readonly updateWorkspaceUseCase: UpdateWorkspaceUseCase,
+    private readonly deleteWorkspaceUseCase: DeleteWorkspaceUseCase,
     private readonly listMembersUseCase: ListMembersUseCase,
     private readonly getWorkspaceActivityUseCase: GetWorkspaceActivityUseCase,
     private readonly idempotencyService: IdempotencyService,
@@ -125,6 +129,17 @@ export class WorkspaceController {
     @Body() dto: UpdateWorkspaceDto,
   ) {
     return this.updateWorkspaceUseCase.execute(userId, workspaceId, dto);
+  }
+
+  @Delete(':id')
+  @HttpCode(204)
+  @ApiOperation({ summary: 'Delete workspace (owner only)' })
+  @ApiParam({ name: 'id', format: 'uuid' })
+  async deleteWorkspace(
+    @UserId() userId: string,
+    @Param('id', ParseUUIDPipe) workspaceId: string,
+  ): Promise<void> {
+    await this.deleteWorkspaceUseCase.execute(userId, workspaceId);
   }
 
   @Get(':id/members')

@@ -39,4 +39,14 @@ export class UpdateCurrentUserProfileDto {
   @Matches(/^[a-z0-9._-]+$/)
   @IsOptional()
   username?: string | null;
+
+  @ApiPropertyOptional({
+    maxLength: 20,
+    description: 'Alias for language preference; updates preferences when set',
+  })
+  @Transform(toOptionalTrimmedString)
+  @IsString()
+  @MaxLength(20)
+  @IsOptional()
+  preferredLanguage?: string;
 }

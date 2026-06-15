@@ -14,8 +14,10 @@ import { CreateWorkspaceUseCase } from './application/use-cases/workspace/create
 import { GetWorkspaceUseCase } from './application/use-cases/workspace/get-workspace.use-case';
 import { ListWorkspacesUseCase } from './application/use-cases/workspace/list-workspaces.use-case';
 import { UpdateWorkspaceUseCase } from './application/use-cases/workspace/update-workspace.use-case';
+import { DeleteWorkspaceUseCase } from './application/use-cases/workspace/delete-workspace.use-case';
 import { ListMembersUseCase } from './application/use-cases/workspace/list-members.use-case';
 import { CreateProjectUseCase } from './application/use-cases/project/create-project.use-case';
+import { GetProjectUseCase } from './application/use-cases/project/get-project.use-case';
 import { ListProjectsUseCase } from './application/use-cases/project/list-projects.use-case';
 import { UpdateProjectUseCase } from './application/use-cases/project/update-project.use-case';
 import { DeleteProjectUseCase } from './application/use-cases/project/delete-project.use-case';
@@ -68,12 +70,14 @@ import { platformAdminAuthProviders } from './presentation/http/platform-admin-a
     GetWorkspaceUseCase,
     ListWorkspacesUseCase,
     UpdateWorkspaceUseCase,
+    DeleteWorkspaceUseCase,
     ListMembersUseCase,
     CheckWorkspaceMembershipUseCase,
     GetWorkspaceActivityUseCase,
     ManageWorkspacesAdminUseCase,
     ...platformAdminAuthProviders,
     CreateProjectUseCase,
+    GetProjectUseCase,
     ListProjectsUseCase,
     UpdateProjectUseCase,
     DeleteProjectUseCase,

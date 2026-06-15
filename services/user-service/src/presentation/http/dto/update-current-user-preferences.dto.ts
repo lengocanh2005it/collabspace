@@ -30,11 +30,27 @@ export class UpdateCurrentUserPreferencesDto {
   @IsOptional()
   emailNotificationsEnabled?: boolean;
 
-  @Transform(toOptionalTrimmedString)
+  @Transform(({ obj, value }) => {
+    const raw = value ?? obj?.preferredLanguage;
+    if (raw === undefined || raw === null) {
+      return undefined;
+    }
+    if (typeof raw !== 'string') {
+      return raw;
+    }
+    const trimmed = raw.trim();
+    return trimmed.length > 0 ? trimmed : undefined;
+  })
   @IsString()
   @MaxLength(20)
   @IsOptional()
   language?: string;
+
+  @Transform(toOptionalTrimmedString)
+  @IsString()
+  @MaxLength(20)
+  @IsOptional()
+  preferredLanguage?: string;
 
   @IsBoolean()
   @IsOptional()

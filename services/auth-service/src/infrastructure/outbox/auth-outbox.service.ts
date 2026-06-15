@@ -208,16 +208,24 @@ export class AuthOutboxService {
   }
 
   async markProcessed(id: string): Promise<void> {
-    await this.getRepository().update(
-      { id },
-      {
-        claimedAt: null,
-        failedAt: null,
-        lastError: null,
-        processedAt: new Date(),
-        updatedAt: new Date(),
-      },
-    );
+    const tablePath = this.dataSource.getMetadata(AuthOutboxEventOrmEntity).tablePath;
+    const rows = (await this.dataSource.query(
+      `
+        UPDATE ${tablePath}
+        SET claimed_at = NULL,
+            failed_at = NULL,
+            last_error = NULL,
+            processed_at = NOW(),
+            updated_at = NOW()
+        WHERE id = $1
+        RETURNING id
+      `,
+      [id],
+    )) as Array<{ id: string }>;
+
+    if (rows.length === 0) {
+      throw new Error(`Outbox event ${id} was not found when marking processed`);
+    }
   }
 
   async markFailed(
@@ -249,7 +257,27 @@ export class AuthOutboxService {
 
   async reclaimStaleClaims(): Promise<number> {
     const tablePath = this.dataSource.getMetadata(AuthOutboxEventOrmEntity).tablePath;
-    const { staleClaimThresholdMs } = this.configurationService.getOutboxConfig();
+    const { maxAttempts, staleClaimThresholdMs } =
+      this.configurationService.getOutboxConfig();
+
+    const exhaustedRows = (await this.dataSource.query(
+      `
+        UPDATE ${tablePath}
+        SET claimed_at = NULL,
+            failed_at = NOW(),
+            last_error = $1,
+            updated_at = NOW()
+        WHERE processed_at IS NULL
+          AND failed_at IS NULL
+          AND attempt_count >= $2
+        RETURNING id
+      `,
+      [
+        `outbox publish exceeded max attempts (${maxAttempts})`,
+        maxAttempts,
+      ],
+    )) as Array<{ id: string }>;
+
     const rows = (await this.dataSource.query(
       `
         UPDATE ${tablePath}
@@ -266,7 +294,7 @@ export class AuthOutboxService {
       [staleClaimThresholdMs, 'stale claim recovered for retry'],
     )) as Array<{ id: string }>;
 
-    return rows.length;
+    return rows.length + exhaustedRows.length;
   }
 
   async replayFailedEvent(id: string): Promise<void> {
