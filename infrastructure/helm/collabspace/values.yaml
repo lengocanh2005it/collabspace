@@ -439,7 +439,7 @@ apps:
       OUTBOX_ENABLED: "true"
       DATABASE_SYNCHRONIZE: "false"
       ALLOW_DEV_OTP_ENDPOINT: "false"
-      MAIL_HOST: smtp.mailtrap.io
+      MAIL_HOST: smtp.gmail.com
       MAIL_PORT: "587"
       MAIL_SECURE: "false"
       MAIL_IGNORE_TLS: "false"
