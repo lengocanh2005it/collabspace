@@ -54,7 +54,7 @@ For cross-service changes:
 Before push (matches CI `lint` job):
 
 ```sh
-pnpm run lint            # format:check + biome:check + lint:types (from repo root)
+pnpm run lint            # lint:deps + format:check + biome:check + lint:types (from repo root)
 ```
 
 Per-service `pnpm run lint` is ESLint only — not the full CI gate.

@@ -2,8 +2,8 @@
 # RabbitMQ StatefulSet for CollabSpace
 # Infrastructure Engineer: Phan Phu Tho
 # ================================================
-# Exchange: collabspace_exchange (direct)
-# Queues: task_assigned, workspace_invited, comment_created
+# Exchange: collabspace_exchange (topic)
+# Service queues: task-service, notification-service, user-service, auth-service
 
 apiVersion: v1
 kind: Secret

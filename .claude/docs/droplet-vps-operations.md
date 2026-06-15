@@ -125,6 +125,7 @@ docker run --rm -e SERVICE_JWT_SECRET=test -e MONGO_URI=mongodb://localhost:2701
 - `maxUnavailable: 0` + 1 node → rollout chậm; pod cũ có thể kẹt `Terminating`
 - `helm-rollout.sh` có `prune_stuck_terminating_pods` — vẫn có thể timeout nếu pod mới crash loop
 - Notification consumer + RabbitMQ: rollout **sau** các service khác (script đã làm vậy)
+- `reconcile-rabbitmq-queues.sh` chạy trong rollout: đảm bảo `collabspace_exchange`, `collabspace_dlx`, các service DLQ, binding `notification-service` cho `task_assigned`, `workspace_invited`, `workspace_deleted`, `comment_created`, `comment_mentioned`, `user_registered`, `user_profile_updated`, và binding `task-service` cho `workspace_deleted`, `user_registered`, `user_profile_updated`. Script gọi RabbitMQ Management API từ trong pod và lấy credential từ env pod; không in secret ra log.
 
 ## Liên quan
 

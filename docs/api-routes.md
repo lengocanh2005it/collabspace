@@ -167,7 +167,7 @@ Route protected yêu cầu `Authorization: Bearer …` (auth gRPC). Dev-only `X-
 | PATCH | `/{id}/read` | Đánh dấu một notification đã đọc |
 | PATCH | `/read-all` | Đánh dấu tất cả đã đọc cho user hiện tại |
 
-**Event consume:** `workspace_invited`, `task_assigned`, `comment_created`, `comment_mentioned`.
+**Event consume:** `workspace_invited`, `workspace_deleted`, `task_assigned`, `comment_created`, `comment_mentioned`, `user_registered`, `user_profile_updated`.
 
 ---
 

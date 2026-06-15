@@ -28,7 +28,7 @@ pnpm test
 2. **Comments:** Attach rich-text comments to tasks.
 3. **Workspace Validation:** Validates workspace membership via `WorkspaceHttpClient` when `WORKSPACE_CLIENT_MODE=http` (required in production). Mock mode is development-only.
 4. **Attachments:** Azure Blob when `AZURE_STORAGE_CONNECTION_STRING` is set; mock URLs in local dev only (production fails startup without storage).
-5. **Event Publisher:** Publishes critical workflow events to the `collabspace_exchange` RabbitMQ direct exchange to trigger notifications.
+5. **Event Publisher:** Publishes critical workflow events to the `notification-service` RabbitMQ queue to trigger notifications.
 
 ## API Endpoints
 
@@ -45,8 +45,11 @@ All endpoints are prefixed with `/api/v1/tasks`. Requests require an `X-User-Id`
 
 ## Internal Contracts
 - **RabbitMQ Publisher:** 
-  - Publishes `TASK_ASSIGNED` when a user is assigned to a task.
-  - Publishes `COMMENT_CREATED` when a comment is added to a task.
+  - Publishes `task_assigned` when a user is assigned to a task.
+  - Publishes `comment_created` when a comment is added to a task assignee.
+  - Publishes `comment_mentioned` when a user is mentioned in a comment.
+- **RabbitMQ Consumer:**
+  - Consumes `workspace_deleted` to clean task projections for deleted workspaces.
 
 ## Environment Variables
 

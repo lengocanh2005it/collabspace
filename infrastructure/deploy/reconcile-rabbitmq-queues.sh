@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
 # Reconcile RabbitMQ consumer queues before app rollouts.
-# Deletes legacy queues missing DLX args so services can re-declare with collabspace_dlx.
+# Deletes legacy queues missing DLX args, ensures DLQs/exchanges, and binds
+# notification-service to integration event routing keys.
 set -euo pipefail
 
 APP_NS="${APP_NS:-collabspace}"
 RABBITMQ_POD="${RABBITMQ_POD:-rabbitmq-0}"
 RABBITMQ_VHOST="${RABBITMQ_VHOST:-collabspace}"
+EVENT_EXCHANGE="${RABBITMQ_EVENT_EXCHANGE:-collabspace_exchange}"
 DLX_EXCHANGE="${RABBITMQ_DLX_EXCHANGE:-collabspace_dlx}"
 
 export KUBECONFIG="${KUBECONFIG:-/etc/rancher/k3s/k3s.yaml}"
@@ -17,6 +19,87 @@ CONSUMER_QUEUES=(
   "task-service:task-service"
   "notification-service:notification-service"
 )
+
+# queue_name:routing_key
+NOTIFICATION_EVENT_BINDINGS=(
+  "notification-service:task_assigned"
+  "notification-service:workspace_invited"
+  "notification-service:workspace_deleted"
+  "notification-service:comment_created"
+  "notification-service:comment_mentioned"
+  "notification-service:user_registered"
+  "notification-service:user_profile_updated"
+)
+
+# queue_name:routing_key
+TASK_EVENT_BINDINGS=(
+  "task-service:workspace_deleted"
+  "task-service:user_registered"
+  "task-service:user_profile_updated"
+)
+
+api_path_escape() {
+  printf '%s' "$1" | sed 's#/#%2F#g'
+}
+
+rabbitmq_api() {
+  local method="$1"
+  local path="$2"
+  local body="$3"
+
+  kubectl exec -n "$APP_NS" "$RABBITMQ_POD" -- sh -lc '
+method="$1"
+path="$2"
+body="$3"
+curl -fsS \
+  -u "${RABBITMQ_USERNAME}:${RABBITMQ_PASSWORD}" \
+  -H "content-type: application/json" \
+  -X "$method" \
+  --data "$body" \
+  "http://127.0.0.1:15672/api/${path}" >/dev/null
+' sh "$method" "$path" "$body"
+}
+
+ensure_exchange() {
+  local exchange="$1"
+  local type="$2"
+  local vhost
+  vhost="$(api_path_escape "$RABBITMQ_VHOST")"
+
+  rabbitmq_api PUT \
+    "exchanges/${vhost}/$(api_path_escape "$exchange")" \
+    "{\"type\":\"${type}\",\"durable\":true,\"auto_delete\":false,\"arguments\":{}}"
+}
+
+ensure_queue_with_dlx() {
+  local queue="$1"
+  local dlq="${queue}.dlq"
+  local vhost
+  vhost="$(api_path_escape "$RABBITMQ_VHOST")"
+
+  rabbitmq_api PUT \
+    "queues/${vhost}/$(api_path_escape "$dlq")" \
+    '{"durable":true,"auto_delete":false,"arguments":{}}'
+
+  rabbitmq_api POST \
+    "bindings/${vhost}/e/$(api_path_escape "$DLX_EXCHANGE")/q/$(api_path_escape "$dlq")" \
+    "{\"routing_key\":\"${dlq}\",\"arguments\":{}}"
+
+  rabbitmq_api PUT \
+    "queues/${vhost}/$(api_path_escape "$queue")" \
+    "{\"durable\":true,\"auto_delete\":false,\"arguments\":{\"x-dead-letter-exchange\":\"${DLX_EXCHANGE}\",\"x-dead-letter-routing-key\":\"${dlq}\"}}"
+}
+
+ensure_queue_binding() {
+  local queue="$1"
+  local routing_key="$2"
+  local vhost
+  vhost="$(api_path_escape "$RABBITMQ_VHOST")"
+
+  rabbitmq_api POST \
+    "bindings/${vhost}/e/$(api_path_escape "$EVENT_EXCHANGE")/q/$(api_path_escape "$queue")" \
+    "{\"routing_key\":\"${routing_key}\",\"arguments\":{}}"
+}
 
 queue_arguments() {
   local queue="$1"
@@ -111,6 +194,29 @@ for entry in "${CONSUMER_QUEUES[@]}"; do
   wait_pods_gone "$deployment"
   delete_queue "$queue"
   reconciled=$((reconciled + 1))
+done
+
+echo "==> Ensuring RabbitMQ exchanges, DLQs, and notification bindings..."
+ensure_exchange "$EVENT_EXCHANGE" topic
+ensure_exchange "$DLX_EXCHANGE" direct
+
+for entry in "${CONSUMER_QUEUES[@]}"; do
+  queue="${entry%%:*}"
+  ensure_queue_with_dlx "$queue"
+done
+
+for binding in "${NOTIFICATION_EVENT_BINDINGS[@]}"; do
+  queue="${binding%%:*}"
+  routing_key="${binding##*:}"
+  ensure_queue_binding "$queue" "$routing_key"
+  echo "  [ok]   ${EVENT_EXCHANGE} -> ${queue} (${routing_key})"
+done
+
+for binding in "${TASK_EVENT_BINDINGS[@]}"; do
+  queue="${binding%%:*}"
+  routing_key="${binding##*:}"
+  ensure_queue_binding "$queue" "$routing_key"
+  echo "  [ok]   ${EVENT_EXCHANGE} -> ${queue} (${routing_key})"
 done
 
 if [[ "$reconciled" -gt 0 ]]; then

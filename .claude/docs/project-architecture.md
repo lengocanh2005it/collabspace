@@ -119,7 +119,7 @@ Technology:
 - NestJS
 - TypeORM
 - PostgreSQL
-- RabbitMQ (direct channel publish from use cases)
+- RabbitMQ (outbox publish through `collabspace_exchange`)
 
 Architecture: Clean Architecture — use cases inject domain repository ports; TypeORM adapters in `infrastructure/repositories/`. See `.claude/docs/service-architecture.md`.
 
@@ -129,7 +129,7 @@ Responsibilities:
 - Workspace membership listing.
 - Workspace invitation flow.
 - Project CRUD under a workspace.
-- Publish `workspace_invited` events.
+- Publish `workspace_invited` and `workspace_deleted` events.
 
 Important source paths:
 
@@ -157,7 +157,7 @@ Technology:
 - NestJS
 - CQRS (`@nestjs/cqrs`)
 - Mongoose / MongoDB
-- RabbitMQ event publisher
+- RabbitMQ direct-queue event publisher and consumer
 
 Architecture: clean + CQRS. See `.claude/docs/service-architecture.md`.
 
@@ -166,7 +166,8 @@ Responsibilities:
 - Task CRUD, assignment, status changes.
 - Comments on tasks.
 - User replica sync from user events.
-- Publish `task_assigned` and `comment_created` events.
+- Publish `task_assigned`, `comment_created`, and `comment_mentioned` events to
+  `notification-service`; consume `workspace_deleted` for task cleanup.
 
 Important source paths:
 
@@ -197,7 +198,7 @@ Architecture: clean + CQRS, event-first. See `.claude/docs/service-architecture.
 
 Responsibilities:
 
-- Consume task/workspace comment events.
+- Consume task, comment, workspace, and user replica events.
 - Persist notifications with `eventId` dedupe.
 - List notifications for a user (HTTP).
 
@@ -294,21 +295,29 @@ Redis:
 
 RabbitMQ is the async event bus.
 
-Canonical exchange from README:
+Canonical exchange for workspace outbox events:
 
-- `collabspace_exchange`, direct type.
+- `collabspace_exchange`, topic type.
 
 Canonical routing keys:
 
 - `task_assigned`
 - `workspace_invited`
+- `workspace_deleted`
 - `comment_created`
+- `comment_mentioned`
+- `user_registered`
+- `user_profile_updated`
 
 Existing or intended event names:
 
 - `TASK_ASSIGNED`
 - `WORKSPACE_INVITED`
+- `WORKSPACE_DELETED`
 - `COMMENT_CREATED`
+- `COMMENT_MENTIONED`
+- `USER_REGISTERED`
+- `USER_PROFILE_UPDATED`
 
 When implementing new events, keep event name, routing key, queue name, payload schema, producer, consumer, retry/dead-letter behavior, and docs aligned. See `.claude/docs/resilience.md` for idempotency, timeouts, and degradation policies.
 

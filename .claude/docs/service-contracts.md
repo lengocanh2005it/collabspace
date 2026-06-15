@@ -440,13 +440,20 @@ Suggested payload:
   "eventId": "uuid",
   "eventType": "WORKSPACE_INVITED",
   "occurredAt": "2026-06-06T00:00:00.000Z",
+  "invitationId": "uuid",
   "workspaceId": "uuid",
   "workspaceName": "Engineering",
+  "recipientId": "uuid",
   "invitedUserId": "uuid",
-  "invitedByUserId": "uuid",
+  "invitedById": "uuid",
   "role": "member"
 }
 ```
+
+Email-only invitations may omit `recipientId` / `invitedUserId` and include
+`inviteEmail` instead. In that case `notification-service` acknowledges the
+event but does not create an in-app notification because there is no user id to
+store as `recipientId`.
 
 ### TASK_ASSIGNED
 
@@ -454,7 +461,7 @@ Suggested payload:
 
 Producer: `workspace-service` transactional outbox.
 
-Consumer: `task-service`.
+Consumers: `task-service`, `notification-service`.
 
 ```json
 {
@@ -465,8 +472,10 @@ Consumer: `task-service`.
 }
 ```
 
-The consumer idempotently removes task projections, comments, activity entries,
-and event streams belonging to the deleted workspace.
+`task-service` idempotently removes task projections, comments, activity entries,
+and event streams belonging to the deleted workspace. `notification-service`
+currently creates a deletion notification for `deletedById`; if workspace-service
+adds affected member ids later, update the recipient logic.
 
 Producer:
 
@@ -484,11 +493,13 @@ Suggested payload:
   "eventType": "TASK_ASSIGNED",
   "occurredAt": "2026-06-06T00:00:00.000Z",
   "workspaceId": "uuid",
-  "projectId": "uuid",
   "taskId": "uuid",
   "taskTitle": "Implement board status update",
-  "assigneeUserId": "uuid",
-  "assignedByUserId": "uuid"
+  "recipientId": "uuid",
+  "actorId": "uuid",
+  "actorName": "Jane Doe",
+  "actorAvatarUrl": null,
+  "assignedAt": "2026-06-06T00:00:00.000Z"
 }
 ```
 
@@ -509,14 +520,30 @@ Suggested payload:
   "eventId": "uuid",
   "eventType": "COMMENT_CREATED",
   "occurredAt": "2026-06-06T00:00:00.000Z",
-  "workspaceId": "uuid",
-  "projectId": "uuid",
   "taskId": "uuid",
+  "taskTitle": "Implement board status update",
+  "recipientId": "uuid",
+  "actorId": "uuid",
+  "actorName": "Jane Doe",
+  "actorAvatarUrl": null,
   "commentId": "uuid",
-  "authorUserId": "uuid",
-  "mentionedUserIds": ["uuid"]
+  "commentPreview": "Short preview",
+  "createdAt": "2026-06-06T00:00:00.000Z"
 }
 ```
+
+### COMMENT_MENTIONED
+
+Producer:
+
+- `task-service`
+
+Consumer:
+
+- `notification-service`
+
+Payload shape matches `COMMENT_CREATED`; `recipientId` is each mentioned user
+after excluding the author and the assignee notification recipient.
 
 Event rules:
 

@@ -101,21 +101,29 @@ export const InboundNotificationEventMapper = {
     );
   },
 
-  toWorkspaceInvitedCommand(data: WorkspaceInvitedEventPayload): CreateNotificationCommand {
+  toWorkspaceInvitedCommand(data: WorkspaceInvitedEventPayload): CreateNotificationCommand | null {
+    const recipientId = data.recipientId ?? data.invitedUserId;
+
+    if (!recipientId?.trim()) {
+      return null;
+    }
+
+    const actorName = data.invitedByName?.trim() || "Someone";
+    const workspaceName = data.workspaceName?.trim() || "a workspace";
     const eventId =
       data.eventId ??
-      `workspace_invited:${data.workspaceId}:${data.invitedUserId}:${data.inviteEmail ?? "unknown"}`;
+      `workspace_invited:${data.workspaceId}:${recipientId}:${data.inviteEmail ?? "unknown"}`;
 
     return new CreateNotificationCommand(
-      data.invitedUserId,
+      recipientId,
       data.invitedById,
       NotificationType.WORKSPACE_INVITED,
       "Lời mời vào workspace",
-      `${data.invitedByName} đã mời bạn vào workspace "${data.workspaceName}"`,
+      `${actorName} đã mời bạn vào workspace "${workspaceName}"`,
       data.workspaceId,
       "WORKSPACE",
       {
-        workspaceName: data.workspaceName,
+        workspaceName,
         invitedByName: data.invitedByName,
         invitedByAvatarUrl: data.invitedByAvatarUrl,
         role: data.role,

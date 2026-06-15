@@ -5,7 +5,7 @@
 # Port: 3000 (Node.js)
 # Health: /notifications/health
 # Storage: Redis (primary) + MongoDB (optional persistence)
-# Consumes: RabbitMQ events (TASK_ASSIGNED, WORKSPACE_INVITED, COMMENT_CREATED)
+# Consumes: RabbitMQ events (task_assigned, workspace_invited, workspace_deleted, comment_created, comment_mentioned, user_* replica events)
 
 apiVersion: v1
 kind: ConfigMap
@@ -33,7 +33,7 @@ data:
   RABBITMQ_VHOST: "collabspace"
   RABBITMQ_EXCHANGE: "collabspace_exchange"
   # Queues to consume
-  RABBITMQ_QUEUES: "task_assigned,workspace_invited,comment_created"
+  RABBITMQ_QUEUES: "notification-service"
   # Service discovery
   AUTH_SERVICE_URL: "http://auth-service:3000"
   USER_SERVICE_URL: "http://user-service:3000"

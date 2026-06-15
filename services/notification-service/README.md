@@ -23,7 +23,7 @@ pnpm test
 
 ## Core Responsibilities
 
-1. **Event Consumer:** Listens to the `collabspace_exchange` RabbitMQ direct exchange for cross-service events.
+1. **Event Consumer:** Consumes the `notification-service` RabbitMQ queue for cross-service events.
 2. **Notification Persistence:** Stores notifications for `GET /api/v1/notifications` and mark-read.
 3. **Real-time WebSockets:** **Not implemented yet.** Helm may expose `WS_ENABLED` / `WS_PATH` env vars for a future gateway route; clients should use HTTP polling until WS ships.
 
@@ -41,7 +41,10 @@ All HTTP endpoints are prefixed with `/api/v1/notifications`.
 - **RabbitMQ Consumer:** Listens to routing keys such as:
   - `task_assigned` (Published by `task-service`)
   - `workspace_invited` (Published by `workspace-service`)
+  - `workspace_deleted` (Published by `workspace-service`)
   - `comment_created` (Published by `task-service`)
+  - `comment_mentioned` (Published by `task-service`)
+  - `user_registered` / `user_profile_updated` (Published by `user-service`)
 
 ## Environment Variables
 

@@ -256,10 +256,14 @@ Auth/user package names:
 - Include idempotency key `eventId`.
 - Include `occurredAt`.
 - Include `eventType`.
-- Prefer direct routing keys already documented:
+- Prefer routing keys already documented:
   - `task_assigned`
   - `workspace_invited`
+  - `workspace_deleted`
   - `comment_created`
+  - `comment_mentioned`
+  - `user_registered`
+  - `user_profile_updated`
 - Consumers should dedupe repeated events.
 - Consumers should tolerate unknown event fields.
 
