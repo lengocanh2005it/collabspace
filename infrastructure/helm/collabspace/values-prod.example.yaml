@@ -121,8 +121,7 @@ gateway:
   tls:
     enabled: true
     certResolver: letsencrypt
-    sans:
-      - "www.REPLACE_ME_DOMAIN"
+    sans: []   # thêm "www.REPLACE_ME_DOMAIN" nếu DNS có CNAME www
   grafana:
     expose: true
   swagger:
@@ -130,7 +129,6 @@ gateway:
   cors:
     allowOrigins:
       - "https://REPLACE_ME_DOMAIN"
-      - "https://www.REPLACE_ME_DOMAIN"
       - "http://REPLACE_ME_DOMAIN"
 
 grafana:

@@ -9,7 +9,7 @@ Route chi tiết từng endpoint: [`api-routes.md`](./api-routes.md) · Observab
 
 | Thông tin | Giá trị |
 |-----------|---------|
-| **Domain** | `ngocanh2005it.site` (IP: `167.172.77.110`) |
+| **Domain** | `collabspace.ngocanh2005it.site` (IP: `167.172.77.110`) |
 | **Protocol** | **HTTPS** (Let's Encrypt, tự renew — cert đến 13/09/2026) |
 | **SSH** | `ssh root@167.172.77.110` |
 
@@ -19,25 +19,25 @@ Route chi tiết từng endpoint: [`api-routes.md`](./api-routes.md) · Observab
 
 ## API Gateway
 
-Base URL: **`https://ngocanh2005it.site/api/v1`**
+Base URL: **`https://collabspace.ngocanh2005it.site/api/v1`**
 
 | Service | Base path | Ví dụ (Droplet) |
 |---------|-----------|-----------------|
-| Auth | `/api/v1/auth` | https://ngocanh2005it.site/api/v1/auth |
-| User | `/api/v1/users` | https://ngocanh2005it.site/api/v1/users |
-| Workspace | `/api/v1/workspaces` | https://ngocanh2005it.site/api/v1/workspaces |
-| Task | `/api/v1/tasks` | https://ngocanh2005it.site/api/v1/tasks |
-| Notification | `/api/v1/notifications` | https://ngocanh2005it.site/api/v1/notifications |
+| Auth | `/api/v1/auth` | https://collabspace.ngocanh2005it.site/api/v1/auth |
+| User | `/api/v1/users` | https://collabspace.ngocanh2005it.site/api/v1/users |
+| Workspace | `/api/v1/workspaces` | https://collabspace.ngocanh2005it.site/api/v1/workspaces |
+| Task | `/api/v1/tasks` | https://collabspace.ngocanh2005it.site/api/v1/tasks |
+| Notification | `/api/v1/notifications` | https://collabspace.ngocanh2005it.site/api/v1/notifications |
 
 ### Health / readiness
 
 | Service | Ready probe |
 |---------|-------------|
-| Auth | https://ngocanh2005it.site/api/v1/auth/health/ready |
-| User | https://ngocanh2005it.site/api/v1/users/health/ready |
-| Workspace | https://ngocanh2005it.site/api/v1/workspaces/health/ready |
-| Task | https://ngocanh2005it.site/api/v1/tasks/health/ready |
-| Notification | https://ngocanh2005it.site/api/v1/notifications/health/ready |
+| Auth | https://collabspace.ngocanh2005it.site/api/v1/auth/health/ready |
+| User | https://collabspace.ngocanh2005it.site/api/v1/users/health/ready |
+| Workspace | https://collabspace.ngocanh2005it.site/api/v1/workspaces/health/ready |
+| Task | https://collabspace.ngocanh2005it.site/api/v1/tasks/health/ready |
+| Notification | https://collabspace.ngocanh2005it.site/api/v1/notifications/health/ready |
 
 **Lưu ý gateway:**
 
@@ -53,13 +53,13 @@ Bật khi Helm `gateway.swagger.expose: true`. **Không** qua prefix `/api/v1`; 
 
 | Service | Swagger UI | OpenAPI JSON |
 |---------|------------|--------------|
-| Auth | https://ngocanh2005it.site/swagger/auth | https://ngocanh2005it.site/swagger/auth-json |
-| User | https://ngocanh2005it.site/swagger/user | https://ngocanh2005it.site/swagger/user-json |
-| Workspace | https://ngocanh2005it.site/swagger/workspace | https://ngocanh2005it.site/swagger/workspace-json |
-| Task | https://ngocanh2005it.site/swagger/task | https://ngocanh2005it.site/swagger/task-json |
-| Notification | https://ngocanh2005it.site/swagger/notification | https://ngocanh2005it.site/swagger/notification-json |
+| Auth | https://collabspace.ngocanh2005it.site/swagger/auth | https://collabspace.ngocanh2005it.site/swagger/auth-json |
+| User | https://collabspace.ngocanh2005it.site/swagger/user | https://collabspace.ngocanh2005it.site/swagger/user-json |
+| Workspace | https://collabspace.ngocanh2005it.site/swagger/workspace | https://collabspace.ngocanh2005it.site/swagger/workspace-json |
+| Task | https://collabspace.ngocanh2005it.site/swagger/task | https://collabspace.ngocanh2005it.site/swagger/task-json |
+| Notification | https://collabspace.ngocanh2005it.site/swagger/notification | https://collabspace.ngocanh2005it.site/swagger/notification-json |
 
-Pattern chung: `https://ngocanh2005it.site/swagger/<tên-rút-gọn>` và `https://ngocanh2005it.site/swagger/<tên-rút-gọn>-json`.
+Pattern chung: `https://collabspace.ngocanh2005it.site/swagger/<tên-rút-gọn>` và `https://collabspace.ngocanh2005it.site/swagger/<tên-rút-gọn>-json`.
 
 Mỗi endpoint có **request/response schema** (`@ApiOkResponse`, `@ApiCreatedResponse`, DTO `@ApiProperty`).
 
@@ -71,9 +71,9 @@ Mỗi endpoint có **request/response schema** (`@ApiOkResponse`, `@ApiCreatedRe
 
 | Mục đích | URL |
 |----------|-----|
-| **Trang chủ** | https://ngocanh2005it.site/grafana/ |
-| **Explore — Loki** (tail/search log) | https://ngocanh2005it.site/grafana/explore |
-| **Explore — Prometheus** (PromQL) | https://ngocanh2005it.site/grafana/explore?orgId=1&left=%7B%22datasource%22:%22prometheus%22%7D |
+| **Trang chủ** | https://collabspace.ngocanh2005it.site/grafana/ |
+| **Explore — Loki** (tail/search log) | https://collabspace.ngocanh2005it.site/grafana/explore |
+| **Explore — Prometheus** (PromQL) | https://collabspace.ngocanh2005it.site/grafana/explore?orgId=1&left=%7B%22datasource%22:%22prometheus%22%7D |
 
 **Đăng nhập:** user `admin` — password từ Helm/Grafana PVC (mặc định chart: `collabspace-grafana`; PVC cũ có thể khác).
 
@@ -81,9 +81,9 @@ Mỗi endpoint có **request/response schema** (`@ApiOkResponse`, `@ApiCreatedRe
 
 | Dashboard | UID | URL trực tiếp |
 |-----------|-----|---------------|
-| Service Health | `collabspace-service-health` | https://ngocanh2005it.site/grafana/d/collabspace-service-health/collabspace-service-health |
-| App Logs | `collabspace-logs-errors` | https://ngocanh2005it.site/grafana/d/collabspace-logs-errors/collabspace-logs-errors |
-| Load Test Run | `collabspace-load-test` | https://ngocanh2005it.site/grafana/d/collabspace-load-test/collabspace-load-test |
+| Service Health | `collabspace-service-health` | https://collabspace.ngocanh2005it.site/grafana/d/collabspace-service-health/collabspace-service-health |
+| App Logs | `collabspace-logs-errors` | https://collabspace.ngocanh2005it.site/grafana/d/collabspace-logs-errors/collabspace-logs-errors |
+| Load Test Run | `collabspace-load-test` | https://collabspace.ngocanh2005it.site/grafana/d/collabspace-load-test/collabspace-load-test |
 
 ### Thành phần **không** expose public (chỉ trong cluster K8s)
 
@@ -100,13 +100,13 @@ Mỗi endpoint có **request/response schema** (`@ApiOkResponse`, `@ApiCreatedRe
 
 ```bash
 # Smoke — health 5 service
-BASE_URL=https://ngocanh2005it.site/api/v1 \
-GRAFANA_URL=https://ngocanh2005it.site/grafana \
+BASE_URL=https://collabspace.ngocanh2005it.site/api/v1 \
+GRAFANA_URL=https://collabspace.ngocanh2005it.site/grafana \
 GRAFANA_PASSWORD=<admin-password> \
 ./infrastructure/load-testing/run-load-test.sh smoke
 
 # Demo flow — login → workspaces / tasks / notifications
-BASE_URL=https://ngocanh2005it.site/api/v1 K6_VUS=10 \
+BASE_URL=https://collabspace.ngocanh2005it.site/api/v1 K6_VUS=10 \
 ./infrastructure/load-testing/run-load-test.sh demo-flow
 ```
 
@@ -115,9 +115,9 @@ Script prod: `infrastructure/deploy/run-k6-smoke-prod.sh` · Chi tiết: [`infra
 ### Demo E2E
 
 ```bash
-BASE_URL=https://ngocanh2005it.site/api/v1 ./scripts/demo-e2e.sh
+BASE_URL=https://collabspace.ngocanh2005it.site/api/v1 ./scripts/demo-e2e.sh
 # Windows:
-# $env:BASE_URL="https://ngocanh2005it.site/api/v1"; .\scripts\demo-e2e.ps1
+# $env:BASE_URL="https://collabspace.ngocanh2005it.site/api/v1"; .\scripts\demo-e2e.ps1
 ```
 
 **Demo users** (sau seed): `ngocanh@collabspace.dev`, `quangtien@collabspace.dev` — password `collabspace123`.
