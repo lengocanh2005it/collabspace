@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
+import { unwrapQueryRows } from '@collabspace/shared';
 import { randomUUID } from 'crypto';
 import { DataSource, EntityManager } from 'typeorm';
 import { getWorkspaceOutboxConfig } from './workspace-outbox.config';
@@ -15,24 +16,6 @@ type ClaimedOutboxEvent = {
   id: string;
   payload: Record<string, unknown>;
 };
-
-function unwrapQueryRows<T extends Record<string, unknown>>(
-  result: unknown,
-): T[] {
-  if (Array.isArray(result)) {
-    return result as T[];
-  }
-
-  if (
-    typeof result === 'object' &&
-    result !== null &&
-    Array.isArray((result as { rows?: unknown }).rows)
-  ) {
-    return (result as { rows: T[] }).rows;
-  }
-
-  return [];
-}
 
 function normalizeClaimedOutboxRow(
   row: Record<string, unknown>,

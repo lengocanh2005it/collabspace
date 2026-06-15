@@ -1,4 +1,5 @@
 import { ConfigurationService } from '@/configuration/configuration.service';
+import { unwrapQueryRows } from '@collabspace/shared';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { randomUUID } from 'node:crypto';
@@ -32,24 +33,6 @@ type ClaimedOutboxEvent = {
   id: string;
   payload: Record<string, unknown>;
 };
-
-function unwrapQueryRows<T extends Record<string, unknown>>(
-  result: unknown,
-): T[] {
-  if (Array.isArray(result)) {
-    return result as T[];
-  }
-
-  if (
-    typeof result === 'object' &&
-    result !== null &&
-    Array.isArray((result as { rows?: unknown }).rows)
-  ) {
-    return (result as { rows: T[] }).rows;
-  }
-
-  return [];
-}
 
 function normalizeClaimedOutboxRow(
   row: Record<string, unknown>,
