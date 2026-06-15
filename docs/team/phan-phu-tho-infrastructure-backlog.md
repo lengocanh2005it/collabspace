@@ -97,7 +97,7 @@ P3  Chaos quarterly (staging)       →  chứng minh recovery
 
 | Loại | Ví dụ | Lưu ở đâu (staging/prod) | Trong Git? |
 |------|-------|---------------------------|------------|
-| **Secret** | `JWT_SECRET`, `SERVICE_JWT_SECRET`, `POSTGRES_PASSWORD`, `MAIL_PASSWORD`, `METRICS_AUTH_TOKEN`, `AZURE_STORAGE_CONNECTION_STRING` | Vault KV → ESO → K8s `Secret` | ❌ |
+| **Secret** | `JWT_SECRET`, `SERVICE_JWT_SECRET`, `POSTGRES_PASSWORD`, `BREVO_API_KEY`, `METRICS_AUTH_TOKEN`, `AZURE_STORAGE_CONNECTION_STRING` | Vault KV → ESO → K8s `Secret` | ✅ |
 | **Config** | `PORT`, `GRPC_URL`, `RABBITMQ_QUEUE`, timeout ms, feature flags | Helm `ConfigMap` / `values.yaml` | ✅ |
 | **Connection string lẫn secret** | `DATABASE_URL`, `MONGO_URI`, `RABBITMQ_URL`, `REDIS_URL` | Build từ template + password từ Secret (Helm helper hiện có) | URL template ✅; password ❌ |
 
@@ -153,7 +153,7 @@ Dùng bảng này khi seed Vault KV (`secret/collabspace/staging`, …).
 
 | Service | Secret (đưa vào SM) | Config (Helm ConfigMap / values) |
 |---------|---------------------|----------------------------------|
-| **auth-service** | `JWT_SECRET`, `POSTGRES_PASSWORD`, `REDIS_PASSWORD`, `RABBITMQ_PASSWORD`, `MAIL_USER`, `MAIL_PASSWORD`, `METRICS_AUTH_TOKEN` | `PORT`, `GRPC_*`, `RABBITMQ_QUEUE`, OTP TTL, outbox tuning, `TRACING_*` |
+| **auth-service** | `JWT_SECRET`, `POSTGRES_PASSWORD`, `REDIS_PASSWORD`, `RABBITMQ_PASSWORD`, `BREVO_API_KEY`, `METRICS_AUTH_TOKEN` | `PORT`, `GRPC_*`, `BREVO_SENDER_*`, `RABBITMQ_QUEUE`, OTP TTL, outbox tuning, `TRACING_*` |
 | **user-service** | `POSTGRES_PASSWORD`, `RABBITMQ_PASSWORD`, `SERVICE_JWT_SECRET`, `METRICS_AUTH_TOKEN`, `AZURE_STORAGE_CONNECTION_STRING` (avatar upload; optional local) | `AUTH_SERVICE_GRPC_URL`, `GRPC_URL`, `DATABASE_SCHEMA` |
 | **workspace-service** | `POSTGRES_PASSWORD`, `RABBITMQ_PASSWORD`, `SERVICE_JWT_SECRET`, `METRICS_AUTH_TOKEN` | `PORT=8080`, `AUTH_SERVICE_GRPC_URL`, `ALLOW_DEV_IDENTITY_HEADERS=false` |
 | **task-service** | `MONGO_URI` (hoặc password riêng + template URI), `RABBITMQ_PASSWORD`, `SERVICE_JWT_SECRET`, `AZURE_STORAGE_CONNECTION_STRING`, `METRICS_AUTH_TOKEN` | `WORKSPACE_SERVICE_URL`, `USER_SERVICE_URL`, `AZURE_STORAGE_CONTAINER_NAME`, `AZURE_STORAGE_MAX_FILE_SIZE`, outbox, `ALLOW_DEV_IDENTITY_HEADERS=false` |
@@ -170,7 +170,7 @@ Dùng bảng này khi seed Vault KV (`secret/collabspace/staging`, …).
 - [x] Helm: `global.externalSecrets.enabled`, `global.secrets.serviceJwtSecret` trong [secret.yaml](../../infrastructure/helm/collabspace/templates/apps/secret.yaml).
 - [ ] Cài **External Secrets Operator** trên cluster staging thật.
 - [ ] Deploy **Vault HA** + Kubernetes auth (không root token prod).
-- [ ] **Bổ sung gap:** `MAIL_*` cho auth email outbox trong Vault + ExternalSecret.
+- [x] **Bổ sung gap:** `BREVO_API_KEY` cho auth email outbox trong Vault + ExternalSecret.
 - [ ] Tạo `values-staging.yaml.example` (commit được): `externalSecrets.enabled: true`, không giá trị secret.
 - [ ] Staging/prod: tắt render Helm `stringData` — chỉ ESO (`externalSecrets.enabled: true`).
 
@@ -205,7 +205,7 @@ Dùng bảng này khi seed Vault KV (`secret/collabspace/staging`, …).
 | Redis | `REDIS_PASSWORD` | `redisPassword` | `redis_password` |
 | RabbitMQ | URL trong `.env` | `rabbitmqPassword` | `rabbitmq_username`, `rabbitmq_password` |
 | Metrics | `METRICS_AUTH_TOKEN` | `metricsAuthToken` | `metrics_auth_token` |
-| SMTP | `MAIL_*` auth | *(gap)* | *(gap — chưa trong Vault seed)* |
+| Email | `BREVO_*` auth | Vault + ESO | `configure-prod-brevo.sh` |
 
 - [ ] Script kiểm tra (infra): `scripts/verify-env-parity.sh` — so sánh tên biến trong tất cả `.env.example` vs Helm ConfigMap/Secret keys (không in giá trị).
 
@@ -445,7 +445,7 @@ Infra **hỗ trợ** bằng: Compose profile Traefik, seed trong job, `demo-e2e`
 |---|-----------|---------|------------|
 | 1 | Chốt Vault + KV naming (`collabspace/<env>`) | P0 | ✅ scaffold |
 | 2 | ESO cài trên cluster + `ExternalSecret` staging live | P0 | ⬜ (YAML có sẵn) |
-| 3 | Helm: `SERVICE_JWT_SECRET` + `MAIL_*` trong Secret template | P0 | ✅ |
+| 3 | Helm: `SERVICE_JWT_SECRET` + `BREVO_API_KEY` trong Secret template | P0 | ✅ |
 | 4 | `values-staging.yaml.example` + map SM → K8s Secret | P0 | ⬜ |
 | 5 | Doc local `.env` setup + shared JWT/SERVICE_JWT_SECRET | P0 | ⬜ |
 | 6 | CI/pre-commit: chặn commit file `.env` | P0 | ⬜ |

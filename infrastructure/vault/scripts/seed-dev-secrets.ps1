@@ -56,6 +56,7 @@ $payload = @{
         rabbitmq_username          = Get-ConfigValue "COLLABSPACE_RABBITMQ_USERNAME" "guest"
         rabbitmq_password          = Get-ConfigValue "COLLABSPACE_RABBITMQ_PASSWORD" "guest"
         metrics_auth_token         = Get-ConfigValue "COLLABSPACE_METRICS_AUTH_TOKEN" ""
+        brevo_api_key              = Get-ConfigValue "COLLABSPACE_BREVO_API_KEY" ""
     }
 }
 

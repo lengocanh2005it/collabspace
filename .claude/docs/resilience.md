@@ -140,7 +140,7 @@ Legend: **Current** = observed or likely today; **Target** = required after resi
 | `POST /auth/login` | Postgres / Redis | Fail | `503` / `401` as appropriate |
 | `GET /auth/me` | user-service gRPC | Returns identity with `profileStatus: "unavailable"`; omits `fullName`/`username` | Degrade OK **(DONE)** |
 | `GET /auth/health/ready` | user-service gRPC | `503` not ready | Keep required |
-| Email OTP send | outbox / SMTP | Outbox retries; readiness `degraded` if backlog | Keep; alert on failed outbox |
+| Email OTP send | outbox / Brevo API | Outbox retries; readiness `degraded` if backlog | Keep; alert on failed outbox |
 
 ### 4.2 user-service
 

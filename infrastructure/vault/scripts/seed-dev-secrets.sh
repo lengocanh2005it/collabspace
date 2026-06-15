@@ -30,6 +30,7 @@ REDIS_PASSWORD="${COLLABSPACE_REDIS_PASSWORD:-collabspace123}"
 RABBITMQ_USERNAME="${COLLABSPACE_RABBITMQ_USERNAME:-guest}"
 RABBITMQ_PASSWORD="${COLLABSPACE_RABBITMQ_PASSWORD:-guest}"
 METRICS_AUTH_TOKEN="${COLLABSPACE_METRICS_AUTH_TOKEN:-}"
+BREVO_API_KEY="${COLLABSPACE_BREVO_API_KEY:-}"
 
 payload=$(cat <<EOF
 {
@@ -42,7 +43,8 @@ payload=$(cat <<EOF
     "redis_password": "$REDIS_PASSWORD",
     "rabbitmq_username": "$RABBITMQ_USERNAME",
     "rabbitmq_password": "$RABBITMQ_PASSWORD",
-    "metrics_auth_token": "$METRICS_AUTH_TOKEN"
+    "metrics_auth_token": "$METRICS_AUTH_TOKEN",
+    "brevo_api_key": "$BREVO_API_KEY"
   }
 }
 EOF

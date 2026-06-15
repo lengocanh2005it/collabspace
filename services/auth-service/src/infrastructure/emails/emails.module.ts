@@ -1,42 +1,11 @@
 import { GraphileWorkerModule } from '@/infrastructure/graphile-worker/graphile-worker.module';
 import { GRAPHILE_WORKER_TASK_LIST } from '@/infrastructure/graphile-worker/graphile-worker.constants';
 import { forwardRef, Module } from '@nestjs/common';
-import { MailerModule } from '@nestjs-modules/mailer';
-import { ConfigurationService } from '@/configuration/configuration.service';
 import { EmailsSenderService } from './emails-sender.service';
 import { EmailsService } from './emails.service';
 
 @Module({
-  imports: [
-    forwardRef(() => GraphileWorkerModule),
-    MailerModule.forRootAsync({
-      inject: [ConfigurationService],
-      useFactory: (configurationService: ConfigurationService) => {
-        const emailConfig = configurationService.getEmailConfig();
-
-        return {
-          defaults: {
-            from: emailConfig.from,
-          },
-          transport: emailConfig.url
-            ? emailConfig.url
-            : {
-                auth:
-                  emailConfig.user || emailConfig.password
-                    ? {
-                        pass: emailConfig.password,
-                        user: emailConfig.user,
-                      }
-                    : undefined,
-                host: emailConfig.host,
-                ignoreTLS: emailConfig.ignoreTls,
-                port: emailConfig.port,
-                secure: emailConfig.secure,
-              },
-        };
-      },
-    }),
-  ],
+  imports: [forwardRef(() => GraphileWorkerModule)],
   providers: [
     EmailsSenderService,
     EmailsService,

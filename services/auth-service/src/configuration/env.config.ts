@@ -69,15 +69,15 @@ export default () => ({
     url: process.env.DATABASE_URL,
   },
   email: {
-    deliveryTimeoutMs: toNumber(process.env.MAIL_DELIVERY_TIMEOUT_MS, 5000),
-    from: process.env.MAIL_FROM ?? 'no-reply@collabspace.local',
-    host: process.env.MAIL_HOST ?? '127.0.0.1',
-    ignoreTls: toBoolean(process.env.MAIL_IGNORE_TLS, false),
-    password: process.env.MAIL_PASSWORD,
-    port: toNumber(process.env.MAIL_PORT, 587),
-    secure: toBoolean(process.env.MAIL_SECURE, false),
-    url: process.env.MAIL_URL,
-    user: process.env.MAIL_USER,
+    deliveryTimeoutMs: toNumber(
+      process.env.EMAIL_DELIVERY_TIMEOUT_MS ?? process.env.MAIL_DELIVERY_TIMEOUT_MS,
+      15000,
+    ),
+  },
+  brevo: {
+    apiKey: process.env.BREVO_API_KEY,
+    senderEmail: process.env.BREVO_SENDER_EMAIL ?? '',
+    senderName: process.env.BREVO_SENDER_NAME ?? 'CollabSpace',
   },
   graphileWorker: {
     concurrency: toNumber(process.env.GRAPHILE_WORKER_CONCURRENCY, 5),

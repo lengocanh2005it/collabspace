@@ -152,11 +152,9 @@ apps:
       USER_SERVICE_GRPC_URL: user-service:50052
       REDIS_HOST: redis-master
       OUTBOX_ENABLED: "true"
-      MAIL_HOST: smtp.gmail.com
-      MAIL_PORT: "587"
-      MAIL_SECURE: "false"
-      MAIL_IGNORE_TLS: "false"
-      MAIL_FROM: REPLACE_ME_MAIL_FROM
+      BREVO_SENDER_EMAIL: REPLACE_ME_BREVO_SENDER_EMAIL
+      BREVO_SENDER_NAME: REPLACE_ME_BREVO_SENDER_NAME
+      EMAIL_DELIVERY_TIMEOUT_MS: "15000"
 
   user-service:
     replicas: 1

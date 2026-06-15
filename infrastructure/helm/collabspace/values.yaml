@@ -24,8 +24,7 @@ global:
     rabbitmqUsername: guest
     rabbitmqPassword: guest
     metricsAuthToken: ""
-    mailUser: ""
-    mailPassword: ""
+    brevoApiKey: ""
     # Optional — task attachments + user avatars (mock mode when empty)
     azureStorageConnectionString: ""
   azureStorage:
@@ -439,11 +438,9 @@ apps:
       OUTBOX_ENABLED: "true"
       DATABASE_SYNCHRONIZE: "false"
       ALLOW_DEV_OTP_ENDPOINT: "false"
-      MAIL_HOST: smtp.gmail.com
-      MAIL_PORT: "587"
-      MAIL_SECURE: "false"
-      MAIL_IGNORE_TLS: "false"
-      MAIL_FROM: no-reply@collabspace.local
+      BREVO_SENDER_EMAIL: no-reply@collabspace.local
+      BREVO_SENDER_NAME: CollabSpace
+      EMAIL_DELIVERY_TIMEOUT_MS: "15000"
       AUTH_VERIFY_LITE_CACHE_ENABLED: "true"
       AUTH_VERIFY_LITE_CACHE_MAX_TTL_SECONDS: "300"
       OUTBOX_POLL_INTERVAL_MS: "5000"

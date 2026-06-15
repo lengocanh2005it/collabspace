@@ -33,8 +33,7 @@ for key in "${required[@]}"; do
   fi
 done
 
-MAIL_USER="${MAIL_USER:-}"
-MAIL_PASSWORD="${MAIL_PASSWORD:-}"
+BREVO_API_KEY="${BREVO_API_KEY:-}"
 
 root_token="$(jq -r '.root_token' "$INIT_FILE")"
 azure_b64="$(printf '%s' "$AZURE_STORAGE_CONNECTION_STRING" | base64 -w 0 2>/dev/null || printf '%s' "$AZURE_STORAGE_CONNECTION_STRING" | base64 | tr -d '\n')"
@@ -53,8 +52,7 @@ kubectl exec -n "$VAULT_NS" "$VAULT_POD" -- env \
   RABBITMQ_PASSWORD="$RABBITMQ_PASSWORD" \
   METRICS_AUTH_TOKEN="$METRICS_AUTH_TOKEN" \
   AZURE_B64="$azure_b64" \
-  MAIL_USER="$MAIL_USER" \
-  MAIL_PASSWORD="$MAIL_PASSWORD" \
+  BREVO_API_KEY="$BREVO_API_KEY" \
   sh -ec '
     AZURE_STORAGE_CONNECTION_STRING="$(printf "%s" "$AZURE_B64" | base64 -d)"
     vault kv put "secret/${KV_PATH}" \
@@ -68,8 +66,7 @@ kubectl exec -n "$VAULT_NS" "$VAULT_POD" -- env \
       rabbitmq_password="${RABBITMQ_PASSWORD}" \
       metrics_auth_token="${METRICS_AUTH_TOKEN}" \
       azure_storage_connection_string="${AZURE_STORAGE_CONNECTION_STRING}" \
-      mail_user="${MAIL_USER}" \
-      mail_password="${MAIL_PASSWORD}"
+      brevo_api_key="${BREVO_API_KEY}"
   '
 
 echo "Done. Verify:"

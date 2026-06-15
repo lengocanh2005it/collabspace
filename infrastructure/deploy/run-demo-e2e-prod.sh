@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Run MVP demo-e2e against a production k3s Droplet (OTP from auth outbox when SMTP is not set).
+# Run MVP demo-e2e against a production k3s Droplet (OTP from auth outbox when Brevo is not set).
 set -euo pipefail
 
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname "$0")" && pwd)

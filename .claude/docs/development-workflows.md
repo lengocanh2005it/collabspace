@@ -241,7 +241,7 @@ After Compose + Traefik + migrate + seed:
 
 Windows: `.\scripts\demo-e2e.ps1`. Story and acceptance: `docs/mvp-demo-scope.md`. Infra CI integration: `docs/team/phan-phu-tho-infrastructure-backlog.md` §11.
 
-**k3s production (Droplet):** after CI images include `seed:prod` and the app rollout is healthy, run `bash infrastructure/deploy/run-k8s-seed.sh` on the server. The seed script uses the currently deployed image tag by default; set `IMAGE_TAG=<sha>` only when intentionally seeding a different image. E2E without SMTP: `BASE_URL=http://<host>/api/v1 bash infrastructure/deploy/run-demo-e2e-prod.sh` (OTP via `read-auth-otp-from-outbox.sh`).
+**k3s production (Droplet):** after CI images include `seed:prod` and the app rollout is healthy, run `bash infrastructure/deploy/run-k8s-seed.sh` on the server. The seed script uses the currently deployed image tag by default; set `IMAGE_TAG=<sha>` only when intentionally seeding a different image. E2E without Brevo: `BASE_URL=http://<host>/api/v1 bash infrastructure/deploy/run-demo-e2e-prod.sh` (OTP via `read-auth-otp-from-outbox.sh`). With Brevo: `bash infrastructure/deploy/configure-prod-brevo.sh` after filling `phase0.env`.
 
 ## Testing Strategy
 

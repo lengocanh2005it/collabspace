@@ -18,8 +18,7 @@ import {
   forwardRef,
 } from '@nestjs/common';
 import type { Job } from 'graphile-worker';
-import { SentMessageInfo } from 'nodemailer';
-import { EmailsSenderService } from './emails-sender.service';
+import { EmailSendResult, EmailsSenderService } from './emails-sender.service';
 
 @Injectable()
 export class EmailsService {
@@ -33,7 +32,7 @@ export class EmailsService {
     private readonly graphileWorkerService: GraphileWorkerService | null,
   ) {}
 
-  async sendHtml(input: SendHtmlEmailInput): Promise<Job | SentMessageInfo> {
+  async sendHtml(input: SendHtmlEmailInput): Promise<Job | EmailSendResult> {
     return this.sendMail({
       bcc: input.bcc,
       cc: input.cc,
@@ -46,7 +45,7 @@ export class EmailsService {
     });
   }
 
-  async sendMail(options: SendEmailJobPayload): Promise<Job | SentMessageInfo> {
+  async sendMail(options: SendEmailJobPayload): Promise<Job | EmailSendResult> {
     const normalizedOptions = this.normalizeOptions(options);
 
     if (this.shouldQueueEmails()) {
@@ -56,7 +55,7 @@ export class EmailsService {
     return this.sendMailNow(normalizedOptions);
   }
 
-  async sendMailNow(options: SendEmailJobPayload): Promise<SentMessageInfo> {
+  async sendMailNow(options: SendEmailJobPayload): Promise<EmailSendResult> {
     try {
       return await withTimeout(
         this.emailsSenderService.send(options),
@@ -68,7 +67,7 @@ export class EmailsService {
     }
   }
 
-  async sendText(input: SendTextEmailInput): Promise<Job | SentMessageInfo> {
+  async sendText(input: SendTextEmailInput): Promise<Job | EmailSendResult> {
     return this.sendMail({
       bcc: input.bcc,
       cc: input.cc,

@@ -51,14 +51,12 @@ export type DatabaseConfig = {
 
 export type EmailConfig = {
   deliveryTimeoutMs: number;
-  from: string;
-  host: string;
-  ignoreTls: boolean;
-  password?: string;
-  port: number;
-  secure: boolean;
-  url?: string;
-  user?: string;
+};
+
+export type BrevoConfig = {
+  apiKey?: string;
+  senderEmail: string;
+  senderName: string;
 };
 
 export type GraphileWorkerConfig = {
@@ -217,16 +215,16 @@ export class ConfigurationService {
     return {
       deliveryTimeoutMs:
         this.configService.get<number>('email.deliveryTimeoutMs') ?? 5000,
-      from:
-        this.configService.get<string>('email.from') ??
-        'no-reply@collabspace.local',
-      host: this.configService.get<string>('email.host') ?? '127.0.0.1',
-      ignoreTls: this.configService.get<boolean>('email.ignoreTls') ?? false,
-      password: this.configService.get<string>('email.password') || undefined,
-      port: this.configService.get<number>('email.port') ?? 587,
-      secure: this.configService.get<boolean>('email.secure') ?? false,
-      url: this.configService.get<string>('email.url') || undefined,
-      user: this.configService.get<string>('email.user') || undefined,
+    };
+  }
+
+  getBrevoConfig(): BrevoConfig {
+    return {
+      apiKey: this.configService.get<string>('brevo.apiKey') || undefined,
+      senderEmail:
+        this.configService.get<string>('brevo.senderEmail') ?? '',
+      senderName:
+        this.configService.get<string>('brevo.senderName') ?? 'CollabSpace',
     };
   }
 
