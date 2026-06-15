@@ -170,7 +170,14 @@ export class TypeOrmUserProfileRepository implements UserProfileRepository {
       }
     }
 
-    return userIds.map((uid) => this.toDomainStatus(statusMap.get(uid)!));
+    return userIds.map((uid) => {
+      const status = statusMap.get(uid);
+      if (!status) {
+        throw new Error(`Missing user status for ${uid}`);
+      }
+
+      return this.toDomainStatus(status);
+    });
   }
 
   async list(input: ListUserProfilesInput): Promise<ListUserProfilesResult> {

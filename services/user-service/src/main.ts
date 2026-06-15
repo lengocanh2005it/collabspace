@@ -139,4 +139,4 @@ async function bootstrap() {
   Logger.log(`Swagger Docs: http://localhost:${port}/${swaggerPath}`, 'Bootstrap');
 }
 
-bootstrap();
+void bootstrap();

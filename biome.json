@@ -32,12 +32,15 @@
       "suspicious": {
         "noExplicitAny": "off"
       },
+      "complexity": {
+        "noStaticOnlyClass": "off"
+      },
       "correctness": {
         "noUnusedVariables": "warn",
         "noUnusedFunctionParameters": "warn"
       },
       "style": {
-        "noNonNullAssertion": "warn",
+        "noNonNullAssertion": "error",
         "useImportType": "off"
       }
     }

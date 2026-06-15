@@ -3,6 +3,7 @@ import { SERVICE_IDS, SERVICE_SCOPES, signServiceJwt } from '@collabspace/shared
 import { InternalUsersController } from './internal-users.controller';
 
 describe('InternalUsersController', () => {
+  const testServiceJwtSecret = 'test-service-jwt-secret';
   const lookupUserReplicasUseCase = {
     execute: jest.fn(),
   };
@@ -15,7 +16,7 @@ describe('InternalUsersController', () => {
     jest.clearAllMocks();
     controller = new InternalUsersController(lookupUserReplicasUseCase as never);
     process.env.NODE_ENV = 'test';
-    process.env.SERVICE_JWT_SECRET = 'test-service-jwt-secret';
+    process.env.SERVICE_JWT_SECRET = testServiceJwtSecret;
     lookupUserReplicasUseCase.execute.mockResolvedValue([
       { userId: 'user-1', username: 'jane.doe', isActive: true },
     ]);
@@ -31,7 +32,7 @@ describe('InternalUsersController', () => {
       iss: SERVICE_IDS.TASK,
       aud: SERVICE_IDS.USER,
       scope: [SERVICE_SCOPES.USER_REPLICAS_READ],
-      secret: process.env.SERVICE_JWT_SECRET!,
+      secret: testServiceJwtSecret,
     });
 
     const response = await controller.lookupReplicas(

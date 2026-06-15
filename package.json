@@ -12,7 +12,7 @@
     "lint:types": "pnpm -r run lint",
     "format": "biome format --write services packages",
     "format:check": "biome format services packages",
-    "biome:check": "biome check --assist-enabled=false services packages",
+    "biome:check": "biome check --assist-enabled=false --error-on-warnings services packages",
     "biome:fix": "biome check --write --assist-enabled=false services packages",
     "seed": "sh ./scripts/seed.sh"
   },

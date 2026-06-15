@@ -1,3 +1,4 @@
+import { DataSource } from 'typeorm';
 import './observability/instrumentation';
 import { assertRequiredInProduction } from '@collabspace/shared';
 import { NestFactory } from '@nestjs/core';
@@ -23,7 +24,7 @@ async function bootstrap() {
   registerRequestIdMiddleware(app);
   registerMetricsMiddleware(app, app.get(MetricsService));
 
-  const dataSource = app.get(require('typeorm').DataSource);
+  const dataSource = app.get(DataSource);
   if (!dataSource.isInitialized) {
     await dataSource.initialize();
   }

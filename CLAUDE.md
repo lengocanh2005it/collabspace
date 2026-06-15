@@ -128,12 +128,17 @@ cd ../notification-service && pnpm run seed
 sh ./scripts/seed.sh
 ```
 
-From repo root (lint/format):
+From repo root (lint / format / build / test):
 
 ```sh
-pnpm run format
-pnpm run lint
+pnpm run lint            # CI gate: lint:deps + format:check + biome:check + lint:types (0 warnings)
+pnpm run format          # Biome write (services + packages)
+pnpm run biome:fix       # Biome format + lint auto-fix
+pnpm run build           # compile all workspace packages
+pnpm run test            # unit tests all packages
 ```
+
+Per-service: `pnpm run build`, `pnpm run test`, `pnpm run lint` (ESLint only), `pnpm run format` (Biome via `-w`). Config: `biome.json`, `packages/eslint-config/`. See `.claude/docs/development-workflows.md`.
 
 ## Claude Code Skills
 

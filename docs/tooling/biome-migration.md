@@ -99,7 +99,7 @@ pnpm run biome:check    # format check only (linter + assist off đến Phase 4)
 - `packages/shared`: thêm `eslint` + `eslint.config.mjs` (fix lint script broken từ Phase 0)
 - Gỡ `eslint-config-prettier` + `eslint-plugin-prettier` khỏi service `devDependencies`
 - **Giữ** `prettier` package (Phase 6 gỡ hẳn)
-- Root `pnpm run lint` = `biome:check` + `lint:types` (ESLint recursive)
+- Root `pnpm run lint` = `lint:ci` = `lint:deps` + `format:check` + `biome:check` + `lint:types`
 
 ### Verify Phase 3
 
@@ -137,7 +137,7 @@ pnpm run biome:check    # format check only (linter + assist off đến Phase 4)
 - **CI** (`.github/workflows/ci.yml`): job `lint` chạy `pnpm run lint:ci` trước `build-test` (`needs: lint`)
 - **Pre-commit** (`.githooks/pre-commit`): sau check `.env`, chạy `biome check --staged` (format + lint trên file staged)
 - Root scripts:
-  - `lint:ci` = `format:check` + `biome:check` + `lint:types`
+  - `lint:ci` = `lint:deps` + `format:check` + `biome:check` + `lint:types`
   - `lint` = alias của `lint:ci`
 - `user-service/eslint.config.mjs`: align unsafe rules với `workspace-service` (warnings, không fail CI)
 - Fix 2 ESLint errors còn lại ở `user-service` (cache `Promise.all` + unused var trong spec)
@@ -154,7 +154,33 @@ pnpm run biome:check    # format check only (linter + assist off đến Phase 4)
 | `pnpm run test` | Pass |
 | Pre-commit hook | `biome check --staged` (cần Git Bash / sh trên Windows) |
 
-**Dev workflow:** `pnpm run lint` trước push; pre-commit tự format/lint file staged. Chi tiết: `.claude/docs/development-workflows.md` → Lint & format.
+**Dev workflow:** `pnpm run lint` trước push; pre-commit tự format/lint file staged. Chi tiết: `.claude/docs/development-workflows.md` → Lint, format, build, test.
+
+## Phase 5b — Zero-warning enforcement (2026-06-15)
+
+Sau Phase 5, cleanup toàn repo để CI **fail trên mọi warning** (Biome + ESLint).
+
+### Thay đổi config
+
+| File | Thay đổi |
+|------|----------|
+| `package.json` | `biome:check` thêm `--error-on-warnings` |
+| `biome.json` | `noNonNullAssertion: "error"`; `noStaticOnlyClass: "off"` |
+| `packages/eslint-config/create-type-checked-config.mjs` | Base: `no-unsafe-*` off; `no-unused-vars` + `^_` ignore; `no-floating-promises: error`; spec/testing globs mở rộng |
+| Mỗi service + `packages/shared` `package.json` | `lint` script: `--max-warnings 0` |
+| Per-service `eslint.config.mjs` | Bỏ override `no-unsafe-*: warn` trùng base |
+
+### Verify Phase 5b
+
+| Command | Kết quả |
+|---------|---------|
+| `pnpm run lint:ci` | Pass — **0 warnings** |
+| `pnpm run biome:check` | Pass — 0 warnings (`--error-on-warnings`) |
+| `pnpm run lint:types` | Pass — 0 warnings (`--max-warnings 0`) |
+| `pnpm run build` | Pass |
+| `pnpm run test` | Pass |
+
+**Pattern code:** tránh `!` (Biome error); `void bootstrap()`; `getAuthServiceClient()` thay vì `client!`; `testServiceJwtSecret` trong spec thay `process.env.SERVICE_JWT_SECRET!`.
 
 ## Phase 6 — Cleanup + docs (2026-06-15)
 
@@ -193,13 +219,15 @@ Phase 7 ban đầu là tuỳ chọn: gỡ ESLint + `@collabspace/eslint-config`,
 | NestJS / DI | Phase 4 đã thấy `useImportType` (Biome) phá `emitDecoratorMetadata` — cần `useImportType: off` và cẩn trọng với auto-fix |
 | Chi phí / lợi ích | Gỡ ESLint tiết kiệm deps nhưng mất lớp an toàn; ~hàng trăm warnings `no-unsafe-*` đang ở mức warn, không block CI |
 
-### Toolchain chốt (sau migration)
+### Toolchain chốt (sau migration + Phase 5b)
 
 ```text
+lint:ci         → lint:deps + format:check + biome:check + lint:types (0 warnings)
 format          → Biome (root biome.json)
-lint style      → Biome (root: biome:check)
-lint type-aware → ESLint per package (lint:types)
-CI / local      → pnpm run lint  (= format:check + biome:check + lint:types)
+lint style      → Biome (biome:check, --error-on-warnings)
+lint type-aware → ESLint per package (lint:types, --max-warnings 0)
+build           → pnpm -r run build (type-check via compile)
+test            → pnpm -r run test
 pre-commit      → biome check --staged
 ```
 

@@ -19,28 +19,65 @@ Expected tools:
 - Shared package: `packages/shared` (`@collabspace/shared`) — rebuild after event type changes.
 - All five app services are NestJS; `workspace-service` uses port **8080**.
 
-## Lint & format (Biome + ESLint)
+## Lint, format, build, test (toolchain)
 
-From repo root:
+### CI gate (chạy từ repo root trước push)
 
 ```sh
-pnpm run format          # Biome write (services + packages)
-pnpm run format:check    # Biome format only
-pnpm run biome:check     # Biome format + lint
-pnpm run biome:fix       # Biome format + lint with safe fixes
-pnpm run lint:types      # ESLint type-checked (per package)
-pnpm run lint:deps       # build @collabspace/shared + nest-auth (required before lint:types)
-pnpm run lint:ci         # CI gate: lint:deps + format:check + biome:check + lint:types
-pnpm run lint            # alias of lint:ci
+pnpm run lint            # = lint:ci (alias)
+pnpm run lint:ci         # lint:deps → format:check → biome:check → lint:types
+pnpm run build           # tsc / nest build — all workspace packages
+pnpm run test            # unit tests — all workspace packages
 ```
 
-**Per-service vs root:** `pnpm run lint` **inside** `services/<name>` runs ESLint type-checked for that package only. The full CI gate (Biome format + Biome lint + ESLint) is **`pnpm run lint` from repo root**. Per-service `pnpm run format` calls root Biome via `pnpm -w exec biome format …`.
+`lint:ci` **phải sạch** (0 warnings): Biome dùng `--error-on-warnings`; ESLint dùng `--max-warnings 0` trên mỗi package.
 
-Pre-commit (`.githooks/pre-commit`, enabled via `pnpm install` → `prepare`): blocks `.env` commits and runs `biome check --staged`.
+### Lint & format commands
 
-CI (`.github/workflows/ci.yml`): `lint` job runs `pnpm run lint:ci` before `build-test`.
+| Command | Mục đích |
+|---------|----------|
+| `pnpm run lint:deps` | Build `@collabspace/shared` + `@collabspace/nest-auth` (ESLint type-checked cần types) |
+| `pnpm run format:check` | Biome format only (read-only) |
+| `pnpm run biome:check` | Biome format + lint (`--error-on-warnings`) |
+| `pnpm run lint:types` | ESLint type-checked recursive (`pnpm -r run lint`) |
+| `pnpm run format` | Biome format write (`services` + `packages`) |
+| `pnpm run biome:fix` | Biome format + lint auto-fix (safe; review diff) |
 
-Details: `docs/tooling/biome-migration.md`.
+Config: root `biome.json`; ESLint factory `packages/eslint-config/create-type-checked-config.mjs` (`@collabspace/eslint-config`).
+
+### Hai lớp lint
+
+| Lớp | Tool | Phạm vi | Ghi chú |
+|-----|------|---------|---------|
+| Style / syntax | **Biome** | `services/**`, `packages/**` | `noNonNullAssertion: error` — tránh `!`; dùng guard / narrow type |
+| Type-aware | **ESLint** | Per package (`eslint.config.mjs`) | `no-floating-promises: error`; `no-unsafe-*` off ở base; `_` prefix cho unused |
+
+**Per-service vs root:** `pnpm run lint` **trong** `services/<name>` chỉ chạy ESLint package đó. Gate đầy đủ (Biome + ESLint) = **`pnpm run lint` từ repo root**. Per-service `pnpm run format` → `pnpm -w exec biome format --write src test`.
+
+### Type-check / compile
+
+| Scope | Command |
+|-------|---------|
+| Toàn repo | `pnpm run build` |
+| Một service | `cd services/<name> && pnpm run build` |
+| Shared packages | `pnpm --filter @collabspace/shared build` |
+
+Không có script `tsc --noEmit` riêng ở root — `build` là compile gate chính.
+
+### Test
+
+| Scope | Command |
+|-------|---------|
+| Toàn repo | `pnpm run test` |
+| Một service | `cd services/<name> && pnpm run test` |
+| E2E (auth, user) | `pnpm run test:e2e` trong service đó |
+
+### Pre-commit & CI
+
+- **Pre-commit** (`.githooks/pre-commit`, bật qua `pnpm install` → `prepare`): chặn commit `.env`; `biome check --staged` trên file staged.
+- **CI** (`.github/workflows/ci.yml`): job `lint` → `pnpm run lint:ci`; sau đó `build-test` → `build` + `test`.
+
+Chi tiết migration: `docs/tooling/biome-migration.md`. Conventions: `.claude/docs/coding-conventions.md` → Format & lint.
 
 ## Environment Files
 

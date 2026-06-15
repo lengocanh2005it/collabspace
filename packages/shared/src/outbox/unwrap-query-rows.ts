@@ -5,7 +5,9 @@
 export function unwrapQueryRows<T extends Record<string, unknown>>(result: unknown): T[] {
   if (Array.isArray(result)) {
     if (result.length === 2) {
-      const [first, second] = result;
+      const tuple = result as unknown[];
+      const first = tuple[0];
+      const second = tuple[1];
 
       if (Array.isArray(first) && (typeof second === 'number' || typeof second === 'bigint')) {
         return first as T[];

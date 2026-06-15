@@ -12,14 +12,25 @@
 
 ## Format & lint
 
-- **Format:** [Biome](https://biomejs.dev/) at repo root — `pnpm run format` / `format:check` (config: `biome.json`).
-- **Lint:** Biome recommended rules at root (`pnpm run biome:check`) + ESLint type-checked per package (`pnpm run lint:types`). CI gate: `pnpm run lint` (= `lint:ci`).
-- **Quote style** (Biome overrides in `biome.json`):
-  - Single quotes: `auth-service`, `user-service`, `workspace-service`
-  - Double quotes: `task-service`, `notification-service`
-- Per-service `pnpm run format` delegates to root Biome. Per-service `pnpm run lint` is ESLint only.
-- Do **not** re-enable `useImportType` in Biome for NestJS DI constructor tokens.
-- Details: `docs/tooling/biome-migration.md`, `.claude/docs/development-workflows.md` → Lint & format.
+Hybrid **Biome + ESLint** (Phase 7 deferred — giữ cả hai). CI / local gate: `pnpm run lint` (= `lint:ci`) phải **0 warnings**.
+
+| Việc | Lệnh | Config |
+|------|------|--------|
+| Format write | `pnpm run format` | `biome.json` |
+| Format check | `pnpm run format:check` | |
+| Style lint | `pnpm run biome:check` | `--error-on-warnings`; `noNonNullAssertion: error` |
+| Auto-fix style | `pnpm run biome:fix` | Review diff; không dùng unsafe fix bừa |
+| Type-aware lint | `pnpm run lint:types` | `@collabspace/eslint-config`, `--max-warnings 0` |
+| Full gate | `pnpm run lint:ci` | `lint:deps` → format → biome → ESLint |
+
+- **Quote style** (`biome.json` overrides): single — auth/user/workspace; double — task/notification.
+- Per-service `pnpm run format` → `pnpm -w exec biome format …`. Per-service `pnpm run lint` = ESLint only (không thay `lint:ci`).
+- **NestJS:** giữ `useImportType: off` và `unsafeParameterDecoratorsEnabled: true` trong `biome.json`.
+- **Tránh `!`:** dùng optional chain, guard, hoặc narrow type sau check (Biome error).
+- **ESLint:** `no-floating-promises: error`; `void bootstrap()` cho entrypoint; `_` prefix cho unused params/vars.
+- **Mapper static classes:** `noStaticOnlyClass: off` (convention hiện tại).
+
+Details: `docs/tooling/biome-migration.md`, `.claude/docs/development-workflows.md`.
 
 ## TypeScript/NestJS Style
 

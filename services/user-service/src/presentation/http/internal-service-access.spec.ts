@@ -4,6 +4,7 @@ import type { Request } from 'express';
 import { assertInternalServiceAccess } from './internal-service-access';
 
 describe('assertInternalServiceAccess (user-service)', () => {
+  const testServiceJwtSecret = 'phase-2-service-jwt-secret';
   const originalEnv = {
     serviceJwtSecret: process.env.SERVICE_JWT_SECRET,
     nodeEnv: process.env.NODE_ENV,
@@ -13,7 +14,7 @@ describe('assertInternalServiceAccess (user-service)', () => {
 
   beforeEach(() => {
     process.env.NODE_ENV = 'test';
-    process.env.SERVICE_JWT_SECRET = 'phase-2-service-jwt-secret';
+    process.env.SERVICE_JWT_SECRET = testServiceJwtSecret;
   });
 
   afterEach(() => {
@@ -26,7 +27,7 @@ describe('assertInternalServiceAccess (user-service)', () => {
       iss: SERVICE_IDS.TASK,
       aud: SERVICE_IDS.USER,
       scope: [SERVICE_SCOPES.USER_REPLICAS_READ],
-      secret: process.env.SERVICE_JWT_SECRET!,
+      secret: testServiceJwtSecret,
     });
 
     expect(() =>
@@ -39,7 +40,7 @@ describe('assertInternalServiceAccess (user-service)', () => {
       iss: SERVICE_IDS.NOTIFICATION,
       aud: SERVICE_IDS.USER,
       scope: [SERVICE_SCOPES.USER_REPLICAS_READ],
-      secret: process.env.SERVICE_JWT_SECRET!,
+      secret: testServiceJwtSecret,
     });
 
     expect(() =>
@@ -52,7 +53,7 @@ describe('assertInternalServiceAccess (user-service)', () => {
       iss: SERVICE_IDS.TASK,
       aud: SERVICE_IDS.USER,
       scope: [SERVICE_SCOPES.WORKSPACE_MEMBERSHIP_READ],
-      secret: process.env.SERVICE_JWT_SECRET!,
+      secret: testServiceJwtSecret,
     });
 
     expect(() =>

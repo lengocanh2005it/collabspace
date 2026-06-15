@@ -155,13 +155,16 @@ Nếu skill mô tả bước **không còn đúng** sau khi sửa code → sửa
 
 ## Verification checklist
 
-Sau khi sửa code:
+Sau khi sửa code (từ **repo root** khi có thể):
 
-1. `pnpm run build` trong service đích.
-2. `pnpm run test` (và `test:e2e` nếu đổi routing/validation/auth).
-3. Health check nếu chạy Docker: `curl localhost:3000/api/v1/auth/health`.
-4. Báo cáo commands đã chạy và kết quả pass/fail.
-5. Liệt kê **agent docs + skills** đã cập nhật (hoặc "không cần sync").
+1. `pnpm run lint` — full gate Biome + ESLint (khớp CI; phải 0 warnings).
+2. `pnpm run build` — compile (toàn repo hoặc service đích nếu scope hẹp).
+3. `pnpm run test` — unit tests (và `test:e2e` nếu đổi routing/validation/auth).
+4. Health check nếu chạy Docker: `curl localhost:3000/api/v1/auth/health`.
+5. Báo cáo commands đã chạy và kết quả pass/fail.
+6. Liệt kê **agent docs + skills** đã cập nhật (hoặc "không cần sync").
+
+Toolchain: `.claude/docs/development-workflows.md` → Lint, format, build, test.
 
 ## "Continue MVP" default
 

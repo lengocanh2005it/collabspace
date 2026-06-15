@@ -21,13 +21,13 @@ export class UpdateCurrentUserPreferencesDto {
   @IsOptional()
   emailNotificationsEnabled?: boolean;
 
-  @Transform(({ obj, value }) => {
+  @Transform(({ obj, value }: { obj?: { preferredLanguage?: unknown }; value?: unknown }) => {
     const raw = value ?? obj?.preferredLanguage;
     if (raw === undefined || raw === null) {
       return undefined;
     }
     if (typeof raw !== 'string') {
-      return raw;
+      return undefined;
     }
     const trimmed = raw.trim();
     return trimmed.length > 0 ? trimmed : undefined;

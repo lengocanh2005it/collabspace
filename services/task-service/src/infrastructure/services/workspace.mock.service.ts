@@ -248,7 +248,10 @@ export class WorkspaceMockService implements IWorkspaceClient {
       return true;
     }
 
-    const workspace = this.mockWorkspaces.get(workspaceId)!;
+    const workspace = this.mockWorkspaces.get(workspaceId);
+    if (!workspace) {
+      return true;
+    }
 
     // Dynamic workspaces (auto-registered) always grant member-level access to any user
     if (workspace.description === "Dynamically registered from workspace-service") {

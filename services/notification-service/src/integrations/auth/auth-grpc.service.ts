@@ -34,6 +34,10 @@ type VerifyAccessTokenLiteResponse = {
   workspaceId?: string;
 };
 
+type AuthenticatedVerifyAccessTokenResponse<T extends VerifyAccessTokenResponse> = T & {
+  userId: string;
+};
+
 type AuthGrpcClient = {
   verifyAccessToken(request: VerifyAccessTokenRequest): Observable<VerifyAccessTokenResponse>;
   verifyAccessTokenLite(
@@ -73,8 +77,9 @@ export class AuthGrpcService implements OnModuleInit {
   }
 
   async verifyAccessTokenLite(authorizationHeader?: string): Promise<AuthLiteIdentity> {
+    const authService = this.getAuthServiceClient();
     const response = await this.invokeVerify(
-      (authorization) => this.authService!.verifyAccessTokenLite({ authorization }),
+      (authorization) => authService.verifyAccessTokenLite({ authorization }),
       authorizationHeader,
       "VerifyAccessTokenLite",
     );
@@ -83,14 +88,15 @@ export class AuthGrpcService implements OnModuleInit {
       emailVerified: response.emailVerified,
       role: response.role,
       roles: response.roles ?? [],
-      userId: response.userId!,
+      userId: response.userId,
       workspaceId: response.workspaceId,
     };
   }
 
   async verifyAccessToken(authorizationHeader?: string): Promise<AuthIdentity> {
+    const authService = this.getAuthServiceClient();
     const response = await this.invokeVerify(
-      (authorization) => this.authService!.verifyAccessToken({ authorization }),
+      (authorization) => authService.verifyAccessToken({ authorization }),
       authorizationHeader,
       "VerifyAccessToken",
     );
@@ -100,16 +106,27 @@ export class AuthGrpcService implements OnModuleInit {
       permissions: response.permissions ?? [],
       role: response.role,
       roles: response.roles ?? [],
-      userId: response.userId!,
+      userId: response.userId,
       workspaceId: response.workspaceId,
     };
+  }
+
+  private getAuthServiceClient(): AuthGrpcClient {
+    if (!this.authService) {
+      throw new ServiceUnavailableException({
+        code: "AUTH_SERVICE_GRPC_UNAVAILABLE",
+        message: "Auth gRPC client is not initialized",
+      });
+    }
+
+    return this.authService;
   }
 
   private async invokeVerify<T extends VerifyAccessTokenResponse>(
     call: (authorization: string) => Observable<T>,
     authorizationHeader: string | undefined,
     rpcLabel: string,
-  ): Promise<T> {
+  ): Promise<AuthenticatedVerifyAccessTokenResponse<T>> {
     const authorization = authorizationHeader?.trim();
 
     if (!authorization) {
@@ -140,7 +157,7 @@ export class AuthGrpcService implements OnModuleInit {
         });
       }
 
-      return response;
+      return response as AuthenticatedVerifyAccessTokenResponse<T>;
     } catch (error) {
       if (error instanceof UnauthorizedException) {
         throw error;

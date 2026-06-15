@@ -67,5 +67,6 @@ When implementing:
 
 - Do not stop at a high-level plan if the request asks for code.
 - Keep edits scoped to the owning service unless integration files must change.
+- Before push: `pnpm run lint` → `pnpm run build` → `pnpm run test` from repo root (see `local-dev-verify` skill).
 - **Docs & skills sync:** if contracts, ports, env vars, events, auth, resilience, or MVP status change, update related agent docs (`.claude/docs/`, `services/*/CLAUDE.md`, `docs/features.md`, …) and skills (this file, `nest-service-change`, `mvp-feature-planner`, `local-dev-verify`) in the **same change** when needed. See `.claude/rules/docs-and-skills-sync.md`.
 

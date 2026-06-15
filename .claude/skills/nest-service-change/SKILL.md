@@ -159,16 +159,29 @@ pnpm run test
 
 Run `test:e2e` when changing routing, validation, bootstrap, or auth guards/integration.
 
-## Format & lint
+## Format, lint, build, test
 
-From repo root (CI gate):
+From repo root (CI gate — **0 warnings**):
 
 ```sh
-pnpm run format          # Biome write
-pnpm run lint            # format:check + biome:check + ESLint type-checked
+pnpm run lint            # lint:ci: deps + format:check + biome:check + lint:types
+pnpm run build           # after lint passes, or scoped: cd services/<name> && pnpm run build
+pnpm run test            # unit tests
 ```
 
-Per service: `pnpm run format` (Biome via `-w`), `pnpm run lint` (ESLint only). Config: root `biome.json`, `@collabspace/eslint-config`. See `docs/tooling/biome-migration.md`.
+Quick fix while editing:
+
+```sh
+pnpm run format          # Biome write (services + packages)
+pnpm run biome:fix       # Biome format + lint safe fixes
+```
+
+Per service: `pnpm run format` (Biome via `-w`), `pnpm run lint` (ESLint only — **not** full CI gate).
+
+- Config: `biome.json` (root), `packages/eslint-config/create-type-checked-config.mjs`.
+- Avoid `!` non-null assertions — Biome errors; use guards / `getAuthServiceClient()` pattern.
+- ESLint: `void bootstrap()`; unused `_param` prefix.
+- See `docs/tooling/biome-migration.md`, `.claude/docs/coding-conventions.md`.
 
 ## Service JWT — S2S HTTP (user, workspace, task, notification)
 

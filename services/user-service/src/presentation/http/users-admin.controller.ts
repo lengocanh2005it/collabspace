@@ -13,8 +13,8 @@ export class UsersAdminController {
 
   @Get('all')
   @ApiOperation({ summary: 'List all accounts with profile data' })
-  async list(@Headers('authorization') authorization?: string) {
-    return this.useCase.list(authorization!);
+  async list(@Headers('authorization') authorization: string) {
+    return this.useCase.list(authorization);
   }
 
   @Delete(':id')
@@ -23,8 +23,8 @@ export class UsersAdminController {
   async anonymize(
     @AdminUserId() actorId: string,
     @Param('id') userId: string,
-    @Headers('authorization') authorization?: string,
+    @Headers('authorization') authorization: string,
   ): Promise<void> {
-    await this.useCase.anonymize(actorId, userId, authorization!);
+    await this.useCase.anonymize(actorId, userId, authorization);
   }
 }

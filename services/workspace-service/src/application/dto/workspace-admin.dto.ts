@@ -10,5 +10,5 @@ export class ForceJoinWorkspaceDto {
 
   @ApiProperty({ enum: ['admin'], default: 'admin' })
   @IsIn(['admin'])
-  role: 'admin' = 'admin';
+  role = 'admin' as const;
 }

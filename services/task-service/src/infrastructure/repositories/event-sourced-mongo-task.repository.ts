@@ -44,7 +44,7 @@ export class EventSourcedMongoTaskRepository implements ITaskRepository {
   async findByIdAsync(id: TaskId): Promise<TaskDomain | null> {
     const rawDoc = await this.taskModel.findById(id.getValue()).lean().exec();
     if (!rawDoc) return null;
-    return TaskMapper.toDomain(rawDoc as any);
+    return TaskMapper.toDomain(rawDoc as TaskPersistence);
   }
 
   async loadAggregateByIdAsync(id: TaskId): Promise<TaskDomain | null> {
@@ -82,7 +82,7 @@ export class EventSourcedMongoTaskRepository implements ITaskRepository {
     }
 
     const rawDocs = await query.lean().exec();
-    return rawDocs.map((doc) => TaskMapper.toDomain(doc as any));
+    return rawDocs.map((doc) => TaskMapper.toDomain(doc as TaskPersistence));
   }
 
   async countByWorkspaceIdAsync(workspaceId: string, filter?: TaskListFilter): Promise<number> {

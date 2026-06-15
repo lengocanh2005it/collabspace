@@ -54,11 +54,16 @@ export class DeleteCommentHandler
       throw new BadRequestException("Failed to delete comment");
     }
 
+    const deletedAt = comment.getDeletedAt();
+    if (!deletedAt) {
+      throw new BadRequestException("Comment delete timestamp is missing");
+    }
+
     // Step 6: Return response
     return {
       commentId: comment.getId(),
       message: "Comment deleted successfully",
-      deletedAt: comment.getDeletedAt()!,
+      deletedAt,
     };
   }
 }

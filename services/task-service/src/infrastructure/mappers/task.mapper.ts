@@ -46,9 +46,10 @@ export class TaskMapper {
 
       // 👇 Dùng payload typed rõ ràng để tránh trôi schema giữa các layer
       createdBy: TaskMapper.toSnapshotPersistence(domainTask.getCreatedBy()),
-      assignedTo: domainTask.getAssignedTo()
-        ? TaskMapper.toSnapshotPersistence(domainTask.getAssignedTo()!)
-        : null,
+      assignedTo: (() => {
+        const assignedTo = domainTask.getAssignedTo();
+        return assignedTo ? TaskMapper.toSnapshotPersistence(assignedTo) : null;
+      })(),
 
       attachments: domainTask.getAttachments(),
       createdAt: domainTask.getCreatedAt(),
@@ -114,9 +115,10 @@ export class TaskMapper {
 
       // 👇 Trả về response typed rõ ràng thay vì object any
       createdBy: TaskMapper.toResponseUser(domainTask.getCreatedBy()),
-      assignedTo: domainTask.getAssignedTo()
-        ? TaskMapper.toResponseUser(domainTask.getAssignedTo()!)
-        : null,
+      assignedTo: (() => {
+        const assignedTo = domainTask.getAssignedTo();
+        return assignedTo ? TaskMapper.toResponseUser(assignedTo) : null;
+      })(),
 
       attachments: domainTask.getAttachments(),
       createdAt: domainTask.getCreatedAt(),

@@ -49,24 +49,32 @@ For cross-service changes:
 - Verify every affected service.
 - Check proto/event/docs alignment.
 
-## Lint & format (repo root)
+## Lint, format, build, test (repo root)
 
-Before push (matches CI `lint` job):
-
-```sh
-pnpm run lint            # format:check + biome:check + lint:types (from repo root)
-```
-
-Per-service `pnpm run lint` is ESLint only — not the full CI gate.
-
-Format only:
+**Trước push** — khớp CI job `lint` + `build-test` (phải **0 warnings**):
 
 ```sh
-pnpm run format          # Biome write (services + packages)
-pnpm run biome:fix       # Biome format + lint auto-fix
+pnpm run lint            # lint:ci = lint:deps + format:check + biome:check + lint:types
+pnpm run build           # tsc / nest build — all packages
+pnpm run test            # unit tests — all packages
 ```
 
-Pre-commit runs `biome check --staged` on staged files. Details: `.claude/docs/development-workflows.md`, `docs/tooling/biome-migration.md`.
+| Script | Mô tả |
+|--------|--------|
+| `lint:deps` | Build `@collabspace/shared` + `@collabspace/nest-auth` trước ESLint |
+| `format:check` | Biome format read-only |
+| `biome:check` | Biome format + lint (`--error-on-warnings`) |
+| `lint:types` | ESLint type-checked per package (`--max-warnings 0`) |
+| `format` | Biome write |
+| `biome:fix` | Biome auto-fix (review diff) |
+
+**Per-service:** `pnpm run lint` = ESLint only; `pnpm run format` = Biome via `pnpm -w exec`. **Không** thay `pnpm run lint` ở root.
+
+**Biome rules agents hay dính:** `noNonNullAssertion` (error) — không dùng `!`; narrow type hoặc guard. NestJS: `useImportType` off trong `biome.json`.
+
+**ESLint:** `no-floating-promises` (error) — dùng `void bootstrap()` cho entrypoint async.
+
+Pre-commit: `biome check --staged`. Details: `.claude/docs/development-workflows.md`, `docs/tooling/biome-migration.md`.
 
 ## Commands
 
@@ -156,7 +164,13 @@ Trước push đổi `Dockerfile.service` hoặc workspace packages: chạy `pnp
 
 ## Final Verification Summary
 
-Report:
+Report (typical code change — repo root):
+
+1. `pnpm run lint` — pass/fail (0 warnings required).
+2. `pnpm run build` — pass/fail.
+3. `pnpm run test` — pass/fail.
+
+Also report:
 
 - Commands run.
 - Pass/fail result.

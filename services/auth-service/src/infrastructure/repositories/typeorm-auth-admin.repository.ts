@@ -66,7 +66,7 @@ export class TypeOrmAuthAdminRepository implements AuthAdminRepository {
   }
 
   async assignPermissionToRole(roleId: string, permissionId: string): Promise<AdminRole> {
-    const [_role, permission] = await Promise.all([
+    const [, permission] = await Promise.all([
       this.loadRole(roleId),
       this.permissionRepository.findOne({ where: { id: permissionId } }),
     ]);

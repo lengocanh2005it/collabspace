@@ -6,8 +6,21 @@ const DEFAULT_IGNORES = ['dist/**', 'eslint.config.mjs', 'src/generated/**'];
 
 const BASE_RULES = {
   '@typescript-eslint/no-explicit-any': 'off',
-  '@typescript-eslint/no-floating-promises': 'warn',
-  '@typescript-eslint/no-unsafe-argument': 'warn',
+  '@typescript-eslint/no-floating-promises': 'error',
+  '@typescript-eslint/no-unsafe-argument': 'off',
+  '@typescript-eslint/no-unsafe-assignment': 'off',
+  '@typescript-eslint/no-unsafe-call': 'off',
+  '@typescript-eslint/no-unsafe-member-access': 'off',
+  '@typescript-eslint/no-unsafe-return': 'off',
+  '@typescript-eslint/no-unused-vars': [
+    'error',
+    {
+      argsIgnorePattern: '^_',
+      caughtErrorsIgnorePattern: '^_',
+      varsIgnorePattern: '^_',
+    },
+  ],
+  '@typescript-eslint/prefer-as-const': 'error',
   '@typescript-eslint/restrict-template-expressions': 'off',
 };
 
@@ -69,7 +82,7 @@ export function createTypeCheckedEslintConfig({
 
   if (specRules !== false) {
     configs.push({
-      files: ['**/*.spec.ts', '**/*.e2e-spec.ts'],
+      files: ['**/*.spec.ts', '**/*.e2e-spec.ts', '**/testing/**/*.ts', '**/*.mock.ts'],
       rules: {
         ...DEFAULT_SPEC_RULES,
         ...(specRules ?? {}),

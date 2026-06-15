@@ -27,13 +27,14 @@ export class TaskCommentNotificationPublisher {
     const commentPreview = CommentPreview.fromContent(input.content);
     const now = new Date().toISOString();
 
-    if (CommentNotificationPolicy.shouldNotifyAssignee(input.assigneeId, input.authorId)) {
+    const assigneeId = input.assigneeId;
+    if (assigneeId && CommentNotificationPolicy.shouldNotifyAssignee(assigneeId, input.authorId)) {
       await this.taskOutboxService.enqueueTaskCommented({
         eventId: randomUUID(),
         occurredAt: now,
         taskId: input.taskId,
         taskTitle: input.taskTitle,
-        recipientId: input.assigneeId!,
+        recipientId: assigneeId,
         actorId: input.authorId,
         actorName: input.authorName,
         actorAvatarUrl: input.authorAvatarUrl,
