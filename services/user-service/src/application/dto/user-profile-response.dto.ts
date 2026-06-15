@@ -12,16 +12,20 @@ export type UserProfileResponseDto = {
   username: string | null;
 };
 
+function toIsoString(value: Date | string): string {
+  return value instanceof Date ? value.toISOString() : new Date(value).toISOString();
+}
+
 export const toUserProfileResponseDto = (
   profile: UserProfile,
 ): UserProfileResponseDto => ({
   avatarUrl: profile.avatarUrl,
   bio: profile.bio,
-  createdAt: profile.createdAt.toISOString(),
+  createdAt: toIsoString(profile.createdAt),
   displayName: profile.displayName,
   fullName: profile.fullName,
   id: profile.id,
-  updatedAt: profile.updatedAt.toISOString(),
+  updatedAt: toIsoString(profile.updatedAt),
   userId: profile.userId,
   username: profile.username,
 });

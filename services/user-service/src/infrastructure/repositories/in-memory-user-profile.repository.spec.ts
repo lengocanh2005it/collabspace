@@ -43,5 +43,9 @@ describe('InMemoryUserProfileRepository', () => {
 
     expect(updated.username).toBe(created.username);
     expect(updated.fullName).toBe('Le Ngoc Anh Updated');
+    expect(updated.createdAt).toEqual(created.createdAt);
+    expect(updated.updatedAt.getTime()).toBeGreaterThanOrEqual(
+      created.updatedAt.getTime(),
+    );
   });
 });

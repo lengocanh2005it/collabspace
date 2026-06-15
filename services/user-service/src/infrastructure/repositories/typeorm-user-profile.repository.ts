@@ -219,21 +219,37 @@ export class TypeOrmUserProfileRepository implements UserProfileRepository {
       },
     });
 
-    const savedProfile = await this.repository.save(
-      this.repository.create({
-        avatarUrl: existingProfile?.avatarUrl ?? null,
-        bio: existingProfile?.bio ?? null,
-        deletedAt: null,
-        displayName: existingProfile?.displayName ?? null,
-        fullName: input.fullName,
-        id: existingProfile?.id ?? randomUUID(),
-        userId: input.userId,
-        username:
-          existingProfile?.username ??
-          (await this.resolveAvailableUsername(input.fullName, input.userId)),
-      }),
-    );
+    let savedProfile: UserProfileOrmEntity;
 
+    if (existingProfile) {
+      existingProfile.fullName = input.fullName;
+      existingProfile.deletedAt = null;
+      if (!existingProfile.username) {
+        existingProfile.username = await this.resolveAvailableUsername(
+          input.fullName,
+          input.userId,
+        );
+      }
+      savedProfile = await this.repository.save(existingProfile);
+    } else {
+      savedProfile = await this.repository.save(
+        this.repository.create({
+          avatarUrl: null,
+          bio: null,
+          deletedAt: null,
+          displayName: null,
+          fullName: input.fullName,
+          id: randomUUID(),
+          userId: input.userId,
+          username: await this.resolveAvailableUsername(
+            input.fullName,
+            input.userId,
+          ),
+        }),
+      );
+    }
+
+    await this.cache.deleteProfile(input.userId);
     return this.toDomainProfile(savedProfile);
   }
 

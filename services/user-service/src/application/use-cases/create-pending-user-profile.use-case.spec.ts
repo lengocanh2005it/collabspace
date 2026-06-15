@@ -63,4 +63,20 @@ describe('CreatePendingUserProfileUseCase', () => {
       useCase.execute({ fullName: 'Jane Doe', userId: 'user-1' }),
     ).resolves.toMatchObject({ userId: 'user-1' });
   });
+
+  it('maps upsert result with string timestamps for pending re-register', async () => {
+    jest.spyOn(repository, 'upsertPending').mockResolvedValue({
+      ...sampleUserProfile,
+      createdAt: '2026-01-01T00:00:00.000Z' as unknown as Date,
+      updatedAt: '2026-01-02T00:00:00.000Z' as unknown as Date,
+    });
+    rabbitMqEventsMock.publishUserRegistered.mockResolvedValue(undefined);
+
+    await expect(
+      useCase.execute({ fullName: 'Jane Doe', userId: 'user-1' }),
+    ).resolves.toMatchObject({
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-02T00:00:00.000Z',
+    });
+  });
 });
