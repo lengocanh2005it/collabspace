@@ -25,33 +25,8 @@ if [[ ! -f "$VALUES_PROD" ]]; then
   exit 1
 fi
 
-if [[ -f "$PHASE0_ENV" ]]; then
-  echo "==> Refreshing values-prod.yaml from phase0.env..."
-  ci_image_tag="${IMAGE_TAG:-}"
-  if [[ -n "$ci_image_tag" ]]; then
-    IMAGE_TAG="$ci_image_tag" bash "$SCRIPT_DIR/prepare-prod-values.sh"
-  else
-    bash "$SCRIPT_DIR/prepare-prod-values.sh"
-  fi
-fi
-
-cd "$APP_DIR"
-
 # CI/workflow may export IMAGE_TAG before this script; phase0.env must not override it.
 ci_image_tag="${IMAGE_TAG:-}"
-if [[ -f "$PHASE0_ENV" ]]; then
-  set -a
-  # shellcheck disable=SC1090
-  source "$PHASE0_ENV"
-  set +a
-fi
-if [[ -n "$ci_image_tag" ]]; then
-  export IMAGE_TAG="$ci_image_tag"
-else
-  unset IMAGE_TAG
-fi
-
-GHCR_OWNER="${GHCR_OWNER:-}"
 
 # Returns "true" when a service had its image rebuilt in this CI run.
 # Defaults to "true" when CHANGED_* vars are not set (manual / local runs).
@@ -65,6 +40,52 @@ service_was_changed() {
     *) echo "true" ;;
   esac
 }
+
+all_services_changed() {
+  local svc
+  for svc in auth-service user-service workspace-service task-service notification-service; do
+    [[ "$(service_was_changed "$svc")" == "true" ]] || return 1
+  done
+  return 0
+}
+
+any_service_changed() {
+  local svc
+  for svc in auth-service user-service workspace-service task-service notification-service; do
+    [[ "$(service_was_changed "$svc")" == "true" ]] && return 0
+  done
+  return 1
+}
+
+if [[ -f "$PHASE0_ENV" ]]; then
+  if [[ -n "$ci_image_tag" ]] && any_service_changed && ! all_services_changed; then
+    echo "==> Partial image deploy — keeping per-service tags in values-prod.yaml"
+    echo "    (only rebuilt services get helm --set apps.<svc>.image.tag=${ci_image_tag})"
+  else
+    echo "==> Refreshing values-prod.yaml from phase0.env..."
+    if [[ -n "$ci_image_tag" ]]; then
+      IMAGE_TAG="$ci_image_tag" bash "$SCRIPT_DIR/prepare-prod-values.sh"
+    else
+      bash "$SCRIPT_DIR/prepare-prod-values.sh"
+    fi
+  fi
+fi
+
+cd "$APP_DIR"
+
+if [[ -f "$PHASE0_ENV" ]]; then
+  set -a
+  # shellcheck disable=SC1090
+  source "$PHASE0_ENV"
+  set +a
+fi
+if [[ -n "$ci_image_tag" ]]; then
+  export IMAGE_TAG="$ci_image_tag"
+else
+  unset IMAGE_TAG
+fi
+
+GHCR_OWNER="${GHCR_OWNER:-}"
 
 helm_image_tag_sets() {
   if [[ -z "${IMAGE_TAG:-}" ]]; then
