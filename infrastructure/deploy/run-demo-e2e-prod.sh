@@ -21,9 +21,11 @@ if kubectl get deployment auth-service -n "${APP_NS:-collabspace}" >/dev/null 2>
   fi
 fi
 
-# On the Droplet, Traefik is reachable on loopback. Avoid overwriting BASE_URL with raw
-# IPv6 node addresses (curl requires http://[ipv6]/...).
-export BASE_URL="${BASE_URL:-http://127.0.0.1/api/v1}"
+# On the Droplet, probe via loopback with HTTPS when PROD_DOMAIN has TLS (Traefik redirects HTTP).
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/resolve-prod-api-base.sh"
+export BASE_URL="$(resolve_prod_api_base_url)"
+install_prod_api_curl_wrapper
 echo "==> Demo E2E BASE_URL=${BASE_URL}"
 export DEMO_E2E_OTP_SCRIPT="${DEMO_E2E_OTP_SCRIPT:-$SCRIPT_DIR/read-auth-otp-from-outbox.sh}"
 chmod +x "$DEMO_E2E_OTP_SCRIPT"
