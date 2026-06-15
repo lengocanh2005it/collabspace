@@ -1,10 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import { Model } from "mongoose";
-import {
-  IdempotencyKeyRecord,
-  IdempotencyKeyDocument,
-} from "./idempotency-key.schema";
+import type { Model } from "mongoose";
+import { IdempotencyKeyRecord, type IdempotencyKeyDocument } from "./idempotency-key.schema";
 
 export type CachedIdempotentResponse = {
   body: Record<string, unknown>;

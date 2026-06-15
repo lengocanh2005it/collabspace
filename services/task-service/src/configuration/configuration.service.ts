@@ -45,12 +45,10 @@ export class ConfigurationService {
       queue: this.configService.get<string>("RABBITMQ_QUEUE") ?? "task-service",
 
       // Mặc định là true, trừ khi cố tình ghi 'false'
-      queueDurable:
-        this.configService.get<string>("RABBITMQ_QUEUE_DURABLE") !== "false",
+      queueDurable: this.configService.get<string>("RABBITMQ_QUEUE_DURABLE") !== "false",
 
       // Ép kiểu từ String sang Number
-      prefetchCount:
-        Number(this.configService.get<number>("RABBITMQ_PREFETCH_COUNT")) || 10,
+      prefetchCount: Number(this.configService.get<number>("RABBITMQ_PREFETCH_COUNT")) || 10,
 
       noAck: this.configService.get<string>("RABBITMQ_NO_ACK") === "true",
     };

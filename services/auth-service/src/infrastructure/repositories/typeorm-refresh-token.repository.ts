@@ -1,13 +1,10 @@
-import {
-  IssueRefreshTokenInput,
-  RefreshTokenPayload,
-} from '@/domain/types/refresh-token';
-import { ConfigurationService } from '@/configuration/configuration.service';
+import type { IssueRefreshTokenInput, RefreshTokenPayload } from '@/domain/types/refresh-token';
+import type { ConfigurationService } from '@/configuration/configuration.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { createHash, randomBytes, randomUUID } from 'crypto';
-import { DataSource, IsNull, MoreThan, Repository } from 'typeorm';
-import { RefreshTokenRepository } from '@/domain/repositories/refresh-token.repository';
+import { createHash, randomBytes, randomUUID } from 'node:crypto';
+import { type DataSource, IsNull, MoreThan, type Repository } from 'typeorm';
+import type { RefreshTokenRepository } from '@/domain/repositories/refresh-token.repository';
 import type { RefreshTokenSessionSummary } from '@/domain/types/refresh-token-session';
 import { RefreshTokenOrmEntity } from '@/infrastructure/database/entities/refresh-token.orm-entity';
 
@@ -20,9 +17,7 @@ export class TypeOrmRefreshTokenRepository implements RefreshTokenRepository {
     private readonly refreshTokenRepository: Repository<RefreshTokenOrmEntity>,
   ) {}
 
-  async findActiveToken(
-    refreshToken: string,
-  ): Promise<RefreshTokenOrmEntity | null> {
+  async findActiveToken(refreshToken: string): Promise<RefreshTokenOrmEntity | null> {
     const tokenHash = this.hashToken(refreshToken);
 
     return this.refreshTokenRepository.findOne({
@@ -34,9 +29,7 @@ export class TypeOrmRefreshTokenRepository implements RefreshTokenRepository {
     });
   }
 
-  async listSessionsByUserId(
-    userId: string,
-  ): Promise<RefreshTokenSessionSummary[]> {
+  async listSessionsByUserId(userId: string): Promise<RefreshTokenSessionSummary[]> {
     const tokens = await this.refreshTokenRepository.find({
       order: {
         createdAt: 'DESC',
@@ -54,9 +47,7 @@ export class TypeOrmRefreshTokenRepository implements RefreshTokenRepository {
     }
 
     return [...latestByFamily.values()]
-      .sort(
-        (left, right) => right.createdAt.getTime() - left.createdAt.getTime(),
-      )
+      .sort((left, right) => right.createdAt.getTime() - left.createdAt.getTime())
       .map((token) => this.toSessionSummary(token));
   }
 
@@ -85,10 +76,7 @@ export class TypeOrmRefreshTokenRepository implements RefreshTokenRepository {
     });
   }
 
-  async revokeFamily(
-    familyId: string,
-    reason = 'family_revoked',
-  ): Promise<number> {
+  async revokeFamily(familyId: string, reason = 'family_revoked'): Promise<number> {
     const now = new Date();
     const result = await this.refreshTokenRepository
       .createQueryBuilder()
@@ -125,10 +113,7 @@ export class TypeOrmRefreshTokenRepository implements RefreshTokenRepository {
     return result.affected ?? 0;
   }
 
-  async revokeToken(
-    refreshToken: string,
-    reason = 'manually_revoked',
-  ): Promise<void> {
+  async revokeToken(refreshToken: string, reason = 'manually_revoked'): Promise<void> {
     const currentToken = await this.loadTokenByValue(refreshToken);
 
     if (!currentToken || currentToken.revokedAt) {
@@ -141,10 +126,7 @@ export class TypeOrmRefreshTokenRepository implements RefreshTokenRepository {
     await this.refreshTokenRepository.save(currentToken);
   }
 
-  async revokeAllForUser(
-    userId: string,
-    reason = 'logout_all',
-  ): Promise<number> {
+  async revokeAllForUser(userId: string, reason = 'logout_all'): Promise<number> {
     const now = new Date();
     const result = await this.refreshTokenRepository
       .createQueryBuilder()
@@ -193,10 +175,7 @@ export class TypeOrmRefreshTokenRepository implements RefreshTokenRepository {
   async rotate(refreshToken: string): Promise<RefreshTokenPayload> {
     return this.dataSource.transaction(async (manager) => {
       const repository = manager.getRepository(RefreshTokenOrmEntity);
-      const currentToken = await this.loadTokenByValue(
-        refreshToken,
-        repository,
-      );
+      const currentToken = await this.loadTokenByValue(refreshToken, repository);
 
       if (!currentToken) {
         throw new UnauthorizedException({
@@ -263,9 +242,7 @@ export class TypeOrmRefreshTokenRepository implements RefreshTokenRepository {
     });
   }
 
-  private buildTokenPayload(
-    input: IssueRefreshTokenInput,
-  ): RefreshTokenPayload {
+  private buildTokenPayload(input: IssueRefreshTokenInput): RefreshTokenPayload {
     return {
       expiresAt: input.expiresAt ?? this.calculateExpiryDate(),
       familyId: input.familyId ?? randomUUID(),
@@ -282,8 +259,7 @@ export class TypeOrmRefreshTokenRepository implements RefreshTokenRepository {
   }
 
   private generateRefreshToken(): string {
-    const byteLength =
-      this.configurationService.getRefreshTokenConfig().byteLength;
+    const byteLength = this.configurationService.getRefreshTokenConfig().byteLength;
 
     return randomBytes(byteLength).toString('base64url');
   }
@@ -292,9 +268,7 @@ export class TypeOrmRefreshTokenRepository implements RefreshTokenRepository {
     return createHash('sha256').update(refreshToken).digest('hex');
   }
 
-  private toSessionSummary(
-    token: RefreshTokenOrmEntity,
-  ): RefreshTokenSessionSummary {
+  private toSessionSummary(token: RefreshTokenOrmEntity): RefreshTokenSessionSummary {
     const now = Date.now();
     const isActive = !token.revokedAt && token.expiresAt.getTime() > now;
 

@@ -15,12 +15,7 @@ import {
   UploadedFile,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import {
-  ApiBearerAuth,
-  ApiOkResponse,
-  ApiOperation,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import {
   PaginatedUserSummaryResponseSchemaDto,
   UserPreferencesResponseSchemaDto,
@@ -38,17 +33,17 @@ import { UpdateUserPreferencesUseCase } from '../../application/use-cases/update
 import { UpdateUserProfileUseCase } from '../../application/use-cases/update-user-profile.use-case';
 import { UpdateUserStatusUseCase } from '../../application/use-cases/update-user-status.use-case';
 import { GetUserStatusesUseCase } from '../../application/use-cases/get-user-statuses.use-case';
-import { AzureBlobService } from '../../infrastructure/services/azure-blob.service';
-import { BulkUsersRequestDto } from './dto/bulk-users-request.dto';
-import { ListUsersQueryDto } from './dto/list-users-query.dto';
-import { PresenceQueryDto } from './dto/presence-query.dto';
-import { SearchUsersQueryDto } from './dto/search-users-query.dto';
-import { UpdateCurrentUserPreferencesDto } from './dto/update-current-user-preferences.dto';
-import { UpdateCurrentUserProfileDto } from './dto/update-current-user-profile.dto';
-import { UpdateCurrentUserStatusDto } from './dto/update-current-user-status.dto';
-import { UserHealthService } from '../../health/user-health.service';
+import type { AzureBlobService } from '../../infrastructure/services/azure-blob.service';
+import type { BulkUsersRequestDto } from './dto/bulk-users-request.dto';
+import type { ListUsersQueryDto } from './dto/list-users-query.dto';
+import type { PresenceQueryDto } from './dto/presence-query.dto';
+import type { SearchUsersQueryDto } from './dto/search-users-query.dto';
+import type { UpdateCurrentUserPreferencesDto } from './dto/update-current-user-preferences.dto';
+import type { UpdateCurrentUserProfileDto } from './dto/update-current-user-profile.dto';
+import type { UpdateCurrentUserStatusDto } from './dto/update-current-user-status.dto';
+import type { UserHealthService } from '../../health/user-health.service';
 import { assertMetricsAccess } from '../../metrics/metrics-access';
-import { MetricsService } from '../../metrics/metrics.service';
+import type { MetricsService } from '../../metrics/metrics.service';
 import type { UploadedFile as CustomUploadedFile } from '../../common/types/uploaded-file';
 import { isPlatformAdmin } from '@collabspace/shared';
 import type { AuthenticatedRequest } from './authenticated-request';
@@ -112,15 +107,9 @@ export class UsersController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update current user profile' })
   @ApiOkResponse({ type: UserProfileResponseSchemaDto })
-  async updateMe(
-    @Body() body: UpdateCurrentUserProfileDto,
-    @Req() request: AuthenticatedRequest,
-  ) {
+  async updateMe(@Body() body: UpdateCurrentUserProfileDto, @Req() request: AuthenticatedRequest) {
     const { preferredLanguage, ...profileInput } = body;
-    const profile = await this.updateUserProfileUseCase.execute(
-      request.user.id,
-      profileInput,
-    );
+    const profile = await this.updateUserProfileUseCase.execute(request.user.id, profileInput);
 
     if (preferredLanguage) {
       await this.updateUserPreferencesUseCase.execute(request.user.id, {
@@ -142,10 +131,7 @@ export class UsersController {
       throw new BadRequestException('No file provided');
     }
 
-    const avatarUrl = await this.azureBlobService.uploadAvatar(
-      file,
-      request.user.id,
-    );
+    const avatarUrl = await this.azureBlobService.uploadAvatar(file, request.user.id);
 
     return this.updateUserProfileUseCase.execute(request.user.id, {
       avatarUrl,
@@ -206,10 +192,7 @@ export class UsersController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'List/search user directory (mentions, assignees)' })
   @ApiOkResponse({ type: PaginatedUserSummaryResponseSchemaDto })
-  async listUsers(
-    @Query() query: ListUsersQueryDto,
-    @Req() request: AuthenticatedRequest,
-  ) {
+  async listUsers(@Query() query: ListUsersQueryDto, @Req() request: AuthenticatedRequest) {
     this.assertDirectoryAccess(request.user, query.q);
     return this.listUserSummariesUseCase.execute({
       limit: query.limit ?? 20,
@@ -221,10 +204,7 @@ export class UsersController {
   @Get('search')
   @UseGuards(AuthGuard)
   @ApiOkResponse({ type: PaginatedUserSummaryResponseSchemaDto })
-  async searchUsers(
-    @Query() query: SearchUsersQueryDto,
-    @Req() request: AuthenticatedRequest,
-  ) {
+  async searchUsers(@Query() query: SearchUsersQueryDto, @Req() request: AuthenticatedRequest) {
     this.assertDirectoryAccess(request.user, query.q);
     return this.listUserSummariesUseCase.execute({
       limit: query.limit ?? 20,

@@ -19,11 +19,7 @@ export interface OutboxPollCycleOptions {
   claimPendingBatch: () => Promise<ClaimedOutboxEvent[]>;
   publish: (event: ClaimedOutboxEvent) => Promise<void>;
   markProcessed: (id: string) => Promise<void>;
-  markFailed: (
-    id: string,
-    attemptCount: number,
-    message: string,
-  ) => Promise<void>;
+  markFailed: (id: string, attemptCount: number, message: string) => Promise<void>;
   /** Log label prefix, e.g. "auth outbox" */
   logLabel?: string;
   /** Wrap markFailed in try/catch (auth/workspace); task omits this */
@@ -55,9 +51,7 @@ export async function runOutboxPollCycle(
       await options.markProcessed(event.id);
     } catch (error) {
       const message = errorMessage(error);
-      logger?.warn(
-        `${label} publish failed for ${event.id} (${event.eventType}): ${message}`,
-      );
+      logger?.warn(`${label} publish failed for ${event.id} (${event.eventType}): ${message}`);
 
       if (options.safeMarkFailed) {
         try {

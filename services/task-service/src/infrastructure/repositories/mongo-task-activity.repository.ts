@@ -1,7 +1,7 @@
 // src/infrastructure/repositories/mongo-task-activity.repository.ts
 import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import { Model } from "mongoose";
+import type { Model } from "mongoose";
 import type { ITaskActivityRepository } from "../../application/ports/ITaskActivityRepository";
 import { TaskActivityItemMapper } from "../../application/mappers/task-activity-item.mapper";
 import type { Comment } from "../../domain/entities/comment.entity";
@@ -19,18 +19,13 @@ export class MongoTaskActivityRepository implements ITaskActivityRepository {
     private readonly activityModel: Model<TaskActivityDocument>,
   ) {}
 
-  async appendFromEventsAsync(
-    taskId: string,
-    events: StoredTaskDomainEvent[],
-  ): Promise<void> {
+  async appendFromEventsAsync(taskId: string, events: StoredTaskDomainEvent[]): Promise<void> {
     const items = TaskActivityItemMapper.fromStoredEvents(events);
     await this.appendItems(taskId, items);
   }
 
   async appendFromCommentAsync(comment: Comment): Promise<void> {
-    await this.appendItems(comment.getTaskId(), [
-      TaskActivityItemMapper.fromComment(comment),
-    ]);
+    await this.appendItems(comment.getTaskId(), [TaskActivityItemMapper.fromComment(comment)]);
   }
 
   async findByTaskIdAsync(
@@ -52,10 +47,7 @@ export class MongoTaskActivityRepository implements ITaskActivityRepository {
     return this.activityModel.countDocuments({ taskId }).exec();
   }
 
-  private async appendItems(
-    taskId: string,
-    items: TaskActivityItemData[],
-  ): Promise<void> {
+  private async appendItems(taskId: string, items: TaskActivityItemData[]): Promise<void> {
     if (items.length === 0) {
       return;
     }
@@ -83,9 +75,7 @@ export class MongoTaskActivityRepository implements ITaskActivityRepository {
     );
   }
 
-  private toItemData(
-    document: TaskActivityPersistence,
-  ): TaskActivityItemData {
+  private toItemData(document: TaskActivityPersistence): TaskActivityItemData {
     return {
       id: document._id,
       type: document.type as TaskActivityItemData["type"],

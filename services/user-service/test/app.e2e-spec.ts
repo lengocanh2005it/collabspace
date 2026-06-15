@@ -1,13 +1,9 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication } from '@nestjs/common';
+import { Test, type TestingModule } from '@nestjs/testing';
+import type { INestApplication } from '@nestjs/common';
 import { UnauthorizedException } from '@nestjs/common';
 import request from 'supertest';
-import {
-  SERVICE_IDS,
-  SERVICE_SCOPES,
-  signServiceJwt,
-} from '@collabspace/shared';
-import { App } from 'supertest/types';
+import { SERVICE_IDS, SERVICE_SCOPES, signServiceJwt } from '@collabspace/shared';
+import type { App } from 'supertest/types';
 import { AuthGrpcService } from '../src/integrations/auth/auth-grpc.service';
 import { AuthAdminHttpClient } from '../src/integrations/auth/auth-admin-http.client';
 import { AppModule } from './../src/app.module';
@@ -47,9 +43,7 @@ describe('AppController (e2e)', () => {
       };
     };
     authGrpcServiceMock.verifyAccessToken.mockImplementation(verifyIdentity);
-    authGrpcServiceMock.verifyAccessTokenLite.mockImplementation(
-      verifyIdentity,
-    );
+    authGrpcServiceMock.verifyAccessTokenLite.mockImplementation(verifyIdentity);
     authGrpcServiceMock.ping.mockResolvedValue(undefined);
     userHealthServiceMock.getLiveness.mockReturnValue({
       service: 'user-service',
@@ -65,8 +59,7 @@ describe('AppController (e2e)', () => {
           status: 'up',
         },
         database: {
-          detail:
-            'DATABASE_URL not configured; using in-memory repository mode',
+          detail: 'DATABASE_URL not configured; using in-memory repository mode',
           required: false,
           status: 'disabled',
         },

@@ -1,19 +1,11 @@
-import {
-  Injectable,
-  Logger,
-  OnModuleDestroy,
-  OnModuleInit,
-} from '@nestjs/common';
+import { Injectable, Logger, type OnModuleDestroy, type OnModuleInit } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
-import { DataSource } from 'typeorm';
+import type { DataSource } from 'typeorm';
 import { runOutboxPollCycle } from '@collabspace/shared';
-import {
-  isOperationTimeoutError,
-  withTimeout,
-} from '@/common/utils/timeout.util';
-import { ConfigurationService } from '@/configuration/configuration.service';
-import { EmailsService } from '@/infrastructure/emails/emails.service';
-import { AuthOutboxService } from './auth-outbox.service';
+import { isOperationTimeoutError, withTimeout } from '@/common/utils/timeout.util';
+import type { ConfigurationService } from '@/configuration/configuration.service';
+import type { EmailsService } from '@/infrastructure/emails/emails.service';
+import type { AuthOutboxService } from './auth-outbox.service';
 import { AuthOutboxPublishRegistry } from './auth-outbox-publish.registry';
 
 @Injectable()
@@ -40,8 +32,7 @@ export class AuthOutboxProcessor implements OnModuleInit, OnModuleDestroy {
       return;
     }
 
-    const pollIntervalMs =
-      this.configurationService.getOutboxConfig().pollIntervalMs;
+    const pollIntervalMs = this.configurationService.getOutboxConfig().pollIntervalMs;
     this.timer = setInterval(() => {
       void this.processPendingEvents();
     }, pollIntervalMs);
@@ -50,12 +41,9 @@ export class AuthOutboxProcessor implements OnModuleInit, OnModuleDestroy {
   }
 
   private async bootstrapOutboxProcessing(): Promise<void> {
-    const released =
-      await this.authOutboxService.releaseInFlightClaimsOnStartup();
+    const released = await this.authOutboxService.releaseInFlightClaimsOnStartup();
     if (released > 0) {
-      this.logger.warn(
-        `Released ${released} in-flight auth outbox event(s) on startup`,
-      );
+      this.logger.warn(`Released ${released} in-flight auth outbox event(s) on startup`);
     }
 
     await this.processPendingEvents();
@@ -84,26 +72,19 @@ export class AuthOutboxProcessor implements OnModuleInit, OnModuleDestroy {
       while (this.pendingWake) {
         this.pendingWake = false;
 
-        const exhaustedCount =
-          await this.authOutboxService.markExhaustedClaims();
+        const exhaustedCount = await this.authOutboxService.markExhaustedClaims();
         if (exhaustedCount > 0) {
-          this.logger.warn(
-            `Marked ${exhaustedCount} exhausted auth outbox event(s) as failed`,
-          );
+          this.logger.warn(`Marked ${exhaustedCount} exhausted auth outbox event(s) as failed`);
         }
 
         await runOutboxPollCycle(
           {
-            reclaimStaleClaims: () =>
-              this.authOutboxService.reclaimStaleClaims(),
+            reclaimStaleClaims: () => this.authOutboxService.reclaimStaleClaims(),
             claimPendingBatch: () => this.authOutboxService.claimPendingBatch(),
             publish: async (event) => {
-              const { publishTimeoutMs } =
-                this.configurationService.getOutboxConfig();
+              const { publishTimeoutMs } = this.configurationService.getOutboxConfig();
               const recipient =
-                typeof event.payload.email === 'string'
-                  ? event.payload.email
-                  : 'unknown';
+                typeof event.payload.email === 'string' ? event.payload.email : 'unknown';
 
               this.logger.log(
                 `Publishing auth outbox event ${event.id} (${event.eventType}) attempt=${event.attemptCount} to=${recipient}`,

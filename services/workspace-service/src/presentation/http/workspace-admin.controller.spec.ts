@@ -1,9 +1,6 @@
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
-import {
-  PLATFORM_IDENTITY_RESOLVER,
-  PlatformAdminGuard,
-} from '@collabspace/nest-auth';
+import { PLATFORM_IDENTITY_RESOLVER, PlatformAdminGuard } from '@collabspace/nest-auth';
 import { ManageWorkspacesAdminUseCase } from '../../application/use-cases/workspace/manage-workspaces-admin.use-case';
 import { WorkspaceAdminController } from './workspace-admin.controller';
 
@@ -58,9 +55,7 @@ describe('WorkspaceAdminController (http)', () => {
       roles: ['admin'],
       userId: 'admin-1',
     });
-    useCase.list.mockResolvedValue([
-      { id: 'workspace-1', memberCount: 2, name: 'Demo' },
-    ]);
+    useCase.list.mockResolvedValue([{ id: 'workspace-1', memberCount: 2, name: 'Demo' }]);
 
     await request(app.getHttpServer())
       .get('/api/v1/workspaces/admin/all')

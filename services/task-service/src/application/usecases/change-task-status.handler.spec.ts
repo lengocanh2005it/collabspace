@@ -1,6 +1,6 @@
 import { ChangeTaskStatusHandler } from "./change-task-status.handler";
 import { ChangeTaskStatusCommand } from "../commands/change-task-status.command";
-import { ITaskRepository } from "../ports/ITaskRepository";
+import type { ITaskRepository } from "../ports/ITaskRepository";
 import { createMockTaskRepository } from "../../test-utils/mock-task-repository";
 import { Task } from "../../domain/entities/Task";
 import { TaskId } from "../../domain/value-objects/TaskId";
@@ -19,13 +19,7 @@ describe("ChangeTaskStatusHandler", () => {
   });
 
   const createMockTask = (status: string = "TODO") => {
-    const creatorSnapshot = UserSnapshot.create(
-      "creator-1",
-      "c@c.c",
-      "Creator",
-      "Creator",
-      "url",
-    );
+    const creatorSnapshot = UserSnapshot.create("creator-1", "c@c.c", "Creator", "Creator", "url");
     return Task.restore(
       new TaskId("123e4567-e89b-12d3-a456-426614174000"),
       "Task Title",
@@ -44,10 +38,7 @@ describe("ChangeTaskStatusHandler", () => {
 
   it("should change status of an existing task", async () => {
     const task = createMockTask("TODO");
-    const command = new ChangeTaskStatusCommand(
-      "123e4567-e89b-12d3-a456-426614174000",
-      "DOING",
-    );
+    const command = new ChangeTaskStatusCommand("123e4567-e89b-12d3-a456-426614174000", "DOING");
 
     mockTaskRepo.loadAggregateByIdAsync.mockResolvedValue(task);
 
@@ -58,30 +49,20 @@ describe("ChangeTaskStatusHandler", () => {
   });
 
   it("should throw EntityNotFoundException if task does not exist", async () => {
-    const command = new ChangeTaskStatusCommand(
-      "123e4567-e89b-12d3-a456-426614174000",
-      "DOING",
-    );
+    const command = new ChangeTaskStatusCommand("123e4567-e89b-12d3-a456-426614174000", "DOING");
     mockTaskRepo.loadAggregateByIdAsync.mockResolvedValue(null);
 
-    await expect(handler.execute(command)).rejects.toThrow(
-      EntityNotFoundException,
-    );
+    await expect(handler.execute(command)).rejects.toThrow(EntityNotFoundException);
     expect(mockTaskRepo.saveAsync).not.toHaveBeenCalled();
   });
 
   it("should throw BusinessRuleException when transitioning from DONE to TODO", async () => {
     const task = createMockTask("DONE");
-    const command = new ChangeTaskStatusCommand(
-      "123e4567-e89b-12d3-a456-426614174000",
-      "TODO",
-    );
+    const command = new ChangeTaskStatusCommand("123e4567-e89b-12d3-a456-426614174000", "TODO");
 
     mockTaskRepo.loadAggregateByIdAsync.mockResolvedValue(task);
 
-    await expect(handler.execute(command)).rejects.toThrow(
-      BusinessRuleException,
-    );
+    await expect(handler.execute(command)).rejects.toThrow(BusinessRuleException);
     await expect(handler.execute(command)).rejects.toThrow(
       "Business Rule Violated: Cannot move from DONE to TODO",
     );
@@ -93,10 +74,7 @@ describe("ChangeTaskStatusHandler", () => {
 
   it("should allow transitioning from TODO to DONE", async () => {
     const task = createMockTask("TODO");
-    const command = new ChangeTaskStatusCommand(
-      "123e4567-e89b-12d3-a456-426614174000",
-      "DONE",
-    );
+    const command = new ChangeTaskStatusCommand("123e4567-e89b-12d3-a456-426614174000", "DONE");
 
     mockTaskRepo.loadAggregateByIdAsync.mockResolvedValue(task);
 

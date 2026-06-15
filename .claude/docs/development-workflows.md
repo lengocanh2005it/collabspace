@@ -19,6 +19,28 @@ Expected tools:
 - Shared package: `packages/shared` (`@collabspace/shared`) — rebuild after event type changes.
 - All five app services are NestJS; `workspace-service` uses port **8080**.
 
+## Lint & format (Biome + ESLint)
+
+From repo root:
+
+```sh
+pnpm run format          # Biome write (services + packages)
+pnpm run format:check    # Biome format only
+pnpm run biome:check     # Biome format + lint
+pnpm run biome:fix       # Biome format + lint with safe fixes
+pnpm run lint:types      # ESLint type-checked (per package)
+pnpm run lint:ci         # CI gate: format:check + biome:check + lint:types
+pnpm run lint            # alias of lint:ci
+```
+
+**Per-service vs root:** `pnpm run lint` **inside** `services/<name>` runs ESLint type-checked for that package only. The full CI gate (Biome format + Biome lint + ESLint) is **`pnpm run lint` from repo root**. Per-service `pnpm run format` calls root Biome via `pnpm -w exec biome format …`.
+
+Pre-commit (`.githooks/pre-commit`, enabled via `pnpm install` → `prepare`): blocks `.env` commits and runs `biome check --staged`.
+
+CI (`.github/workflows/ci.yml`): `lint` job runs `pnpm run lint:ci` before `build-test`.
+
+Details: `docs/tooling/biome-migration.md`.
+
 ## Environment Files
 
 Environment examples exist for most services and infrastructure components:
@@ -120,7 +142,7 @@ pnpm run proto:gen
 pnpm run build
 pnpm run test
 pnpm run test:e2e
-pnpm run lint
+pnpm run lint            # ESLint only — full gate: pnpm run lint from repo root
 pnpm run migrate
 pnpm run seed
 ```
@@ -148,7 +170,7 @@ pnpm install
 pnpm run build
 pnpm run test
 pnpm run test:e2e
-pnpm run lint
+pnpm run lint            # ESLint only — full gate: pnpm run lint from repo root
 pnpm run migrate
 pnpm run seed
 ```
@@ -343,7 +365,7 @@ Rules:
 
 GitHub Actions is the preferred CI/CD path for Droplet deployment:
 
-- `.github/workflows/ci.yml` runs root `pnpm install`, `pnpm run build`, and `pnpm run test`.
+- `.github/workflows/ci.yml` runs `pnpm run lint:ci` (format + Biome + ESLint), then `pnpm run build` and `pnpm run test`.
 - `.github/workflows/docker-deploy.yml` builds five service images using `infrastructure/docker/Dockerfile.service`, pushes them to GHCR, then SSH deploys to k3s via `helm-deploy-ci.sh` + `verify-k8s-readiness.sh` (Phase 4).
 - Droplet scripts live in `infrastructure/deploy/` (`helm-rollout.sh`, `run-k8s-migrations.sh`, phase checklists).
 - Production Compose overlay: `infrastructure/docker/docker-compose.prod.yml`.
@@ -363,7 +385,7 @@ Required GitHub Actions secrets for deploy:
 Pipeline (GitHub Actions):
 
 1. Checkout.
-2. `pnpm install` → build + test (`ci.yml`).
+2. `pnpm install` → lint (`lint:ci`) → build + test (`ci.yml`).
 3. Build Docker images (`Dockerfile.service`) → push GHCR (`docker-deploy.yml`).
 4. SSH Droplet → `helm-deploy-ci.sh` → `verify-k8s-readiness.sh`.
 

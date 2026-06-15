@@ -1,10 +1,10 @@
 // src/application/usecases/comments/create/create-comment.handler.ts
-import { CommandHandler, ICommandHandler } from "@nestjs/cqrs";
+import { CommandHandler, type ICommandHandler } from "@nestjs/cqrs";
 import { Inject, BadRequestException } from "@nestjs/common";
 import { CreateCommentCommand } from "./create-comment.command";
 import {
   USER_REPLICA_LOOKUP_TOKEN,
-  UserReplicaLookupService,
+  type UserReplicaLookupService,
 } from "../../../services/user-replica-lookup.service";
 import {
   type ICommentRepository,
@@ -14,7 +14,7 @@ import { ITaskRepository as ITaskRepositoryToken } from "../../../ports/ITaskRep
 import type { ITaskRepository } from "../../../ports/ITaskRepository";
 import { Comment } from "../../../../domain/entities/comment.entity";
 import { TaskId } from "../../../../domain/value-objects/TaskId";
-import { TaskCommentNotificationPublisher } from "../../../services/task-comment-notification.publisher";
+import type { TaskCommentNotificationPublisher } from "../../../services/task-comment-notification.publisher";
 import { ITaskActivityRepository as ITaskActivityRepositoryToken } from "../../../ports/ITaskActivityRepository";
 import type { ITaskActivityRepository } from "../../../ports/ITaskActivityRepository";
 import { parseMentionUsernames } from "../../../../domain/utils/mention-parser";
@@ -26,10 +26,9 @@ export interface CreateCommentResponse {
 }
 
 @CommandHandler(CreateCommentCommand)
-export class CreateCommentHandler implements ICommandHandler<
-  CreateCommentCommand,
-  CreateCommentResponse
-> {
+export class CreateCommentHandler
+  implements ICommandHandler<CreateCommentCommand, CreateCommentResponse>
+{
   constructor(
     @Inject(COMMENT_REPOSITORY_TOKEN)
     private readonly commentRepository: ICommentRepository,
@@ -51,19 +50,13 @@ export class CreateCommentHandler implements ICommandHandler<
     const task = await this.taskRepository.findByIdAsync(taskIdObj);
 
     if (!task) {
-      throw new BadRequestException(
-        `Không tìm thấy Task với ID: ${command.taskId}`,
-      );
+      throw new BadRequestException(`Không tìm thấy Task với ID: ${command.taskId}`);
     }
 
-    const authorRecord = await this.userReplicaLookup.findActiveByIdAsync(
-      command.authorId,
-    );
+    const authorRecord = await this.userReplicaLookup.findActiveByIdAsync(command.authorId);
 
-    if (!authorRecord || !authorRecord.isActive) {
-      throw new BadRequestException(
-        "Tài khoản của bạn không tồn tại hoặc đã bị khóa!",
-      );
+    if (!authorRecord?.isActive) {
+      throw new BadRequestException("Tài khoản của bạn không tồn tại hoặc đã bị khóa!");
     }
 
     const commentId = uuid();
@@ -80,9 +73,8 @@ export class CreateCommentHandler implements ICommandHandler<
     const mentionedUserIds: string[] = [];
     const mentionUsernames = parseMentionUsernames(command.content);
     if (mentionUsernames.length > 0) {
-      const mentionMap = await this.userReplicaLookup.findActiveMapByUsernamesAsync(
-        mentionUsernames,
-      );
+      const mentionMap =
+        await this.userReplicaLookup.findActiveMapByUsernamesAsync(mentionUsernames);
       for (const username of mentionUsernames) {
         const mentionedUser = mentionMap.get(username.toLowerCase());
         if (mentionedUser && mentionedUser.userId !== command.authorId) {

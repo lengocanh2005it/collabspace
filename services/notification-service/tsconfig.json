@@ -24,14 +24,6 @@
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false
   },
-  "include": [
-    "src/**/*"
-  ],
-  "exclude": [
-    "dist",
-    "node_modules",
-    "**/*.spec.ts",
-    "src/seed.ts",
-    "src/load-demo-seed.ts"
-  ]
+  "include": ["src/**/*"],
+  "exclude": ["dist", "node_modules", "**/*.spec.ts", "src/seed.ts", "src/load-demo-seed.ts"]
 }

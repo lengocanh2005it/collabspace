@@ -38,6 +38,9 @@ infrastructure/vault/.vault-*.json
 **/*.k8s.yaml
 **/kubeconfig
 
+# Biome
+.biome-cache/
+
 # IDEs
 .vscode/
 .idea/

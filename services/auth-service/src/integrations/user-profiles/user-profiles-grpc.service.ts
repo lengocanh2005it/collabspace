@@ -1,6 +1,5 @@
-import { ConfigurationModule } from '@/configuration/configuration.module';
-import { ConfigurationService } from '@/configuration/configuration.service';
-import {
+import type { ConfigurationService } from '@/configuration/configuration.service';
+import type {
   CreatePendingProfileInput,
   UserProfileClient,
   UserProfileSnapshot,
@@ -10,12 +9,12 @@ import {
   Inject,
   Injectable,
   Logger,
-  OnModuleInit,
+  type OnModuleInit,
   ServiceUnavailableException,
 } from '@nestjs/common';
 import { status } from '@grpc/grpc-js';
 import type { ClientGrpc } from '@nestjs/microservices';
-import { TimeoutError, firstValueFrom, Observable, timeout } from 'rxjs';
+import { TimeoutError, firstValueFrom, type Observable, timeout } from 'rxjs';
 
 export const USER_PROFILES_GRPC_CLIENT = 'USER_PROFILES_GRPC_CLIENT';
 
@@ -47,16 +46,11 @@ type UserProfilesGrpcClient = {
 };
 
 type ReadyGrpcClient = {
-  waitForReady(
-    deadline: number,
-    callback: (error?: Error | null) => void,
-  ): void;
+  waitForReady(deadline: number, callback: (error?: Error | null) => void): void;
 };
 
 @Injectable()
-export class UserProfilesGrpcService
-  implements OnModuleInit, UserProfileClient
-{
+export class UserProfilesGrpcService implements OnModuleInit, UserProfileClient {
   private readonly logger = new Logger(UserProfilesGrpcService.name);
   private readonly client: ClientGrpc;
   private userProfilesClient?: ReadyGrpcClient;
@@ -71,13 +65,10 @@ export class UserProfilesGrpcService
   }
 
   onModuleInit(): void {
-    this.userProfilesService = this.client.getService<UserProfilesGrpcClient>(
-      'UserProfilesService',
-    );
+    this.userProfilesService =
+      this.client.getService<UserProfilesGrpcClient>('UserProfilesService');
     this.userProfilesClient =
-      this.client.getClientByServiceName<ReadyGrpcClient>(
-        'UserProfilesService',
-      );
+      this.client.getClientByServiceName<ReadyGrpcClient>('UserProfilesService');
   }
 
   async ping(): Promise<void> {
@@ -88,28 +79,21 @@ export class UserProfilesGrpcService
       });
     }
 
-    const { grpcTimeoutMs, grpcUrl } =
-      this.configurationService.getUserServiceConfig();
+    const { grpcTimeoutMs, grpcUrl } = this.configurationService.getUserServiceConfig();
 
     try {
       await new Promise<void>((resolve, reject) => {
-        this.userProfilesClient?.waitForReady(
-          Date.now() + grpcTimeoutMs,
-          (error) => {
-            if (error) {
-              reject(error);
-              return;
-            }
+        this.userProfilesClient?.waitForReady(Date.now() + grpcTimeoutMs, (error) => {
+          if (error) {
+            reject(error);
+            return;
+          }
 
-            resolve();
-          },
-        );
+          resolve();
+        });
       });
     } catch (error) {
-      if (
-        error instanceof Error &&
-        error.message.toLowerCase().includes('deadline')
-      ) {
+      if (error instanceof Error && error.message.toLowerCase().includes('deadline')) {
         throw new ServiceUnavailableException({
           code: 'USER_SERVICE_GRPC_TIMEOUT',
           message: `User service gRPC readiness timed out after ${grpcTimeoutMs}ms via ${grpcUrl}`,
@@ -134,8 +118,7 @@ export class UserProfilesGrpcService
       });
     }
 
-    const { grpcTimeoutMs, grpcUrl } =
-      this.configurationService.getUserServiceConfig();
+    const { grpcTimeoutMs, grpcUrl } = this.configurationService.getUserServiceConfig();
 
     try {
       await firstValueFrom(
@@ -160,12 +143,8 @@ export class UserProfilesGrpcService
       }
 
       const message =
-        error instanceof Error
-          ? error.message
-          : `User service gRPC request failed via ${grpcUrl}`;
-      this.logger.warn(
-        `UserProfilesService.CreatePendingProfile failed: ${message}`,
-      );
+        error instanceof Error ? error.message : `User service gRPC request failed via ${grpcUrl}`;
+      this.logger.warn(`UserProfilesService.CreatePendingProfile failed: ${message}`);
       throw new ServiceUnavailableException({
         code: 'USER_SERVICE_GRPC_REQUEST_FAILED',
         message,
@@ -181,14 +160,11 @@ export class UserProfilesGrpcService
       });
     }
 
-    const { grpcTimeoutMs, grpcUrl } =
-      this.configurationService.getUserServiceConfig();
+    const { grpcTimeoutMs, grpcUrl } = this.configurationService.getUserServiceConfig();
 
     try {
       return await firstValueFrom(
-        this.userProfilesService
-          .getProfile(input)
-          .pipe(timeout({ first: grpcTimeoutMs })),
+        this.userProfilesService.getProfile(input).pipe(timeout({ first: grpcTimeoutMs })),
       );
     } catch (error) {
       if (error instanceof TimeoutError) {
@@ -202,9 +178,7 @@ export class UserProfilesGrpcService
       }
 
       const message =
-        error instanceof Error
-          ? error.message
-          : `User service gRPC request failed via ${grpcUrl}`;
+        error instanceof Error ? error.message : `User service gRPC request failed via ${grpcUrl}`;
       this.logger.warn(`UserProfilesService.GetProfile failed: ${message}`);
       throw new ServiceUnavailableException({
         code: 'USER_SERVICE_GRPC_REQUEST_FAILED',
@@ -262,9 +236,7 @@ export class UserProfilesGrpcService
     return String(error);
   }
 
-  private parseGrpcConflictPayload(
-    message: string,
-  ): { code?: string; message?: string } | null {
+  private parseGrpcConflictPayload(message: string): { code?: string; message?: string } | null {
     const jsonStart = message.indexOf('{');
     if (jsonStart === -1) {
       return null;
@@ -276,17 +248,13 @@ export class UserProfilesGrpcService
         message?: unknown;
       };
 
-      if (
-        typeof parsed.code !== 'string' &&
-        typeof parsed.message !== 'string'
-      ) {
+      if (typeof parsed.code !== 'string' && typeof parsed.message !== 'string') {
         return null;
       }
 
       return {
         code: typeof parsed.code === 'string' ? parsed.code : undefined,
-        message:
-          typeof parsed.message === 'string' ? parsed.message : undefined,
+        message: typeof parsed.message === 'string' ? parsed.message : undefined,
       };
     } catch {
       return null;

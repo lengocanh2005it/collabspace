@@ -1,5 +1,5 @@
 // src/application/usecases/update-task-details.handler.ts
-import { CommandHandler, ICommandHandler } from "@nestjs/cqrs";
+import { CommandHandler, type ICommandHandler } from "@nestjs/cqrs";
 import { Inject } from "@nestjs/common";
 import { UpdateTaskDetailsCommand } from "../commands/update-task-details.command";
 import { ITaskRepository as ITaskRepositoryToken } from "../ports/ITaskRepository";
@@ -8,10 +8,7 @@ import { TaskId } from "../../domain/value-objects/TaskId";
 import { EntityNotFoundException } from "../../domain/exceptions/EntityNotFoundException";
 
 @CommandHandler(UpdateTaskDetailsCommand)
-export class UpdateTaskDetailsHandler implements ICommandHandler<
-  UpdateTaskDetailsCommand,
-  void
-> {
+export class UpdateTaskDetailsHandler implements ICommandHandler<UpdateTaskDetailsCommand, void> {
   constructor(
     @Inject(ITaskRepositoryToken)
     private readonly taskRepository: ITaskRepository,

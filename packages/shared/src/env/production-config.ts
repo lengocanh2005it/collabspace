@@ -2,10 +2,7 @@ export function isNodeProduction(): boolean {
   return process.env.NODE_ENV === 'production';
 }
 
-export function assertRequiredInProduction(
-  envName: string,
-  value: string | undefined,
-): void {
+export function assertRequiredInProduction(envName: string, value: string | undefined): void {
   if (!isNodeProduction()) {
     return;
   }

@@ -5,9 +5,7 @@ describe('AuthEventsController', () => {
     const verifyUserProfileEmailUseCase = {
       execute: jest.fn().mockResolvedValue({ userId: 'user-1' }),
     };
-    const controller = new AuthEventsController(
-      verifyUserProfileEmailUseCase as never,
-    );
+    const controller = new AuthEventsController(verifyUserProfileEmailUseCase as never);
 
     await controller.handleAuthEmailVerified({
       email: 'jane@example.com',
@@ -15,8 +13,6 @@ describe('AuthEventsController', () => {
       verifiedAt: '2026-01-01T00:00:00.000Z',
     });
 
-    expect(verifyUserProfileEmailUseCase.execute).toHaveBeenCalledWith(
-      'user-1',
-    );
+    expect(verifyUserProfileEmailUseCase.execute).toHaveBeenCalledWith('user-1');
   });
 });

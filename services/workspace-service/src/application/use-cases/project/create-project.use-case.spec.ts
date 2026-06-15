@@ -1,4 +1,4 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { Test, type TestingModule } from '@nestjs/testing';
 import { ForbiddenException } from '@nestjs/common';
 import { CreateProjectUseCase } from './create-project.use-case';
 import { PROJECT_REPOSITORY } from '../../../domain/repositories/project.repository';
@@ -29,9 +29,9 @@ describe('CreateProjectUseCase', () => {
 
   it('should throw ForbiddenException if user is not a member', async () => {
     mockMemberRepo.findByWorkspaceAndUser.mockResolvedValue(null);
-    await expect(
-      useCase.execute('user-1', 'ws-1', { name: 'Proj' }),
-    ).rejects.toThrow(ForbiddenException);
+    await expect(useCase.execute('user-1', 'ws-1', { name: 'Proj' })).rejects.toThrow(
+      ForbiddenException,
+    );
   });
 
   it('should create project if user is a member', async () => {

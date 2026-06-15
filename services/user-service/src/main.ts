@@ -2,7 +2,7 @@ import './observability/instrumentation';
 import { assertRequiredInProduction } from '@collabspace/shared';
 import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
-import { MicroserviceOptions, Transport } from '@nestjs/microservices';
+import { type MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { buildConsumerQueueOptions } from '@collabspace/shared';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { join } from 'node:path';
@@ -25,10 +25,7 @@ const toBoolean = (value: string | undefined, fallback: boolean): boolean => {
 
 async function bootstrap() {
   assertRequiredInProduction('DATABASE_URL', process.env.DATABASE_URL);
-  assertRequiredInProduction(
-    'SERVICE_JWT_SECRET',
-    process.env.SERVICE_JWT_SECRET,
-  );
+  assertRequiredInProduction('SERVICE_JWT_SECRET', process.env.SERVICE_JWT_SECRET);
 
   const app = await NestFactory.create(AppModule);
   app.use(compression());
@@ -48,8 +45,7 @@ async function bootstrap() {
         type: 'http',
         scheme: 'bearer',
         bearerFormat: 'service-jwt',
-        description:
-          'Short-lived service JWT (iss/aud/scope) for internal S2S HTTP.',
+        description: 'Short-lived service JWT (iss/aud/scope) for internal S2S HTTP.',
       },
       'service-jwt',
     )
@@ -101,8 +97,7 @@ async function bootstrap() {
   if (rabbitMqEnabled && rabbitMqUrl) {
     const queue = process.env.RABBITMQ_QUEUE ?? 'user-service';
     const dlxExchange = process.env.RABBITMQ_DLX_EXCHANGE ?? 'collabspace_dlx';
-    const dlxRoutingKey =
-      process.env.RABBITMQ_DLX_ROUTING_KEY ?? `${queue}.dlq`;
+    const dlxRoutingKey = process.env.RABBITMQ_DLX_ROUTING_KEY ?? `${queue}.dlq`;
 
     app.connectMicroservice<MicroserviceOptions>({
       transport: Transport.RMQ,
@@ -141,10 +136,7 @@ async function bootstrap() {
   await app.listen(port);
 
   Logger.log(`HTTP Server: http://localhost:${port}`, 'Bootstrap');
-  Logger.log(
-    `Swagger Docs: http://localhost:${port}/${swaggerPath}`,
-    'Bootstrap',
-  );
+  Logger.log(`Swagger Docs: http://localhost:${port}/${swaggerPath}`, 'Bootstrap');
 }
 
 bootstrap();

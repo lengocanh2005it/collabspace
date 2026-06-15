@@ -20,9 +20,7 @@ describe('GetUserProfileUseCase', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    getUserProfileUseCase = new GetUserProfileUseCase(
-      userProfileRepositoryMock,
-    );
+    getUserProfileUseCase = new GetUserProfileUseCase(userProfileRepositoryMock);
   });
 
   it('returns a user profile response dto when profile exists', async () => {
@@ -53,12 +51,8 @@ describe('GetUserProfileUseCase', () => {
   });
 
   it('throws not found when profile does not exist', async () => {
-    jest
-      .spyOn(userProfileRepositoryMock, 'findByUserId')
-      .mockResolvedValue(null);
+    jest.spyOn(userProfileRepositoryMock, 'findByUserId').mockResolvedValue(null);
 
-    await expect(getUserProfileUseCase.execute('missing-user')).rejects.toThrow(
-      NotFoundException,
-    );
+    await expect(getUserProfileUseCase.execute('missing-user')).rejects.toThrow(NotFoundException);
   });
 });

@@ -1,17 +1,15 @@
 import { BadRequestException } from "@nestjs/common";
 import { CreateTaskHandler } from "./create-task.handler";
 import { CreateTaskCommand } from "../commands/create-task.command";
-import { ITaskRepository } from "../ports/ITaskRepository";
+import type { ITaskRepository } from "../ports/ITaskRepository";
 import { createMockTaskRepository } from "../../test-utils/mock-task-repository";
-import { UserReplicaLookupService } from "../services/user-replica-lookup.service";
-import { UserReplica } from "../../infrastructure/persistence/user-replica.schema";
+import type { UserReplicaLookupService } from "../services/user-replica-lookup.service";
+import type { UserReplica } from "../../infrastructure/persistence/user-replica.schema";
 
 describe("CreateTaskHandler", () => {
   let handler: CreateTaskHandler;
   let mockTaskRepo: jest.Mocked<ITaskRepository>;
-  let mockUserReplicaLookup: jest.Mocked<
-    Pick<UserReplicaLookupService, "findActiveByIdAsync">
-  >;
+  let mockUserReplicaLookup: jest.Mocked<Pick<UserReplicaLookupService, "findActiveByIdAsync">>;
 
   beforeEach(() => {
     mockTaskRepo = createMockTaskRepository();
@@ -50,9 +48,7 @@ describe("CreateTaskHandler", () => {
     const taskId = await handler.execute(command);
 
     expect(taskId).toBeDefined();
-    expect(mockUserReplicaLookup.findActiveByIdAsync).toHaveBeenCalledWith(
-      "user-123",
-    );
+    expect(mockUserReplicaLookup.findActiveByIdAsync).toHaveBeenCalledWith("user-123");
     expect(mockTaskRepo.saveAsync).toHaveBeenCalledTimes(1);
   });
 

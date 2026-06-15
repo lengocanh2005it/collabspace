@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
+import { TypeOrmModule, type TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { DatabaseService } from './database.service';
 import { WorkspaceOrmEntity } from './entities/workspace.orm-entity';
 import { WorkspaceMemberOrmEntity } from './entities/workspace-member.orm-entity';
@@ -23,9 +23,7 @@ const createDatabaseOptions = (): TypeOrmModuleOptions => ({
   retryAttempts: 1,
   retryDelay: 0,
   schema: process.env.DATABASE_SCHEMA ?? 'public',
-  ssl: toBoolean(process.env.DATABASE_SSL, false)
-    ? { rejectUnauthorized: false }
-    : false,
+  ssl: toBoolean(process.env.DATABASE_SSL, false) ? { rejectUnauthorized: false } : false,
   synchronize: toBoolean(process.env.DATABASE_SYNCHRONIZE, false),
   type: 'postgres',
   url: process.env.DATABASE_URL,

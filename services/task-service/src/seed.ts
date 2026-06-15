@@ -95,9 +95,7 @@ async function seedTask(
   const createdByUser = findUser(users, taskSeed.createdByUserId);
   const createdBy = userSnapshot(createdByUser);
   const createdAt = new Date("2026-01-15T08:00:00.000Z");
-  const assigneeUser = taskSeed.assigneeUserId
-    ? findUser(users, taskSeed.assigneeUserId)
-    : null;
+  const assigneeUser = taskSeed.assigneeUserId ? findUser(users, taskSeed.assigneeUserId) : null;
   const assignedTo = assigneeUser ? userSnapshot(assigneeUser) : null;
 
   const createdPayload = {
@@ -211,8 +209,7 @@ async function backfillTaskActivity(
   comments: mongoose.mongo.Collection,
   taskActivity: mongoose.mongo.Collection,
 ): Promise<void> {
-  const writes: mongoose.mongo.AnyBulkWriteOperation<mongoose.mongo.BSON.Document>[] =
-    [];
+  const writes: mongoose.mongo.AnyBulkWriteOperation<mongoose.mongo.BSON.Document>[] = [];
 
   const eventDocs = await taskEvents.find({}).toArray();
   for (const doc of eventDocs) {
@@ -222,9 +219,7 @@ async function backfillTaskActivity(
       eventId: String(doc.eventId),
       eventType: doc.eventType as StoredTaskDomainEvent["eventType"],
       occurredAt:
-        doc.occurredAt instanceof Date
-          ? doc.occurredAt.toISOString()
-          : String(doc.occurredAt),
+        doc.occurredAt instanceof Date ? doc.occurredAt.toISOString() : String(doc.occurredAt),
       payload: doc.payload as StoredTaskDomainEvent["payload"],
     };
     const item = TaskActivityItemMapper.fromStoredEvent(storedEvent);
@@ -265,13 +260,10 @@ async function backfillTaskActivity(
             actorId: String(doc.authorId),
             actorName: String(doc.authorName),
             actorAvatarUrl: doc.authorAvatarUrl ?? null,
-            summary:
-              content.length > 120 ? `${content.slice(0, 120)}…` : content,
+            summary: content.length > 120 ? `${content.slice(0, 120)}…` : content,
             meta: { commentId: doc._id.toString() },
             occurredAt:
-              doc.createdAt instanceof Date
-                ? doc.createdAt
-                : new Date(String(doc.createdAt)),
+              doc.createdAt instanceof Date ? doc.createdAt : new Date(String(doc.createdAt)),
           },
         },
         upsert: true,
@@ -306,13 +298,7 @@ async function main(): Promise<void> {
     await seedUserReplicas(demoData.users, userReplicas);
 
     for (const taskSeed of demoData.demo.tasks) {
-      await seedTask(
-        taskSeed,
-        demoData.users,
-        demoData.demo,
-        taskEvents,
-        tasks,
-      );
+      await seedTask(taskSeed, demoData.users, demoData.demo, taskEvents, tasks);
     }
 
     await seedSampleComment(demoData.demo, demoData.users, comments);

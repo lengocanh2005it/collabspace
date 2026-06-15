@@ -24,22 +24,13 @@ export class UserSnapshot {
       );
     }
     if (!fullName || fullName.trim() === "") {
-      throw new BusinessRuleException(
-        "Tên User không được để trống",
-        "SNAPSHOT_FULLNAME_EMPTY",
-      );
+      throw new BusinessRuleException("Tên User không được để trống", "SNAPSHOT_FULLNAME_EMPTY");
     }
 
     // Nếu không có displayName, tự động fallback về fullName cho đồng bộ
     const resolvedDisplayName = displayName?.trim() ? displayName : fullName;
 
-    return new UserSnapshot(
-      userId,
-      email,
-      fullName,
-      resolvedDisplayName,
-      avatarUrl,
-    );
+    return new UserSnapshot(userId, email, fullName, resolvedDisplayName, avatarUrl);
   }
 
   // ========================================================

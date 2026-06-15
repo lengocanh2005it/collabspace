@@ -8,15 +8,10 @@ import type {
 } from "../persistence/task.schema";
 import { TaskId } from "../../domain/value-objects/TaskId";
 import { UserSnapshot } from "../../domain/value-objects/UserSnapshot";
-import type {
-  TaskResponseData,
-  TaskUserResponse,
-} from "../../presentation/dtos/task.response";
+import type { TaskResponseData, TaskUserResponse } from "../../presentation/dtos/task.response";
 
 export class TaskMapper {
-  private static toSnapshotPersistence(
-    snapshot: UserSnapshot,
-  ): TaskUserSnapshotPersistence {
+  private static toSnapshotPersistence(snapshot: UserSnapshot): TaskUserSnapshotPersistence {
     return {
       userId: snapshot.getUserId(),
       email: snapshot.getEmail(),
@@ -50,9 +45,9 @@ export class TaskMapper {
       assigneeId: domainTask.getAssigneeId(),
 
       // 👇 Dùng payload typed rõ ràng để tránh trôi schema giữa các layer
-      createdBy: this.toSnapshotPersistence(domainTask.getCreatedBy()),
+      createdBy: TaskMapper.toSnapshotPersistence(domainTask.getCreatedBy()),
       assignedTo: domainTask.getAssignedTo()
-        ? this.toSnapshotPersistence(domainTask.getAssignedTo()!)
+        ? TaskMapper.toSnapshotPersistence(domainTask.getAssignedTo()!)
         : null,
 
       attachments: domainTask.getAttachments(),
@@ -118,9 +113,9 @@ export class TaskMapper {
       assigneeId: domainTask.getAssigneeId(),
 
       // 👇 Trả về response typed rõ ràng thay vì object any
-      createdBy: this.toResponseUser(domainTask.getCreatedBy()),
+      createdBy: TaskMapper.toResponseUser(domainTask.getCreatedBy()),
       assignedTo: domainTask.getAssignedTo()
-        ? this.toResponseUser(domainTask.getAssignedTo()!)
+        ? TaskMapper.toResponseUser(domainTask.getAssignedTo()!)
         : null,
 
       attachments: domainTask.getAttachments(),

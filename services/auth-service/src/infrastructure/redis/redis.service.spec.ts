@@ -33,37 +33,21 @@ describe('RedisService', () => {
   it('sets values with ttl', async () => {
     redisClientMock.set.mockResolvedValue('OK');
 
-    await expect(redisService.set('cache:key', 'value', 60)).resolves.toBe(
-      'OK',
-    );
-    expect(redisClientMock.set).toHaveBeenCalledWith(
-      'cache:key',
-      'value',
-      'EX',
-      60,
-    );
+    await expect(redisService.set('cache:key', 'value', 60)).resolves.toBe('OK');
+    expect(redisClientMock.set).toHaveBeenCalledWith('cache:key', 'value', 'EX', 60);
   });
 
   it('serializes json values', async () => {
     redisClientMock.set.mockResolvedValue('OK');
 
-    await expect(
-      redisService.setJson('cache:key', { userId: 'user-1' }, 30),
-    ).resolves.toBe('OK');
-    expect(redisClientMock.set).toHaveBeenCalledWith(
-      'cache:key',
-      '{"userId":"user-1"}',
-      'EX',
-      30,
-    );
+    await expect(redisService.setJson('cache:key', { userId: 'user-1' }, 30)).resolves.toBe('OK');
+    expect(redisClientMock.set).toHaveBeenCalledWith('cache:key', '{"userId":"user-1"}', 'EX', 30);
   });
 
   it('parses json values', async () => {
     redisClientMock.get.mockResolvedValue('{"userId":"user-1"}');
 
-    await expect(
-      redisService.getJson<{ userId: string }>('cache:key'),
-    ).resolves.toEqual({
+    await expect(redisService.getJson<{ userId: string }>('cache:key')).resolves.toEqual({
       userId: 'user-1',
     });
   });

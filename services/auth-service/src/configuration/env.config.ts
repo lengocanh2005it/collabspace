@@ -22,28 +22,13 @@ export default () => ({
   auth: {
     emailVerification: {
       otpLength: toNumber(process.env.EMAIL_VERIFICATION_OTP_LENGTH, 6),
-      otpTtlSeconds: toNumber(
-        process.env.EMAIL_VERIFICATION_OTP_TTL_SECONDS,
-        600,
-      ),
-      resendCooldownSeconds: toNumber(
-        process.env.EMAIL_VERIFICATION_RESEND_COOLDOWN_SECONDS,
-        60,
-      ),
-      resendMaxAttempts: toNumber(
-        process.env.EMAIL_VERIFICATION_RESEND_MAX_ATTEMPTS,
-        5,
-      ),
-      resendWindowSeconds: toNumber(
-        process.env.EMAIL_VERIFICATION_RESEND_WINDOW_SECONDS,
-        3600,
-      ),
+      otpTtlSeconds: toNumber(process.env.EMAIL_VERIFICATION_OTP_TTL_SECONDS, 600),
+      resendCooldownSeconds: toNumber(process.env.EMAIL_VERIFICATION_RESEND_COOLDOWN_SECONDS, 60),
+      resendMaxAttempts: toNumber(process.env.EMAIL_VERIFICATION_RESEND_MAX_ATTEMPTS, 5),
+      resendWindowSeconds: toNumber(process.env.EMAIL_VERIFICATION_RESEND_WINDOW_SECONDS, 3600),
     },
     passwordReset: {
-      tokenByteLength: toNumber(
-        process.env.PASSWORD_RESET_TOKEN_BYTE_LENGTH,
-        32,
-      ),
+      tokenByteLength: toNumber(process.env.PASSWORD_RESET_TOKEN_BYTE_LENGTH, 32),
       ttlSeconds: toNumber(process.env.PASSWORD_RESET_TTL_SECONDS, 1800),
     },
     jwt: {
@@ -54,10 +39,7 @@ export default () => ({
     },
     verifyLiteCache: {
       enabled: toBoolean(process.env.AUTH_VERIFY_LITE_CACHE_ENABLED, true),
-      maxTtlSeconds: toNumber(
-        process.env.AUTH_VERIFY_LITE_CACHE_MAX_TTL_SECONDS,
-        300,
-      ),
+      maxTtlSeconds: toNumber(process.env.AUTH_VERIFY_LITE_CACHE_MAX_TTL_SECONDS, 300),
     },
   },
   database: {
@@ -70,8 +52,7 @@ export default () => ({
   },
   email: {
     deliveryTimeoutMs: toNumber(
-      process.env.EMAIL_DELIVERY_TIMEOUT_MS ??
-        process.env.MAIL_DELIVERY_TIMEOUT_MS,
+      process.env.EMAIL_DELIVERY_TIMEOUT_MS ?? process.env.MAIL_DELIVERY_TIMEOUT_MS,
       15000,
     ),
     queueTimeoutMs: toNumber(process.env.EMAIL_QUEUE_TIMEOUT_MS, 5000),
@@ -84,23 +65,14 @@ export default () => ({
   },
   graphileWorker: {
     concurrency: toNumber(process.env.GRAPHILE_WORKER_CONCURRENCY, 5),
-    enabled: toBoolean(
-      process.env.GRAPHILE_WORKER_ENABLED,
-      Boolean(process.env.DATABASE_URL),
-    ),
+    enabled: toBoolean(process.env.GRAPHILE_WORKER_ENABLED, Boolean(process.env.DATABASE_URL)),
     pollInterval: toNumber(process.env.GRAPHILE_WORKER_POLL_INTERVAL, 2000),
     schema: process.env.GRAPHILE_WORKER_SCHEMA ?? 'graphile_worker',
   },
   outbox: {
     batchSize: toNumber(process.env.OUTBOX_BATCH_SIZE, 20),
-    degradedFailedThreshold: toNumber(
-      process.env.OUTBOX_DEGRADED_FAILED_THRESHOLD,
-      1,
-    ),
-    degradedPendingThreshold: toNumber(
-      process.env.OUTBOX_DEGRADED_PENDING_THRESHOLD,
-      50,
-    ),
+    degradedFailedThreshold: toNumber(process.env.OUTBOX_DEGRADED_FAILED_THRESHOLD, 1),
+    degradedPendingThreshold: toNumber(process.env.OUTBOX_DEGRADED_PENDING_THRESHOLD, 50),
     enabled: toBoolean(process.env.OUTBOX_ENABLED, true),
     maxAttempts: toNumber(process.env.OUTBOX_MAX_ATTEMPTS, 10),
     pollIntervalMs: toNumber(process.env.OUTBOX_POLL_INTERVAL_MS, 5000),

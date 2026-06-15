@@ -1,5 +1,5 @@
 // src/application/usecases/get-notifications/get-notifications.handler.ts
-import { IQueryHandler, QueryHandler } from "@nestjs/cqrs";
+import { type IQueryHandler, QueryHandler } from "@nestjs/cqrs";
 import { Inject, Injectable } from "@nestjs/common";
 import { GetNotificationsQuery } from "./get-notifications.query";
 import {
@@ -12,9 +12,9 @@ import {
 } from "../../../domain/types/notification-metadata";
 import {
   USER_REPLICA_LOOKUP_TOKEN,
-  UserReplicaLookupService,
+  type UserReplicaLookupService,
 } from "../../services/user-replica-lookup.service";
-import { NotificationCountCacheService } from "../../../infrastructure/cache/notification-count-cache.service";
+import type { NotificationCountCacheService } from "../../../infrastructure/cache/notification-count-cache.service";
 
 export interface NotificationResponseDto {
   id: string;
@@ -45,10 +45,9 @@ export interface GetNotificationsResponse {
 
 @Injectable()
 @QueryHandler(GetNotificationsQuery)
-export class GetNotificationsHandler implements IQueryHandler<
-  GetNotificationsQuery,
-  GetNotificationsResponse
-> {
+export class GetNotificationsHandler
+  implements IQueryHandler<GetNotificationsQuery, GetNotificationsResponse>
+{
   constructor(
     @Inject(NOTIFICATION_REPOSITORY_TOKEN)
     private readonly notificationRepository: INotificationRepository,
@@ -57,9 +56,7 @@ export class GetNotificationsHandler implements IQueryHandler<
     private readonly countCache: NotificationCountCacheService,
   ) {}
 
-  async execute(
-    query: GetNotificationsQuery,
-  ): Promise<GetNotificationsResponse> {
+  async execute(query: GetNotificationsQuery): Promise<GetNotificationsResponse> {
     const [notifications, total, unreadCount] = await Promise.all([
       this.notificationRepository.findByRecipientIdAsync(query.recipientId, {
         skip: query.skip,
@@ -69,18 +66,14 @@ export class GetNotificationsHandler implements IQueryHandler<
       this.resolveUnreadCount(query.recipientId),
     ]);
 
-    const actorIds = notifications.map((notification) =>
-      notification.getActorId(),
-    );
-    const actorReplicas =
-      await this.userReplicaLookup.findActiveMapByIdsAsync(actorIds);
+    const actorIds = notifications.map((notification) => notification.getActorId());
+    const actorReplicas = await this.userReplicaLookup.findActiveMapByIdsAsync(actorIds);
 
     const mappedNotifications = notifications.map((notification) => {
       const metadata = notification.getMetadata();
       const actorId = notification.getActorId();
       const replica = actorReplicas.get(actorId);
-      const fallbackName =
-        getMetadataString(metadata, "actorName") || "Unknown";
+      const fallbackName = getMetadataString(metadata, "actorName") || "Unknown";
       const fallbackAvatar = getMetadataString(metadata, "actorAvatarUrl");
 
       return {
@@ -116,10 +109,7 @@ export class GetNotificationsHandler implements IQueryHandler<
     const cached = await this.countCache.getUnreadCount(recipientId);
     if (cached !== null) return cached;
 
-    const count =
-      await this.notificationRepository.countUnreadByRecipientIdAsync(
-        recipientId,
-      );
+    const count = await this.notificationRepository.countUnreadByRecipientIdAsync(recipientId);
     await this.countCache.setUnreadCount(recipientId, count);
     return count;
   }

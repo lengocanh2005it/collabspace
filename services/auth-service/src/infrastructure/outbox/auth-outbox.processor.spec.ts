@@ -1,8 +1,8 @@
-import { ConfigurationService } from '@/configuration/configuration.service';
-import { EmailsService } from '@/infrastructure/emails/emails.service';
-import { DataSource } from 'typeorm';
+import type { ConfigurationService } from '@/configuration/configuration.service';
+import type { EmailsService } from '@/infrastructure/emails/emails.service';
+import type { DataSource } from 'typeorm';
 import { AuthOutboxProcessor } from './auth-outbox.processor';
-import { AuthOutboxService } from './auth-outbox.service';
+import type { AuthOutboxService } from './auth-outbox.service';
 import {
   AUTH_OUTBOX_EVENT_EMAIL_VERIFICATION_OTP,
   AUTH_OUTBOX_EVENT_PASSWORD_RESET_EMAIL,
@@ -39,12 +39,8 @@ describe('AuthOutboxProcessor', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    jest
-      .spyOn(authOutboxServiceMock, 'markExhaustedClaims')
-      .mockResolvedValue(0);
-    jest
-      .spyOn(authOutboxServiceMock, 'reclaimStaleClaims')
-      .mockResolvedValue(0);
+    jest.spyOn(authOutboxServiceMock, 'markExhaustedClaims').mockResolvedValue(0);
+    jest.spyOn(authOutboxServiceMock, 'reclaimStaleClaims').mockResolvedValue(0);
     processor = new AuthOutboxProcessor(
       authOutboxServiceMock,
       configurationServiceMock,
@@ -71,9 +67,7 @@ describe('AuthOutboxProcessor', () => {
       accepted: ['member@example.com'],
       messageId: 'brevo-sent',
     });
-    jest
-      .spyOn(authOutboxServiceMock, 'markProcessed')
-      .mockResolvedValue(undefined);
+    jest.spyOn(authOutboxServiceMock, 'markProcessed').mockResolvedValue(undefined);
 
     await processor.processPendingEvents();
 
@@ -82,9 +76,7 @@ describe('AuthOutboxProcessor', () => {
       text: 'Your CollabSpace verification code is 123456. This code expires in 600 seconds.',
       to: 'member@example.com',
     });
-    expect(authOutboxServiceMock.markProcessed).toHaveBeenCalledWith(
-      'event-otp-1',
-    );
+    expect(authOutboxServiceMock.markProcessed).toHaveBeenCalledWith('event-otp-1');
   });
 
   it('sends password reset emails through the outbox processor', async () => {
@@ -105,9 +97,7 @@ describe('AuthOutboxProcessor', () => {
       accepted: ['member@example.com'],
       messageId: 'brevo-sent',
     });
-    jest
-      .spyOn(authOutboxServiceMock, 'markProcessed')
-      .mockResolvedValue(undefined);
+    jest.spyOn(authOutboxServiceMock, 'markProcessed').mockResolvedValue(undefined);
 
     await processor.processPendingEvents();
 
@@ -116,8 +106,6 @@ describe('AuthOutboxProcessor', () => {
       text: 'Use this password reset token: reset-token-123. It expires in 1800 seconds.',
       to: 'member@example.com',
     });
-    expect(authOutboxServiceMock.markProcessed).toHaveBeenCalledWith(
-      'event-reset-1',
-    );
+    expect(authOutboxServiceMock.markProcessed).toHaveBeenCalledWith('event-reset-1');
   });
 });

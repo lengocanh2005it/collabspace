@@ -1,4 +1,4 @@
-import { UserPreferences } from '../../domain/entities/user-preferences.entity';
+import type { UserPreferences } from '../../domain/entities/user-preferences.entity';
 
 export type UserPreferencesResponseDto = {
   createdAt: string;

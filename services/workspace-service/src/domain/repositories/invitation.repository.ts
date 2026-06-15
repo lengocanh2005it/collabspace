@@ -1,4 +1,4 @@
-import { Invitation } from '../entities/invitation.entity';
+import type { Invitation } from '../entities/invitation.entity';
 
 export const INVITATION_REPOSITORY = Symbol('INVITATION_REPOSITORY');
 
@@ -15,9 +15,5 @@ export interface IInvitationRepository {
     invitationId: string,
     userId: string,
   ): Promise<{ status: string; workspaceId: string }>;
-  updateStatus(
-    id: string,
-    status: string,
-    userId?: string,
-  ): Promise<Invitation>;
+  updateStatus(id: string, status: string, userId?: string): Promise<Invitation>;
 }

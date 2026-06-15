@@ -18,10 +18,7 @@ export class AcceptInvitationUseCase {
   ) {}
 
   async execute(userId: string, invitationId: string) {
-    const result = await this.invitationRepo.acceptAndJoinWorkspace(
-      invitationId,
-      userId,
-    );
+    const result = await this.invitationRepo.acceptAndJoinWorkspace(invitationId, userId);
 
     await this.activityRepo.record({
       workspaceId: result.workspaceId,

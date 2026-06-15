@@ -1,5 +1,5 @@
-import { OtpStore } from '@/domain/ports/otp-store.port';
-import { RedisService } from '@/infrastructure/redis/redis.service';
+import type { OtpStore } from '@/domain/ports/otp-store.port';
+import type { RedisService } from '@/infrastructure/redis/redis.service';
 import { Injectable } from '@nestjs/common';
 
 @Injectable()
@@ -38,11 +38,7 @@ export class RedisOtpStoreAdapter implements OtpStore {
     return this.redisService.set(key, value, ttlSeconds);
   }
 
-  setJson(
-    key: string,
-    value: unknown,
-    ttlSeconds?: number,
-  ): Promise<'OK' | null> {
+  setJson(key: string, value: unknown, ttlSeconds?: number): Promise<'OK' | null> {
     return this.redisService.setJson(key, value, ttlSeconds);
   }
 

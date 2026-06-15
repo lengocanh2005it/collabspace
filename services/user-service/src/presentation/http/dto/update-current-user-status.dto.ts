@@ -1,11 +1,5 @@
 import { Transform } from 'class-transformer';
-import {
-  IsIn,
-  IsISO8601,
-  IsOptional,
-  IsString,
-  MaxLength,
-} from 'class-validator';
+import { IsIn, IsISO8601, IsOptional, IsString, MaxLength } from 'class-validator';
 import { toNullableTrimmedString } from './transformers';
 
 export class UpdateCurrentUserStatusDto {

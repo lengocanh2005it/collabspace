@@ -1,5 +1,5 @@
 // src/application/handlers/create-user-replica.handler.ts
-import { CommandHandler, ICommandHandler } from "@nestjs/cqrs";
+import { CommandHandler, type ICommandHandler } from "@nestjs/cqrs";
 import { Inject } from "@nestjs/common";
 import { CreateUserReplicaCommand } from "../commands/create-user-replica.command";
 import {
@@ -19,8 +19,7 @@ export class CreateUserReplicaHandler implements ICommandHandler<CreateUserRepli
     await this.repo.upsertAsync({
       userId: command.userId,
       fullName: command.fullName,
-      email:
-        command.email?.trim() || `${command.userId}@users.collabspace.local`,
+      email: command.email?.trim() || `${command.userId}@users.collabspace.local`,
       username: command.username?.toLowerCase() ?? null,
       displayName: command.displayName ?? command.fullName,
       avatarUrl: command.avatarUrl ?? null,

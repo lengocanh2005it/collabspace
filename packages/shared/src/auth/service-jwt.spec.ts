@@ -4,11 +4,7 @@ import {
   SERVICE_SCOPES,
 } from './service-jwt.constants';
 import { ServiceAccessDeniedError } from './service-jwt.errors';
-import {
-  extractBearerToken,
-  signServiceJwt,
-  verifyServiceJwt,
-} from './service-jwt';
+import { extractBearerToken, signServiceJwt, verifyServiceJwt } from './service-jwt';
 
 const SECRET = 'phase-1-test-service-jwt-secret';
 const NOW = 1_710_000_000;
@@ -25,9 +21,7 @@ describe('extractBearerToken', () => {
   });
 
   it('uses first value when header is an array', () => {
-    expect(extractBearerToken(['Bearer token-1', 'Bearer token-2'])).toBe(
-      'token-1',
-    );
+    expect(extractBearerToken(['Bearer token-1', 'Bearer token-2'])).toBe('token-1');
   });
 });
 
@@ -175,10 +169,7 @@ describe('signServiceJwt / verifyServiceJwt', () => {
 
 describe('ServiceAccessDeniedError', () => {
   it('exposes stable code', () => {
-    const error = new ServiceAccessDeniedError(
-      'SERVICE_JWT_SCOPE_DENIED',
-      'scope missing',
-    );
+    const error = new ServiceAccessDeniedError('SERVICE_JWT_SCOPE_DENIED', 'scope missing');
 
     expect(error.code).toBe('SERVICE_JWT_SCOPE_DENIED');
     expect(error.name).toBe('ServiceAccessDeniedError');

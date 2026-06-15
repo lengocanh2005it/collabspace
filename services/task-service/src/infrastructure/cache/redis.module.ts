@@ -23,7 +23,11 @@ import { REDIS_CLIENT } from "./redis-client.token";
         const db = Number(configService.get<string>("REDIS_DB") ?? 0);
 
         const client = url
-          ? new Redis(url, { keyPrefix: "task:", lazyConnect: false, maxRetriesPerRequest: 1 })
+          ? new Redis(url, {
+              keyPrefix: "task:",
+              lazyConnect: false,
+              maxRetriesPerRequest: 1,
+            })
           : new Redis({
               host,
               port,

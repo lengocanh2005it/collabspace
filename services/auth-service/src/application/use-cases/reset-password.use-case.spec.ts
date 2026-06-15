@@ -1,5 +1,5 @@
 import { ResetPasswordUseCase } from '@/application/use-cases/reset-password.use-case';
-import { PasswordResetTokenService } from '@/application/services/password-reset-token.service';
+import type { PasswordResetTokenService } from '@/application/services/password-reset-token.service';
 import type { AuthUser } from '@/domain/entities/auth-user';
 import type { RefreshTokenRepository } from '@/domain/repositories/refresh-token.repository';
 import type { UserRepository } from '@/domain/repositories/user.repository';
@@ -26,13 +26,13 @@ describe('ResetPasswordUseCase', () => {
     userRepository = {
       getAuthUserById: jest.fn(),
       resetPassword: jest.fn(),
-    } as unknown as jest.Mocked<UserRepository>;
+    };
     refreshTokenRepository = {
       revokeAllForUser: jest.fn(),
-    } as unknown as jest.Mocked<RefreshTokenRepository>;
+    };
     passwordResetTokenService = {
       consumeToken: jest.fn(),
-    } as unknown as jest.Mocked<PasswordResetTokenService>;
+    };
     useCase = new ResetPasswordUseCase(
       userRepository,
       refreshTokenRepository,
@@ -64,9 +64,6 @@ describe('ResetPasswordUseCase', () => {
       revokedSessionCount: 2,
       userId: user.userId,
     });
-    expect(userRepository.resetPassword).toHaveBeenCalledWith(
-      user.userId,
-      'newpassword1',
-    );
+    expect(userRepository.resetPassword).toHaveBeenCalledWith(user.userId, 'newpassword1');
   });
 });

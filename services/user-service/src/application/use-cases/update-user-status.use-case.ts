@@ -1,11 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
 import {
-  UpdateUserStatusInput,
+  type UpdateUserStatusInput,
   USER_PROFILE_REPOSITORY,
 } from '../../domain/repositories/user-profile.repository';
 import type { UserProfileRepository } from '../../domain/repositories/user-profile.repository';
 import {
-  UserStatusResponseDto,
+  type UserStatusResponseDto,
   toUserStatusResponseDto,
 } from '../dto/user-status-response.dto';
 
@@ -16,12 +16,7 @@ export class UpdateUserStatusUseCase {
     private readonly userProfileRepository: UserProfileRepository,
   ) {}
 
-  async execute(
-    userId: string,
-    input: UpdateUserStatusInput,
-  ): Promise<UserStatusResponseDto> {
-    return toUserStatusResponseDto(
-      await this.userProfileRepository.updateStatus(userId, input),
-    );
+  async execute(userId: string, input: UpdateUserStatusInput): Promise<UserStatusResponseDto> {
+    return toUserStatusResponseDto(await this.userProfileRepository.updateStatus(userId, input));
   }
 }

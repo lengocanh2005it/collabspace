@@ -1,6 +1,6 @@
-import { ConfigurationService } from '@/configuration/configuration.service';
-import { GraphileWorkerService } from '@/infrastructure/graphile-worker/graphile-worker.service';
-import { EmailsSenderService } from './emails-sender.service';
+import type { ConfigurationService } from '@/configuration/configuration.service';
+import type { GraphileWorkerService } from '@/infrastructure/graphile-worker/graphile-worker.service';
+import type { EmailsSenderService } from './emails-sender.service';
 import { EmailsService } from './emails.service';
 
 describe('EmailsService', () => {
@@ -140,9 +140,7 @@ describe('EmailsService', () => {
   });
 
   it('falls back to direct Brevo send when graphile worker is disabled', async () => {
-    (
-      configurationServiceMock.getGraphileWorkerConfig as jest.Mock
-    ).mockReturnValue({
+    (configurationServiceMock.getGraphileWorkerConfig as jest.Mock).mockReturnValue({
       concurrency: 5,
       connectionString: undefined,
       enabled: false,
@@ -165,9 +163,7 @@ describe('EmailsService', () => {
   });
 
   it('maps direct email delivery timeouts to ServiceUnavailableException', async () => {
-    (
-      configurationServiceMock.getGraphileWorkerConfig as jest.Mock
-    ).mockReturnValue({
+    (configurationServiceMock.getGraphileWorkerConfig as jest.Mock).mockReturnValue({
       concurrency: 5,
       connectionString: undefined,
       enabled: false,

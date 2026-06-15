@@ -4,10 +4,7 @@ export interface NotificationMetadata {
   [key: string]: unknown;
 }
 
-export function getMetadataString(
-  metadata: NotificationMetadata,
-  key: string,
-): string | undefined {
+export function getMetadataString(metadata: NotificationMetadata, key: string): string | undefined {
   const value = metadata[key];
 
   return typeof value === "string" ? value : undefined;

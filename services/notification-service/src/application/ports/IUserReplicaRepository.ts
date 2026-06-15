@@ -1,4 +1,4 @@
-import { UserReplica } from "../../infrastructure/database/schemas/user-replica.schema";
+import type { UserReplica } from "../../infrastructure/database/schemas/user-replica.schema";
 
 export const USER_REPLICA_REPOSITORY_TOKEN = Symbol("IUserReplicaRepository");
 

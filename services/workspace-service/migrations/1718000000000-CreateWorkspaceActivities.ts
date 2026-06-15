@@ -1,4 +1,4 @@
-import { MigrationInterface, QueryRunner } from 'typeorm';
+import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 export class CreateWorkspaceActivities1718000000000 implements MigrationInterface {
   name = 'CreateWorkspaceActivities1718000000000';
@@ -25,9 +25,7 @@ export class CreateWorkspaceActivities1718000000000 implements MigrationInterfac
   }
 
   async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(
-      `DROP INDEX IF EXISTS "IDX_workspace_activities_workspace_occurred"`,
-    );
+    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_workspace_activities_workspace_occurred"`);
     await queryRunner.query(`DROP TABLE IF EXISTS "workspace_activities"`);
   }
 }

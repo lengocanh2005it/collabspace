@@ -15,12 +15,12 @@ export function defaultDlqRoutingKey(queueName: string): string {
  * NestJS RMQ `queueOptions` with dead-letter exchange (DLX) for consumer queues.
  * All services must use the same shape so RabbitMQ queue declare stays idempotent.
  */
-export function buildConsumerQueueOptions(
-  input: ConsumerQueueOptionsInput = {},
-): { durable: boolean; arguments?: Record<string, string> } {
+export function buildConsumerQueueOptions(input: ConsumerQueueOptionsInput = {}): {
+  durable: boolean;
+  arguments?: Record<string, string>;
+} {
   const durable = input.durable ?? true;
-  const deadLetterExchange =
-    input.deadLetterExchange ?? COLLABSPACE_DLX_EXCHANGE;
+  const deadLetterExchange = input.deadLetterExchange ?? COLLABSPACE_DLX_EXCHANGE;
   const deadLetterRoutingKey = input.deadLetterRoutingKey;
 
   if (!deadLetterRoutingKey) {

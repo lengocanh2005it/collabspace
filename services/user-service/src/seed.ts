@@ -6,11 +6,7 @@ import { DataSource } from 'typeorm';
 import { UserProfileOrmEntity } from './infrastructure/database/entities/user-profile.orm-entity';
 import { UserPreferencesOrmEntity } from './infrastructure/database/entities/user-preferences.orm-entity';
 import { UserStatusOrmEntity } from './infrastructure/database/entities/user-status.orm-entity';
-import {
-  avatarUrlFor,
-  loadDemoSeedData,
-  type DemoSeedUser,
-} from './load-demo-seed';
+import { avatarUrlFor, loadDemoSeedData, type DemoSeedUser } from './load-demo-seed';
 
 const USER_REGISTERED_EVENT = 'user_registered';
 const USER_PROFILE_UPDATED_EVENT = 'user_profile_updated';
@@ -66,18 +62,14 @@ function toBoolean(value: string | undefined, fallback: boolean): boolean {
 
 async function publishUserReplicaEvents(users: DemoSeedUser[]): Promise<void> {
   if (!toBoolean(process.env.RABBITMQ_ENABLED, false)) {
-    console.log(
-      'RABBITMQ_ENABLED is false — skipping user replica event broadcast.',
-    );
+    console.log('RABBITMQ_ENABLED is false — skipping user replica event broadcast.');
     return;
   }
 
   const rabbitUrl = process.env.RABBITMQ_URL;
 
   if (!rabbitUrl) {
-    console.warn(
-      'RABBITMQ_URL is missing — skipping user replica event broadcast.',
-    );
+    console.warn('RABBITMQ_URL is missing — skipping user replica event broadcast.');
     return;
   }
 
@@ -131,14 +123,9 @@ async function publishUserReplicaEvents(users: DemoSeedUser[]): Promise<void> {
   }
 }
 
-async function seedProfiles(
-  dataSource: DataSource,
-  users: DemoSeedUser[],
-): Promise<void> {
+async function seedProfiles(dataSource: DataSource, users: DemoSeedUser[]): Promise<void> {
   const repository = dataSource.getRepository(UserProfileOrmEntity);
-  const preferencesRepository = dataSource.getRepository(
-    UserPreferencesOrmEntity,
-  );
+  const preferencesRepository = dataSource.getRepository(UserPreferencesOrmEntity);
   const statusRepository = dataSource.getRepository(UserStatusOrmEntity);
 
   for (const seedProfile of users) {
@@ -171,20 +158,15 @@ async function seedProfiles(
     await preferencesRepository.save(
       preferencesRepository.create({
         dateFormat: existingPreferences?.dateFormat ?? 'YYYY-MM-DD',
-        desktopNotificationsEnabled:
-          existingPreferences?.desktopNotificationsEnabled ?? true,
+        desktopNotificationsEnabled: existingPreferences?.desktopNotificationsEnabled ?? true,
         digestFrequency: existingPreferences?.digestFrequency ?? 'daily',
-        emailNotificationsEnabled:
-          existingPreferences?.emailNotificationsEnabled ?? true,
+        emailNotificationsEnabled: existingPreferences?.emailNotificationsEnabled ?? true,
         id: existingPreferences?.id ?? randomUUID(),
-        language:
-          existingPreferences?.language ?? seedProfile.preferredLanguage,
-        pushNotificationsEnabled:
-          existingPreferences?.pushNotificationsEnabled ?? true,
+        language: existingPreferences?.language ?? seedProfile.preferredLanguage,
+        pushNotificationsEnabled: existingPreferences?.pushNotificationsEnabled ?? true,
         theme: existingPreferences?.theme ?? 'system',
         timeFormat: existingPreferences?.timeFormat ?? '24h',
-        timezone:
-          existingPreferences?.timezone ?? seedProfile.preferredTimezone,
+        timezone: existingPreferences?.timezone ?? seedProfile.preferredTimezone,
         userId: seedProfile.id,
         weekStartsOn: existingPreferences?.weekStartsOn ?? 'monday',
       }),
@@ -215,16 +197,10 @@ async function main(): Promise<void> {
 
   const demoData = loadDemoSeedData();
   const dataSource = new DataSource({
-    entities: [
-      UserProfileOrmEntity,
-      UserPreferencesOrmEntity,
-      UserStatusOrmEntity,
-    ],
+    entities: [UserProfileOrmEntity, UserPreferencesOrmEntity, UserStatusOrmEntity],
     logging: toBoolean(process.env.DATABASE_LOGGING, false),
     schema: process.env.DATABASE_SCHEMA ?? 'public',
-    ssl: toBoolean(process.env.DATABASE_SSL, false)
-      ? { rejectUnauthorized: false }
-      : false,
+    ssl: toBoolean(process.env.DATABASE_SSL, false) ? { rejectUnauthorized: false } : false,
     synchronize: false,
     type: 'postgres',
     url: requireDatabaseUrl(),

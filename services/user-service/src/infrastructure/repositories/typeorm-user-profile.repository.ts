@@ -1,11 +1,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'node:crypto';
-import { In, Repository } from 'typeorm';
+import { In, type Repository } from 'typeorm';
 import { UserProfile } from '../../domain/entities/user-profile.entity';
 import { UserPreferences } from '../../domain/entities/user-preferences.entity';
 import { UserStatus } from '../../domain/entities/user-status.entity';
-import {
+import type {
   CreatePendingUserProfileInput,
   ListUserProfilesResult,
   ListUserProfilesInput,
@@ -17,7 +17,7 @@ import {
 import { UserProfileOrmEntity } from '../database/entities/user-profile.orm-entity';
 import { UserPreferencesOrmEntity } from '../database/entities/user-preferences.orm-entity';
 import { UserStatusOrmEntity } from '../database/entities/user-status.orm-entity';
-import { UserProfileCacheService } from '../cache/user-profile-cache.service';
+import type { UserProfileCacheService } from '../cache/user-profile-cache.service';
 
 @Injectable()
 export class TypeOrmUserProfileRepository implements UserProfileRepository {
@@ -104,9 +104,7 @@ export class TypeOrmUserProfileRepository implements UserProfileRepository {
       weekStartsOn: 'monday',
     });
 
-    const result = this.toDomainPreferences(
-      await this.preferencesRepository.save(defaults),
-    );
+    const result = this.toDomainPreferences(await this.preferencesRepository.save(defaults));
     await this.cache.setPreferences(userId, result);
     return result;
   }
@@ -135,9 +133,7 @@ export class TypeOrmUserProfileRepository implements UserProfileRepository {
       userId,
     });
 
-    const result = this.toDomainStatus(
-      await this.statusRepository.save(defaults),
-    );
+    const result = this.toDomainStatus(await this.statusRepository.save(defaults));
     await this.cache.setStatus(userId, result);
     return result;
   }
@@ -152,9 +148,7 @@ export class TypeOrmUserProfileRepository implements UserProfileRepository {
         userId: In(userIds),
       },
     });
-    const statusMap = new Map(
-      statuses.map((status) => [status.userId, status]),
-    );
+    const statusMap = new Map(statuses.map((status) => [status.userId, status]));
     const missingUserIds = userIds.filter((id) => !statusMap.has(id));
 
     if (missingUserIds.length > 0) {
@@ -210,9 +204,7 @@ export class TypeOrmUserProfileRepository implements UserProfileRepository {
     };
   }
 
-  async upsertPending(
-    input: CreatePendingUserProfileInput,
-  ): Promise<UserProfile> {
+  async upsertPending(input: CreatePendingUserProfileInput): Promise<UserProfile> {
     const existingProfile = await this.repository.findOne({
       where: {
         userId: input.userId,
@@ -241,10 +233,7 @@ export class TypeOrmUserProfileRepository implements UserProfileRepository {
           fullName: input.fullName,
           id: randomUUID(),
           userId: input.userId,
-          username: await this.resolveAvailableUsername(
-            input.fullName,
-            input.userId,
-          ),
+          username: await this.resolveAvailableUsername(input.fullName, input.userId),
         }),
       );
     }
@@ -253,10 +242,7 @@ export class TypeOrmUserProfileRepository implements UserProfileRepository {
     return this.toDomainProfile(savedProfile);
   }
 
-  async updateProfile(
-    userId: string,
-    input: UpdateUserProfileInput,
-  ): Promise<UserProfile> {
+  async updateProfile(userId: string, input: UpdateUserProfileInput): Promise<UserProfile> {
     const profile = await this.repository.findOne({
       where: {
         userId,
@@ -270,14 +256,11 @@ export class TypeOrmUserProfileRepository implements UserProfileRepository {
       });
     }
 
-    profile.avatarUrl =
-      input.avatarUrl === undefined ? profile.avatarUrl : input.avatarUrl;
+    profile.avatarUrl = input.avatarUrl === undefined ? profile.avatarUrl : input.avatarUrl;
     profile.bio = input.bio === undefined ? profile.bio : input.bio;
-    profile.displayName =
-      input.displayName === undefined ? profile.displayName : input.displayName;
+    profile.displayName = input.displayName === undefined ? profile.displayName : input.displayName;
     profile.fullName = input.fullName ?? profile.fullName;
-    profile.username =
-      input.username === undefined ? profile.username : input.username;
+    profile.username = input.username === undefined ? profile.username : input.username;
 
     const result = this.toDomainProfile(await this.repository.save(profile));
     await this.cache.deleteProfile(userId);
@@ -289,30 +272,21 @@ export class TypeOrmUserProfileRepository implements UserProfileRepository {
     input: UpdateUserPreferencesInput,
   ): Promise<UserPreferences> {
     const existingPreferences = await this.getPreferencesEntity(userId);
-    existingPreferences.dateFormat =
-      input.dateFormat ?? existingPreferences.dateFormat;
+    existingPreferences.dateFormat = input.dateFormat ?? existingPreferences.dateFormat;
     existingPreferences.desktopNotificationsEnabled =
-      input.desktopNotificationsEnabled ??
-      existingPreferences.desktopNotificationsEnabled;
+      input.desktopNotificationsEnabled ?? existingPreferences.desktopNotificationsEnabled;
     existingPreferences.digestFrequency =
       input.digestFrequency ?? existingPreferences.digestFrequency;
     existingPreferences.emailNotificationsEnabled =
-      input.emailNotificationsEnabled ??
-      existingPreferences.emailNotificationsEnabled;
-    existingPreferences.language =
-      input.language ?? existingPreferences.language;
+      input.emailNotificationsEnabled ?? existingPreferences.emailNotificationsEnabled;
+    existingPreferences.language = input.language ?? existingPreferences.language;
     existingPreferences.pushNotificationsEnabled =
-      input.pushNotificationsEnabled ??
-      existingPreferences.pushNotificationsEnabled;
+      input.pushNotificationsEnabled ?? existingPreferences.pushNotificationsEnabled;
     existingPreferences.theme = input.theme ?? existingPreferences.theme;
-    existingPreferences.timeFormat =
-      input.timeFormat ?? existingPreferences.timeFormat;
+    existingPreferences.timeFormat = input.timeFormat ?? existingPreferences.timeFormat;
     existingPreferences.timezone =
-      input.timezone === undefined
-        ? existingPreferences.timezone
-        : input.timezone;
-    existingPreferences.weekStartsOn =
-      input.weekStartsOn ?? existingPreferences.weekStartsOn;
+      input.timezone === undefined ? existingPreferences.timezone : input.timezone;
+    existingPreferences.weekStartsOn = input.weekStartsOn ?? existingPreferences.weekStartsOn;
 
     const result = this.toDomainPreferences(
       await this.preferencesRepository.save(existingPreferences),
@@ -321,35 +295,22 @@ export class TypeOrmUserProfileRepository implements UserProfileRepository {
     return result;
   }
 
-  async updateStatus(
-    userId: string,
-    input: UpdateUserStatusInput,
-  ): Promise<UserStatus> {
+  async updateStatus(userId: string, input: UpdateUserStatusInput): Promise<UserStatus> {
     const existingStatus = await this.getStatusEntity(userId);
-    existingStatus.clearAt =
-      input.clearAt === undefined ? existingStatus.clearAt : input.clearAt;
-    existingStatus.emoji =
-      input.emoji === undefined ? existingStatus.emoji : input.emoji;
+    existingStatus.clearAt = input.clearAt === undefined ? existingStatus.clearAt : input.clearAt;
+    existingStatus.emoji = input.emoji === undefined ? existingStatus.emoji : input.emoji;
     existingStatus.lastSeenAt =
-      input.lastSeenAt === undefined
-        ? existingStatus.lastSeenAt
-        : input.lastSeenAt;
+      input.lastSeenAt === undefined ? existingStatus.lastSeenAt : input.lastSeenAt;
     existingStatus.status = input.status ?? existingStatus.status;
     existingStatus.statusText =
-      input.statusText === undefined
-        ? existingStatus.statusText
-        : input.statusText;
+      input.statusText === undefined ? existingStatus.statusText : input.statusText;
 
-    const result = this.toDomainStatus(
-      await this.statusRepository.save(existingStatus),
-    );
+    const result = this.toDomainStatus(await this.statusRepository.save(existingStatus));
     await this.cache.deleteStatus(userId);
     return result;
   }
 
-  private async getPreferencesEntity(
-    userId: string,
-  ): Promise<UserPreferencesOrmEntity> {
+  private async getPreferencesEntity(userId: string): Promise<UserPreferencesOrmEntity> {
     const existingPreferences = await this.preferencesRepository.findOne({
       where: {
         userId,
@@ -413,9 +374,7 @@ export class TypeOrmUserProfileRepository implements UserProfileRepository {
     );
   }
 
-  private toDomainPreferences(
-    preferences: UserPreferencesOrmEntity,
-  ): UserPreferences {
+  private toDomainPreferences(preferences: UserPreferencesOrmEntity): UserPreferences {
     return new UserPreferences(
       preferences.userId,
       preferences.theme,
@@ -450,10 +409,7 @@ export class TypeOrmUserProfileRepository implements UserProfileRepository {
     return username.length > 0 ? username : 'user';
   }
 
-  private async resolveAvailableUsername(
-    fullName: string,
-    userId: string,
-  ): Promise<string> {
+  private async resolveAvailableUsername(fullName: string, userId: string): Promise<string> {
     const base = this.createUsername(fullName);
 
     for (let suffix = 0; suffix < 100; suffix += 1) {

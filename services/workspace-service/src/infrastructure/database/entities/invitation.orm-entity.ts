@@ -38,9 +38,13 @@ export class InvitationOrmEntity {
   @Column({ type: 'timestamptz' })
   expires_at: Date;
 
-  @ManyToOne(() => WorkspaceOrmEntity, (workspace) => workspace.invitations, {
-    onDelete: 'CASCADE',
-  })
+  @ManyToOne(
+    () => WorkspaceOrmEntity,
+    (workspace) => workspace.invitations,
+    {
+      onDelete: 'CASCADE',
+    },
+  )
   @JoinColumn({ name: 'workspace_id' })
   workspace: WorkspaceOrmEntity;
 }

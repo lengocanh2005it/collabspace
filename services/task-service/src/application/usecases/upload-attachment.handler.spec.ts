@@ -1,8 +1,8 @@
 import { UploadAttachmentHandler } from "./upload-attachment.handler";
 import { UploadAttachmentCommand } from "../commands/upload-attachment.command";
-import { ITaskRepository } from "../ports/ITaskRepository";
+import type { ITaskRepository } from "../ports/ITaskRepository";
 import { createMockTaskRepository } from "../../test-utils/mock-task-repository";
-import { AzureBlobService } from "../../infrastructure/services/azure-blob.service";
+import type { AzureBlobService } from "../../infrastructure/services/azure-blob.service";
 import { Task } from "../../domain/entities/Task";
 import { TaskId } from "../../domain/value-objects/TaskId";
 import { UserSnapshot } from "../../domain/value-objects/UserSnapshot";
@@ -26,13 +26,7 @@ describe("UploadAttachmentHandler", () => {
   });
 
   const createMockTask = () => {
-    const creatorSnapshot = UserSnapshot.create(
-      "creator-1",
-      "c@c.c",
-      "Creator",
-      "Creator",
-      "url",
-    );
+    const creatorSnapshot = UserSnapshot.create("creator-1", "c@c.c", "Creator", "Creator", "url");
     return Task.restore(
       new TaskId("123e4567-e89b-12d3-a456-426614174000"),
       "Title",
@@ -56,16 +50,11 @@ describe("UploadAttachmentHandler", () => {
       size: 1024,
       buffer: Buffer.from("test"),
     } as UploadedFile;
-    const command = new UploadAttachmentCommand(
-      "123e4567-e89b-12d3-a456-426614174000",
-      mockFile,
-    );
+    const command = new UploadAttachmentCommand("123e4567-e89b-12d3-a456-426614174000", mockFile);
     const task = createMockTask();
 
     mockTaskRepo.loadAggregateByIdAsync.mockResolvedValue(task);
-    mockAzureBlobService.uploadFile.mockResolvedValue(
-      "https://azure.blob/test.jpg",
-    );
+    mockAzureBlobService.uploadFile.mockResolvedValue("https://azure.blob/test.jpg");
 
     const result = await handler.execute(command);
 
@@ -86,16 +75,11 @@ describe("UploadAttachmentHandler", () => {
       size: 1024,
       buffer: Buffer.from("test"),
     } as UploadedFile;
-    const command = new UploadAttachmentCommand(
-      "123e4567-e89b-12d3-a456-426614174000",
-      mockFile,
-    );
+    const command = new UploadAttachmentCommand("123e4567-e89b-12d3-a456-426614174000", mockFile);
 
     mockTaskRepo.loadAggregateByIdAsync.mockResolvedValue(null);
 
-    await expect(handler.execute(command)).rejects.toThrow(
-      EntityNotFoundException,
-    );
+    await expect(handler.execute(command)).rejects.toThrow(EntityNotFoundException);
     expect(mockAzureBlobService.uploadFile).not.toHaveBeenCalled();
     expect(mockTaskRepo.saveAsync).not.toHaveBeenCalled();
   });

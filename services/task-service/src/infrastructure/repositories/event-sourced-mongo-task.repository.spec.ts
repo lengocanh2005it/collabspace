@@ -10,13 +10,7 @@ import type { TaskPersistence } from "../persistence/task.schema";
 
 describe("EventSourcedMongoTaskRepository", () => {
   const taskId = new TaskId("123e4567-e89b-12d3-a456-426614174000");
-  const creator = UserSnapshot.create(
-    "creator-1",
-    "creator@test.com",
-    "Creator",
-    "Creator",
-    null,
-  );
+  const creator = UserSnapshot.create("creator-1", "creator@test.com", "Creator", "Creator", null);
 
   let repository: EventSourcedMongoTaskRepository;
   let mockEventStore: jest.Mocked<ITaskEventStore>;
@@ -50,13 +44,7 @@ describe("EventSourcedMongoTaskRepository", () => {
   });
 
   it("syncs projection from in-memory aggregate without reloading the stream", async () => {
-    const task = Task.create(
-      taskId,
-      "Title",
-      "Description",
-      "workspace-1",
-      creator,
-    );
+    const task = Task.create(taskId, "Title", "Description", "workspace-1", creator);
     const uncommitted = [...task.getUncommittedEvents()];
 
     mockEventStore.append.mockResolvedValue(

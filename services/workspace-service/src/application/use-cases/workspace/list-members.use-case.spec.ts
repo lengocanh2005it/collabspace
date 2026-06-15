@@ -1,4 +1,4 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { Test, type TestingModule } from '@nestjs/testing';
 import { ForbiddenException } from '@nestjs/common';
 import { ListMembersUseCase } from './list-members.use-case';
 import { WORKSPACE_MEMBER_REPOSITORY } from '../../../domain/repositories/workspace-member.repository';
@@ -25,9 +25,7 @@ describe('ListMembersUseCase', () => {
 
   it('should throw ForbiddenException if user is not a member', async () => {
     mockMemberRepo.findByWorkspaceAndUser.mockResolvedValue(null);
-    await expect(useCase.execute('user-1', 'ws-1')).rejects.toThrow(
-      ForbiddenException,
-    );
+    await expect(useCase.execute('user-1', 'ws-1')).rejects.toThrow(ForbiddenException);
   });
 
   it('should return list of members if user is a member', async () => {

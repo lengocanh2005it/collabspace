@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import type { Repository } from 'typeorm';
 import { WorkspaceMember } from '../../domain/entities/workspace-member.entity';
-import { IWorkspaceMemberRepository } from '../../domain/repositories/workspace-member.repository';
+import type { IWorkspaceMemberRepository } from '../../domain/repositories/workspace-member.repository';
 import { WorkspaceMemberOrmEntity } from '../database/entities/workspace-member.orm-entity';
 
 @Injectable()
@@ -28,12 +28,6 @@ export class TypeOrmWorkspaceMemberRepository implements IWorkspaceMemberReposit
   }
 
   private toDomain(orm: WorkspaceMemberOrmEntity): WorkspaceMember {
-    return new WorkspaceMember(
-      orm.id,
-      orm.workspace_id,
-      orm.user_id,
-      orm.role,
-      orm.joined_at,
-    );
+    return new WorkspaceMember(orm.id, orm.workspace_id, orm.user_id, orm.role, orm.joined_at);
   }
 }

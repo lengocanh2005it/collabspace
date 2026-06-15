@@ -1,5 +1,5 @@
 // src/domain/repositories/comment.repository.interface.ts
-import { Comment } from "../entities/comment.entity";
+import type { Comment } from "../entities/comment.entity";
 
 /**
  * Comment Repository Interface (Port)

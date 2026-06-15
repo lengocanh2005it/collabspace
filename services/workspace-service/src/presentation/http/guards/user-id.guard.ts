@@ -1,10 +1,10 @@
 import {
   Injectable,
-  CanActivate,
-  ExecutionContext,
+  type CanActivate,
+  type ExecutionContext,
   UnauthorizedException,
 } from '@nestjs/common';
-import { Request } from 'express';
+import type { Request } from 'express';
 
 @Injectable()
 export class UserIdGuard implements CanActivate {

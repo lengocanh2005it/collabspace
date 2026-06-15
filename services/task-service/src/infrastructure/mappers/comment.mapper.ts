@@ -1,6 +1,6 @@
 // src/infrastructure/mappers/comment.mapper.ts
 import { Comment } from "../../domain/entities/comment.entity";
-import { TaskCommentDocument } from "../persistence/task-comment.schema";
+import type { TaskCommentDocument } from "../persistence/task-comment.schema";
 
 interface CommentMapperResponse {
   id: string;
@@ -97,9 +97,7 @@ export class CommentMapper {
   /**
    * Chuyển collection Document sang DTOs
    */
-  public static toResponses(
-    comments: TaskCommentDocument[],
-  ): CommentMapperResponse[] {
-    return comments.map((comment) => this.toResponse(comment));
+  public static toResponses(comments: TaskCommentDocument[]): CommentMapperResponse[] {
+    return comments.map((comment) => CommentMapper.toResponse(comment));
   }
 }

@@ -1,4 +1,4 @@
-import { ExecutionContext, UnauthorizedException } from "@nestjs/common";
+import { type ExecutionContext, UnauthorizedException } from "@nestjs/common";
 import type { AuthGrpcService } from "../../integrations/auth/auth-grpc.service";
 import type { AuthenticatedRequest } from "../http/authenticated-request";
 import { AuthGuard } from "./auth.guard";
@@ -14,9 +14,7 @@ describe("AuthGuard", () => {
     }
   });
 
-  function createContext(
-    request: Partial<AuthenticatedRequest>,
-  ): ExecutionContext {
+  function createContext(request: Partial<AuthenticatedRequest>): ExecutionContext {
     return {
       switchToHttp: () => ({
         getRequest: () => request,
@@ -26,9 +24,7 @@ describe("AuthGuard", () => {
 
   it("should verify JWT and attach recipient id", async () => {
     const authGrpcService = {
-      verifyAccessTokenLite: jest
-        .fn()
-        .mockResolvedValue({ userId: "user-abc" }),
+      verifyAccessTokenLite: jest.fn().mockResolvedValue({ userId: "user-abc" }),
       verifyAccessToken: jest.fn(),
     } as unknown as AuthGrpcService;
     const guard = new AuthGuard(authGrpcService);
@@ -40,9 +36,7 @@ describe("AuthGuard", () => {
     const result = await guard.canActivate(createContext(request));
 
     expect(result).toBe(true);
-    expect(authGrpcService.verifyAccessTokenLite).toHaveBeenCalledWith(
-      "Bearer token",
-    );
+    expect(authGrpcService.verifyAccessTokenLite).toHaveBeenCalledWith("Bearer token");
     expect(request.user).toEqual({ id: "user-abc" });
   });
 
@@ -56,8 +50,6 @@ describe("AuthGuard", () => {
       headers: { "x-user-id": "attacker" },
     } as unknown as AuthenticatedRequest;
 
-    await expect(guard.canActivate(createContext(request))).rejects.toThrow(
-      UnauthorizedException,
-    );
+    await expect(guard.canActivate(createContext(request))).rejects.toThrow(UnauthorizedException);
   });
 });

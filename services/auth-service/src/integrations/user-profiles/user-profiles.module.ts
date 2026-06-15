@@ -4,10 +4,7 @@ import { USER_PROFILE_CLIENT } from '@/domain/ports/user-profile-client.port';
 import { Module } from '@nestjs/common';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { join } from 'node:path';
-import {
-  USER_PROFILES_GRPC_CLIENT,
-  UserProfilesGrpcService,
-} from './user-profiles-grpc.service';
+import { USER_PROFILES_GRPC_CLIENT, UserProfilesGrpcService } from './user-profiles-grpc.service';
 
 const userProfilesProtoPath = join(process.cwd(), 'proto', 'user.proto');
 const protoIncludeDir = join(process.cwd(), 'proto');

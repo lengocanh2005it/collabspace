@@ -1,9 +1,9 @@
 import { Controller, Logger } from "@nestjs/common";
-import { Ctx, EventPattern, Payload, RmqContext } from "@nestjs/microservices";
-import { CommandBus } from "@nestjs/cqrs";
+import { Ctx, EventPattern, Payload, type RmqContext } from "@nestjs/microservices";
+import type { CommandBus } from "@nestjs/cqrs";
 import type { Channel, ConsumeMessage } from "amqplib";
 import { TASK_COMMENTED_EVENT } from "../../../domain/events/comment-events";
-import { type TaskCommentedEventPayload } from "../../../domain/events/comment-events";
+import type { TaskCommentedEventPayload } from "../../../domain/events/comment-events";
 import { InboundNotificationEventMapper } from "../../../application/mappers/inbound-notification-event.mapper";
 import { consumeNotificationEvent } from "../../helpers/rmq-notification-consumer.helper";
 
@@ -21,9 +21,7 @@ export class CommentEventListenerController {
     const channel = context.getChannelRef() as Channel;
     const originalMsg = context.getMessage() as ConsumeMessage;
 
-    this.logger.log(
-      `📥 [RABBITMQ] Bắt được event comment cho Task: ${data.taskId}`,
-    );
+    this.logger.log(`📥 [RABBITMQ] Bắt được event comment cho Task: ${data.taskId}`);
 
     await consumeNotificationEvent(
       {

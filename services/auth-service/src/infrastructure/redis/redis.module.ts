@@ -1,7 +1,7 @@
 import { ConfigurationService } from '@/configuration/configuration.service';
 import { Logger, Module } from '@nestjs/common';
 import { REDIS_CLIENT } from '@/common/constants/redis.constant';
-import Redis, { RedisOptions } from 'ioredis';
+import Redis, { type RedisOptions } from 'ioredis';
 import { RedisService } from './redis.service';
 
 @Module({
@@ -14,9 +14,7 @@ import { RedisService } from './redis.service';
         const redisConfig = configurationService.getRedisConfig();
         const options: RedisOptions = configurationService.getRedisOptions();
 
-        const redis = redisConfig.url
-          ? new Redis(redisConfig.url, options)
-          : new Redis(options);
+        const redis = redisConfig.url ? new Redis(redisConfig.url, options) : new Redis(options);
 
         redis.on('connect', () => {
           logger.log('Redis connection established');

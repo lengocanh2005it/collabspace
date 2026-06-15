@@ -14,9 +14,7 @@ describe('GetUserStatusesUseCase', () => {
   });
 
   it('returns status DTOs for user ids', async () => {
-    jest
-      .spyOn(repository, 'getStatusesByUserIds')
-      .mockResolvedValue([sampleUserStatus]);
+    jest.spyOn(repository, 'getStatusesByUserIds').mockResolvedValue([sampleUserStatus]);
 
     await expect(useCase.execute(['user-1'])).resolves.toEqual([
       expect.objectContaining({ userId: 'user-1', status: 'online' }),

@@ -1,8 +1,8 @@
 import { Injectable } from "@nestjs/common";
 import { InjectConnection } from "@nestjs/mongoose";
-import { Connection } from "mongoose";
+import type { Connection } from "mongoose";
 import { ConfigService } from "@nestjs/config";
-import { ConfigurationService } from "../configuration/configuration.service";
+import type { ConfigurationService } from "../configuration/configuration.service";
 import * as amqp from "amqplib";
 
 type CheckStatus = "up" | "down" | "disabled";
@@ -75,26 +75,18 @@ export class TaskHealthService {
                 `${this.configService.get<string>("WORKSPACE_SERVICE_URL") ?? "http://workspace-service:8080"}/api/v1/workspaces/health/live`,
                 {
                   signal: AbortSignal.timeout(
-                    Number(
-                      this.configService.get<string>(
-                        "WORKSPACE_SERVICE_TIMEOUT_MS",
-                      ) ?? 3000,
-                    ),
+                    Number(this.configService.get<string>("WORKSPACE_SERVICE_TIMEOUT_MS") ?? 3000),
                   ),
                 },
               );
 
               if (!response.ok) {
-                throw new Error(
-                  `Workspace service health returned ${response.status}`,
-                );
+                throw new Error(`Workspace service health returned ${response.status}`);
               }
             })
           : process.env.NODE_ENV === "production"
             ? await this.runCheck(true, async () => {
-                throw new Error(
-                  "Workspace client runs in mock mode (not allowed in production)",
-                );
+                throw new Error("Workspace client runs in mock mode (not allowed in production)");
               })
             : {
                 detail: "Workspace client runs in mock mode",
@@ -107,10 +99,7 @@ export class TaskHealthService {
               const connectionString = this.configService.get<string>(
                 "AZURE_STORAGE_CONNECTION_STRING",
               );
-              if (
-                !connectionString?.trim() ||
-                connectionString.includes("your_")
-              ) {
+              if (!connectionString?.trim() || connectionString.includes("your_")) {
                 throw new Error("Azure Blob Storage is not configured");
               }
             })
@@ -140,8 +129,7 @@ export class TaskHealthService {
       };
     } catch (error) {
       return {
-        detail:
-          error instanceof Error ? error.message : "Unknown dependency error",
+        detail: error instanceof Error ? error.message : "Unknown dependency error",
         required,
         responseTimeMs: Date.now() - startedAt,
         status: "down",
@@ -159,11 +147,7 @@ export class TaskHealthService {
     const optionalFailure = Object.values(checks).some(
       (check) => !check.required && check.status === "down",
     );
-    const status: OverallStatus = requiredFailure
-      ? "error"
-      : optionalFailure
-        ? "degraded"
-        : "ok";
+    const status: OverallStatus = requiredFailure ? "error" : optionalFailure ? "degraded" : "ok";
 
     return {
       checks,

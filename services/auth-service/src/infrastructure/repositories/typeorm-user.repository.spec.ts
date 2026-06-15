@@ -4,13 +4,13 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { randomBytes, scrypt } from 'crypto';
-import { promisify } from 'util';
-import { Repository } from 'typeorm';
+import { randomBytes, scrypt } from 'node:crypto';
+import { promisify } from 'node:util';
+import type { Repository } from 'typeorm';
 import { TypeOrmUserRepository } from './typeorm-user.repository';
-import { RoleOrmEntity } from '@/infrastructure/database/entities/role.orm-entity';
-import { UserRoleOrmEntity } from '@/infrastructure/database/entities/user-role.orm-entity';
-import { UserOrmEntity } from '@/infrastructure/database/entities/user.orm-entity';
+import type { RoleOrmEntity } from '@/infrastructure/database/entities/role.orm-entity';
+import type { UserRoleOrmEntity } from '@/infrastructure/database/entities/user-role.orm-entity';
+import type { UserOrmEntity } from '@/infrastructure/database/entities/user.orm-entity';
 
 const scryptAsync = promisify(scrypt);
 
@@ -20,9 +20,7 @@ async function hashPassword(password: string): Promise<string> {
   return `scrypt:${salt}:${derivedKey.toString('hex')}`;
 }
 
-function buildAuthUserOrmEntity(
-  overrides: Partial<UserOrmEntity> = {},
-): UserOrmEntity {
+function buildAuthUserOrmEntity(overrides: Partial<UserOrmEntity> = {}): UserOrmEntity {
   return {
     id: 'user-1',
     email: 'member@example.com',
@@ -99,13 +97,9 @@ describe('TypeOrmUserRepository', () => {
   });
 
   it('returns auth user by id', async () => {
-    (userRepositoryMock.findOne as jest.Mock).mockResolvedValue(
-      buildAuthUserOrmEntity(),
-    );
+    (userRepositoryMock.findOne as jest.Mock).mockResolvedValue(buildAuthUserOrmEntity());
 
-    await expect(
-      userRepository.getAuthUserById('user-1'),
-    ).resolves.toMatchObject({
+    await expect(userRepository.getAuthUserById('user-1')).resolves.toMatchObject({
       userId: 'user-1',
       email: 'member@example.com',
       emailVerified: true,
@@ -116,9 +110,7 @@ describe('TypeOrmUserRepository', () => {
   it('throws when auth user is not found', async () => {
     (userRepositoryMock.findOne as jest.Mock).mockResolvedValue(null);
 
-    await expect(userRepository.getAuthUserById('missing')).rejects.toThrow(
-      NotFoundException,
-    );
+    await expect(userRepository.getAuthUserById('missing')).rejects.toThrow(NotFoundException);
   });
 
   it('validates credentials for a verified active user', async () => {
@@ -179,13 +171,9 @@ describe('TypeOrmUserRepository', () => {
   it('marks email verified when pending verification', async () => {
     const user = buildAuthUserOrmEntity({ emailVerifiedAt: null });
     (userRepositoryMock.findOne as jest.Mock).mockResolvedValue(user);
-    (userRepositoryMock.save as jest.Mock).mockImplementation(
-      async (value) => value,
-    );
+    (userRepositoryMock.save as jest.Mock).mockImplementation(async (value) => value);
 
-    await expect(
-      userRepository.markEmailVerified('user-1'),
-    ).resolves.toMatchObject({
+    await expect(userRepository.markEmailVerified('user-1')).resolves.toMatchObject({
       userId: 'user-1',
       emailVerified: true,
     });

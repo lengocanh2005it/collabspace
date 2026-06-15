@@ -1,20 +1,20 @@
 // src/domain/entities/Task.ts
-import { randomUUID } from "crypto";
+import { randomUUID } from "node:crypto";
 import { TaskId } from "../value-objects/TaskId";
 import { TaskStatus } from "../value-objects/TaskStatus";
 import { TaskPriority } from "../value-objects/TaskPriority";
 import { UserSnapshot } from "../value-objects/UserSnapshot";
 import { BusinessRuleException } from "../exceptions/BusinessRuleException";
 import {
-  TaskAssigneeChangedPayload,
-  TaskAttachmentAddedPayload,
-  TaskAttachmentRemovedPayload,
-  TaskCreatedPayload,
-  TaskDeletedPayload,
-  TaskDetailsUpdatedPayload,
+  type TaskAssigneeChangedPayload,
+  type TaskAttachmentAddedPayload,
+  type TaskAttachmentRemovedPayload,
+  type TaskCreatedPayload,
+  type TaskDeletedPayload,
+  type TaskDetailsUpdatedPayload,
   TaskDomainEventType,
-  TaskStatusChangedPayload,
-  TaskUserSnapshotEventPayload,
+  type TaskStatusChangedPayload,
+  type TaskUserSnapshotEventPayload,
   type StoredTaskDomainEvent,
   type UncommittedTaskDomainEvent,
 } from "../events/task-domain.events";
@@ -102,9 +102,7 @@ export class Task {
 
   public static fromHistory(events: StoredTaskDomainEvent[]): Task {
     if (events.length === 0) {
-      throw new BusinessRuleException(
-        "Cannot rehydrate task from empty event stream",
-      );
+      throw new BusinessRuleException("Cannot rehydrate task from empty event stream");
     }
 
     const task = Task.emptyShell();
@@ -176,9 +174,7 @@ export class Task {
   public changeStatus(newStatusRaw: string): void {
     const newStatus = new TaskStatus(newStatusRaw);
     if (!this.status.canTransitionTo(newStatus)) {
-      throw new BusinessRuleException(
-        "Business Rule Violated: Cannot move from DONE to TODO",
-      );
+      throw new BusinessRuleException("Business Rule Violated: Cannot move from DONE to TODO");
     }
 
     const previousStatus = this.status.getValue();
@@ -202,17 +198,14 @@ export class Task {
     const nextPriority = options.priority
       ? new TaskPriority(options.priority).getValue()
       : this.priority.getValue();
-    const nextDueDate =
-      options.dueDate !== undefined ? options.dueDate : this.dueDate;
-    const nextLabels =
-      options.labels !== undefined ? [...options.labels] : [...this.labels];
+    const nextDueDate = options.dueDate !== undefined ? options.dueDate : this.dueDate;
+    const nextLabels = options.labels !== undefined ? [...options.labels] : [...this.labels];
 
     if (
       this.title === title &&
       this.description === description &&
       this.priority.getValue() === nextPriority &&
-      (this.dueDate?.toISOString() ?? null) ===
-        (nextDueDate?.toISOString() ?? null) &&
+      (this.dueDate?.toISOString() ?? null) === (nextDueDate?.toISOString() ?? null) &&
       JSON.stringify(this.labels) === JSON.stringify(nextLabels)
     ) {
       return;
@@ -228,8 +221,7 @@ export class Task {
   }
 
   public assignTo(assigneeId: string, assignedTo: UserSnapshot): void {
-    if (!assigneeId)
-      throw new BusinessRuleException("Assignee ID cannot be empty");
+    if (!assigneeId) throw new BusinessRuleException("Assignee ID cannot be empty");
 
     this.raise(TaskDomainEventType.TaskAssigneeChanged, {
       assigneeId,
@@ -365,9 +357,7 @@ export class Task {
       case TaskDomainEventType.TaskAssigneeChanged: {
         const payload = event.payload as TaskAssigneeChangedPayload;
         this.assigneeId = payload.assigneeId;
-        this.assignedTo = payload.assignedTo
-          ? this.fromSnapshotPayload(payload.assignedTo)
-          : null;
+        this.assignedTo = payload.assignedTo ? this.fromSnapshotPayload(payload.assignedTo) : null;
         this.updatedAt = new Date(event.occurredAt);
         break;
       }
@@ -381,9 +371,7 @@ export class Task {
       }
       case TaskDomainEventType.TaskAttachmentRemoved: {
         const payload = event.payload as TaskAttachmentRemovedPayload;
-        this.attachments = this.attachments.filter(
-          (url) => url !== payload.fileUrl,
-        );
+        this.attachments = this.attachments.filter((url) => url !== payload.fileUrl);
         this.updatedAt = new Date(event.occurredAt);
         break;
       }
@@ -393,21 +381,15 @@ export class Task {
         break;
       }
       default:
-        throw new BusinessRuleException(
-          `Unknown task event type: ${event.eventType}`,
-        );
+        throw new BusinessRuleException(`Unknown task event type: ${event.eventType}`);
     }
   }
 
-  private toSnapshotPayload(
-    snapshot: UserSnapshot,
-  ): TaskUserSnapshotEventPayload {
+  private toSnapshotPayload(snapshot: UserSnapshot): TaskUserSnapshotEventPayload {
     return snapshot.toPlainObject() as TaskUserSnapshotEventPayload;
   }
 
-  private fromSnapshotPayload(
-    payload: TaskUserSnapshotEventPayload,
-  ): UserSnapshot {
+  private fromSnapshotPayload(payload: TaskUserSnapshotEventPayload): UserSnapshot {
     return UserSnapshot.create(
       payload.userId,
       payload.email,

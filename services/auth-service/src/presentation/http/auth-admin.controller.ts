@@ -10,13 +10,9 @@ import {
   Put,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import {
-  AdminUserId,
-  PlatformAdminGuard,
-  RequirePlatformAdmin,
-} from '@collabspace/nest-auth';
-import {
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { AdminUserId, PlatformAdminGuard, RequirePlatformAdmin } from '@collabspace/nest-auth';
+import type {
   AssignPermissionDto,
   AssignRoleDto,
   CreateAdminPermissionDto,
@@ -45,10 +41,7 @@ export class AuthAdminController {
   }
 
   @Post('roles/:roleId/permissions')
-  assignPermission(
-    @Param('roleId') roleId: string,
-    @Body() body: AssignPermissionDto,
-  ) {
+  assignPermission(@Param('roleId') roleId: string, @Body() body: AssignPermissionDto) {
     return this.adminUseCase.assignPermission(roleId, body.permissionId);
   }
 

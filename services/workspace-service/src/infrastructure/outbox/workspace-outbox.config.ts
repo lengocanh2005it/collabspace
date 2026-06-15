@@ -28,8 +28,5 @@ export const getWorkspaceOutboxConfig = (): WorkspaceOutboxConfig => ({
   enabled: toBoolean(process.env.WORKSPACE_OUTBOX_ENABLED, true),
   maxAttempts: toNumber(process.env.WORKSPACE_OUTBOX_MAX_ATTEMPTS, 8),
   pollIntervalMs: toNumber(process.env.WORKSPACE_OUTBOX_POLL_INTERVAL_MS, 2000),
-  staleClaimThresholdMs: toNumber(
-    process.env.WORKSPACE_OUTBOX_STALE_CLAIM_THRESHOLD_MS,
-    60_000,
-  ),
+  staleClaimThresholdMs: toNumber(process.env.WORKSPACE_OUTBOX_STALE_CLAIM_THRESHOLD_MS, 60_000),
 });

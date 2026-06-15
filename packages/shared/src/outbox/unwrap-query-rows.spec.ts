@@ -13,9 +13,7 @@ describe('unwrapQueryRows', () => {
 
   it('unwraps reversed [rowCount, rows] tuples', () => {
     expect(unwrapQueryRows([0, []])).toEqual([]);
-    expect(unwrapQueryRows([1, [{ id: 'event-2' }]])).toEqual([
-      { id: 'event-2' },
-    ]);
+    expect(unwrapQueryRows([1, [{ id: 'event-2' }]])).toEqual([{ id: 'event-2' }]);
   });
 
   it('reads rows from pg QueryResult objects', () => {

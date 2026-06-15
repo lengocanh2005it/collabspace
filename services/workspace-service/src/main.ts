@@ -12,10 +12,7 @@ import { registerMetricsMiddleware } from './metrics/register-metrics.middleware
 import compression from 'compression';
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
-  assertRequiredInProduction(
-    'SERVICE_JWT_SECRET',
-    process.env.SERVICE_JWT_SECRET,
-  );
+  assertRequiredInProduction('SERVICE_JWT_SECRET', process.env.SERVICE_JWT_SECRET);
 
   const app = await NestFactory.create(AppModule);
   app.use(compression());
@@ -53,8 +50,7 @@ async function bootstrap() {
         type: 'http',
         scheme: 'bearer',
         bearerFormat: 'service-jwt',
-        description:
-          'Short-lived service JWT (iss/aud/scope) for internal S2S HTTP.',
+        description: 'Short-lived service JWT (iss/aud/scope) for internal S2S HTTP.',
       },
       'service-jwt',
     )
@@ -69,9 +65,6 @@ async function bootstrap() {
   const port = process.env.PORT || 8080;
   await app.listen(port);
   logger.log(`Workspace service is running on port ${port}`);
-  logger.log(
-    `Swagger Docs: http://localhost:${port}/${swaggerPath}`,
-    'Bootstrap',
-  );
+  logger.log(`Swagger Docs: http://localhost:${port}/${swaggerPath}`, 'Bootstrap');
 }
 void bootstrap();

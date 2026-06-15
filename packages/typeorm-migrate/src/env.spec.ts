@@ -1,20 +1,16 @@
 import { join } from 'node:path';
-import {
-  migrationsGlobFromMigrateDir,
-  requireDatabaseUrl,
-  toBoolean,
-} from './env';
+import { migrationsGlobFromMigrateDir, requireDatabaseUrl, toBoolean } from './env';
 
 describe('typeorm-migrate env helpers', () => {
   it('migrationsGlobFromMigrateDir requires 13-digit timestamp prefix', () => {
-    const fromSrc = migrationsGlobFromMigrateDir(
-      join('/app/services/user-service', 'src'),
+    const fromSrc = migrationsGlobFromMigrateDir(join('/app/services/user-service', 'src'));
+    const fromDist = migrationsGlobFromMigrateDir(join('/app/services/user-service/dist', 'src'));
+    expect(fromSrc).toContain(
+      '[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]-*.{ts,js}',
     );
-    const fromDist = migrationsGlobFromMigrateDir(
-      join('/app/services/user-service/dist', 'src'),
+    expect(fromDist).toContain(
+      '[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]-*.js',
     );
-    expect(fromSrc).toContain('[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]-*.{ts,js}');
-    expect(fromDist).toContain('[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]-*.js');
   });
 
   it('toBoolean parses common truthy strings', () => {

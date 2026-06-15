@@ -1,9 +1,6 @@
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
-import {
-  PLATFORM_IDENTITY_RESOLVER,
-  PlatformAdminGuard,
-} from '@collabspace/nest-auth';
+import { PLATFORM_IDENTITY_RESOLVER, PlatformAdminGuard } from '@collabspace/nest-auth';
 import { ManageUsersAdminUseCase } from '../../application/use-cases/manage-users-admin.use-case';
 import { UsersAdminController } from './users-admin.controller';
 
@@ -65,9 +62,7 @@ describe('UsersAdminController (http)', () => {
       .get('/api/v1/users/admin/all')
       .set('Authorization', 'Bearer admin')
       .expect(200)
-      .expect([
-        { email: 'jane@example.com', fullName: 'Jane Doe', id: 'user-1' },
-      ]);
+      .expect([{ email: 'jane@example.com', fullName: 'Jane Doe', id: 'user-1' }]);
   });
 
   afterAll(async () => {

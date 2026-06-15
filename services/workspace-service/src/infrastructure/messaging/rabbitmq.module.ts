@@ -7,8 +7,7 @@ import * as amqp from 'amqplib';
     {
       provide: 'RABBITMQ_CHANNEL',
       useFactory: async () => {
-        const url =
-          process.env.RABBITMQ_URL || 'amqp://guest:guest@localhost:5672';
+        const url = process.env.RABBITMQ_URL || 'amqp://guest:guest@localhost:5672';
         const connection = await amqp.connect(url);
         const channel = await connection.createChannel();
 

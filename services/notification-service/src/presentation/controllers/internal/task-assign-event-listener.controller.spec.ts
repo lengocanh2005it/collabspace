@@ -1,6 +1,6 @@
 import { TaskEventController } from "./task-assign-event-listener.controller";
-import { CommandBus } from "@nestjs/cqrs";
-import { RmqContext } from "@nestjs/microservices";
+import type { CommandBus } from "@nestjs/cqrs";
+import type { RmqContext } from "@nestjs/microservices";
 
 describe("TaskEventController", () => {
   let controller: TaskEventController;

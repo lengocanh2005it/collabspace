@@ -1,15 +1,6 @@
 import { Transform } from 'class-transformer';
-import {
-  IsBoolean,
-  IsIn,
-  IsOptional,
-  IsString,
-  MaxLength,
-} from 'class-validator';
-import {
-  toNullableTrimmedString,
-  toOptionalTrimmedString,
-} from './transformers';
+import { IsBoolean, IsIn, IsOptional, IsString, MaxLength } from 'class-validator';
+import { toNullableTrimmedString, toOptionalTrimmedString } from './transformers';
 
 export class UpdateCurrentUserPreferencesDto {
   @Transform(toOptionalTrimmedString)

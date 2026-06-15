@@ -1,6 +1,6 @@
 // src/infrastructure/persistence/task-comment.schema.ts
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { Document } from "mongoose";
+import type { Document } from "mongoose";
 
 export type TaskCommentDocument = TaskComment & Document;
 

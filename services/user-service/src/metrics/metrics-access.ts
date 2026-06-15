@@ -15,8 +15,7 @@ export function assertMetricsAccess(request: Request): void {
       ? authorization.match(/^Bearer\s+(.+)$/i)?.[1]?.trim()
       : undefined;
   const headerToken = request.headers['x-metrics-token'];
-  const plainToken =
-    typeof headerToken === 'string' ? headerToken.trim() : undefined;
+  const plainToken = typeof headerToken === 'string' ? headerToken.trim() : undefined;
 
   if (bearer === expected || plainToken === expected) {
     return;

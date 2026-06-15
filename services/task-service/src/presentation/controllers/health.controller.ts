@@ -1,9 +1,9 @@
 import { Controller, Get, HttpCode, Req, Res } from "@nestjs/common";
 import { ApiOperation, ApiTags } from "@nestjs/swagger";
 import type { Request, Response } from "express";
-import { TaskHealthService } from "../../health/task-health.service";
+import type { TaskHealthService } from "../../health/task-health.service";
 import { assertMetricsAccess } from "../../metrics/metrics-access";
-import { MetricsService } from "../../metrics/metrics.service";
+import type { MetricsService } from "../../metrics/metrics.service";
 
 @ApiTags("health")
 @Controller("tasks")

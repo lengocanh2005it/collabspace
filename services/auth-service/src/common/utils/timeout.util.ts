@@ -8,9 +8,8 @@ export class OperationTimeoutError extends Error {
   }
 }
 
-export const isOperationTimeoutError = (
-  error: unknown,
-): error is OperationTimeoutError => error instanceof OperationTimeoutError;
+export const isOperationTimeoutError = (error: unknown): error is OperationTimeoutError =>
+  error instanceof OperationTimeoutError;
 
 export async function withTimeout<T>(
   operation: Promise<T>,

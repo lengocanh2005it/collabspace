@@ -1,7 +1,7 @@
-import { INestApplication } from '@nestjs/common';
-import { Test, TestingModule } from '@nestjs/testing';
+import type { INestApplication } from '@nestjs/common';
+import { Test, type TestingModule } from '@nestjs/testing';
 import request from 'supertest';
-import { App } from 'supertest/types';
+import type { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
 import { JwtTokenService } from '../src/application/services/jwt-token.service';
 import { AuthHealthService } from '../src/health/auth-health.service';
@@ -145,8 +145,7 @@ describe('AuthController (e2e)', () => {
     otpStoreMock.set.mockResolvedValue('OK');
     otpStoreMock.getJson.mockResolvedValue({
       email: 'member@example.com',
-      otpHash:
-        '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
+      otpHash: '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
     });
     otpStoreMock.delete.mockResolvedValue(1);
     otpStoreMock.exists.mockResolvedValue(false);
@@ -250,9 +249,7 @@ describe('AuthController (e2e)', () => {
       timestamp: '2026-05-11T00:00:00.000Z',
     });
 
-    await request(app.getHttpServer())
-      .get('/api/v1/auth/health/ready')
-      .expect(503);
+    await request(app.getHttpServer()).get('/api/v1/auth/health/ready').expect(503);
   });
 
   it('/api/v1/auth/verify (GET) returns identity headers for valid JWT', async () => {

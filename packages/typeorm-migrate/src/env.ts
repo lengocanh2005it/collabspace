@@ -43,10 +43,7 @@ export function requireDatabaseUrl(): string {
   return databaseUrl;
 }
 
-export function toBoolean(
-  value: string | undefined,
-  fallback: boolean,
-): boolean {
+export function toBoolean(value: string | undefined, fallback: boolean): boolean {
   if (!value) {
     return fallback;
   }
@@ -58,8 +55,7 @@ export function toBoolean(
 export function migrationsGlobFromMigrateDir(migrateDirname: string): string {
   const migrationsDir = resolve(migrateDirname, '..', 'migrations');
   const parentName = basename(resolve(migrateDirname, '..'));
-  const runningFromSource =
-    basename(migrateDirname) === 'src' && parentName !== 'dist';
+  const runningFromSource = basename(migrateDirname) === 'src' && parentName !== 'dist';
   // Require 13-digit JS timestamp prefix (excludes legacy 001-foo files in old images).
   const pattern = runningFromSource
     ? '[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]-*.{ts,js}'

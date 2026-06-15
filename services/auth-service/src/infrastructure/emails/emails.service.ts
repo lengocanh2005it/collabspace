@@ -1,13 +1,10 @@
-import {
+import type {
   SendEmailJobPayload,
   SendHtmlEmailInput,
   SendTextEmailInput,
 } from '@/infrastructure/emails/email-job.types';
-import {
-  isOperationTimeoutError,
-  withTimeout,
-} from '@/common/utils/timeout.util';
-import { ConfigurationService } from '@/configuration/configuration.service';
+import { isOperationTimeoutError, withTimeout } from '@/common/utils/timeout.util';
+import type { ConfigurationService } from '@/configuration/configuration.service';
 import { GraphileWorkerService } from '@/infrastructure/graphile-worker/graphile-worker.service';
 import {
   Inject,
@@ -18,7 +15,7 @@ import {
   forwardRef,
 } from '@nestjs/common';
 import type { Job } from 'graphile-worker';
-import { EmailSendResult, EmailsSenderService } from './emails-sender.service';
+import type { EmailSendResult, EmailsSenderService } from './emails-sender.service';
 
 @Injectable()
 export class EmailsService {
@@ -130,8 +127,7 @@ export class EmailsService {
   }
 
   private shouldQueueEmails(): boolean {
-    const graphileWorkerConfig =
-      this.configurationService.getGraphileWorkerConfig();
+    const graphileWorkerConfig = this.configurationService.getGraphileWorkerConfig();
 
     return (
       graphileWorkerConfig.enabled &&
@@ -167,8 +163,7 @@ export class EmailsService {
       });
     }
 
-    const message =
-      error instanceof Error ? error.message : 'Email delivery failed';
+    const message = error instanceof Error ? error.message : 'Email delivery failed';
     this.logger.warn(`Email delivery failed: ${message}`);
     throw new ServiceUnavailableException({
       code: 'EMAIL_DELIVERY_FAILED',

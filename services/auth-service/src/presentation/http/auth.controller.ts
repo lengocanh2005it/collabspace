@@ -25,7 +25,7 @@ import {
   ApiUnauthorizedResponse,
   ApiTooManyRequestsResponse,
 } from '@nestjs/swagger';
-import {
+import type {
   ChangePasswordRequestDto,
   ForgotPasswordRequestDto,
   LoginRequestDto,
@@ -53,10 +53,7 @@ import {
   VerifyAccessResponseDto,
   VerifyEmailOtpResponseDto,
 } from '@/application/dto/auth-response.dto';
-import {
-  LivenessReportDto,
-  ReadinessReportDto,
-} from '@/application/dto/health-response.dto';
+import { LivenessReportDto, ReadinessReportDto } from '@/application/dto/health-response.dto';
 import { ChangePasswordUseCase } from '@/application/use-cases/change-password.use-case';
 import { ForgotPasswordUseCase } from '@/application/use-cases/forgot-password.use-case';
 import { GetCurrentUserUseCase } from '@/application/use-cases/get-current-user.use-case';
@@ -72,16 +69,13 @@ import { ResetPasswordUseCase } from '@/application/use-cases/reset-password.use
 import { RevokeSessionUseCase } from '@/application/use-cases/revoke-session.use-case';
 import { VerifyAccessTokenUseCase } from '@/application/use-cases/verify-access-token.use-case';
 import { VerifyEmailOtpUseCase } from '@/application/use-cases/verify-email-otp.use-case';
-import { AuthHealthService } from '@/health/auth-health.service';
+import type { AuthHealthService } from '@/health/auth-health.service';
 import { assertMetricsAccess } from '@/metrics/metrics-access';
-import { MetricsService } from '@/metrics/metrics.service';
+import type { MetricsService } from '@/metrics/metrics.service';
 import type { RequestWithId } from '@/common/http/request-id.middleware';
 import type { Request, Response } from 'express';
-import {
-  EMAIL_OUTBOX,
-  type EmailOutbox,
-} from '@/domain/ports/email-outbox.port';
-import { ConfigurationService } from '@/configuration/configuration.service';
+import { EMAIL_OUTBOX, type EmailOutbox } from '@/domain/ports/email-outbox.port';
+import type { ConfigurationService } from '@/configuration/configuration.service';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -163,8 +157,7 @@ export class AuthController {
   @HttpCode(200)
   @ApiBearerAuth()
   @ApiOperation({
-    summary:
-      'Current authenticated user (profile hydrated when user-service is up)',
+    summary: 'Current authenticated user (profile hydrated when user-service is up)',
   })
   @ApiOkResponse({ type: MeResponseDto })
   @ApiUnauthorizedResponse()
@@ -195,9 +188,7 @@ export class AuthController {
   @ApiTooManyRequestsResponse({
     description: 'Resend cooldown or max attempts exceeded',
   })
-  async resendVerificationOtp(
-    @Body() body: ResendEmailVerificationOtpRequestDto,
-  ) {
+  async resendVerificationOtp(@Body() body: ResendEmailVerificationOtpRequestDto) {
     return this.resendEmailVerificationOtpUseCase.execute(body);
   }
 
@@ -205,8 +196,7 @@ export class AuthController {
   @HttpCode(200)
   @ApiOperation({
     summary: 'Verify email with OTP',
-    description:
-      'OTP is hashed at rest in Redis. Invalid or expired OTP returns 401.',
+    description: 'OTP is hashed at rest in Redis. Invalid or expired OTP returns 401.',
   })
   @ApiOkResponse({ type: VerifyEmailOtpResponseDto })
   @ApiUnauthorizedResponse({ description: 'Invalid or expired OTP' })
@@ -220,14 +210,8 @@ export class AuthController {
   @ApiOperation({ summary: 'Change password for authenticated user' })
   @ApiOkResponse({ type: ChangePasswordResponseDto })
   @ApiUnauthorizedResponse()
-  async changePassword(
-    @Req() request: Request,
-    @Body() body: ChangePasswordRequestDto,
-  ) {
-    return this.changePasswordUseCase.execute(
-      request.header('authorization'),
-      body,
-    );
+  async changePassword(@Req() request: Request, @Body() body: ChangePasswordRequestDto) {
+    return this.changePasswordUseCase.execute(request.header('authorization'), body);
   }
 
   @Post('forgot-password')
@@ -270,14 +254,8 @@ export class AuthController {
   @ApiParam({ name: 'familyId', format: 'uuid' })
   @ApiOkResponse({ type: RevokeSessionResponseDto })
   @ApiUnauthorizedResponse()
-  async revokeSession(
-    @Req() request: Request,
-    @Param('familyId') familyId: string,
-  ) {
-    return this.revokeSessionUseCase.execute(
-      request.header('authorization'),
-      familyId,
-    );
+  async revokeSession(@Req() request: Request, @Param('familyId') familyId: string) {
+    return this.revokeSessionUseCase.execute(request.header('authorization'), familyId);
   }
 
   @Post('logout-others')
@@ -288,14 +266,8 @@ export class AuthController {
   })
   @ApiOkResponse({ type: LogoutOthersResponseDto })
   @ApiUnauthorizedResponse()
-  async logoutOthers(
-    @Req() request: Request,
-    @Body() body: LogoutOthersRequestDto,
-  ) {
-    return this.logoutOthersUseCase.execute(
-      request.header('authorization'),
-      body,
-    );
+  async logoutOthers(@Req() request: Request, @Body() body: LogoutOthersRequestDto) {
+    return this.logoutOthersUseCase.execute(request.header('authorization'), body);
   }
 
   @Post('logout-all')
@@ -330,8 +302,7 @@ export class AuthController {
   @Get('dev/otp')
   @HttpCode(200)
   @ApiOperation({
-    summary:
-      '[DEV ONLY] Get latest OTP for email — requires ALLOW_DEV_OTP_ENDPOINT=true',
+    summary: '[DEV ONLY] Get latest OTP for email — requires ALLOW_DEV_OTP_ENDPOINT=true',
   })
   async getDevOtp(@Query('email') email: string) {
     if (!this.configurationService.isDevOtpEndpointEnabled()) {
@@ -373,13 +344,8 @@ export class AuthController {
   @ApiOperation({ summary: 'Traefik forward-auth token verification' })
   @ApiOkResponse({ type: VerifyAccessResponseDto })
   @ApiUnauthorizedResponse()
-  async verify(
-    @Req() request: Request,
-    @Res({ passthrough: true }) response: Response,
-  ) {
-    const identity = await this.verifyAccessTokenUseCase.execute(
-      request.header('authorization'),
-    );
+  async verify(@Req() request: Request, @Res({ passthrough: true }) response: Response) {
+    const identity = await this.verifyAccessTokenUseCase.execute(request.header('authorization'));
 
     response.setHeader('X-User-Id', identity.userId);
 

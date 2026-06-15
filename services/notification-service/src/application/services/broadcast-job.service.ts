@@ -3,11 +3,11 @@ import {
   Inject,
   Injectable,
   Logger,
-  OnModuleDestroy,
-  OnModuleInit,
+  type OnModuleDestroy,
+  type OnModuleInit,
 } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import { Model } from "mongoose";
+import type { Model } from "mongoose";
 import { Notification } from "../../domain/entities/Notification";
 import {
   NOTIFICATION_REPOSITORY_TOKEN,
@@ -47,21 +47,14 @@ export class BroadcastJobService implements OnModuleInit, OnModuleDestroy {
     if (this.timer) clearInterval(this.timer);
   }
 
-  async enqueue(input: {
-    actorId: string;
-    body: string;
-    idempotencyKey: string;
-    title: string;
-  }) {
+  async enqueue(input: { actorId: string; body: string; idempotencyKey: string; title: string }) {
     try {
       const job = await this.jobModel.create({
         ...input,
         cursor: 0,
         status: "pending",
       });
-      this.logger.log(
-        `admin_action=broadcast_enqueued actorId=${input.actorId} jobId=${job.id}`,
-      );
+      this.logger.log(`admin_action=broadcast_enqueued actorId=${input.actorId} jobId=${job.id}`);
       return { id: job.id, status: job.status };
     } catch (error) {
       if (
@@ -105,10 +98,7 @@ export class BroadcastJobService implements OnModuleInit, OnModuleDestroy {
         .exec();
       if (!job) return;
       const batchSize = 100;
-      const recipients = await this.userRepository.listActiveUserIdsAsync(
-        job.cursor,
-        batchSize,
-      );
+      const recipients = await this.userRepository.listActiveUserIdsAsync(job.cursor, batchSize);
       for (const recipientId of recipients) {
         await this.notificationRepository.createBroadcastAsync(
           Notification.create(
@@ -130,9 +120,7 @@ export class BroadcastJobService implements OnModuleInit, OnModuleDestroy {
       await job.save();
     } catch (error) {
       this.logger.error(
-        `Broadcast processing failed: ${
-          error instanceof Error ? error.message : String(error)
-        }`,
+        `Broadcast processing failed: ${error instanceof Error ? error.message : String(error)}`,
       );
     } finally {
       this.running = false;

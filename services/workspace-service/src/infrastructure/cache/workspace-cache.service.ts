@@ -22,11 +22,7 @@ export class WorkspaceCacheService {
   }
 
   async setWorkspace(workspace: Workspace): Promise<void> {
-    await this.set(
-      this.workspaceKey(workspace.id),
-      workspace,
-      this.workspaceTtl(),
-    );
+    await this.set(this.workspaceKey(workspace.id), workspace, this.workspaceTtl());
   }
 
   async deleteWorkspace(id: string): Promise<void> {
@@ -40,10 +36,7 @@ export class WorkspaceCacheService {
     return result === null ? undefined : result;
   }
 
-  async setWorkspaceList(
-    userId: string,
-    workspaces: Workspace[],
-  ): Promise<void> {
+  async setWorkspaceList(userId: string, workspaces: Workspace[]): Promise<void> {
     await this.set(this.listKey(userId), workspaces, this.listTtl());
   }
 
@@ -103,19 +96,14 @@ export class WorkspaceCacheService {
   private workspaceTtl(): number {
     return Math.max(
       1,
-      Number(
-        this.configService.get<string>('WORKSPACE_CACHE_TTL_SECONDS') ?? 300,
-      ),
+      Number(this.configService.get<string>('WORKSPACE_CACHE_TTL_SECONDS') ?? 300),
     );
   }
 
   private listTtl(): number {
     return Math.max(
       1,
-      Number(
-        this.configService.get<string>('WORKSPACE_LIST_CACHE_TTL_SECONDS') ??
-          120,
-      ),
+      Number(this.configService.get<string>('WORKSPACE_LIST_CACHE_TTL_SECONDS') ?? 120),
     );
   }
 }

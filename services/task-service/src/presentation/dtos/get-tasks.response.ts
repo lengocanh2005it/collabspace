@@ -7,12 +7,7 @@ export class GetTasksResponse {
   public readonly skip: number;
   public readonly limit: number;
 
-  constructor(
-    tasks: TaskResponseData[],
-    total: number,
-    skip: number,
-    limit: number,
-  ) {
+  constructor(tasks: TaskResponseData[], total: number, skip: number, limit: number) {
     this.tasks = tasks;
     this.total = total;
     this.skip = skip;

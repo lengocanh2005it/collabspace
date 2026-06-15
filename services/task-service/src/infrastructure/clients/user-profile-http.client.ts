@@ -47,22 +47,13 @@ export class UserProfileHttpClient {
   private readonly serviceJwtSecret: string | undefined;
 
   constructor(private readonly configService: ConfigService) {
-    this.baseUrl =
-      this.configService.get<string>("USER_SERVICE_URL") ??
-      "http://user-service:3000";
-    this.timeoutMs = Number(
-      this.configService.get<string>("USER_SERVICE_TIMEOUT_MS") ?? 3000,
-    );
-    this.serviceJwtSecret = this.configService
-      .get<string>("SERVICE_JWT_SECRET")
-      ?.trim();
+    this.baseUrl = this.configService.get<string>("USER_SERVICE_URL") ?? "http://user-service:3000";
+    this.timeoutMs = Number(this.configService.get<string>("USER_SERVICE_TIMEOUT_MS") ?? 3000);
+    this.serviceJwtSecret = this.configService.get<string>("SERVICE_JWT_SECRET")?.trim();
   }
 
   isFallbackEnabled(): boolean {
-    if (
-      this.configService.get<string>("USER_REPLICA_FALLBACK_ENABLED") ===
-      "false"
-    ) {
+    if (this.configService.get<string>("USER_REPLICA_FALLBACK_ENABLED") === "false") {
       return false;
     }
 
@@ -75,17 +66,12 @@ export class UserProfileHttpClient {
     );
   }
 
-  async lookupReplicas(
-    request: UserReplicaLookupRequest,
-  ): Promise<RemoteUserReplica[]> {
+  async lookupReplicas(request: UserReplicaLookupRequest): Promise<RemoteUserReplica[]> {
     if (!this.isFallbackEnabled()) {
       return [];
     }
 
-    const response = await this.post(
-      "/api/v1/users/internal/replicas",
-      request,
-    );
+    const response = await this.post("/api/v1/users/internal/replicas", request);
 
     if (!response.ok) {
       throw new ServiceUnavailableException({
@@ -127,10 +113,7 @@ export class UserProfileHttpClient {
     } catch (error) {
       throw new ServiceUnavailableException({
         code: "USER_SERVICE_UNAVAILABLE",
-        message:
-          error instanceof Error
-            ? error.message
-            : "User service replica lookup failed",
+        message: error instanceof Error ? error.message : "User service replica lookup failed",
       });
     }
   }

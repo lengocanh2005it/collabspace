@@ -1,4 +1,4 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { Test, type TestingModule } from '@nestjs/testing';
 import { ForbiddenException } from '@nestjs/common';
 import { ListInvitationsUseCase } from './list-invitations.use-case';
 import { INVITATION_REPOSITORY } from '../../../domain/repositories/invitation.repository';
@@ -27,9 +27,7 @@ describe('ListInvitationsUseCase', () => {
   it('should throw ForbiddenException if requester is not a workspace member', async () => {
     mockMemberRepo.findByWorkspaceAndUser.mockResolvedValue(null);
 
-    await expect(useCase.execute('user-1', 'ws-1')).rejects.toThrow(
-      ForbiddenException,
-    );
+    await expect(useCase.execute('user-1', 'ws-1')).rejects.toThrow(ForbiddenException);
   });
 
   it('should list pending invitations for workspace members', async () => {
@@ -55,13 +53,8 @@ describe('ListInvitationsUseCase', () => {
 
     const result = await useCase.execute('user-1', 'ws-1');
 
-    expect(mockMemberRepo.findByWorkspaceAndUser).toHaveBeenCalledWith(
-      'ws-1',
-      'user-1',
-    );
-    expect(mockInvitationRepo.findPendingByWorkspace).toHaveBeenCalledWith(
-      'ws-1',
-    );
+    expect(mockMemberRepo.findByWorkspaceAndUser).toHaveBeenCalledWith('ws-1', 'user-1');
+    expect(mockInvitationRepo.findPendingByWorkspace).toHaveBeenCalledWith('ws-1');
     expect(result).toEqual([
       {
         id: 'inv-1',

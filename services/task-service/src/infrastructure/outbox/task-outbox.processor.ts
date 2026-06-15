@@ -1,17 +1,12 @@
-import {
-  Injectable,
-  Logger,
-  OnModuleDestroy,
-  OnModuleInit,
-} from "@nestjs/common";
+import { Injectable, Logger, type OnModuleDestroy, type OnModuleInit } from "@nestjs/common";
 import { runOutboxPollCycle } from "@collabspace/shared";
-import { TaskAssignedEventPayload } from "../../domain/events/task.events";
-import {
+import type { TaskAssignedEventPayload } from "../../domain/events/task.events";
+import type {
   CommentMentionedEventPayload,
   TaskCommentedEventPayload,
 } from "../../domain/events/comment.events";
-import { RabbitMqEventsService } from "../messaging/rabbitmq/rabbitmq-events.service";
-import { TaskOutboxService } from "./task-outbox.service";
+import type { RabbitMqEventsService } from "../messaging/rabbitmq/rabbitmq-events.service";
+import type { TaskOutboxService } from "./task-outbox.service";
 import {
   TASK_OUTBOX_EVENT_COMMENT_MENTIONED,
   TASK_OUTBOX_EVENT_TASK_ASSIGNED,
@@ -37,9 +32,7 @@ export class TaskOutboxProcessor implements OnModuleInit, OnModuleDestroy {
       return;
     }
 
-    const pollIntervalMs = Number(
-      process.env.TASK_OUTBOX_POLL_INTERVAL_MS ?? 2000,
-    );
+    const pollIntervalMs = Number(process.env.TASK_OUTBOX_POLL_INTERVAL_MS ?? 2000);
 
     this.timer = setInterval(() => {
       void this.processPendingEvents();
@@ -68,8 +61,7 @@ export class TaskOutboxProcessor implements OnModuleInit, OnModuleDestroy {
           reclaimStaleClaims: () => this.taskOutboxService.reclaimStaleClaims(),
           claimPendingBatch: async () => {
             const batchSize = Number(process.env.TASK_OUTBOX_BATCH_SIZE ?? 25);
-            const events =
-              await this.taskOutboxService.claimPendingBatch(batchSize);
+            const events = await this.taskOutboxService.claimPendingBatch(batchSize);
             return events.map((event) => ({
               id: String(event._id),
               eventType: event.eventType,
@@ -91,14 +83,9 @@ export class TaskOutboxProcessor implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  private async publishEvent(
-    eventType: string,
-    payload: Record<string, unknown>,
-  ): Promise<void> {
+  private async publishEvent(eventType: string, payload: Record<string, unknown>): Promise<void> {
     if (eventType === TASK_OUTBOX_EVENT_TASK_ASSIGNED) {
-      await this.rabbitMqEvents.publishTaskAssigned(
-        payload as unknown as TaskAssignedEventPayload,
-      );
+      await this.rabbitMqEvents.publishTaskAssigned(payload as unknown as TaskAssignedEventPayload);
       return;
     }
 

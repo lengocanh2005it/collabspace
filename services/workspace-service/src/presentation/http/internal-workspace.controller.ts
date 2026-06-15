@@ -1,11 +1,4 @@
-import {
-  Controller,
-  Get,
-  Param,
-  ParseUUIDPipe,
-  Query,
-  Req,
-} from '@nestjs/common';
+import { Controller, Get, Param, ParseUUIDPipe, Query, Req } from '@nestjs/common';
 import {
   ApiExcludeController,
   ApiOperation,
@@ -23,9 +16,7 @@ import { assertInternalServiceAccess } from './internal-service-access';
 @ApiSecurity('service-jwt')
 @Controller('workspaces/internal')
 export class InternalWorkspaceController {
-  constructor(
-    private readonly checkWorkspaceMembershipUseCase: CheckWorkspaceMembershipUseCase,
-  ) {}
+  constructor(private readonly checkWorkspaceMembershipUseCase: CheckWorkspaceMembershipUseCase) {}
 
   @Get(':workspaceId/membership')
   @ApiOperation({

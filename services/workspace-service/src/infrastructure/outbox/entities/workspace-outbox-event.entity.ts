@@ -1,15 +1,7 @@
-import {
-  Column,
-  CreateDateColumn,
-  Entity,
-  PrimaryColumn,
-  UpdateDateColumn,
-} from 'typeorm';
+import { Column, CreateDateColumn, Entity, PrimaryColumn, UpdateDateColumn } from 'typeorm';
 
-export const WORKSPACE_OUTBOX_EVENT_WORKSPACE_INVITED =
-  'workspace.workspace_invited';
-export const WORKSPACE_OUTBOX_EVENT_WORKSPACE_DELETED =
-  'workspace.workspace_deleted';
+export const WORKSPACE_OUTBOX_EVENT_WORKSPACE_INVITED = 'workspace.workspace_invited';
+export const WORKSPACE_OUTBOX_EVENT_WORKSPACE_DELETED = 'workspace.workspace_deleted';
 
 @Entity({ name: 'workspace_outbox_events' })
 export class WorkspaceOutboxEventEntity {

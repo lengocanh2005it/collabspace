@@ -1,17 +1,16 @@
-import { CommandHandler, ICommandHandler } from "@nestjs/cqrs";
+import { CommandHandler, type ICommandHandler } from "@nestjs/cqrs";
 import { Inject, NotFoundException, ForbiddenException } from "@nestjs/common";
 import { MarkNotificationReadCommand } from "./mark-notification-read.command";
 import {
   NOTIFICATION_REPOSITORY_TOKEN,
   type INotificationRepository,
 } from "../../../domain/repositories/INotificationRepository";
-import { NotificationCountCacheService } from "../../../infrastructure/cache/notification-count-cache.service";
+import type { NotificationCountCacheService } from "../../../infrastructure/cache/notification-count-cache.service";
 
 @CommandHandler(MarkNotificationReadCommand)
-export class MarkNotificationReadHandler implements ICommandHandler<
-  MarkNotificationReadCommand,
-  void
-> {
+export class MarkNotificationReadHandler
+  implements ICommandHandler<MarkNotificationReadCommand, void>
+{
   constructor(
     @Inject(NOTIFICATION_REPOSITORY_TOKEN)
     private readonly notificationRepository: INotificationRepository,
@@ -19,9 +18,7 @@ export class MarkNotificationReadHandler implements ICommandHandler<
   ) {}
 
   async execute(command: MarkNotificationReadCommand): Promise<void> {
-    const notification = await this.notificationRepository.findByIdAsync(
-      command.notificationId,
-    );
+    const notification = await this.notificationRepository.findByIdAsync(command.notificationId);
 
     if (!notification) {
       throw new NotFoundException({

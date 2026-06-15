@@ -1,8 +1,8 @@
 import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import { Model } from "mongoose";
-import { TaskAssignedEventPayload } from "../../domain/events/task.events";
-import {
+import type { Model } from "mongoose";
+import type { TaskAssignedEventPayload } from "../../domain/events/task.events";
+import type {
   CommentMentionedEventPayload,
   TaskCommentedEventPayload,
 } from "../../domain/events/comment.events";
@@ -11,7 +11,7 @@ import {
   TASK_OUTBOX_EVENT_TASK_ASSIGNED,
   TASK_OUTBOX_EVENT_TASK_COMMENTED,
   TaskOutboxEvent,
-  TaskOutboxEventDocument,
+  type TaskOutboxEventDocument,
 } from "./task-outbox.schema";
 
 const MAX_ATTEMPTS = Number(process.env.TASK_OUTBOX_MAX_ATTEMPTS ?? 8);
@@ -37,15 +37,11 @@ export class TaskOutboxService {
     });
   }
 
-  async enqueueCommentMentioned(
-    payload: CommentMentionedEventPayload,
-  ): Promise<void> {
+  async enqueueCommentMentioned(payload: CommentMentionedEventPayload): Promise<void> {
     await this.enqueueCommentMentionedBatch([payload]);
   }
 
-  async enqueueCommentMentionedBatch(
-    payloads: CommentMentionedEventPayload[],
-  ): Promise<void> {
+  async enqueueCommentMentionedBatch(payloads: CommentMentionedEventPayload[]): Promise<void> {
     if (payloads.length === 0) {
       return;
     }
@@ -64,9 +60,7 @@ export class TaskOutboxService {
     );
   }
 
-  async enqueueTaskCommented(
-    payload: TaskCommentedEventPayload,
-  ): Promise<void> {
+  async enqueueTaskCommented(payload: TaskCommentedEventPayload): Promise<void> {
     await this.outboxModel.create({
       attemptCount: 0,
       availableAt: new Date(),
@@ -79,9 +73,7 @@ export class TaskOutboxService {
     });
   }
 
-  async claimPendingBatch(
-    limit = DEFAULT_BATCH_SIZE,
-  ): Promise<TaskOutboxEventDocument[]> {
+  async claimPendingBatch(limit = DEFAULT_BATCH_SIZE): Promise<TaskOutboxEventDocument[]> {
     const batchSize = Math.max(1, Math.floor(limit));
     const now = new Date();
     const pendingFilter = {
@@ -142,11 +134,7 @@ export class TaskOutboxService {
     );
   }
 
-  async markFailed(
-    id: string,
-    attemptCount: number,
-    error: string,
-  ): Promise<void> {
+  async markFailed(id: string, attemptCount: number, error: string): Promise<void> {
     const isPermanentFailure = attemptCount >= MAX_ATTEMPTS;
 
     await this.outboxModel.updateOne(

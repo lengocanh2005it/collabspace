@@ -1,18 +1,6 @@
-import {
-  Controller,
-  Delete,
-  Get,
-  Headers,
-  HttpCode,
-  Param,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Delete, Get, Headers, HttpCode, Param, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import {
-  AdminUserId,
-  PlatformAdminGuard,
-  RequirePlatformAdmin,
-} from '@collabspace/nest-auth';
+import { AdminUserId, PlatformAdminGuard, RequirePlatformAdmin } from '@collabspace/nest-auth';
 import { ManageUsersAdminUseCase } from '../../application/use-cases/manage-users-admin.use-case';
 
 @ApiTags('users-admin')

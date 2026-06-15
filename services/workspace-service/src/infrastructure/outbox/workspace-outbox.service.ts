@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { unwrapQueryRows } from '@collabspace/shared';
-import { randomUUID } from 'crypto';
-import { DataSource, EntityManager } from 'typeorm';
+import { randomUUID } from 'node:crypto';
+import type { DataSource, EntityManager } from 'typeorm';
 import { getWorkspaceOutboxConfig } from './workspace-outbox.config';
 import {
   WORKSPACE_OUTBOX_EVENT_WORKSPACE_DELETED,
@@ -17,12 +17,9 @@ type ClaimedOutboxEvent = {
   payload: Record<string, unknown>;
 };
 
-function normalizeClaimedOutboxRow(
-  row: Record<string, unknown>,
-): ClaimedOutboxEvent | null {
+function normalizeClaimedOutboxRow(row: Record<string, unknown>): ClaimedOutboxEvent | null {
   const rawId = row.id;
-  const id =
-    typeof rawId === 'string' ? rawId : rawId != null ? String(rawId) : '';
+  const id = typeof rawId === 'string' ? rawId : rawId != null ? String(rawId) : '';
   if (id.length === 0) {
     return null;
   }
@@ -34,9 +31,7 @@ function normalizeClaimedOutboxRow(
 
   const rawAttemptCount = row.attemptCount ?? row.attempt_count;
   const attemptCount =
-    typeof rawAttemptCount === 'number'
-      ? rawAttemptCount
-      : Number(rawAttemptCount ?? 0);
+    typeof rawAttemptCount === 'number' ? rawAttemptCount : Number(rawAttemptCount ?? 0);
 
   return {
     id,
@@ -57,29 +52,19 @@ export class WorkspaceOutboxService {
     payload: Record<string, unknown>,
     manager?: EntityManager,
   ): Promise<void> {
-    await this.enqueueEvent(
-      WORKSPACE_OUTBOX_EVENT_WORKSPACE_INVITED,
-      payload,
-      manager,
-    );
+    await this.enqueueEvent(WORKSPACE_OUTBOX_EVENT_WORKSPACE_INVITED, payload, manager);
   }
 
   async enqueueWorkspaceDeleted(
     payload: Record<string, unknown>,
     manager?: EntityManager,
   ): Promise<void> {
-    await this.enqueueEvent(
-      WORKSPACE_OUTBOX_EVENT_WORKSPACE_DELETED,
-      payload,
-      manager,
-    );
+    await this.enqueueEvent(WORKSPACE_OUTBOX_EVENT_WORKSPACE_DELETED, payload, manager);
   }
 
   async claimPendingBatch(limit?: number): Promise<ClaimedOutboxEvent[]> {
     const { batchSize } = getWorkspaceOutboxConfig();
-    const tablePath = this.dataSource.getMetadata(
-      WorkspaceOutboxEventEntity,
-    ).tablePath;
+    const tablePath = this.dataSource.getMetadata(WorkspaceOutboxEventEntity).tablePath;
 
     return this.dataSource.transaction(async (manager) => {
       const candidates = unwrapQueryRows<{ id: string }>(
@@ -151,11 +136,7 @@ export class WorkspaceOutboxService {
     );
   }
 
-  async markFailed(
-    id: string,
-    attemptCount: number,
-    error: string,
-  ): Promise<void> {
+  async markFailed(id: string, attemptCount: number, error: string): Promise<void> {
     if (typeof id !== 'string' || id.length === 0) {
       return;
     }
@@ -167,9 +148,7 @@ export class WorkspaceOutboxService {
     await this.getRepository().update(
       { id },
       {
-        ...(isPermanentFailure
-          ? {}
-          : { availableAt: this.getRetryAvailableAt(safeAttemptCount) }),
+        ...(isPermanentFailure ? {} : { availableAt: this.getRetryAvailableAt(safeAttemptCount) }),
         claimedAt: null,
         failedAt: isPermanentFailure ? new Date() : null,
         lastError: error,
@@ -179,9 +158,7 @@ export class WorkspaceOutboxService {
   }
 
   async reclaimStaleClaims(): Promise<number> {
-    const tablePath = this.dataSource.getMetadata(
-      WorkspaceOutboxEventEntity,
-    ).tablePath;
+    const tablePath = this.dataSource.getMetadata(WorkspaceOutboxEventEntity).tablePath;
     const { staleClaimThresholdMs } = getWorkspaceOutboxConfig();
 
     const rows = unwrapQueryRows<{ id: string }>(
@@ -206,9 +183,7 @@ export class WorkspaceOutboxService {
   }
 
   async markExhaustedClaims(): Promise<number> {
-    const tablePath = this.dataSource.getMetadata(
-      WorkspaceOutboxEventEntity,
-    ).tablePath;
+    const tablePath = this.dataSource.getMetadata(WorkspaceOutboxEventEntity).tablePath;
     const { maxAttempts } = getWorkspaceOutboxConfig();
 
     const rows = unwrapQueryRows<{ id: string }>(
@@ -232,9 +207,7 @@ export class WorkspaceOutboxService {
   }
 
   async releaseInFlightClaimsOnStartup(): Promise<number> {
-    const tablePath = this.dataSource.getMetadata(
-      WorkspaceOutboxEventEntity,
-    ).tablePath;
+    const tablePath = this.dataSource.getMetadata(WorkspaceOutboxEventEntity).tablePath;
 
     const rows = unwrapQueryRows<{ id: string }>(
       await this.dataSource.query(
@@ -256,9 +229,7 @@ export class WorkspaceOutboxService {
   }
 
   private getRepository(manager?: EntityManager) {
-    return (manager ?? this.dataSource.manager).getRepository(
-      WorkspaceOutboxEventEntity,
-    );
+    return (manager ?? this.dataSource.manager).getRepository(WorkspaceOutboxEventEntity);
   }
 
   private async enqueueEvent(
@@ -287,8 +258,7 @@ export class WorkspaceOutboxService {
   }
 
   private getRetryDelayMs(attemptCount: number): number {
-    const safeAttemptCount =
-      Number.isFinite(attemptCount) && attemptCount > 0 ? attemptCount : 1;
+    const safeAttemptCount = Number.isFinite(attemptCount) && attemptCount > 0 ? attemptCount : 1;
     const baseDelayMs = 5_000;
     const cappedExponent = Math.min(Math.max(safeAttemptCount - 1, 0), 6);
     const delayMs = baseDelayMs * 2 ** cappedExponent;

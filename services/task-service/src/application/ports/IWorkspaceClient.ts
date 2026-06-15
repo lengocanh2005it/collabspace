@@ -28,8 +28,5 @@ export interface IWorkspaceClient {
     requiredRole?: "owner" | "admin" | "member",
   ): Promise<boolean>;
 
-  getWorkspaceMemberAsync(
-    workspaceId: string,
-    userId: string,
-  ): Promise<WorkspaceMember | null>;
+  getWorkspaceMemberAsync(workspaceId: string, userId: string): Promise<WorkspaceMember | null>;
 }

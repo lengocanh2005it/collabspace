@@ -5,7 +5,7 @@ import {
   type RefreshTokenRepository,
 } from '@/domain/repositories/refresh-token.repository';
 import { Inject, Injectable } from '@nestjs/common';
-import { JwtTokenService } from './jwt-token.service';
+import type { JwtTokenService } from './jwt-token.service';
 
 @Injectable()
 export class SessionIssuanceService {
@@ -15,10 +15,7 @@ export class SessionIssuanceService {
     private readonly refreshTokenRepository: RefreshTokenRepository,
   ) {}
 
-  async issue(
-    user: AuthUser,
-    workspaceId?: string,
-  ): Promise<AuthSessionResponseDto> {
+  async issue(user: AuthUser, workspaceId?: string): Promise<AuthSessionResponseDto> {
     const accessToken = await this.jwtTokenService.signAccessToken({
       role: user.role,
       roles: user.roles,

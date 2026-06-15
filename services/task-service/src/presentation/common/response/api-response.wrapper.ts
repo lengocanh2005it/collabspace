@@ -1,16 +1,10 @@
 import { buildSuccess, buildError } from "./response.helper";
 
-export const ok = <T>(
-  data: T,
-  requestId?: string,
-  meta?: Record<string, unknown>,
-) => buildSuccess(data, requestId, meta);
+export const ok = <T>(data: T, requestId?: string, meta?: Record<string, unknown>) =>
+  buildSuccess(data, requestId, meta);
 
-export const created = <T>(
-  data: T,
-  requestId?: string,
-  meta?: Record<string, unknown>,
-) => buildSuccess(data, requestId, meta);
+export const created = <T>(data: T, requestId?: string, meta?: Record<string, unknown>) =>
+  buildSuccess(data, requestId, meta);
 
 export const badRequest = (message: string, requestId?: string) =>
   buildError(message, requestId, "BAD_REQUEST");

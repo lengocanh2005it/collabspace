@@ -86,9 +86,7 @@ describe("Notification Entity", () => {
     );
 
     notification.markAsRead();
-    expect(() => notification.markAsRead()).toThrow(
-      "Notification is already read",
-    );
+    expect(() => notification.markAsRead()).toThrow("Notification is already read");
   });
 
   it("should restore from database state", () => {

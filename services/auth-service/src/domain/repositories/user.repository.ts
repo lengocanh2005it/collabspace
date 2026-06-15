@@ -13,10 +13,6 @@ export interface UserRepository {
   register(input: RegisterUserInput): Promise<AuthUser>;
   rollbackNewRegistration(userId: string): Promise<void>;
   validateCredentials(input: LoginInput): Promise<AuthUser>;
-  changePassword(
-    userId: string,
-    currentPassword: string,
-    newPassword: string,
-  ): Promise<void>;
+  changePassword(userId: string, currentPassword: string, newPassword: string): Promise<void>;
   resetPassword(userId: string, newPassword: string): Promise<void>;
 }

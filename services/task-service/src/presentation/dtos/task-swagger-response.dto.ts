@@ -23,16 +23,12 @@ export class TaskResponseSchemaDto {
   @ApiProperty() description!: string;
   @ApiProperty() status!: string;
   @ApiProperty({ format: "uuid" }) workspaceId!: string;
-  @ApiPropertyOptional({ nullable: true, format: "uuid" }) projectId!:
-    | string
-    | null;
+  @ApiPropertyOptional({ nullable: true, format: "uuid" }) projectId!: string | null;
   @ApiProperty() priority!: string;
   @ApiPropertyOptional({ nullable: true, format: "date-time" })
   dueDate!: Date | null;
   @ApiProperty({ type: [String] }) labels!: string[];
-  @ApiPropertyOptional({ nullable: true, format: "uuid" }) assigneeId!:
-    | string
-    | null;
+  @ApiPropertyOptional({ nullable: true, format: "uuid" }) assigneeId!: string | null;
   @ApiProperty({ type: TaskUserResponseSchemaDto })
   createdBy!: TaskUserResponseSchemaDto;
   @ApiPropertyOptional({ nullable: true, type: TaskUserResponseSchemaDto })
@@ -72,16 +68,11 @@ export class GetTaskBoardResponseSchemaDto {
 export class TaskActivityItemSchemaDto {
   @ApiProperty({ format: "uuid" }) id!: string;
   @ApiProperty() type!: string;
-  @ApiPropertyOptional({ nullable: true, format: "uuid" }) actorId!:
-    | string
-    | null;
+  @ApiPropertyOptional({ nullable: true, format: "uuid" }) actorId!: string | null;
   @ApiPropertyOptional({ nullable: true }) actorName!: string | null;
   @ApiPropertyOptional({ nullable: true }) actorAvatarUrl!: string | null;
   @ApiProperty() summary!: string;
-  @ApiProperty({ type: "object", additionalProperties: true }) meta!: Record<
-    string,
-    unknown
-  >;
+  @ApiProperty({ type: "object", additionalProperties: true }) meta!: Record<string, unknown>;
   @ApiProperty({ format: "date-time" }) occurredAt!: string;
 }
 

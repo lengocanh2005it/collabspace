@@ -1,12 +1,9 @@
-import { LoginRequestDto } from '@/application/dto/auth-request.dto';
+import type { LoginRequestDto } from '@/application/dto/auth-request.dto';
 import type { AuthSessionResponseDto } from '@/application/dto/auth-session-response.dto';
 import { User } from '@/domain/entities/user.entity';
-import {
-  USER_REPOSITORY,
-  type UserRepository,
-} from '@/domain/repositories/user.repository';
+import { USER_REPOSITORY, type UserRepository } from '@/domain/repositories/user.repository';
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { SessionIssuanceService } from '../services/session-issuance.service';
+import type { SessionIssuanceService } from '../services/session-issuance.service';
 import {
   AUTH_ADMIN_REPOSITORY,
   type AuthAdminRepository,
@@ -27,10 +24,7 @@ export class LoginUseCase {
   async execute(input: LoginRequestDto): Promise<AuthSessionResponseDto> {
     const authUser = await this.userRepository.validateCredentials(input);
     User.fromAuthUser(authUser).assertCanLogin();
-    const session = await this.sessionIssuanceService.issue(
-      authUser,
-      input.workspaceId,
-    );
+    const session = await this.sessionIssuanceService.issue(authUser, input.workspaceId);
     try {
       await this.authAdminRepository.recordLogin(authUser.userId);
     } catch (error) {

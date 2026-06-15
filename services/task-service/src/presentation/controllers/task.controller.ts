@@ -39,12 +39,12 @@ import {
   ApiSuccessTaskResponseSchemaDto,
 } from "../dtos/task-swagger-response.dto";
 import { FileInterceptor } from "@nestjs/platform-express";
-import { CommandBus, QueryBus } from "@nestjs/cqrs";
+import type { CommandBus, QueryBus } from "@nestjs/cqrs";
 import type { UploadedFile as TaskUploadedFile } from "../../common/types/uploaded-file";
-import { CreateTaskRequest } from "../dtos/create-task.request";
-import { UpdateTaskDetailsRequest } from "../dtos/update-task-details.request";
-import { ChangeTaskStatusRequest } from "../dtos/change-task-status.request";
-import { AssignTaskRequest } from "../dtos/assign-task.request";
+import type { CreateTaskRequest } from "../dtos/create-task.request";
+import type { UpdateTaskDetailsRequest } from "../dtos/update-task-details.request";
+import type { ChangeTaskStatusRequest } from "../dtos/change-task-status.request";
+import type { AssignTaskRequest } from "../dtos/assign-task.request";
 import type { TaskResponseData } from "../dtos/task.response";
 import { GetTasksResponse } from "../dtos/get-tasks.response";
 import { CreateTaskCommand } from "../../application/commands/create-task.command";
@@ -58,15 +58,15 @@ import { GetTaskByIdQuery } from "../../application/queries/get-task-by-id.query
 import { GetTasksQuery } from "../../application/queries/get-tasks.query";
 import type { GetTasksResult } from "../../application/usecases/get-tasks.handler";
 import { GetTaskBoardQuery } from "../../application/queries/get-task-board.query";
-import { GetTaskBoardResponse } from "../dtos/get-task-board.response";
+import type { GetTaskBoardResponse } from "../dtos/get-task-board.response";
 import { GetTaskActivityQuery } from "../../application/queries/get-task-activity.query";
-import { TaskActivityResponse } from "../dtos/task-activity.response";
+import type { TaskActivityResponse } from "../dtos/task-activity.response";
 import type { UploadAttachmentResponse } from "../../application/usecases/upload-attachment.handler";
 import { created, ok } from "../common/response/api-response.wrapper";
 import type { ApiResponse } from "../common/response/api-response.interface";
 import { WorkspaceValidationGuard } from "../guards/workspace-validation.guard";
 import { AuthGuard } from "../guards/auth.guard";
-import { IdempotencyService } from "../../infrastructure/idempotency/idempotency.service";
+import type { IdempotencyService } from "../../infrastructure/idempotency/idempotency.service";
 import { getHeaderValue } from "../http/request-context";
 import type { AppRequest } from "../http/request-context";
 
@@ -144,10 +144,7 @@ export class TaskController {
     const route = "POST /v1/tasks";
 
     if (idempotencyKey) {
-      const cached = await this.idempotencyService.findCached(
-        currentUserId,
-        idempotencyKey,
-      );
+      const cached = await this.idempotencyService.findCached(currentUserId, idempotencyKey);
 
       if (cached) {
         return replayCachedResponse<CreateTaskBody>(cached.body, requestId);
@@ -166,9 +163,7 @@ export class TaskController {
       request.labels,
     );
 
-    const taskId = await this.commandBus.execute<CreateTaskCommand, string>(
-      command,
-    );
+    const taskId = await this.commandBus.execute<CreateTaskCommand, string>(command);
 
     const response = created({ id: taskId, taskId }, requestId);
 
@@ -210,11 +205,8 @@ export class TaskController {
     @Query("limit") limit?: string,
   ): Promise<ApiResponse<GetTasksResponse>> {
     const parsedSkip =
-      skip != null && !Number.isNaN(Number(skip))
-        ? Math.max(0, Number(skip))
-        : undefined;
-    const parsedLimit =
-      limit != null && !Number.isNaN(Number(limit)) ? Number(limit) : undefined;
+      skip != null && !Number.isNaN(Number(skip)) ? Math.max(0, Number(skip)) : undefined;
+    const parsedLimit = limit != null && !Number.isNaN(Number(limit)) ? Number(limit) : undefined;
 
     const query = new GetTasksQuery(
       workspaceId,
@@ -226,17 +218,10 @@ export class TaskController {
       parsedLimit,
     );
     const requestId = getHeaderValue(req.headers, "x-request-id");
-    const result = await this.queryBus.execute<GetTasksQuery, GetTasksResult>(
-      query,
-    );
+    const result = await this.queryBus.execute<GetTasksQuery, GetTasksResult>(query);
 
     return ok(
-      new GetTasksResponse(
-        result.tasks,
-        result.total,
-        result.skip,
-        result.limit,
-      ),
+      new GetTasksResponse(result.tasks, result.total, result.skip, result.limit),
       requestId,
     );
   }
@@ -257,10 +242,7 @@ export class TaskController {
   ): Promise<ApiResponse<GetTaskBoardResponse>> {
     const query = new GetTaskBoardQuery(workspaceId, projectId);
     const requestId = getHeaderValue(req.headers, "x-request-id");
-    const result = await this.queryBus.execute<
-      GetTaskBoardQuery,
-      GetTaskBoardResponse
-    >(query);
+    const result = await this.queryBus.execute<GetTaskBoardQuery, GetTaskBoardResponse>(query);
 
     return ok(result, requestId);
   }
@@ -279,10 +261,7 @@ export class TaskController {
   ): Promise<ApiResponse<TaskResponseData>> {
     const query = new GetTaskByIdQuery(taskId);
     const requestId = getHeaderValue(req.headers, "x-request-id");
-    const result = await this.queryBus.execute<
-      GetTaskByIdQuery,
-      TaskResponseData
-    >(query);
+    const result = await this.queryBus.execute<GetTaskByIdQuery, TaskResponseData>(query);
 
     return ok(result, requestId);
   }
@@ -309,10 +288,7 @@ export class TaskController {
       limit ? Math.min(parseInt(limit, 10), 200) : 50,
       offset ? parseInt(offset, 10) : 0,
     );
-    const result = await this.queryBus.execute<
-      GetTaskActivityQuery,
-      TaskActivityResponse
-    >(query);
+    const result = await this.queryBus.execute<GetTaskActivityQuery, TaskActivityResponse>(query);
     return ok(result, requestId);
   }
 
@@ -341,10 +317,7 @@ export class TaskController {
 
     await this.commandBus.execute(command);
 
-    return ok(
-      { message: "Cập nhật thông tin công việc thành công" },
-      requestId,
-    );
+    return ok({ message: "Cập nhật thông tin công việc thành công" }, requestId);
   }
 
   /**
@@ -393,28 +366,18 @@ export class TaskController {
     const route = `PATCH /v1/tasks/${taskId}/assignee`;
 
     if (idempotencyKey) {
-      const cached = await this.idempotencyService.findCached(
-        assignerId,
-        idempotencyKey,
-      );
+      const cached = await this.idempotencyService.findCached(assignerId, idempotencyKey);
 
       if (cached) {
         return replayCachedResponse<MessageBody>(cached.body, requestId);
       }
     }
 
-    const command = new AssignTaskCommand(
-      taskId,
-      assignerId,
-      request.assigneeId || null,
-    );
+    const command = new AssignTaskCommand(taskId, assignerId, request.assigneeId || null);
 
     await this.commandBus.execute(command);
 
-    const response = ok(
-      { message: "Gán người phụ trách thành công" },
-      requestId,
-    );
+    const response = ok({ message: "Gán người phụ trách thành công" }, requestId);
 
     if (idempotencyKey) {
       await this.idempotencyService.store(
@@ -484,10 +447,9 @@ export class TaskController {
 
     const requestId = getHeaderValue(req.headers, "x-request-id");
     const command = new UploadAttachmentCommand(taskId, file);
-    const result = await this.commandBus.execute<
-      UploadAttachmentCommand,
-      UploadAttachmentResponse
-    >(command);
+    const result = await this.commandBus.execute<UploadAttachmentCommand, UploadAttachmentResponse>(
+      command,
+    );
 
     return created(
       {

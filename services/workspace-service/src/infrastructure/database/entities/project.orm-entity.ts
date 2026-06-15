@@ -37,9 +37,13 @@ export class ProjectOrmEntity {
   @UpdateDateColumn({ type: 'timestamptz' })
   updated_at: Date;
 
-  @ManyToOne(() => WorkspaceOrmEntity, (workspace) => workspace.projects, {
-    onDelete: 'CASCADE',
-  })
+  @ManyToOne(
+    () => WorkspaceOrmEntity,
+    (workspace) => workspace.projects,
+    {
+      onDelete: 'CASCADE',
+    },
+  )
   @JoinColumn({ name: 'workspace_id' })
   workspace: WorkspaceOrmEntity;
 }

@@ -17,10 +17,7 @@ describe('ManageAuthAdminUseCase', () => {
   const refreshTokenRepository = {
     revokeAllForUser: jest.fn(),
   } as unknown as jest.Mocked<RefreshTokenRepository>;
-  const useCase = new ManageAuthAdminUseCase(
-    adminRepository,
-    refreshTokenRepository,
-  );
+  const useCase = new ManageAuthAdminUseCase(adminRepository, refreshTokenRepository);
 
   beforeEach(() => jest.clearAllMocks());
 
@@ -53,10 +50,7 @@ describe('ManageAuthAdminUseCase', () => {
 
     await useCase.assignRole('admin-1', 'user-1', 'role-1');
 
-    expect(adminRepository.assignRoleToUser).toHaveBeenCalledWith(
-      'user-1',
-      'role-1',
-    );
+    expect(adminRepository.assignRoleToUser).toHaveBeenCalledWith('user-1', 'role-1');
     expect(refreshTokenRepository.revokeAllForUser).toHaveBeenCalledWith(
       'user-1',
       'admin_role_changed',

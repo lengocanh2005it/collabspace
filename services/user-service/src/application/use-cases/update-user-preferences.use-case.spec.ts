@@ -17,9 +17,7 @@ describe('UpdateUserPreferencesUseCase', () => {
     const updated = { ...sampleUserPreferences, theme: 'dark' };
     jest.spyOn(repository, 'updatePreferences').mockResolvedValue(updated);
 
-    await expect(
-      useCase.execute('user-1', { theme: 'dark' }),
-    ).resolves.toMatchObject({
+    await expect(useCase.execute('user-1', { theme: 'dark' })).resolves.toMatchObject({
       userId: 'user-1',
       theme: 'dark',
     });

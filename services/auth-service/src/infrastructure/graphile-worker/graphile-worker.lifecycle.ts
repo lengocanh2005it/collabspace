@@ -1,14 +1,11 @@
-import {
-  GRAPHILE_WORKER_OPTIONS,
-  GRAPHILE_WORKER_UTILS_TOKEN,
-} from './graphile-worker.constants';
+import { GRAPHILE_WORKER_OPTIONS, GRAPHILE_WORKER_UTILS_TOKEN } from './graphile-worker.constants';
 import type { GraphileWorkerModuleOptions } from './graphile-worker.types';
 import {
   Inject,
   Injectable,
   Logger,
-  OnModuleDestroy,
-  OnModuleInit,
+  type OnModuleDestroy,
+  type OnModuleInit,
   Optional,
 } from '@nestjs/common';
 import { run, type Runner, type WorkerUtils } from 'graphile-worker';
@@ -32,10 +29,7 @@ export class GraphileWorkerLifecycle implements OnModuleInit, OnModuleDestroy {
       return;
     }
 
-    this.runner = await run(
-      this.getRunnerOptions(),
-      this.options.taskList ?? {},
-    );
+    this.runner = await run(this.getRunnerOptions(), this.options.taskList ?? {});
     this.logger.log('Graphile worker started');
   }
 
@@ -50,11 +44,7 @@ export class GraphileWorkerLifecycle implements OnModuleInit, OnModuleDestroy {
   }
 
   private getRunnerOptions(): GraphileWorkerModuleOptions {
-    const {
-      disabled: _disabled,
-      taskList: _taskList,
-      ...runnerOptions
-    } = this.options;
+    const { disabled: _disabled, taskList: _taskList, ...runnerOptions } = this.options;
 
     return runnerOptions;
   }

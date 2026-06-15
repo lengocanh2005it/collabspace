@@ -1,25 +1,21 @@
-import { Inject } from '@nestjs/common';
-import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { randomUUID } from 'node:crypto';
+import { Inject } from "@nestjs/common";
+import { CommandHandler, type ICommandHandler } from "@nestjs/cqrs";
+import { randomUUID } from "node:crypto";
 
-import { AssignTaskCommand } from '../commands/assign-task.command';
-import { ITaskRepository } from '../ports/ITaskRepository';
+import { AssignTaskCommand } from "../commands/assign-task.command";
+import { ITaskRepository } from "../ports/ITaskRepository";
 
-import type { IUserReplicaRepository } from '../ports/IUserReplicaRepository';
-import {
-  USER_REPLICA_REPOSITORY_TOKEN,
-} from '../ports/IUserReplicaRepository';
+import type { IUserReplicaRepository } from "../ports/IUserReplicaRepository";
+import { USER_REPLICA_REPOSITORY_TOKEN } from "../ports/IUserReplicaRepository";
 
-import { TaskId } from '../../domain/value-objects/TaskId';
-import { UserSnapshot } from '../../domain/value-objects/UserSnapshot';
-import { EntityNotFoundException } from '../../domain/exceptions/EntityNotFoundException';
-import { BusinessRuleException } from '../../domain/exceptions/BusinessRuleException';
-import { RabbitMqEventsService } from '../../infrastructure/messaging/rabbitmq/rabbitmq-events.service';
+import { TaskId } from "../../domain/value-objects/TaskId";
+import { UserSnapshot } from "../../domain/value-objects/UserSnapshot";
+import { EntityNotFoundException } from "../../domain/exceptions/EntityNotFoundException";
+import { BusinessRuleException } from "../../domain/exceptions/BusinessRuleException";
+import type { RabbitMqEventsService } from "../../infrastructure/messaging/rabbitmq/rabbitmq-events.service";
 
 @CommandHandler(AssignTaskCommand)
-export class AssignTaskHandler
-  implements ICommandHandler<AssignTaskCommand, void>
-{
+export class AssignTaskHandler implements ICommandHandler<AssignTaskCommand, void> {
   constructor(
     @Inject(ITaskRepository)
     private readonly taskRepository: ITaskRepository,
@@ -37,17 +33,13 @@ export class AssignTaskHandler
     const task = await this.taskRepository.loadAggregateByIdAsync(taskId);
 
     if (!task) {
-      throw new EntityNotFoundException('Task', command.taskId);
+      throw new EntityNotFoundException("Task", command.taskId);
     }
 
-    const assignerRecord = await this.userReplicaRepo.findByIdAsync(
-      command.assignerId,
-    );
+    const assignerRecord = await this.userReplicaRepo.findByIdAsync(command.assignerId);
 
-    if (!assignerRecord || !assignerRecord.isActive) {
-      throw new BusinessRuleException(
-        'The assigner is invalid or inactive.',
-      );
+    if (!assignerRecord?.isActive) {
+      throw new BusinessRuleException("The assigner is invalid or inactive.");
     }
 
     const assignerSnapshot = UserSnapshot.create(
@@ -63,14 +55,10 @@ export class AssignTaskHandler
     if (!command.assigneeId) {
       task.unassign();
     } else {
-      const assigneeRecord = await this.userReplicaRepo.findByIdAsync(
-        command.assigneeId,
-      );
+      const assigneeRecord = await this.userReplicaRepo.findByIdAsync(command.assigneeId);
 
-      if (!assigneeRecord || !assigneeRecord.isActive) {
-        throw new BusinessRuleException(
-          'The assignee does not exist or is inactive.',
-        );
+      if (!assigneeRecord?.isActive) {
+        throw new BusinessRuleException("The assignee does not exist or is inactive.");
       }
 
       assigneeSnapshot = UserSnapshot.create(
@@ -100,14 +88,13 @@ export class AssignTaskHandler
 
           actorId: assignerSnapshot.getUserId(),
           actorName: assignerSnapshot.getDisplayName(),
-          actorAvatarUrl:
-            assignerSnapshot.getAvatarUrl() || undefined,
+          actorAvatarUrl: assignerSnapshot.getAvatarUrl() || undefined,
 
           assignedAt: occurred,
           workspaceId: task.getWorkspaceId(),
         });
       } catch (error: unknown) {
-        console.error('RabbitMQ Publish Error:', error);
+        console.error("RabbitMQ Publish Error:", error);
       }
     }
   }

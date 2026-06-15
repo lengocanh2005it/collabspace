@@ -3,7 +3,7 @@ import type { CommandBus } from "@nestjs/cqrs";
 import type { Channel, ConsumeMessage } from "amqplib";
 import { handleRmqConsumerFailure } from "@collabspace/shared";
 import type { RmqChannel, RmqConsumeMessage } from "@collabspace/shared";
-import { CreateNotificationCommand } from "../../application/usecases/create-notification/create-notification.command";
+import type { CreateNotificationCommand } from "../../application/usecases/create-notification/create-notification.command";
 
 export type RmqNotificationConsumerDeps = {
   commandBus: CommandBus;
@@ -29,14 +29,9 @@ function resolveCommandTimeoutMs(): number {
 function withCommandTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   let timer: ReturnType<typeof setTimeout>;
   const timeoutPromise = new Promise<never>((_, reject) => {
-    timer = setTimeout(
-      () => reject(new Error(`Command timed out after ${ms}ms`)),
-      ms,
-    );
+    timer = setTimeout(() => reject(new Error(`Command timed out after ${ms}ms`)), ms);
   });
-  return Promise.race([promise, timeoutPromise]).finally(() =>
-    clearTimeout(timer),
-  );
+  return Promise.race([promise, timeoutPromise]).finally(() => clearTimeout(timer));
 }
 
 /**
@@ -47,10 +42,7 @@ export async function consumeNotificationEvent(
   command: CreateNotificationCommand,
 ): Promise<void> {
   try {
-    await withCommandTimeout(
-      deps.commandBus.execute(command),
-      resolveCommandTimeoutMs(),
-    );
+    await withCommandTimeout(deps.commandBus.execute(command), resolveCommandTimeoutMs());
     deps.channel.ack(deps.message);
   } catch (error) {
     deps.logger.error(

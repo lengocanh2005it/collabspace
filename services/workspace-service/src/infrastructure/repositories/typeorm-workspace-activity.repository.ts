@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import type { Repository } from 'typeorm';
 import {
   WorkspaceActivity,
-  WorkspaceActivityType,
+  type WorkspaceActivityType,
 } from '../../domain/entities/workspace-activity.entity';
-import { IWorkspaceActivityRepository } from '../../domain/repositories/workspace-activity.repository';
+import type { IWorkspaceActivityRepository } from '../../domain/repositories/workspace-activity.repository';
 import { WorkspaceActivityOrmEntity } from '../database/entities/workspace-activity.orm-entity';
 
 @Injectable()

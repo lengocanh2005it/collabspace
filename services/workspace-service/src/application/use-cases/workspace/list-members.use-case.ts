@@ -12,10 +12,7 @@ export class ListMembersUseCase {
   ) {}
 
   async execute(userId: string, workspaceId: string) {
-    const requestingMember = await this.memberRepo.findByWorkspaceAndUser(
-      workspaceId,
-      userId,
-    );
+    const requestingMember = await this.memberRepo.findByWorkspaceAndUser(workspaceId, userId);
     if (!requestingMember) {
       throw new ForbiddenException('You are not a member of this workspace');
     }

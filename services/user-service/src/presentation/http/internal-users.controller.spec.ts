@@ -1,9 +1,5 @@
 import { UnauthorizedException } from '@nestjs/common';
-import {
-  SERVICE_IDS,
-  SERVICE_SCOPES,
-  signServiceJwt,
-} from '@collabspace/shared';
+import { SERVICE_IDS, SERVICE_SCOPES, signServiceJwt } from '@collabspace/shared';
 import { InternalUsersController } from './internal-users.controller';
 
 describe('InternalUsersController', () => {
@@ -17,9 +13,7 @@ describe('InternalUsersController', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    controller = new InternalUsersController(
-      lookupUserReplicasUseCase as never,
-    );
+    controller = new InternalUsersController(lookupUserReplicasUseCase as never);
     process.env.NODE_ENV = 'test';
     process.env.SERVICE_JWT_SECRET = 'test-service-jwt-secret';
     lookupUserReplicasUseCase.execute.mockResolvedValue([

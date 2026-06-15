@@ -46,13 +46,9 @@ export class UserPreferencesResponseSchemaDto {
 }
 
 export class UserStatusResponseSchemaDto {
-  @ApiPropertyOptional({ nullable: true, format: 'date-time' }) clearAt:
-    | string
-    | null;
+  @ApiPropertyOptional({ nullable: true, format: 'date-time' }) clearAt: string | null;
   @ApiPropertyOptional({ nullable: true }) emoji: string | null;
-  @ApiPropertyOptional({ nullable: true, format: 'date-time' }) lastSeenAt:
-    | string
-    | null;
+  @ApiPropertyOptional({ nullable: true, format: 'date-time' }) lastSeenAt: string | null;
   @ApiProperty() status: string;
   @ApiPropertyOptional({ nullable: true }) statusText: string | null;
   @ApiProperty({ format: 'date-time' }) updatedAt: string;

@@ -11,14 +11,10 @@ type AuthEmailVerifiedEvent = {
 
 @Controller()
 export class AuthEventsController {
-  constructor(
-    private readonly verifyUserProfileEmailUseCase: VerifyUserProfileEmailUseCase,
-  ) {}
+  constructor(private readonly verifyUserProfileEmailUseCase: VerifyUserProfileEmailUseCase) {}
 
   @EventPattern(AUTH_EMAIL_VERIFIED_EVENT)
-  async handleAuthEmailVerified(
-    @Payload() payload: AuthEmailVerifiedEvent,
-  ): Promise<void> {
+  async handleAuthEmailVerified(@Payload() payload: AuthEmailVerifiedEvent): Promise<void> {
     await this.verifyUserProfileEmailUseCase.execute(payload.userId);
   }
 }

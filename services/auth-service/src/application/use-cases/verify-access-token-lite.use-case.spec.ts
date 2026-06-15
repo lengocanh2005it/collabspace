@@ -14,16 +14,11 @@ describe('VerifyAccessTokenLiteUseCase', () => {
     write: jest.fn(),
   } as unknown as AccessTokenVerifyLiteCacheService;
 
-  const useCase = new VerifyAccessTokenLiteUseCase(
-    jwtTokenService,
-    verifyLiteCache,
-  );
+  const useCase = new VerifyAccessTokenLiteUseCase(jwtTokenService, verifyLiteCache);
 
   beforeEach(() => {
     jest.clearAllMocks();
-    (jwtTokenService.extractBearerToken as jest.Mock).mockReturnValue(
-      'token-1',
-    );
+    (jwtTokenService.extractBearerToken as jest.Mock).mockReturnValue('token-1');
   });
 
   it('returns cached identity without resolving JWT again', async () => {
@@ -37,17 +32,13 @@ describe('VerifyAccessTokenLiteUseCase', () => {
     const result = await useCase.execute('Bearer token-1');
 
     expect(result.userId).toBe('user-1');
-    expect(
-      jwtTokenService.resolveVerifiedLiteUserContext,
-    ).not.toHaveBeenCalled();
+    expect(jwtTokenService.resolveVerifiedLiteUserContext).not.toHaveBeenCalled();
     expect(verifyLiteCache.write).not.toHaveBeenCalled();
   });
 
   it('resolves lite context and writes cache on miss', async () => {
     (verifyLiteCache.read as jest.Mock).mockResolvedValue(null);
-    (
-      jwtTokenService.resolveVerifiedLiteUserContext as jest.Mock
-    ).mockResolvedValue({
+    (jwtTokenService.resolveVerifiedLiteUserContext as jest.Mock).mockResolvedValue({
       userId: 'user-2',
       roles: ['member'],
       role: 'member',
@@ -66,26 +57,18 @@ describe('VerifyAccessTokenLiteUseCase', () => {
       emailVerified: false,
       workspaceId: 'ws-1',
     });
-    expect(verifyLiteCache.write).toHaveBeenCalledWith(
-      'token-1',
-      result,
-      expect.any(Number),
-    );
+    expect(verifyLiteCache.write).toHaveBeenCalledWith('token-1', result, expect.any(Number));
   });
 
   it('propagates inactive user errors', async () => {
     (verifyLiteCache.read as jest.Mock).mockResolvedValue(null);
-    (
-      jwtTokenService.resolveVerifiedLiteUserContext as jest.Mock
-    ).mockRejectedValue(
+    (jwtTokenService.resolveVerifiedLiteUserContext as jest.Mock).mockRejectedValue(
       new UnauthorizedException({
         code: 'USER_INACTIVE',
         message: 'User account is inactive',
       }),
     );
 
-    await expect(useCase.execute('Bearer token-1')).rejects.toBeInstanceOf(
-      UnauthorizedException,
-    );
+    await expect(useCase.execute('Bearer token-1')).rejects.toBeInstanceOf(UnauthorizedException);
   });
 });

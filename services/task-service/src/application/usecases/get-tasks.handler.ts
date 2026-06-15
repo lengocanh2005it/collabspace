@@ -1,13 +1,10 @@
 // src/application/usecases/get-tasks.handler.ts
-import { QueryHandler, IQueryHandler } from "@nestjs/cqrs";
+import { QueryHandler, type IQueryHandler } from "@nestjs/cqrs";
 import { Inject } from "@nestjs/common";
 import { GetTasksQuery } from "../queries/get-tasks.query";
 import { ITaskRepository as ITaskRepositoryToken } from "../ports/ITaskRepository";
 import type { ITaskRepository } from "../ports/ITaskRepository";
-import {
-  buildTaskListFilter,
-  clampTaskListLimit,
-} from "../ports/task-list-filter";
+import { buildTaskListFilter, clampTaskListLimit } from "../ports/task-list-filter";
 import { TaskMapper } from "../../infrastructure/mappers/task.mapper";
 import type { TaskResponseData } from "../../presentation/dtos/task.response";
 

@@ -1,5 +1,5 @@
 import { BadRequestException } from "@nestjs/common";
-import { BroadcastJobService } from "../../application/services/broadcast-job.service";
+import type { BroadcastJobService } from "../../application/services/broadcast-job.service";
 import { NotificationAdminController } from "./notification-admin.controller";
 
 describe("NotificationAdminController", () => {
@@ -17,9 +17,9 @@ describe("NotificationAdminController", () => {
   beforeEach(() => jest.clearAllMocks());
 
   it("requires an idempotency key", async () => {
-    await expect(
-      controller.broadcast(body, "admin-1", undefined),
-    ).rejects.toBeInstanceOf(BadRequestException);
+    await expect(controller.broadcast(body, "admin-1", undefined)).rejects.toBeInstanceOf(
+      BadRequestException,
+    );
   });
 
   it("enqueues an admin broadcast", async () => {

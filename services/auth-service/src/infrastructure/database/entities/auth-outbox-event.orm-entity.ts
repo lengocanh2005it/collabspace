@@ -1,15 +1,7 @@
-import {
-  Column,
-  CreateDateColumn,
-  Entity,
-  PrimaryColumn,
-  UpdateDateColumn,
-} from 'typeorm';
+import { Column, CreateDateColumn, Entity, PrimaryColumn, UpdateDateColumn } from 'typeorm';
 
-export const AUTH_OUTBOX_EVENT_EMAIL_VERIFICATION_OTP =
-  'auth.email_verification_otp';
-export const AUTH_OUTBOX_EVENT_PASSWORD_RESET_EMAIL =
-  'auth.password_reset_email';
+export const AUTH_OUTBOX_EVENT_EMAIL_VERIFICATION_OTP = 'auth.email_verification_otp';
+export const AUTH_OUTBOX_EVENT_PASSWORD_RESET_EMAIL = 'auth.password_reset_email';
 
 @Entity({ name: 'auth_outbox_events' })
 export class AuthOutboxEventOrmEntity {

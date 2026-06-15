@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
+import { TypeOrmModule, type TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { DatabaseService } from './database.service';
 import { UserProfileOrmEntity } from './entities/user-profile.orm-entity';
 import { UserPreferencesOrmEntity } from './entities/user-preferences.orm-entity';
@@ -20,9 +20,7 @@ const createDatabaseOptions = (): TypeOrmModuleOptions => ({
   retryAttempts: 1,
   retryDelay: 0,
   schema: process.env.DATABASE_SCHEMA ?? 'public',
-  ssl: toBoolean(process.env.DATABASE_SSL, false)
-    ? { rejectUnauthorized: false }
-    : false,
+  ssl: toBoolean(process.env.DATABASE_SSL, false) ? { rejectUnauthorized: false } : false,
   synchronize: toBoolean(process.env.DATABASE_SYNCHRONIZE, false),
   type: 'postgres',
   url: process.env.DATABASE_URL,
@@ -31,11 +29,7 @@ const createDatabaseOptions = (): TypeOrmModuleOptions => ({
 @Module({
   imports: [
     TypeOrmModule.forRootAsync({ useFactory: () => createDatabaseOptions() }),
-    TypeOrmModule.forFeature([
-      UserProfileOrmEntity,
-      UserPreferencesOrmEntity,
-      UserStatusOrmEntity,
-    ]),
+    TypeOrmModule.forFeature([UserProfileOrmEntity, UserPreferencesOrmEntity, UserStatusOrmEntity]),
   ],
   providers: [DatabaseService],
   exports: [TypeOrmModule, DatabaseService],

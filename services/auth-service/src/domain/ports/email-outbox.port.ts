@@ -25,12 +25,8 @@ export type EmailOutboxStats = {
 };
 
 export interface EmailOutbox {
-  enqueueEmailVerificationOtp(
-    payload: EmailVerificationOtpEnqueuePayload,
-  ): Promise<void>;
-  enqueuePasswordResetEmail(
-    payload: PasswordResetEmailEnqueuePayload,
-  ): Promise<void>;
+  enqueueEmailVerificationOtp(payload: EmailVerificationOtpEnqueuePayload): Promise<void>;
+  enqueuePasswordResetEmail(payload: PasswordResetEmailEnqueuePayload): Promise<void>;
   getStats(): Promise<EmailOutboxStats>;
   getDevOtp(email: string): Promise<string | null>;
   getDevPasswordResetToken(email: string): Promise<string | null>;

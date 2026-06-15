@@ -1,8 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { BlobServiceClient, ContainerClient } from '@azure/storage-blob';
+import { BlobServiceClient, type ContainerClient } from '@azure/storage-blob';
 import type { UploadedFile } from '../../common/types/uploaded-file';
-import * as path from 'path';
+import * as path from 'node:path';
 
 @Injectable()
 export class AzureBlobService {
@@ -13,9 +13,7 @@ export class AzureBlobService {
   private readonly isMockMode: boolean;
 
   constructor(private readonly configService: ConfigService) {
-    const connectionString = this.configService.get<string>(
-      'AZURE_STORAGE_CONNECTION_STRING',
-    );
+    const connectionString = this.configService.get<string>('AZURE_STORAGE_CONNECTION_STRING');
 
     if (!connectionString) {
       this.isMockMode = true;
@@ -32,11 +30,8 @@ export class AzureBlobService {
 
     try {
       this.isMockMode = false;
-      this.blobServiceClient =
-        BlobServiceClient.fromConnectionString(connectionString);
-      this.containerClient = this.blobServiceClient.getContainerClient(
-        this.containerName,
-      );
+      this.blobServiceClient = BlobServiceClient.fromConnectionString(connectionString);
+      this.containerClient = this.blobServiceClient.getContainerClient(this.containerName);
     } catch (error) {
       if (process.env.NODE_ENV === 'production') {
         throw new Error(
@@ -73,7 +68,7 @@ export class AzureBlobService {
   async uploadAvatar(file: UploadedFile, userId: string): Promise<string> {
     try {
       const extension = path.extname(file.originalname);
-      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+      const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
       const fileName = `avatars/${userId}-${uniqueSuffix}${extension}`;
 
       if (this.isMockMode || !this.containerClient) {
@@ -103,8 +98,7 @@ export class AzureBlobService {
 
       return fileUrl;
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
       this.logger.error(`Failed to upload avatar to Azure: ${errorMessage}`);
       throw new Error(`Failed to upload avatar: ${errorMessage}`);
     }

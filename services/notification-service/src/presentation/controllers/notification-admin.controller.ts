@@ -1,19 +1,8 @@
-import {
-  BadRequestException,
-  Body,
-  Controller,
-  Headers,
-  Post,
-  UseGuards,
-} from "@nestjs/common";
+import { BadRequestException, Body, Controller, Headers, Post, UseGuards } from "@nestjs/common";
 import { ApiBearerAuth, ApiHeader, ApiTags } from "@nestjs/swagger";
-import {
-  AdminUserId,
-  PlatformAdminGuard,
-  RequirePlatformAdmin,
-} from "@collabspace/nest-auth";
-import { BroadcastJobService } from "../../application/services/broadcast-job.service";
-import { BroadcastNotificationDto } from "../dtos/broadcast-notification.dto";
+import { AdminUserId, PlatformAdminGuard, RequirePlatformAdmin } from "@collabspace/nest-auth";
+import type { BroadcastJobService } from "../../application/services/broadcast-job.service";
+import type { BroadcastNotificationDto } from "../dtos/broadcast-notification.dto";
 
 @ApiTags("notifications-admin")
 @ApiBearerAuth()

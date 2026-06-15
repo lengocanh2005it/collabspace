@@ -1,4 +1,4 @@
-import { ExecutionContext } from "@nestjs/common";
+import type { ExecutionContext } from "@nestjs/common";
 import type { ITaskRepository } from "../../application/ports/ITaskRepository";
 import type { IWorkspaceClient } from "../../application/ports/IWorkspaceClient";
 import type { AppRequest } from "../http/request-context";
@@ -53,10 +53,7 @@ describe("WorkspaceValidationGuard", () => {
     expect(result).toBe(true);
     expect(taskRepository.findByIdAsync).not.toHaveBeenCalled();
     expect(workspaceService.getMembershipAsync).toHaveBeenCalledTimes(1);
-    expect(workspaceService.getMembershipAsync).toHaveBeenCalledWith(
-      "workspace-001",
-      "user-123",
-    );
+    expect(workspaceService.getMembershipAsync).toHaveBeenCalledWith("workspace-001", "user-123");
     expect(request.workspace).toEqual({
       id: "workspace-001",
       userId: "user-123",
@@ -95,10 +92,7 @@ describe("WorkspaceValidationGuard", () => {
     expect(result).toBe(true);
     expect(taskRepository.findByIdAsync).toHaveBeenCalledTimes(1);
     expect(workspaceService.getMembershipAsync).toHaveBeenCalledTimes(1);
-    expect(workspaceService.getMembershipAsync).toHaveBeenCalledWith(
-      "workspace-002",
-      "user-123",
-    );
+    expect(workspaceService.getMembershipAsync).toHaveBeenCalledWith("workspace-002", "user-123");
     expect(request.workspace).toEqual({
       id: "workspace-002",
       userId: "user-123",

@@ -1,8 +1,6 @@
-import { MigrationInterface, QueryRunner } from 'typeorm';
+import type { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class RemoveLegacyEmailVerifiedOutboxEvents1718000000003
-  implements MigrationInterface
-{
+export class RemoveLegacyEmailVerifiedOutboxEvents1718000000003 implements MigrationInterface {
   name = 'RemoveLegacyEmailVerifiedOutboxEvents1718000000003';
 
   async up(queryRunner: QueryRunner): Promise<void> {

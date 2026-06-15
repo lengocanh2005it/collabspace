@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { HydratedDocument } from "mongoose";
+import type { HydratedDocument } from "mongoose";
 
 export type IdempotencyKeyDocument = HydratedDocument<IdempotencyKeyRecord>;
 
@@ -27,7 +27,6 @@ export class IdempotencyKeyRecord {
   expiresAt!: Date;
 }
 
-export const IdempotencyKeySchema =
-  SchemaFactory.createForClass(IdempotencyKeyRecord);
+export const IdempotencyKeySchema = SchemaFactory.createForClass(IdempotencyKeyRecord);
 
 IdempotencyKeySchema.index({ userId: 1, idempotencyKey: 1 }, { unique: true });

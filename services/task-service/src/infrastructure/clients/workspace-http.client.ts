@@ -13,7 +13,7 @@ import type {
   WorkspaceMembershipSnapshot,
 } from "../../application/ports/IWorkspaceClient";
 import { meetsWorkspaceRole } from "./workspace-membership.util";
-import { WorkspaceMembershipCacheService } from "../cache/workspace-membership-cache.service";
+import type { WorkspaceMembershipCacheService } from "../cache/workspace-membership-cache.service";
 
 type WorkspaceMembershipResponse = {
   workspaceId: string;
@@ -33,14 +33,9 @@ export class WorkspaceHttpClient implements IWorkspaceClient {
     private readonly membershipCache: WorkspaceMembershipCacheService,
   ) {
     this.baseUrl =
-      this.configService.get<string>("WORKSPACE_SERVICE_URL") ??
-      "http://workspace-service:8080";
-    this.timeoutMs = Number(
-      this.configService.get<string>("WORKSPACE_SERVICE_TIMEOUT_MS") ?? 3000,
-    );
-    this.serviceJwtSecret = this.configService
-      .get<string>("SERVICE_JWT_SECRET")
-      ?.trim();
+      this.configService.get<string>("WORKSPACE_SERVICE_URL") ?? "http://workspace-service:8080";
+    this.timeoutMs = Number(this.configService.get<string>("WORKSPACE_SERVICE_TIMEOUT_MS") ?? 3000);
+    this.serviceJwtSecret = this.configService.get<string>("SERVICE_JWT_SECRET")?.trim();
   }
 
   async getMembershipAsync(
@@ -67,10 +62,7 @@ export class WorkspaceHttpClient implements IWorkspaceClient {
     return snapshot;
   }
 
-  async validateWorkspaceAsync(
-    workspaceId: string,
-    userId: string,
-  ): Promise<boolean> {
+  async validateWorkspaceAsync(workspaceId: string, userId: string): Promise<boolean> {
     const membership = await this.getMembershipAsync(workspaceId, userId);
     return membership?.isMember === true;
   }
@@ -128,8 +120,7 @@ export class WorkspaceHttpClient implements IWorkspaceClient {
     if (!this.isInternalAccessEnabled()) {
       throw new ServiceUnavailableException({
         code: "WORKSPACE_SERVICE_UNAVAILABLE",
-        message:
-          "SERVICE_JWT_SECRET is required for workspace membership checks",
+        message: "SERVICE_JWT_SECRET is required for workspace membership checks",
       });
     }
 
@@ -176,10 +167,7 @@ export class WorkspaceHttpClient implements IWorkspaceClient {
 
       throw new ServiceUnavailableException({
         code: "WORKSPACE_SERVICE_UNAVAILABLE",
-        message:
-          error instanceof Error
-            ? error.message
-            : "Workspace service request failed",
+        message: error instanceof Error ? error.message : "Workspace service request failed",
       });
     } finally {
       clearTimeout(timeout);

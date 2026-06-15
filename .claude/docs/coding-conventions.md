@@ -10,6 +10,17 @@
 - Add tests where behavior changes.
 - **Docs & skills sync:** when code changes affect routes, env, contracts, events, auth, resilience, MVP status, or verify workflows, update the related **agent docs** (`.claude/docs/`, `services/*/CLAUDE.md`, `.claude/rules/`) and **skills** (`.claude/skills/*/SKILL.md`) in the **same change** when needed. See `.claude/docs/agent-onboarding.md` → Docs & skills sync; auto rule `.claude/rules/docs-and-skills-sync.md`.
 
+## Format & lint
+
+- **Format:** [Biome](https://biomejs.dev/) at repo root — `pnpm run format` / `format:check` (config: `biome.json`).
+- **Lint:** Biome recommended rules at root (`pnpm run biome:check`) + ESLint type-checked per package (`pnpm run lint:types`). CI gate: `pnpm run lint` (= `lint:ci`).
+- **Quote style** (Biome overrides in `biome.json`):
+  - Single quotes: `auth-service`, `user-service`, `workspace-service`
+  - Double quotes: `task-service`, `notification-service`
+- Per-service `pnpm run format` delegates to root Biome. Per-service `pnpm run lint` is ESLint only.
+- Do **not** re-enable `useImportType` in Biome for NestJS DI constructor tokens.
+- Details: `docs/tooling/biome-migration.md`, `.claude/docs/development-workflows.md` → Lint & format.
+
 ## TypeScript/NestJS Style
 
 - Use TypeScript strict-ish patterns already present in each service.

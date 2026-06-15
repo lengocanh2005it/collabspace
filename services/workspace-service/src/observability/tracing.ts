@@ -28,9 +28,7 @@ export function startTracing(serviceName: string): void {
 
   const endpoint = resolveOtlpEndpoint();
   if (!endpoint) {
-    logger.warn(
-      `${serviceName}: TRACING_ENABLED=true but no OTLP/Jaeger endpoint configured`,
-    );
+    logger.warn(`${serviceName}: TRACING_ENABLED=true but no OTLP/Jaeger endpoint configured`);
     return;
   }
 

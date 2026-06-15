@@ -1,4 +1,4 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { Test, type TestingModule } from '@nestjs/testing';
 import { ForbiddenException } from '@nestjs/common';
 import { InviteMemberUseCase } from './invite-member.use-case';
 import { WORKSPACE_REPOSITORY } from '../../../domain/repositories/workspace.repository';
@@ -35,9 +35,9 @@ describe('InviteMemberUseCase', () => {
     mockMemberRepo.findByWorkspaceAndUser.mockResolvedValue(
       new WorkspaceMember('m-1', 'ws-1', 'user-1', 'member', new Date()),
     );
-    await expect(
-      useCase.execute('user-1', 'ws-1', { email: 'test@example.com' }),
-    ).rejects.toThrow(ForbiddenException);
+    await expect(useCase.execute('user-1', 'ws-1', { email: 'test@example.com' })).rejects.toThrow(
+      ForbiddenException,
+    );
   });
 
   it('should create invitation via repository if allowed', async () => {

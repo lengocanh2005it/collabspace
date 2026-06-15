@@ -27,9 +27,13 @@ export class WorkspaceMemberOrmEntity {
   @CreateDateColumn({ type: 'timestamptz' })
   joined_at: Date;
 
-  @ManyToOne(() => WorkspaceOrmEntity, (workspace) => workspace.members, {
-    onDelete: 'CASCADE',
-  })
+  @ManyToOne(
+    () => WorkspaceOrmEntity,
+    (workspace) => workspace.members,
+    {
+      onDelete: 'CASCADE',
+    },
+  )
   @JoinColumn({ name: 'workspace_id' })
   workspace: WorkspaceOrmEntity;
 }

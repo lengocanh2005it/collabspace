@@ -1,5 +1,5 @@
 // src/application/usecases/create-notification/create-notification.command.ts
-import { NotificationType } from "../../../domain/value-objects/NotificationType";
+import type { NotificationType } from "../../../domain/value-objects/NotificationType";
 import type { NotificationMetadata } from "../../../domain/types/notification-metadata";
 
 export class CreateNotificationCommand {

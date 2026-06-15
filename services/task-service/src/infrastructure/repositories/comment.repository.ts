@@ -1,11 +1,11 @@
 // src/infrastructure/repositories/comment.repository.ts
-import { Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
-import { ICommentRepository } from '../../domain/repositories/comment.repository.interface';
-import { Comment } from '../../domain/entities/comment.entity';
-import { TaskComment, TaskCommentDocument } from '../persistence/task-comment.schema';
-import { CommentMapper } from '../mappers/comment.mapper';
+import { Injectable } from "@nestjs/common";
+import { InjectModel } from "@nestjs/mongoose";
+import type { Model } from "mongoose";
+import type { ICommentRepository } from "../../domain/repositories/comment.repository.interface";
+import type { Comment } from "../../domain/entities/comment.entity";
+import { TaskComment, type TaskCommentDocument } from "../persistence/task-comment.schema";
+import { CommentMapper } from "../mappers/comment.mapper";
 
 /**
  * Comment Repository - Infrastructure Layer Adapter
@@ -116,9 +116,7 @@ export class CommentRepository implements ICommentRepository {
       commentsWithReplies.push(parentComment);
 
       // Fetch replies for this parent
-      const replies = await this.findRepliesByParentIdAsync(
-        parentDoc._id.toString(),
-      );
+      const replies = await this.findRepliesByParentIdAsync(parentDoc._id.toString());
       commentsWithReplies.push(...replies);
     }
 

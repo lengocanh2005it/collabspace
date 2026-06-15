@@ -1,7 +1,7 @@
 import { Controller, UnauthorizedException } from '@nestjs/common';
 import { RpcException, GrpcMethod } from '@nestjs/microservices';
 import { status } from '@grpc/grpc-js';
-import { from, Observable } from 'rxjs';
+import { from, type Observable } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import type { auth } from '@/generated/proto/auth';
 import { VerifyAccessTokenLiteUseCase } from '@/application/use-cases/verify-access-token-lite.use-case';
@@ -18,9 +18,7 @@ export class AuthGrpcController implements auth.AuthService {
   verifyAccessToken(
     request: auth.VerifyAccessTokenRequest,
   ): Observable<auth.VerifyAccessTokenResponse> {
-    return from(
-      this.verifyAccessTokenUseCase.execute(request.authorization),
-    ).pipe(
+    return from(this.verifyAccessTokenUseCase.execute(request.authorization)).pipe(
       map((identity) => ({
         authenticated: true,
         emailVerified: identity.emailVerified,
@@ -40,9 +38,7 @@ export class AuthGrpcController implements auth.AuthService {
   verifyAccessTokenLite(
     request: auth.VerifyAccessTokenLiteRequest,
   ): Observable<auth.VerifyAccessTokenLiteResponse> {
-    return from(
-      this.verifyAccessTokenLiteUseCase.execute(request.authorization),
-    ).pipe(
+    return from(this.verifyAccessTokenLiteUseCase.execute(request.authorization)).pipe(
       map((identity) => ({
         authenticated: true,
         emailVerified: identity.emailVerified,

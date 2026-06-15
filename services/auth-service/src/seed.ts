@@ -31,10 +31,7 @@ type SeedUser = {
   roleNames: string[];
 };
 
-function mapDemoUsers(
-  users: DemoSeedUser[],
-  defaultPassword: string,
-): SeedUser[] {
+function mapDemoUsers(users: DemoSeedUser[], defaultPassword: string): SeedUser[] {
   return users.map((user) => ({
     email: user.email,
     fullName: user.fullName,
@@ -114,12 +111,7 @@ const SEED_ROLES: SeedRole[] = [
     description: 'Read-only stakeholder for demos and reviews',
     id: '82000000-0000-4000-8000-000000000003',
     name: 'viewer',
-    permissionNames: [
-      'users.read',
-      'workspaces.read',
-      'tasks.read',
-      'notifications.read',
-    ],
+    permissionNames: ['users.read', 'workspaces.read', 'tasks.read', 'notifications.read'],
   },
 ];
 
@@ -183,9 +175,7 @@ function toBoolean(value: string | undefined, fallback: boolean): boolean {
   return ['1', 'true', 'yes', 'on'].includes(value.toLowerCase());
 }
 
-async function seedRoles(
-  dataSource: DataSource,
-): Promise<Map<string, RoleOrmEntity>> {
+async function seedRoles(dataSource: DataSource): Promise<Map<string, RoleOrmEntity>> {
   const roleRepository = dataSource.getRepository(RoleOrmEntity);
   const rolesByName = new Map<string, RoleOrmEntity>();
 
@@ -210,9 +200,7 @@ async function seedRoles(
   return rolesByName;
 }
 
-async function seedPermissions(
-  dataSource: DataSource,
-): Promise<Map<string, PermissionOrmEntity>> {
+async function seedPermissions(dataSource: DataSource): Promise<Map<string, PermissionOrmEntity>> {
   const permissionRepository = dataSource.getRepository(PermissionOrmEntity);
   const permissionsByName = new Map<string, PermissionOrmEntity>();
 
@@ -242,17 +230,13 @@ async function seedRolePermissions(
   rolesByName: Map<string, RoleOrmEntity>,
   permissionsByName: Map<string, PermissionOrmEntity>,
 ): Promise<void> {
-  const rolePermissionRepository = dataSource.getRepository(
-    RolePermissionOrmEntity,
-  );
+  const rolePermissionRepository = dataSource.getRepository(RolePermissionOrmEntity);
 
   for (const seedRole of SEED_ROLES) {
     const role = rolesByName.get(seedRole.name);
 
     if (!role) {
-      throw new Error(
-        `Missing role ${seedRole.name} during role permission seed`,
-      );
+      throw new Error(`Missing role ${seedRole.name} during role permission seed`);
     }
 
     for (const permissionName of seedRole.permissionNames) {
@@ -353,9 +337,7 @@ async function main(): Promise<void> {
     ],
     logging: toBoolean(process.env.DATABASE_LOGGING, false),
     schema: process.env.DATABASE_SCHEMA ?? 'public',
-    ssl: toBoolean(process.env.DATABASE_SSL, false)
-      ? { rejectUnauthorized: false }
-      : false,
+    ssl: toBoolean(process.env.DATABASE_SSL, false) ? { rejectUnauthorized: false } : false,
     synchronize: false,
     type: 'postgres',
     url: requireDatabaseUrl(),

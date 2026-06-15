@@ -1,5 +1,5 @@
 // src/presentation/dtos/workspace.response.ts
-import { Exclude, Expose } from "class-transformer";
+import { Expose } from "class-transformer";
 
 export class WorkspaceMemberDto {
   @Expose()

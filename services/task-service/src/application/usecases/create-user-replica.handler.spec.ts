@@ -1,6 +1,6 @@
 import { CreateUserReplicaHandler } from "./create-user-replica.handler";
 import { CreateUserReplicaCommand } from "../commands/create-user-replica.command";
-import { IUserReplicaRepository } from "../ports/IUserReplicaRepository";
+import type { IUserReplicaRepository } from "../ports/IUserReplicaRepository";
 
 describe("CreateUserReplicaHandler", () => {
   let handler: CreateUserReplicaHandler;

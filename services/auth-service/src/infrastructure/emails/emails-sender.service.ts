@@ -1,12 +1,8 @@
-import { SendEmailJobPayload } from '@/infrastructure/emails/email-job.types';
-import { ConfigurationService } from '@/configuration/configuration.service';
+import type { SendEmailJobPayload } from '@/infrastructure/emails/email-job.types';
+import type { ConfigurationService } from '@/configuration/configuration.service';
 import { BrevoEmailClient } from '@/infrastructure/emails/brevo-email.client';
 import { isNodeProduction } from '@collabspace/shared';
-import {
-  Injectable,
-  Logger,
-  ServiceUnavailableException,
-} from '@nestjs/common';
+import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
 
 export type EmailSendResult = {
   accepted: string[];
@@ -27,8 +23,7 @@ export class EmailsSenderService {
       if (isNodeProduction()) {
         throw new ServiceUnavailableException({
           code: 'EMAIL_DELIVERY_UNAVAILABLE',
-          message:
-            'Brevo email delivery is not configured (BREVO_API_KEY missing)',
+          message: 'Brevo email delivery is not configured (BREVO_API_KEY missing)',
         });
       }
 

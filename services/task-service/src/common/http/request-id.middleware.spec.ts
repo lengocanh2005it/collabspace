@@ -2,9 +2,11 @@ import type { NextFunction, Request, Response } from "express";
 import { requestIdMiddleware } from "./request-id.middleware";
 
 describe("requestIdMiddleware", () => {
-  function runMiddleware(
-    headers: Record<string, string | string[] | undefined> = {},
-  ): { req: Request; res: Response; next: NextFunction } {
+  function runMiddleware(headers: Record<string, string | string[] | undefined> = {}): {
+    req: Request;
+    res: Response;
+    next: NextFunction;
+  } {
     const req = { headers: { ...headers } } as Request;
     const res = {
       setHeader: jest.fn(),
@@ -19,9 +21,7 @@ describe("requestIdMiddleware", () => {
   it("preserves an incoming X-Request-Id header", () => {
     const { req, res, next } = runMiddleware({ "x-request-id": "trace-123" });
 
-    expect((req as Request & { requestId: string }).requestId).toBe(
-      "trace-123",
-    );
+    expect((req as Request & { requestId: string }).requestId).toBe("trace-123");
     expect(req.headers["x-request-id"]).toBe("trace-123");
     expect(res.setHeader).toHaveBeenCalledWith("X-Request-Id", "trace-123");
     expect(next).toHaveBeenCalled();

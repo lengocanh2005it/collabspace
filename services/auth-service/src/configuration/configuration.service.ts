@@ -1,13 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import {
-  Transport,
-  type GrpcOptions,
-  type RmqOptions,
-} from '@nestjs/microservices';
+import { Transport, type GrpcOptions, type RmqOptions } from '@nestjs/microservices';
 import { buildConsumerQueueOptions } from '@collabspace/shared';
-import { TypeOrmModuleOptions } from '@nestjs/typeorm';
-import { RedisOptions } from 'ioredis';
+import type { TypeOrmModuleOptions } from '@nestjs/typeorm';
+import type { RedisOptions } from 'ioredis';
 import { join } from 'node:path';
 import type { GraphileWorkerModuleOptions } from '@/infrastructure/graphile-worker/graphile-worker.types';
 
@@ -131,8 +127,7 @@ export class ConfigurationService {
 
   getAuthJwtConfig(): AuthJwtConfig {
     return {
-      audience:
-        this.configService.get<string>('auth.jwt.audience') || undefined,
+      audience: this.configService.get<string>('auth.jwt.audience') || undefined,
       expiry: this.configService.get<string>('auth.jwt.expiry') ?? '1h',
       issuer: this.configService.get<string>('auth.jwt.issuer') || undefined,
       secret: this.configService.get<string>('auth.jwt.secret') || undefined,
@@ -141,56 +136,38 @@ export class ConfigurationService {
 
   getVerifyLiteCacheConfig(): VerifyLiteCacheConfig {
     return {
-      enabled:
-        this.configService.get<boolean>('auth.verifyLiteCache.enabled') ?? true,
-      maxTtlSeconds:
-        this.configService.get<number>('auth.verifyLiteCache.maxTtlSeconds') ??
-        300,
+      enabled: this.configService.get<boolean>('auth.verifyLiteCache.enabled') ?? true,
+      maxTtlSeconds: this.configService.get<number>('auth.verifyLiteCache.maxTtlSeconds') ?? 300,
     };
   }
 
   getEmailVerificationConfig(): EmailVerificationConfig {
     return {
-      otpLength:
-        this.configService.get<number>('auth.emailVerification.otpLength') ?? 6,
-      otpTtlSeconds:
-        this.configService.get<number>(
-          'auth.emailVerification.otpTtlSeconds',
-        ) ?? 600,
+      otpLength: this.configService.get<number>('auth.emailVerification.otpLength') ?? 6,
+      otpTtlSeconds: this.configService.get<number>('auth.emailVerification.otpTtlSeconds') ?? 600,
       resendCooldownSeconds:
-        this.configService.get<number>(
-          'auth.emailVerification.resendCooldownSeconds',
-        ) ?? 60,
+        this.configService.get<number>('auth.emailVerification.resendCooldownSeconds') ?? 60,
       resendMaxAttempts:
-        this.configService.get<number>(
-          'auth.emailVerification.resendMaxAttempts',
-        ) ?? 5,
+        this.configService.get<number>('auth.emailVerification.resendMaxAttempts') ?? 5,
       resendWindowSeconds:
-        this.configService.get<number>(
-          'auth.emailVerification.resendWindowSeconds',
-        ) ?? 3600,
+        this.configService.get<number>('auth.emailVerification.resendWindowSeconds') ?? 3600,
     };
   }
 
   getPasswordResetConfig(): PasswordResetConfig {
     return {
-      tokenByteLength:
-        this.configService.get<number>('auth.passwordReset.tokenByteLength') ??
-        32,
-      ttlSeconds:
-        this.configService.get<number>('auth.passwordReset.ttlSeconds') ?? 1800,
+      tokenByteLength: this.configService.get<number>('auth.passwordReset.tokenByteLength') ?? 32,
+      ttlSeconds: this.configService.get<number>('auth.passwordReset.ttlSeconds') ?? 1800,
     };
   }
 
   getDatabaseConfig(): DatabaseConfig {
     return {
-      autoLoadEntities:
-        this.configService.get<boolean>('database.autoLoadEntities') ?? true,
+      autoLoadEntities: this.configService.get<boolean>('database.autoLoadEntities') ?? true,
       logging: this.configService.get<boolean>('database.logging') ?? false,
       schema: this.configService.get<string>('database.schema') ?? 'public',
       ssl: this.configService.get<boolean>('database.ssl') ?? false,
-      synchronize:
-        this.configService.get<boolean>('database.synchronize') ?? false,
+      synchronize: this.configService.get<boolean>('database.synchronize') ?? false,
       url: this.configService.get<string>('database.url') || undefined,
     };
   }
@@ -214,12 +191,9 @@ export class ConfigurationService {
 
   getEmailConfig(): EmailConfig {
     return {
-      deliveryTimeoutMs:
-        this.configService.get<number>('email.deliveryTimeoutMs') ?? 15000,
-      queueTimeoutMs:
-        this.configService.get<number>('email.queueTimeoutMs') ?? 5000,
-      jobMaxAttempts:
-        this.configService.get<number>('email.jobMaxAttempts') ?? 5,
+      deliveryTimeoutMs: this.configService.get<number>('email.deliveryTimeoutMs') ?? 15000,
+      queueTimeoutMs: this.configService.get<number>('email.queueTimeoutMs') ?? 5000,
+      jobMaxAttempts: this.configService.get<number>('email.jobMaxAttempts') ?? 5,
     };
   }
 
@@ -227,23 +201,17 @@ export class ConfigurationService {
     return {
       apiKey: this.configService.get<string>('brevo.apiKey') || undefined,
       senderEmail: this.configService.get<string>('brevo.senderEmail') ?? '',
-      senderName:
-        this.configService.get<string>('brevo.senderName') ?? 'CollabSpace',
+      senderName: this.configService.get<string>('brevo.senderName') ?? 'CollabSpace',
     };
   }
 
   getGraphileWorkerConfig(): GraphileWorkerConfig {
     return {
-      concurrency:
-        this.configService.get<number>('graphileWorker.concurrency') ?? 5,
+      concurrency: this.configService.get<number>('graphileWorker.concurrency') ?? 5,
       connectionString: this.getDatabaseConfig().url,
-      enabled:
-        this.configService.get<boolean>('graphileWorker.enabled') ?? false,
-      pollInterval:
-        this.configService.get<number>('graphileWorker.pollInterval') ?? 2000,
-      schema:
-        this.configService.get<string>('graphileWorker.schema') ??
-        'graphile_worker',
+      enabled: this.configService.get<boolean>('graphileWorker.enabled') ?? false,
+      pollInterval: this.configService.get<number>('graphileWorker.pollInterval') ?? 2000,
+      schema: this.configService.get<string>('graphileWorker.schema') ?? 'graphile_worker',
     };
   }
 
@@ -253,8 +221,7 @@ export class ConfigurationService {
     return {
       concurrency: graphileWorkerConfig.concurrency,
       connectionString: graphileWorkerConfig.connectionString,
-      disabled:
-        !graphileWorkerConfig.enabled || !graphileWorkerConfig.connectionString,
+      disabled: !graphileWorkerConfig.enabled || !graphileWorkerConfig.connectionString,
       pollInterval: graphileWorkerConfig.pollInterval,
       schema: graphileWorkerConfig.schema,
       taskList: {},
@@ -270,10 +237,8 @@ export class ConfigurationService {
         this.configService.get<number>('outbox.degradedPendingThreshold') ?? 50,
       enabled: this.configService.get<boolean>('outbox.enabled') ?? true,
       maxAttempts: this.configService.get<number>('outbox.maxAttempts') ?? 10,
-      pollIntervalMs:
-        this.configService.get<number>('outbox.pollIntervalMs') ?? 5000,
-      publishTimeoutMs:
-        this.configService.get<number>('outbox.publishTimeoutMs') ?? 30000,
+      pollIntervalMs: this.configService.get<number>('outbox.pollIntervalMs') ?? 5000,
+      publishTimeoutMs: this.configService.get<number>('outbox.publishTimeoutMs') ?? 30000,
       staleClaimThresholdMs: Math.max(
         this.configService.get<number>('outbox.staleClaimThresholdMs') ?? 60000,
         5000,
@@ -322,16 +287,12 @@ export class ConfigurationService {
     return {
       enabled: this.configService.get<boolean>('rabbitmq.enabled') ?? false,
       noAck: this.configService.get<boolean>('rabbitmq.noAck') ?? false,
-      publishTimeoutMs:
-        this.configService.get<number>('rabbitmq.publishTimeoutMs') ?? 3000,
-      prefetchCount:
-        this.configService.get<number>('rabbitmq.prefetchCount') ?? 10,
+      publishTimeoutMs: this.configService.get<number>('rabbitmq.publishTimeoutMs') ?? 3000,
+      prefetchCount: this.configService.get<number>('rabbitmq.prefetchCount') ?? 10,
       queue: this.configService.get<string>('rabbitmq.queue') ?? 'auth-service',
-      queueDurable:
-        this.configService.get<boolean>('rabbitmq.queueDurable') ?? true,
+      queueDurable: this.configService.get<boolean>('rabbitmq.queueDurable') ?? true,
       userServiceQueue:
-        this.configService.get<string>('rabbitmq.userServiceQueue') ??
-        'user-service',
+        this.configService.get<string>('rabbitmq.userServiceQueue') ?? 'user-service',
       url: this.configService.get<string>('rabbitmq.url') || undefined,
     };
   }
@@ -339,11 +300,9 @@ export class ConfigurationService {
   getRabbitMqMicroserviceOptions(): RmqOptions {
     const rabbitMqConfig = this.getRabbitMqConfig();
     const dlxExchange =
-      this.configService.get<string>('RABBITMQ_DLX_EXCHANGE') ??
-      'collabspace_dlx';
+      this.configService.get<string>('RABBITMQ_DLX_EXCHANGE') ?? 'collabspace_dlx';
     const dlxRoutingKey =
-      this.configService.get<string>('RABBITMQ_DLX_ROUTING_KEY') ??
-      `${rabbitMqConfig.queue}.dlq`;
+      this.configService.get<string>('RABBITMQ_DLX_ROUTING_KEY') ?? `${rabbitMqConfig.queue}.dlq`;
 
     return {
       options: {
@@ -363,8 +322,7 @@ export class ConfigurationService {
 
   getRefreshTokenConfig(): RefreshTokenConfig {
     return {
-      byteLength:
-        this.configService.get<number>('refreshToken.byteLength') ?? 48,
+      byteLength: this.configService.get<number>('refreshToken.byteLength') ?? 48,
       ttlDays: this.configService.get<number>('refreshToken.ttlDays') ?? 30,
     };
   }
@@ -397,11 +355,8 @@ export class ConfigurationService {
 
   getUserServiceConfig(): UserServiceConfig {
     return {
-      grpcUrl:
-        this.configService.get<string>('userService.grpcUrl') ??
-        'user-service:50052',
-      grpcTimeoutMs:
-        this.configService.get<number>('userService.grpcTimeoutMs') ?? 3000,
+      grpcUrl: this.configService.get<string>('userService.grpcUrl') ?? 'user-service:50052',
+      grpcTimeoutMs: this.configService.get<number>('userService.grpcTimeoutMs') ?? 3000,
     };
   }
 }

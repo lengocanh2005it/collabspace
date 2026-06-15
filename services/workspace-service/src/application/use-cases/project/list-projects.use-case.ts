@@ -18,10 +18,7 @@ export class ListProjectsUseCase {
   ) {}
 
   async execute(userId: string, workspaceId: string) {
-    const member = await this.memberRepo.findByWorkspaceAndUser(
-      workspaceId,
-      userId,
-    );
+    const member = await this.memberRepo.findByWorkspaceAndUser(workspaceId, userId);
     if (!member) {
       throw new ForbiddenException('You are not a member of this workspace');
     }

@@ -1,5 +1,5 @@
 // src/application/usecases/get-task-by-id.handler.ts
-import { QueryHandler, IQueryHandler } from "@nestjs/cqrs";
+import { QueryHandler, type IQueryHandler } from "@nestjs/cqrs";
 import { Inject } from "@nestjs/common";
 import { GetTaskByIdQuery } from "../queries/get-task-by-id.query";
 import { ITaskRepository as ITaskRepositoryToken } from "../ports/ITaskRepository";

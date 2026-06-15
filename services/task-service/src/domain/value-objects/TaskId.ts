@@ -7,10 +7,7 @@ export class TaskId {
   constructor(value: string) {
     // 1. Kiểm tra rỗng
     if (!value || value.trim() === "") {
-      throw new BusinessRuleException(
-        "Task ID không được để trống",
-        "TASK_ID_EMPTY",
-      );
+      throw new BusinessRuleException("Task ID không được để trống", "TASK_ID_EMPTY");
     }
 
     // 2. Kiểm tra định dạng UUID

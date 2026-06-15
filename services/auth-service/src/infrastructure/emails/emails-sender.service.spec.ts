@@ -1,4 +1,4 @@
-import { ConfigurationService } from '@/configuration/configuration.service';
+import type { ConfigurationService } from '@/configuration/configuration.service';
 import { BrevoEmailClient } from './brevo-email.client';
 import { EmailsSenderService } from './emails-sender.service';
 

@@ -1,5 +1,5 @@
 import type { Request } from "express";
-import type { IncomingHttpHeaders } from "http";
+import type { IncomingHttpHeaders } from "node:http";
 
 type RequestParams = Record<string, string | undefined>;
 type RequestQuery = Record<string, string | string[] | undefined>;

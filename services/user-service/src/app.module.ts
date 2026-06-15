@@ -78,13 +78,8 @@ import { AuthGuard } from './presentation/http/guards/auth.guard';
         typeOrmUserProfileRepository: TypeOrmUserProfileRepository,
         inMemoryUserProfileRepository: InMemoryUserProfileRepository,
       ) => {
-        if (
-          process.env.NODE_ENV === 'production' &&
-          !process.env.DATABASE_URL?.trim()
-        ) {
-          throw new Error(
-            'FATAL: DATABASE_URL is required when NODE_ENV=production',
-          );
+        if (process.env.NODE_ENV === 'production' && !process.env.DATABASE_URL?.trim()) {
+          throw new Error('FATAL: DATABASE_URL is required when NODE_ENV=production');
         }
 
         return process.env.DATABASE_URL

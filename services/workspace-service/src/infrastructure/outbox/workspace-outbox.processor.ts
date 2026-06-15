@@ -2,13 +2,13 @@ import {
   Inject,
   Injectable,
   Logger,
-  OnModuleDestroy,
-  OnModuleInit,
+  type OnModuleDestroy,
+  type OnModuleInit,
 } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { runOutboxPollCycle } from '@collabspace/shared';
 import type * as amqp from 'amqplib';
-import { DataSource } from 'typeorm';
+import type { DataSource } from 'typeorm';
 import {
   WORKSPACE_DELETED_EVENT,
   WORKSPACE_INVITED_EVENT,
@@ -18,7 +18,7 @@ import {
   WORKSPACE_OUTBOX_EVENT_WORKSPACE_INVITED,
 } from './entities/workspace-outbox-event.entity';
 import { getWorkspaceOutboxConfig } from './workspace-outbox.config';
-import { WorkspaceOutboxService } from './workspace-outbox.service';
+import type { WorkspaceOutboxService } from './workspace-outbox.service';
 
 @Injectable()
 export class WorkspaceOutboxProcessor implements OnModuleInit, OnModuleDestroy {
@@ -42,21 +42,15 @@ export class WorkspaceOutboxProcessor implements OnModuleInit, OnModuleDestroy {
       return;
     }
 
-    this.timer = setInterval(
-      () => void this.processPendingEvents(),
-      pollIntervalMs,
-    );
+    this.timer = setInterval(() => void this.processPendingEvents(), pollIntervalMs);
     this.timer.unref();
     void this.bootstrapOutboxProcessing();
   }
 
   private async bootstrapOutboxProcessing(): Promise<void> {
-    const released =
-      await this.workspaceOutboxService.releaseInFlightClaimsOnStartup();
+    const released = await this.workspaceOutboxService.releaseInFlightClaimsOnStartup();
     if (released > 0) {
-      this.logger.warn(
-        `Released ${released} in-flight workspace outbox event(s) on startup`,
-      );
+      this.logger.warn(`Released ${released} in-flight workspace outbox event(s) on startup`);
     }
 
     await this.processPendingEvents();
@@ -84,8 +78,7 @@ export class WorkspaceOutboxProcessor implements OnModuleInit, OnModuleDestroy {
       while (this.pendingWake) {
         this.pendingWake = false;
 
-        const exhaustedCount =
-          await this.workspaceOutboxService.markExhaustedClaims();
+        const exhaustedCount = await this.workspaceOutboxService.markExhaustedClaims();
         if (exhaustedCount > 0) {
           this.logger.warn(
             `Marked ${exhaustedCount} exhausted workspace outbox event(s) as failed`,
@@ -94,14 +87,10 @@ export class WorkspaceOutboxProcessor implements OnModuleInit, OnModuleDestroy {
 
         await runOutboxPollCycle(
           {
-            reclaimStaleClaims: () =>
-              this.workspaceOutboxService.reclaimStaleClaims(),
-            claimPendingBatch: () =>
-              this.workspaceOutboxService.claimPendingBatch(),
-            publish: (event) =>
-              this.publishEvent(event.eventType, event.payload),
-            markProcessed: (id) =>
-              this.workspaceOutboxService.markProcessed(id),
+            reclaimStaleClaims: () => this.workspaceOutboxService.reclaimStaleClaims(),
+            claimPendingBatch: () => this.workspaceOutboxService.claimPendingBatch(),
+            publish: (event) => this.publishEvent(event.eventType, event.payload),
+            markProcessed: (id) => this.workspaceOutboxService.markProcessed(id),
             markFailed: (id, attemptCount, message) =>
               this.workspaceOutboxService.markFailed(id, attemptCount, message),
             logLabel: 'workspace outbox',
@@ -124,10 +113,7 @@ export class WorkspaceOutboxProcessor implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  private async publishEvent(
-    eventType: string,
-    payload: Record<string, unknown>,
-  ): Promise<void> {
+  private async publishEvent(eventType: string, payload: Record<string, unknown>): Promise<void> {
     const routingKey =
       eventType === WORKSPACE_OUTBOX_EVENT_WORKSPACE_INVITED
         ? WORKSPACE_INVITED_EVENT

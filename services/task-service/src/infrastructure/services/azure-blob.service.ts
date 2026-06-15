@@ -1,6 +1,6 @@
 // src/infrastructure/services/azure-blob.service.ts
 import { ConfigService } from "@nestjs/config";
-import { Injectable, OnModuleInit, Logger } from "@nestjs/common";
+import { Injectable, type OnModuleInit, Logger } from "@nestjs/common";
 import { BlobServiceClient } from "@azure/storage-blob";
 import { v4 as uuid } from "uuid";
 import type { UploadedFile } from "../../common/types/uploaded-file";
@@ -11,10 +11,7 @@ export interface AzureBlobUploadResponse {
   containerName: string;
 }
 
-function hasErrorCode(
-  error: unknown,
-  expectedCode: string,
-): error is { code: string } {
+function hasErrorCode(error: unknown, expectedCode: string): error is { code: string } {
   return (
     typeof error === "object" &&
     error !== null &&
@@ -38,18 +35,14 @@ export class AzureBlobService implements OnModuleInit {
 
   constructor(private configService: ConfigService) {
     this.containerName =
-      this.configService.get<string>("AZURE_STORAGE_CONTAINER_NAME") ||
-      "task-attachments";
+      this.configService.get<string>("AZURE_STORAGE_CONTAINER_NAME") || "task-attachments";
     this.maxFileSize =
-      this.configService.get<number>("AZURE_STORAGE_MAX_FILE_SIZE") ||
-      5 * 1024 * 1024; // 5MB default
+      this.configService.get<number>("AZURE_STORAGE_MAX_FILE_SIZE") || 5 * 1024 * 1024; // 5MB default
   }
 
   async onModuleInit() {
     try {
-      const connectionString = this.configService.get<string>(
-        "AZURE_STORAGE_CONNECTION_STRING",
-      );
+      const connectionString = this.configService.get<string>("AZURE_STORAGE_CONNECTION_STRING");
 
       // ── Guard: skip real Azure setup if connection string is missing or is a placeholder ──
       if (!connectionString || connectionString.includes("your_")) {
@@ -68,13 +61,10 @@ export class AzureBlobService implements OnModuleInit {
       }
 
       // ── Initialize the top-level BlobServiceClient from the connection string ──
-      this.blobServiceClient =
-        BlobServiceClient.fromConnectionString(connectionString);
+      this.blobServiceClient = BlobServiceClient.fromConnectionString(connectionString);
 
       // ── Get a reference to the target container ──
-      const containerClient = this.blobServiceClient.getContainerClient(
-        this.containerName,
-      );
+      const containerClient = this.blobServiceClient.getContainerClient(this.containerName);
 
       try {
         // ── Try to reach the container; throws ContainerNotFound if it does not exist ──
@@ -84,9 +74,7 @@ export class AzureBlobService implements OnModuleInit {
         );
       } catch (error: unknown) {
         if (hasErrorCode(error, "ContainerNotFound")) {
-          this.logger.warn(
-            `Container "${this.containerName}" not found. Creating it...`,
-          );
+          this.logger.warn(`Container "${this.containerName}" not found. Creating it...`);
           try {
             // ── FIX 1: Do NOT pass `access: 'blob'` here.
             //    Accounts with Hierarchical Namespace (ADLS Gen2) enabled do not support
@@ -94,9 +82,7 @@ export class AzureBlobService implements OnModuleInit {
             //    For standard Blob Storage accounts this is also safer: rely on
             //    storage-account-level access policies instead of per-container public access. ──
             await containerClient.create();
-            this.logger.log(
-              `✅ Created new Azure Blob Storage container: ${this.containerName}`,
-            );
+            this.logger.log(`✅ Created new Azure Blob Storage container: ${this.containerName}`);
           } catch (createError: unknown) {
             // ── Ignore race condition where another instance already created the container ──
             if (!hasErrorCode(createError, "ContainerAlreadyExists")) {
@@ -112,20 +98,15 @@ export class AzureBlobService implements OnModuleInit {
       }
 
       this.isConnected = true;
-      this.logger.log(
-        `✅ Connected to Azure Blob Storage (container: ${this.containerName})`,
-      );
+      this.logger.log(`✅ Connected to Azure Blob Storage (container: ${this.containerName})`);
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
       if (process.env.NODE_ENV === "production") {
         throw new Error(
           `FATAL: Azure Blob Storage connection failed in production: ${errorMessage}`,
         );
       }
-      this.logger.error(
-        `Failed to connect to Azure Blob Storage: ${errorMessage}`,
-      );
+      this.logger.error(`Failed to connect to Azure Blob Storage: ${errorMessage}`);
       this.logger.warn("Falling back to MOCK MODE for development");
       this.blobServiceClient = null;
       this.isConnected = false;
@@ -182,9 +163,7 @@ export class AzureBlobService implements OnModuleInit {
     }
 
     if (file.size > this.maxFileSize) {
-      throw new Error(
-        `File size exceeds maximum limit of ${this.maxFileSize / (1024 * 1024)}MB`,
-      );
+      throw new Error(`File size exceeds maximum limit of ${this.maxFileSize / (1024 * 1024)}MB`);
     }
 
     try {
@@ -205,9 +184,7 @@ export class AzureBlobService implements OnModuleInit {
       }
 
       // ── Real mode: obtain a BlockBlobClient for the target blob path ──
-      const containerClient = this.blobServiceClient.getContainerClient(
-        this.containerName,
-      );
+      const containerClient = this.blobServiceClient.getContainerClient(this.containerName);
       const blockBlobClient = containerClient.getBlockBlobClient(blobName);
 
       // ── Upload the file buffer with correct content-type and safe metadata ──
@@ -230,13 +207,11 @@ export class AzureBlobService implements OnModuleInit {
       this.logger.log(`✅ File uploaded: ${fileUrl}`);
       return fileUrl;
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
       this.logger.error(`Failed to upload file to Azure: ${errorMessage}`);
-      throw new Error(
-        `Failed to upload file to Azure Blob Storage: ${errorMessage}`,
-        { cause: error },
-      );
+      throw new Error(`Failed to upload file to Azure Blob Storage: ${errorMessage}`, {
+        cause: error,
+      });
     }
   }
 
@@ -259,21 +234,17 @@ export class AzureBlobService implements OnModuleInit {
       }
 
       // ── Real mode: obtain a client for the specific blob and delete it ──
-      const containerClient = this.blobServiceClient.getContainerClient(
-        this.containerName,
-      );
+      const containerClient = this.blobServiceClient.getContainerClient(this.containerName);
       const blockBlobClient = containerClient.getBlockBlobClient(blobName);
 
       await blockBlobClient.delete();
       this.logger.log(`✅ File deleted: ${blobName}`);
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
       this.logger.error(`Failed to delete file from Azure: ${errorMessage}`);
-      throw new Error(
-        `Failed to delete file from Azure Blob Storage: ${errorMessage}`,
-        { cause: error },
-      );
+      throw new Error(`Failed to delete file from Azure Blob Storage: ${errorMessage}`, {
+        cause: error,
+      });
     }
   }
 

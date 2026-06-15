@@ -1,9 +1,9 @@
 import { MarkNotificationReadHandler } from "./mark-notification-read.handler";
 import { MarkNotificationReadCommand } from "./mark-notification-read.command";
-import { INotificationRepository } from "../../../domain/repositories/INotificationRepository";
+import type { INotificationRepository } from "../../../domain/repositories/INotificationRepository";
 import { Notification } from "../../../domain/entities/Notification";
 import { NotificationType } from "../../../domain/value-objects/NotificationType";
-import { NotificationCountCacheService } from "../../../infrastructure/cache/notification-count-cache.service";
+import type { NotificationCountCacheService } from "../../../infrastructure/cache/notification-count-cache.service";
 
 const noopCountCache = {
   invalidateUnreadCount: jest.fn().mockResolvedValue(undefined),
@@ -46,9 +46,7 @@ describe("MarkNotificationReadHandler", () => {
     mockRepo.findByIdAsync.mockResolvedValue(notification);
     mockRepo.updateAsync.mockResolvedValue(true);
 
-    await handler.execute(
-      new MarkNotificationReadCommand(notification.getId(), "user-2"),
-    );
+    await handler.execute(new MarkNotificationReadCommand(notification.getId(), "user-2"));
 
     expect(notification.isRead()).toBe(true);
     expect(mockRepo.updateAsync).toHaveBeenCalledWith(notification);

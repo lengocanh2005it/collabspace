@@ -1,13 +1,13 @@
 import { AssignTaskHandler } from "./assign-task.handler";
 import { AssignTaskCommand } from "../commands/assign-task.command";
-import { ITaskRepository } from "../ports/ITaskRepository";
+import type { ITaskRepository } from "../ports/ITaskRepository";
 import { createMockTaskRepository } from "../../test-utils/mock-task-repository";
-import { IUserReplicaRepository } from "../ports/IUserReplicaRepository";
-import { RabbitMqEventsService } from "../../infrastructure/messaging/rabbitmq/rabbitmq-events.service";
+import type { IUserReplicaRepository } from "../ports/IUserReplicaRepository";
+import type { RabbitMqEventsService } from "../../infrastructure/messaging/rabbitmq/rabbitmq-events.service";
 import { Task } from "../../domain/entities/Task";
 import { TaskId } from "../../domain/value-objects/TaskId";
 import { UserSnapshot } from "../../domain/value-objects/UserSnapshot";
-import { UserReplica } from "../../infrastructure/persistence/user-replica.schema";
+import type { UserReplica } from "../../infrastructure/persistence/user-replica.schema";
 import { EntityNotFoundException } from "../../domain/exceptions/EntityNotFoundException";
 import { BusinessRuleException } from "../../domain/exceptions/BusinessRuleException";
 
@@ -97,16 +97,9 @@ describe("AssignTaskHandler", () => {
 
   it("should unassign a task when assigneeId is not provided", async () => {
     const task = createMockTask();
-    task.assignTo(
-      "old-assignee",
-      UserSnapshot.create("old", "o@o.c", "Old", "Old", "url"),
-    );
+    task.assignTo("old-assignee", UserSnapshot.create("old", "o@o.c", "Old", "Old", "url"));
 
-    const command = new AssignTaskCommand(
-      "123e4567-e89b-12d3-a456-426614174000",
-      "assigner-1",
-      "",
-    );
+    const command = new AssignTaskCommand("123e4567-e89b-12d3-a456-426614174000", "assigner-1", "");
 
     mockTaskRepo.loadAggregateByIdAsync.mockResolvedValue(task);
     mockUserReplicaRepo.findByIdAsync.mockImplementation(async (id) => {
@@ -129,9 +122,7 @@ describe("AssignTaskHandler", () => {
     );
     mockTaskRepo.loadAggregateByIdAsync.mockResolvedValue(null);
 
-    await expect(handler.execute(command)).rejects.toThrow(
-      EntityNotFoundException,
-    );
+    await expect(handler.execute(command)).rejects.toThrow(EntityNotFoundException);
   });
 
   it("should throw BusinessRuleException if assigner is inactive", async () => {
@@ -148,9 +139,7 @@ describe("AssignTaskHandler", () => {
       return null;
     });
 
-    await expect(handler.execute(command)).rejects.toThrow(
-      BusinessRuleException,
-    );
+    await expect(handler.execute(command)).rejects.toThrow(BusinessRuleException);
   });
 
   it("should throw BusinessRuleException if assignee is inactive", async () => {
@@ -168,8 +157,6 @@ describe("AssignTaskHandler", () => {
       return null;
     });
 
-    await expect(handler.execute(command)).rejects.toThrow(
-      BusinessRuleException,
-    );
+    await expect(handler.execute(command)).rejects.toThrow(BusinessRuleException);
   });
 });

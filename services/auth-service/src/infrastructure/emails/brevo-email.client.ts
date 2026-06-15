@@ -1,4 +1,4 @@
-import { SendEmailJobPayload } from '@/infrastructure/emails/email-job.types';
+import type { SendEmailJobPayload } from '@/infrastructure/emails/email-job.types';
 import { BrevoClient } from '@getbrevo/brevo';
 import { Logger } from '@nestjs/common';
 
@@ -72,12 +72,8 @@ export class BrevoEmailClient {
       const body = record.body ?? record.response?.body;
 
       if (body !== undefined) {
-        const serialized =
-          typeof body === 'string' ? body : JSON.stringify(body);
-        return [
-          typeof statusCode === 'number' ? `status=${statusCode}` : null,
-          serialized,
-        ]
+        const serialized = typeof body === 'string' ? body : JSON.stringify(body);
+        return [typeof statusCode === 'number' ? `status=${statusCode}` : null, serialized]
           .filter(Boolean)
           .join(' ');
       }
@@ -90,9 +86,7 @@ export class BrevoEmailClient {
     return error instanceof Error ? error.message : String(error);
   }
 
-  private toRecipients(
-    value: string | string[] | undefined,
-  ): { email: string }[] | undefined {
+  private toRecipients(value: string | string[] | undefined): { email: string }[] | undefined {
     if (!value) {
       return undefined;
     }

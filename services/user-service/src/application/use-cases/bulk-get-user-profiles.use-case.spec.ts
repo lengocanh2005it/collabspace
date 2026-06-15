@@ -14,9 +14,7 @@ describe('BulkGetUserProfilesUseCase', () => {
   });
 
   it('returns mapped profiles for the requested user ids', async () => {
-    jest
-      .spyOn(repository, 'findManyByUserIds')
-      .mockResolvedValue([sampleUserProfile]);
+    jest.spyOn(repository, 'findManyByUserIds').mockResolvedValue([sampleUserProfile]);
 
     await expect(useCase.execute(['user-1', 'user-2'])).resolves.toEqual([
       expect.objectContaining({ userId: 'user-1', username: 'jane.doe' }),

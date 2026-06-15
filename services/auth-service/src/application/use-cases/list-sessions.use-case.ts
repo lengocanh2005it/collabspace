@@ -4,7 +4,7 @@ import {
   type RefreshTokenRepository,
 } from '@/domain/repositories/refresh-token.repository';
 import { Inject, Injectable } from '@nestjs/common';
-import { JwtTokenService } from '../services/jwt-token.service';
+import type { JwtTokenService } from '../services/jwt-token.service';
 
 @Injectable()
 export class ListSessionsUseCase {
@@ -14,15 +14,9 @@ export class ListSessionsUseCase {
     private readonly refreshTokenRepository: RefreshTokenRepository,
   ) {}
 
-  async execute(
-    authorizationHeader: string | undefined,
-  ): Promise<AuthSessionSummaryResult[]> {
-    const { userId } =
-      await this.jwtTokenService.resolveVerifiedUserContext(
-        authorizationHeader,
-      );
-    const sessions =
-      await this.refreshTokenRepository.listSessionsByUserId(userId);
+  async execute(authorizationHeader: string | undefined): Promise<AuthSessionSummaryResult[]> {
+    const { userId } = await this.jwtTokenService.resolveVerifiedUserContext(authorizationHeader);
+    const sessions = await this.refreshTokenRepository.listSessionsByUserId(userId);
 
     return sessions.map((session) => ({
       tokenId: session.tokenId,

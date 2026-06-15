@@ -1,11 +1,6 @@
 // src/application/usecases/comments/edit/edit-comment.handler.ts
-import { CommandHandler, ICommandHandler } from "@nestjs/cqrs";
-import {
-  Inject,
-  BadRequestException,
-  ForbiddenException,
-  NotFoundException,
-} from "@nestjs/common";
+import { CommandHandler, type ICommandHandler } from "@nestjs/cqrs";
+import { Inject, BadRequestException, ForbiddenException, NotFoundException } from "@nestjs/common";
 import { EditCommentCommand } from "./edit-comment.command";
 import {
   type ICommentRepository,
@@ -22,10 +17,9 @@ export interface EditCommentResponse {
 }
 
 @CommandHandler(EditCommentCommand)
-export class EditCommentHandler implements ICommandHandler<
-  EditCommentCommand,
-  EditCommentResponse
-> {
+export class EditCommentHandler
+  implements ICommandHandler<EditCommentCommand, EditCommentResponse>
+{
   constructor(
     @Inject(COMMENT_REPOSITORY_TOKEN)
     private readonly commentRepository: ICommentRepository,
@@ -35,21 +29,15 @@ export class EditCommentHandler implements ICommandHandler<
 
   async execute(command: EditCommentCommand): Promise<EditCommentResponse> {
     // Step 1: Verify task exists
-    const task = await this.taskRepository.findByIdAsync(
-      new TaskId(command.taskId),
-    );
+    const task = await this.taskRepository.findByIdAsync(new TaskId(command.taskId));
     if (!task) {
       throw new NotFoundException(`Task with ID ${command.taskId} not found`);
     }
 
     // Step 2: Fetch comment
-    const comment = await this.commentRepository.findByIdAsync(
-      command.commentId,
-    );
+    const comment = await this.commentRepository.findByIdAsync(command.commentId);
     if (!comment) {
-      throw new NotFoundException(
-        `Comment with ID ${command.commentId} not found`,
-      );
+      throw new NotFoundException(`Comment with ID ${command.commentId} not found`);
     }
 
     // Step 3: Authorization check - only comment author can edit

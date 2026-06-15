@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import { Model } from "mongoose";
+import type { Model } from "mongoose";
 import {
   TaskActivityPersistence,
   type TaskActivityDocument,
@@ -13,10 +13,7 @@ import {
   TaskEventPersistence,
   type TaskEventDocument,
 } from "../../infrastructure/persistence/task-event.schema";
-import {
-  TaskPersistence,
-  type TaskDocument,
-} from "../../infrastructure/persistence/task.schema";
+import { TaskPersistence, type TaskDocument } from "../../infrastructure/persistence/task.schema";
 
 @Injectable()
 export class WorkspaceDeletionService {
@@ -32,9 +29,7 @@ export class WorkspaceDeletionService {
   ) {}
 
   async deleteWorkspaceData(workspaceId: string): Promise<number> {
-    const taskIds = await this.taskModel
-      .distinct("_id", { workspaceId })
-      .exec();
+    const taskIds = await this.taskModel.distinct("_id", { workspaceId }).exec();
     if (taskIds.length === 0) return 0;
 
     await Promise.all([

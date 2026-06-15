@@ -1,4 +1,4 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { Test, type TestingModule } from '@nestjs/testing';
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { GetWorkspaceUseCase } from './get-workspace.use-case';
 import { WORKSPACE_REPOSITORY } from '../../../domain/repositories/workspace.repository';
@@ -26,9 +26,7 @@ describe('GetWorkspaceUseCase', () => {
 
   it('should throw ForbiddenException if user is not a member', async () => {
     mockMemberRepo.findByWorkspaceAndUser.mockResolvedValue(null);
-    await expect(useCase.execute('user-1', 'ws-1')).rejects.toThrow(
-      ForbiddenException,
-    );
+    await expect(useCase.execute('user-1', 'ws-1')).rejects.toThrow(ForbiddenException);
   });
 
   it('should throw NotFoundException if workspace does not exist', async () => {
@@ -36,20 +34,11 @@ describe('GetWorkspaceUseCase', () => {
       new WorkspaceMember('m-1', 'ws-1', 'user-1', 'member', new Date()),
     );
     mockWorkspaceRepo.findById.mockResolvedValue(null);
-    await expect(useCase.execute('user-1', 'ws-1')).rejects.toThrow(
-      NotFoundException,
-    );
+    await expect(useCase.execute('user-1', 'ws-1')).rejects.toThrow(NotFoundException);
   });
 
   it('should return workspace if user is member and workspace exists', async () => {
-    const ws = new Workspace(
-      'ws-1',
-      'Test',
-      null,
-      'user-1',
-      new Date(),
-      new Date(),
-    );
+    const ws = new Workspace('ws-1', 'Test', null, 'user-1', new Date(), new Date());
     mockMemberRepo.findByWorkspaceAndUser.mockResolvedValue(
       new WorkspaceMember('m-1', 'ws-1', 'user-1', 'member', new Date()),
     );

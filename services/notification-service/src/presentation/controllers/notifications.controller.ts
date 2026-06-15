@@ -23,15 +23,15 @@ import {
   MessageResponseSchemaDto,
 } from "../dtos/notification-swagger-response.dto";
 import type { Request, Response } from "express";
-import { CommandBus, QueryBus } from "@nestjs/cqrs";
+import type { CommandBus, QueryBus } from "@nestjs/cqrs";
 
 import { GetNotificationsQuery } from "../../application/usecases/get-notifications/get-notifications.query";
 import { MarkNotificationReadCommand } from "../../application/usecases/mark-notification-read/mark-notification-read.command";
 import { MarkAllNotificationsReadCommand } from "../../application/usecases/mark-all-notifications-read/mark-all-notifications-read.command";
 
-import { NotificationHealthService } from "../../health/notification-health.service";
+import type { NotificationHealthService } from "../../health/notification-health.service";
 import { assertMetricsAccess } from "../../metrics/metrics-access";
-import { MetricsService } from "../../metrics/metrics.service";
+import type { MetricsService } from "../../metrics/metrics.service";
 import { AuthGuard } from "../guards/auth.guard";
 import type { AuthenticatedRequest } from "../http/authenticated-request";
 
@@ -93,13 +93,8 @@ export class NotificationsController {
     @Query("limit") limit?: string,
   ) {
     const parsedSkip = Math.max(0, parseInt(skip ?? "0", 10) || 0);
-    const parsedLimit = Math.min(
-      100,
-      Math.max(1, parseInt(limit ?? "20", 10) || 20),
-    );
-    return this.queryBus.execute(
-      new GetNotificationsQuery(req.user.id, parsedSkip, parsedLimit),
-    );
+    const parsedLimit = Math.min(100, Math.max(1, parseInt(limit ?? "20", 10) || 20));
+    return this.queryBus.execute(new GetNotificationsQuery(req.user.id, parsedSkip, parsedLimit));
   }
 
   @Patch("read-all")
@@ -109,9 +104,7 @@ export class NotificationsController {
   @ApiOperation({ summary: "Mark all notifications as read" })
   @ApiOkResponse({ type: MarkAllNotificationsReadResponseSchemaDto })
   async markAllAsRead(@Req() req: AuthenticatedRequest) {
-    return this.commandBus.execute(
-      new MarkAllNotificationsReadCommand(req.user.id),
-    );
+    return this.commandBus.execute(new MarkAllNotificationsReadCommand(req.user.id));
   }
 
   @Patch(":id/read")
@@ -121,13 +114,8 @@ export class NotificationsController {
   @ApiOperation({ summary: "Mark one notification as read" })
   @ApiParam({ name: "id", description: "Notification id" })
   @ApiOkResponse({ type: MessageResponseSchemaDto })
-  async markAsRead(
-    @Param("id") notificationId: string,
-    @Req() req: AuthenticatedRequest,
-  ) {
-    await this.commandBus.execute(
-      new MarkNotificationReadCommand(notificationId, req.user.id),
-    );
+  async markAsRead(@Param("id") notificationId: string, @Req() req: AuthenticatedRequest) {
+    await this.commandBus.execute(new MarkNotificationReadCommand(notificationId, req.user.id));
 
     return { message: "Notification marked as read" };
   }

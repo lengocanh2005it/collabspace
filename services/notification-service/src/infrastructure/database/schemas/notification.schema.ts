@@ -56,7 +56,4 @@ NotificationSchema.index({ recipientId: 1, createdAt: -1 });
 NotificationSchema.index({ recipientId: 1, status: 1 });
 NotificationSchema.index({ createdAt: 1 });
 NotificationSchema.index({ targetId: 1, targetType: 1 });
-NotificationSchema.index(
-  { broadcastDedupeKey: 1 },
-  { unique: true, sparse: true },
-);
+NotificationSchema.index({ broadcastDedupeKey: 1 }, { unique: true, sparse: true });

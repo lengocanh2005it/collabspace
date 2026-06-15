@@ -36,9 +36,7 @@ export class NotificationMapper {
    * Chuyển từ Domain Entity sang Persistence Document
    * Dùng khi: Save notification vào database
    */
-  public static toPersistence(
-    notification: NotificationEntity,
-  ): Partial<NotificationDocument> {
+  public static toPersistence(notification: NotificationEntity): Partial<NotificationDocument> {
     return {
       recipientId: notification.getRecipientId(),
       actorId: notification.getActorId(),
@@ -105,9 +103,7 @@ export class NotificationMapper {
   /**
    * Chuyển collection Document sang DTOs
    */
-  public static toResponses(
-    notifications: NotificationDocument[],
-  ): NotificationResponseDto[] {
-    return notifications.map((notification) => this.toResponse(notification));
+  public static toResponses(notifications: NotificationDocument[]): NotificationResponseDto[] {
+    return notifications.map((notification) => NotificationMapper.toResponse(notification));
   }
 }

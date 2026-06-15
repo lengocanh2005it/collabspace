@@ -6,8 +6,17 @@
     "prepare": "git config core.hooksPath .githooks",
     "build": "pnpm -r run build",
     "test": "pnpm -r run test",
-    "lint": "pnpm -r run lint",
+    "lint": "pnpm run lint:ci",
+    "lint:ci": "pnpm run format:check && pnpm run biome:check && pnpm run lint:types",
+    "lint:types": "pnpm -r run lint",
+    "format": "biome format --write services packages",
+    "format:check": "biome format services packages",
+    "biome:check": "biome check --assist-enabled=false services packages",
+    "biome:fix": "biome check --write --assist-enabled=false services packages",
     "seed": "sh ./scripts/seed.sh"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.0"
   },
   "engines": {
     "node": ">=18",

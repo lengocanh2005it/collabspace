@@ -1,27 +1,23 @@
 import { BadRequestException } from "@nestjs/common";
 import { CreateCommentHandler } from "./create-comment.handler";
 import { CreateCommentCommand } from "./create-comment.command";
-import { ITaskRepository } from "../../../ports/ITaskRepository";
+import type { ITaskRepository } from "../../../ports/ITaskRepository";
 import { createMockTaskRepository } from "../../../../test-utils/mock-task-repository";
-import { UserReplicaLookupService } from "../../../services/user-replica-lookup.service";
-import { ICommentRepository } from "../../../../domain/repositories/comment.repository.interface";
-import { TaskCommentNotificationPublisher } from "../../../services/task-comment-notification.publisher";
+import type { UserReplicaLookupService } from "../../../services/user-replica-lookup.service";
+import type { ICommentRepository } from "../../../../domain/repositories/comment.repository.interface";
+import type { TaskCommentNotificationPublisher } from "../../../services/task-comment-notification.publisher";
 import type { ITaskActivityRepository } from "../../../ports/ITaskActivityRepository";
 import { Task } from "../../../../domain/entities/Task";
 import { TaskId } from "../../../../domain/value-objects/TaskId";
 import { UserSnapshot } from "../../../../domain/value-objects/UserSnapshot";
-import { UserReplica } from "../../../../infrastructure/persistence/user-replica.schema";
-import { Comment } from "../../../../domain/entities/comment.entity";
+import type { UserReplica } from "../../../../infrastructure/persistence/user-replica.schema";
 
 describe("CreateCommentHandler", () => {
   let handler: CreateCommentHandler;
   let mockCommentRepo: jest.Mocked<ICommentRepository>;
   let mockTaskRepo: jest.Mocked<ITaskRepository>;
   let mockUserReplicaLookup: jest.Mocked<
-    Pick<
-      UserReplicaLookupService,
-      "findActiveByIdAsync" | "findActiveByUsernameAsync"
-    >
+    Pick<UserReplicaLookupService, "findActiveByIdAsync" | "findActiveByUsernameAsync">
   >;
   let mockCommentNotificationPublisher: jest.Mocked<TaskCommentNotificationPublisher>;
   let mockTaskActivityRepository: jest.Mocked<ITaskActivityRepository>;
@@ -63,13 +59,7 @@ describe("CreateCommentHandler", () => {
   });
 
   const createMockTask = (assigneeId: string | null) => {
-    const creatorSnapshot = UserSnapshot.create(
-      "creator-1",
-      "c@c.c",
-      "Creator",
-      "Creator",
-      "url",
-    );
+    const creatorSnapshot = UserSnapshot.create("creator-1", "c@c.c", "Creator", "Creator", "url");
     return Task.restore(
       new TaskId("123e4567-e89b-12d3-a456-426614174000"),
       "Task Title",
@@ -78,15 +68,7 @@ describe("CreateCommentHandler", () => {
       "workspace-1",
       null,
       assigneeId,
-      assigneeId
-        ? UserSnapshot.create(
-            assigneeId,
-            "a@a.c",
-            "Assignee",
-            "Assignee",
-            "url",
-          )
-        : null,
+      assigneeId ? UserSnapshot.create(assigneeId, "a@a.c", "Assignee", "Assignee", "url") : null,
       creatorSnapshot,
       new Date(),
       new Date(),
@@ -115,9 +97,7 @@ describe("CreateCommentHandler", () => {
 
     mockTaskRepo.findByIdAsync.mockResolvedValue(task);
     mockUserReplicaLookup.findActiveByIdAsync.mockResolvedValue(authorReplica);
-    mockCommentRepo.createAsync.mockResolvedValue(
-      "123e4567-e89b-12d3-a456-426614174001",
-    );
+    mockCommentRepo.createAsync.mockResolvedValue("123e4567-e89b-12d3-a456-426614174001");
 
     const result = await handler.execute(command);
 
@@ -145,9 +125,7 @@ describe("CreateCommentHandler", () => {
 
     mockTaskRepo.findByIdAsync.mockResolvedValue(task);
     mockUserReplicaLookup.findActiveByIdAsync.mockResolvedValue(authorReplica);
-    mockCommentRepo.createAsync.mockResolvedValue(
-      "123e4567-e89b-12d3-a456-426614174001",
-    );
+    mockCommentRepo.createAsync.mockResolvedValue("123e4567-e89b-12d3-a456-426614174001");
 
     await handler.execute(command);
 
@@ -167,9 +145,7 @@ describe("CreateCommentHandler", () => {
 
     mockTaskRepo.findByIdAsync.mockResolvedValue(task);
     mockUserReplicaLookup.findActiveByIdAsync.mockResolvedValue(authorReplica);
-    mockCommentRepo.createAsync.mockResolvedValue(
-      "123e4567-e89b-12d3-a456-426614174001",
-    );
+    mockCommentRepo.createAsync.mockResolvedValue("123e4567-e89b-12d3-a456-426614174001");
 
     await handler.execute(command);
 

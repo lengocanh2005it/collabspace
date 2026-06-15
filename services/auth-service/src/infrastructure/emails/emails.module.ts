@@ -19,19 +19,13 @@ import type { SendEmailJobPayload } from './email-job.types';
         return {
           'emails.send': async (payload: unknown) => {
             const job = payload as SendEmailJobPayload;
-            const recipient = Array.isArray(job.to)
-              ? job.to.join(',')
-              : (job.to ?? 'unknown');
+            const recipient = Array.isArray(job.to) ? job.to.join(',') : (job.to ?? 'unknown');
 
-            logger.log(
-              `Processing emails.send job to=${recipient} subject="${job.subject ?? ''}"`,
-            );
+            logger.log(`Processing emails.send job to=${recipient} subject="${job.subject ?? ''}"`);
 
             try {
               const result = await emailsSenderService.send(job);
-              logger.log(
-                `Completed emails.send job to=${recipient} messageId=${result.messageId}`,
-              );
+              logger.log(`Completed emails.send job to=${recipient} messageId=${result.messageId}`);
             } catch (error) {
               logger.error(
                 `Failed emails.send job to=${recipient}: ${

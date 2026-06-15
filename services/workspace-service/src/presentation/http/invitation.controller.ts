@@ -25,11 +25,11 @@ import {
 } from '../../application/dto/swagger-response.dto';
 import type { Response } from 'express';
 import { UserId } from './decorators/user-id.decorator';
-import { InviteMemberDto } from '../../application/dto/invite-member.dto';
+import type { InviteMemberDto } from '../../application/dto/invite-member.dto';
 import { InviteMemberUseCase } from '../../application/use-cases/invitation/invite-member.use-case';
 import { AcceptInvitationUseCase } from '../../application/use-cases/invitation/accept-invitation.use-case';
 import { RejectInvitationUseCase } from '../../application/use-cases/invitation/reject-invitation.use-case';
-import { IdempotencyService } from '../../infrastructure/idempotency/idempotency.service';
+import type { IdempotencyService } from '../../infrastructure/idempotency/idempotency.service';
 import { AuthGuard } from './guards/auth.guard';
 import { ListInvitationsUseCase } from '../../application/use-cases/invitation/list-invitations.use-case';
 
@@ -73,10 +73,7 @@ export class InvitationController {
     const route = `POST /workspaces/${workspaceId}/invite`;
 
     if (idempotencyKey?.trim()) {
-      const cached = await this.idempotencyService.findCached(
-        userId,
-        idempotencyKey.trim(),
-      );
+      const cached = await this.idempotencyService.findCached(userId, idempotencyKey.trim());
 
       if (cached) {
         response.status(cached.statusCode);
@@ -84,11 +81,7 @@ export class InvitationController {
       }
     }
 
-    const result = await this.inviteMemberUseCase.execute(
-      userId,
-      workspaceId,
-      dto,
-    );
+    const result = await this.inviteMemberUseCase.execute(userId, workspaceId, dto);
 
     if (idempotencyKey?.trim()) {
       await this.idempotencyService.store(

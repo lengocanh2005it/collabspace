@@ -1,8 +1,6 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class UserServiceCollaborationFoundation1718000000101
-  implements MigrationInterface
-{
+export class UserServiceCollaborationFoundation1718000000101 implements MigrationInterface {
   name = 'UserServiceCollaborationFoundation1718000000101';
 
   async up(queryRunner: QueryRunner): Promise<void> {
@@ -28,30 +26,20 @@ export class UserServiceCollaborationFoundation1718000000101
       )
     `);
 
-    await queryRunner.query(
-      `ALTER TABLE profiles ADD COLUMN IF NOT EXISTS username VARCHAR(255)`,
-    );
+    await queryRunner.query(`ALTER TABLE profiles ADD COLUMN IF NOT EXISTS username VARCHAR(255)`);
     await queryRunner.query(
       `ALTER TABLE profiles ADD COLUMN IF NOT EXISTS display_name VARCHAR(255)`,
     );
     await queryRunner.query(
       `ALTER TABLE profiles ADD COLUMN IF NOT EXISTS cover_url VARCHAR(1024)`,
     );
-    await queryRunner.query(
-      `ALTER TABLE profiles ADD COLUMN IF NOT EXISTS job_title VARCHAR(255)`,
-    );
+    await queryRunner.query(`ALTER TABLE profiles ADD COLUMN IF NOT EXISTS job_title VARCHAR(255)`);
     await queryRunner.query(
       `ALTER TABLE profiles ADD COLUMN IF NOT EXISTS department VARCHAR(255)`,
     );
-    await queryRunner.query(
-      `ALTER TABLE profiles ADD COLUMN IF NOT EXISTS location VARCHAR(255)`,
-    );
-    await queryRunner.query(
-      `ALTER TABLE profiles ADD COLUMN IF NOT EXISTS timezone VARCHAR(100)`,
-    );
-    await queryRunner.query(
-      `ALTER TABLE profiles ADD COLUMN IF NOT EXISTS locale VARCHAR(50)`,
-    );
+    await queryRunner.query(`ALTER TABLE profiles ADD COLUMN IF NOT EXISTS location VARCHAR(255)`);
+    await queryRunner.query(`ALTER TABLE profiles ADD COLUMN IF NOT EXISTS timezone VARCHAR(100)`);
+    await queryRunner.query(`ALTER TABLE profiles ADD COLUMN IF NOT EXISTS locale VARCHAR(50)`);
 
     await queryRunner.query(
       `CREATE UNIQUE INDEX IF NOT EXISTS uq_profiles_user_id ON profiles (user_id)`,

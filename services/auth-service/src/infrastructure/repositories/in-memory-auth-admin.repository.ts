@@ -1,14 +1,10 @@
-import {
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
-import {
-  type AdminPermission,
-  type AdminRole,
-  type AdminUser,
-  type AuthAdminRepository,
+import type {
+  AdminPermission,
+  AdminRole,
+  AdminUser,
+  AuthAdminRepository,
 } from '@/domain/repositories/auth-admin.repository';
 
 @Injectable()
@@ -17,10 +13,7 @@ export class InMemoryAuthAdminRepository implements AuthAdminRepository {
   private readonly roles: AdminRole[] = [];
   private readonly users: AdminUser[] = [];
 
-  async createRole(input: {
-    description: string;
-    name: string;
-  }): Promise<AdminRole> {
+  async createRole(input: { description: string; name: string }): Promise<AdminRole> {
     const name = input.name.trim().toLowerCase();
     if (this.roles.some((role) => role.name === name)) {
       throw new ConflictException({
@@ -38,10 +31,7 @@ export class InMemoryAuthAdminRepository implements AuthAdminRepository {
     return role;
   }
 
-  async createPermission(input: {
-    description: string;
-    name: string;
-  }): Promise<AdminPermission> {
+  async createPermission(input: { description: string; name: string }): Promise<AdminPermission> {
     const name = input.name.trim().toLowerCase();
     if (this.permissions.some((permission) => permission.name === name)) {
       throw new ConflictException({
@@ -58,21 +48,15 @@ export class InMemoryAuthAdminRepository implements AuthAdminRepository {
     return permission;
   }
 
-  async assignPermissionToRole(
-    roleId: string,
-    permissionId: string,
-  ): Promise<AdminRole> {
+  async assignPermissionToRole(roleId: string, permissionId: string): Promise<AdminRole> {
     const role = this.requireRole(roleId);
-    const permission = this.permissions.find(
-      (item) => item.id === permissionId,
-    );
+    const permission = this.permissions.find((item) => item.id === permissionId);
     if (!permission)
       throw new NotFoundException({
         code: 'PERMISSION_NOT_FOUND',
         message: `Permission ${permissionId} was not found`,
       });
-    if (!role.permissions.includes(permission.name))
-      role.permissions.push(permission.name);
+    if (!role.permissions.includes(permission.name)) role.permissions.push(permission.name);
     return role;
   }
 
@@ -105,8 +89,7 @@ export class InMemoryAuthAdminRepository implements AuthAdminRepository {
   ): Promise<AdminRole> {
     const role = this.requireRole(roleId);
     if (input.name !== undefined) role.name = input.name.trim().toLowerCase();
-    if (input.description !== undefined)
-      role.description = input.description.trim();
+    if (input.description !== undefined) role.description = input.description.trim();
     return role;
   }
 

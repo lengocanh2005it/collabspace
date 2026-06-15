@@ -1,7 +1,4 @@
-import {
-  SERVICE_IDS,
-  SERVICE_SCOPES,
-} from './service-jwt.constants';
+import { SERVICE_IDS, SERVICE_SCOPES } from './service-jwt.constants';
 import {
   buildOutboundServiceAuthHeaders,
   isOutboundServiceAuthConfigured,
@@ -43,14 +40,10 @@ describe('isOutboundServiceAuthConfigured', () => {
   });
 
   it('is true in development without secrets', () => {
-    expect(isOutboundServiceAuthConfigured({ nodeEnv: 'development' })).toBe(
-      true,
-    );
+    expect(isOutboundServiceAuthConfigured({ nodeEnv: 'development' })).toBe(true);
   });
 
   it('is false in production without JWT secret', () => {
-    expect(isOutboundServiceAuthConfigured({ nodeEnv: 'production' })).toBe(
-      false,
-    );
+    expect(isOutboundServiceAuthConfigured({ nodeEnv: 'production' })).toBe(false);
   });
 });

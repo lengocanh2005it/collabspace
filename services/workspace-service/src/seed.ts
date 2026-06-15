@@ -64,12 +64,7 @@ async function main(): Promise<void> {
     type: 'postgres',
     url: requireDatabaseUrl(),
     schema: process.env.DATABASE_SCHEMA || 'public',
-    entities: [
-      WorkspaceOrmEntity,
-      WorkspaceMemberOrmEntity,
-      ProjectOrmEntity,
-      InvitationOrmEntity,
-    ],
+    entities: [WorkspaceOrmEntity, WorkspaceMemberOrmEntity, ProjectOrmEntity, InvitationOrmEntity],
     synchronize: toBoolean(process.env.DATABASE_SYNCHRONIZE, false),
     logging: toBoolean(process.env.DATABASE_LOGGING, false),
   });

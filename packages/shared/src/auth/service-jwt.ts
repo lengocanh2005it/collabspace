@@ -63,9 +63,7 @@ export type VerifyServiceJwtInput = {
 export function extractBearerToken(
   authorizationHeader: string | string[] | undefined,
 ): string | undefined {
-  const raw = Array.isArray(authorizationHeader)
-    ? authorizationHeader[0]
-    : authorizationHeader;
+  const raw = Array.isArray(authorizationHeader) ? authorizationHeader[0] : authorizationHeader;
 
   if (!raw?.trim()) {
     return undefined;
@@ -84,9 +82,7 @@ export function signServiceJwt(input: SignServiceJwtInput): string {
   const ttlSeconds = input.ttlSeconds ?? DEFAULT_SERVICE_JWT_TTL_SECONDS;
 
   if (ttlSeconds <= 0 || ttlSeconds > MAX_SERVICE_JWT_TTL_SECONDS) {
-    throw new Error(
-      `Service JWT ttlSeconds must be between 1 and ${MAX_SERVICE_JWT_TTL_SECONDS}`,
-    );
+    throw new Error(`Service JWT ttlSeconds must be between 1 and ${MAX_SERVICE_JWT_TTL_SECONDS}`);
   }
 
   if (!input.scope.length) {
@@ -111,9 +107,7 @@ export function signServiceJwt(input: SignServiceJwtInput): string {
   );
 }
 
-export function verifyServiceJwt(
-  input: VerifyServiceJwtInput,
-): VerifiedServiceJwt {
+export function verifyServiceJwt(input: VerifyServiceJwtInput): VerifiedServiceJwt {
   const secret = readSecret(input.secret);
 
   try {
@@ -131,10 +125,7 @@ export function verifyServiceJwt(
     const scope = normalizeScopeClaim(payload.scope);
 
     if (typeof iss !== 'string' || !iss.trim()) {
-      throw new ServiceAccessDeniedError(
-        'INTERNAL_ACCESS_DENIED',
-        'Service JWT is missing issuer',
-      );
+      throw new ServiceAccessDeniedError('INTERNAL_ACCESS_DENIED', 'Service JWT is missing issuer');
     }
 
     const audience =
@@ -172,9 +163,7 @@ export function verifyServiceJwt(
       );
     }
 
-    const missingScopes = input.requiredScopes.filter(
-      (required) => !scope.includes(required),
-    );
+    const missingScopes = input.requiredScopes.filter((required) => !scope.includes(required));
 
     if (missingScopes.length > 0) {
       throw new ServiceAccessDeniedError(
@@ -195,9 +184,6 @@ export function verifyServiceJwt(
       throw error;
     }
 
-    throw new ServiceAccessDeniedError(
-      'INTERNAL_ACCESS_DENIED',
-      'Service JWT verification failed',
-    );
+    throw new ServiceAccessDeniedError('INTERNAL_ACCESS_DENIED', 'Service JWT verification failed');
   }
 }

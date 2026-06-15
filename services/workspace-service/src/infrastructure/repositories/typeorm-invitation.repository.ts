@@ -1,15 +1,11 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
-import { randomUUID } from 'crypto';
-import { DataSource, Repository } from 'typeorm';
+import { randomUUID } from 'node:crypto';
+import type { DataSource, Repository } from 'typeorm';
 import { Invitation } from '../../domain/entities/invitation.entity';
 import { InvitationInvalidStateError } from '../../domain/exceptions/invitation.exceptions';
-import { IInvitationRepository } from '../../domain/repositories/invitation.repository';
-import { WorkspaceOutboxService } from '../outbox/workspace-outbox.service';
+import type { IInvitationRepository } from '../../domain/repositories/invitation.repository';
+import type { WorkspaceOutboxService } from '../outbox/workspace-outbox.service';
 import { InvitationOrmEntity } from '../database/entities/invitation.orm-entity';
 import { WorkspaceMemberOrmEntity } from '../database/entities/workspace-member.orm-entity';
 
@@ -109,11 +105,7 @@ export class TypeOrmInvitationRepository implements IInvitationRepository {
     });
   }
 
-  async updateStatus(
-    id: string,
-    status: string,
-    userId?: string,
-  ): Promise<Invitation> {
+  async updateStatus(id: string, status: string, userId?: string): Promise<Invitation> {
     const orm = await this.repo.findOne({ where: { id } });
     if (!orm) throw new NotFoundException('Invitation not found');
     orm.status = status;

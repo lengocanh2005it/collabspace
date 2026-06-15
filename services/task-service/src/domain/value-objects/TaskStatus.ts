@@ -9,9 +9,7 @@ export class TaskStatus {
   constructor(value: string) {
     const upperValue = value.toUpperCase();
     if (!["TODO", "DOING", "DONE"].includes(upperValue)) {
-      throw new BusinessRuleException(
-        `Invalid status: ${value}. Must be TODO, DOING, or DONE.`,
-      );
+      throw new BusinessRuleException(`Invalid status: ${value}. Must be TODO, DOING, or DONE.`);
     }
     this.value = upperValue as StatusEnum;
   }

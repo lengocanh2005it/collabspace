@@ -1,18 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import {
-  collectDefaultMetrics,
-  Counter,
-  Histogram,
-  Registry,
-} from 'prom-client';
+import { collectDefaultMetrics, Counter, Histogram, Registry } from 'prom-client';
 
 @Injectable()
 export class MetricsService {
   private readonly registry = new Registry();
   private readonly httpRequestsTotal: Counter<'method' | 'route' | 'status'>;
-  private readonly httpRequestDurationSeconds: Histogram<
-    'method' | 'route' | 'status'
-  >;
+  private readonly httpRequestDurationSeconds: Histogram<'method' | 'route' | 'status'>;
 
   constructor(serviceName: string) {
     this.registry.setDefaultLabels({ service: serviceName });
@@ -34,12 +27,7 @@ export class MetricsService {
     });
   }
 
-  recordHttpRequest(
-    method: string,
-    route: string,
-    status: number,
-    durationSeconds: number,
-  ): void {
+  recordHttpRequest(method: string, route: string, status: number, durationSeconds: number): void {
     const labels = { method, route, status: String(status) };
     this.httpRequestsTotal.inc(labels);
     this.httpRequestDurationSeconds.observe(labels, durationSeconds);

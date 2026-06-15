@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import { Model } from "mongoose";
-import { IUserReplicaRepository } from "../../application/ports/IUserReplicaRepository";
+import type { Model } from "mongoose";
+import type { IUserReplicaRepository } from "../../application/ports/IUserReplicaRepository";
 import { UserReplica } from "../persistence/user-replica.schema";
 
 @Injectable()
@@ -60,10 +60,7 @@ export class UserReplicaRepository implements IUserReplicaRepository {
   }
 
   // 3. DÙNG CHO LUỒNG UPDATE (USER_PROFILE_UPDATED_EVENT)
-  async updateFieldsAsync(
-    userId: string,
-    data: Partial<UserReplica>,
-  ): Promise<void> {
+  async updateFieldsAsync(userId: string, data: Partial<UserReplica>): Promise<void> {
     // Lọc bỏ các giá trị undefined.
     // Ví dụ gửi { fullName: 'Tin', displayName: undefined } => Chỉ giữ lại { fullName: 'Tin' }
     const updateData = Object.fromEntries(
@@ -71,9 +68,7 @@ export class UserReplicaRepository implements IUserReplicaRepository {
     );
 
     if (Object.keys(updateData).length > 0) {
-      await this.userReplicaModel
-        .findOneAndUpdate({ userId: userId }, { $set: updateData })
-        .exec();
+      await this.userReplicaModel.findOneAndUpdate({ userId: userId }, { $set: updateData }).exec();
     }
   }
 }

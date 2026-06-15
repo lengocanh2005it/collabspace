@@ -1,5 +1,5 @@
 import { ForgotPasswordUseCase } from '@/application/use-cases/forgot-password.use-case';
-import { PasswordResetTokenService } from '@/application/services/password-reset-token.service';
+import type { PasswordResetTokenService } from '@/application/services/password-reset-token.service';
 import type { AuthUser } from '@/domain/entities/auth-user';
 import type { UserRepository } from '@/domain/repositories/user.repository';
 
@@ -22,22 +22,17 @@ describe('ForgotPasswordUseCase', () => {
   beforeEach(() => {
     userRepository = {
       findUserByEmail: jest.fn(),
-    } as unknown as jest.Mocked<UserRepository>;
+    };
     passwordResetTokenService = {
       send: jest.fn(),
-    } as unknown as jest.Mocked<PasswordResetTokenService>;
-    useCase = new ForgotPasswordUseCase(
-      userRepository,
-      passwordResetTokenService,
-    );
+    };
+    useCase = new ForgotPasswordUseCase(userRepository, passwordResetTokenService);
   });
 
   it('returns a generic success message when the email is unknown', async () => {
     userRepository.findUserByEmail.mockResolvedValue(null);
 
-    await expect(
-      useCase.execute({ email: 'missing@collabspace.dev' }),
-    ).resolves.toEqual({
+    await expect(useCase.execute({ email: 'missing@collabspace.dev' })).resolves.toEqual({
       message: 'If the account exists, password reset instructions were sent.',
       sent: true,
     });

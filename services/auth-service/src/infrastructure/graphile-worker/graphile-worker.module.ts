@@ -33,11 +33,7 @@ import type { GraphileWorkerModuleOptions } from './graphile-worker.types';
           return null;
         }
 
-        const {
-          disabled: _disabled,
-          taskList: _taskList,
-          ...workerUtilsOptions
-        } = options;
+        const { disabled: _disabled, taskList: _taskList, ...workerUtilsOptions } = options;
 
         return makeWorkerUtils(workerUtilsOptions);
       },

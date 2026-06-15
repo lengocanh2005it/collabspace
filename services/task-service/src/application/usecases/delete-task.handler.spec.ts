@@ -1,6 +1,6 @@
 import { DeleteTaskHandler } from "./delete-task.handler";
 import { DeleteTaskCommand } from "../commands/delete-task.command";
-import { ITaskRepository } from "../ports/ITaskRepository";
+import type { ITaskRepository } from "../ports/ITaskRepository";
 import { createMockTaskRepository } from "../../test-utils/mock-task-repository";
 import { TaskId } from "../../domain/value-objects/TaskId";
 
@@ -15,9 +15,7 @@ describe("DeleteTaskHandler", () => {
   });
 
   it("should delete a task successfully", async () => {
-    const command = new DeleteTaskCommand(
-      "123e4567-e89b-12d3-a456-426614174000",
-    );
+    const command = new DeleteTaskCommand("123e4567-e89b-12d3-a456-426614174000");
 
     await handler.execute(command);
 

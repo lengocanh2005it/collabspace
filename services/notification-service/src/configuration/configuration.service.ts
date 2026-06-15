@@ -45,30 +45,23 @@ export class ConfigurationService {
 
       url,
 
-      queue:
-        this.configService.get<string>("RABBITMQ_QUEUE") ??
-        "notification-service",
+      queue: this.configService.get<string>("RABBITMQ_QUEUE") ?? "notification-service",
 
       // Mặc định là true, trừ khi cố tình ghi 'false'
-      queueDurable:
-        this.configService.get<string>("RABBITMQ_QUEUE_DURABLE") !== "false",
+      queueDurable: this.configService.get<string>("RABBITMQ_QUEUE_DURABLE") !== "false",
 
       // Ép kiểu từ String sang Number
-      prefetchCount:
-        Number(this.configService.get<number>("RABBITMQ_PREFETCH_COUNT")) || 10,
+      prefetchCount: Number(this.configService.get<number>("RABBITMQ_PREFETCH_COUNT")) || 10,
 
       noAck: this.configService.get<string>("RABBITMQ_NO_ACK") === "true",
 
-      maxRetries:
-        Number(this.configService.get<number>("RABBITMQ_MAX_RETRIES")) || 5,
+      maxRetries: Number(this.configService.get<number>("RABBITMQ_MAX_RETRIES")) || 5,
 
       deadLetterExchange:
-        this.configService.get<string>("RABBITMQ_DLX_EXCHANGE") ??
-        "collabspace_dlx",
+        this.configService.get<string>("RABBITMQ_DLX_EXCHANGE") ?? "collabspace_dlx",
 
       deadLetterRoutingKey:
-        this.configService.get<string>("RABBITMQ_DLX_ROUTING_KEY") ??
-        "notification-service.dlq",
+        this.configService.get<string>("RABBITMQ_DLX_ROUTING_KEY") ?? "notification-service.dlq",
     };
   }
 

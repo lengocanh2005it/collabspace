@@ -7,7 +7,7 @@
   "license": "UNLICENSED",
   "scripts": {
     "build": "nest build && tsc -p tsconfig.migrate.json && tsc -p tsconfig.seed.json",
-    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+    "format": "pnpm -w exec biome format --write src test",
     "migrate": "node -r ts-node/register src/migrate.ts",
     "migrate:prod": "node dist/src/migrate.js",
     "migrate:revert": "node -r ts-node/register src/migrate-revert.ts",
@@ -60,6 +60,7 @@
     "typeorm": "^0.3.29"
   },
   "devDependencies": {
+    "@collabspace/eslint-config": "workspace:*",
     "@eslint/eslintrc": "^3.2.0",
     "@eslint/js": "^9.18.0",
     "@nestjs/cli": "^11.0.0",
@@ -72,11 +73,8 @@
     "@types/node": "^24.0.0",
     "@types/supertest": "^7.0.0",
     "eslint": "^9.18.0",
-    "eslint-config-prettier": "^10.0.1",
-    "eslint-plugin-prettier": "^5.2.2",
     "globals": "^17.0.0",
     "jest": "^30.0.0",
-    "prettier": "^3.4.2",
     "source-map-support": "^0.5.21",
     "supertest": "^7.0.0",
     "ts-jest": "^29.2.5",

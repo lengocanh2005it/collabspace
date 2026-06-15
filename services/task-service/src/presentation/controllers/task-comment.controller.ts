@@ -12,16 +12,10 @@ import {
   HttpStatus,
   Req,
 } from "@nestjs/common";
-import {
-  ApiBearerAuth,
-  ApiOperation,
-  ApiParam,
-  ApiQuery,
-  ApiTags,
-} from "@nestjs/swagger";
-import { CommandBus, QueryBus } from "@nestjs/cqrs";
-import { CreateCommentRequest } from "../dtos/create-comment.request";
-import { EditCommentRequest } from "../dtos/edit-comment.request";
+import { ApiBearerAuth, ApiOperation, ApiParam, ApiQuery, ApiTags } from "@nestjs/swagger";
+import type { CommandBus, QueryBus } from "@nestjs/cqrs";
+import type { CreateCommentRequest } from "../dtos/create-comment.request";
+import type { EditCommentRequest } from "../dtos/edit-comment.request";
 import { CommentResponse, GetCommentsResponse } from "../dtos/comment.response";
 import { CreateCommentCommand } from "../../application/usecases/comments/create/create-comment.command";
 import { EditCommentCommand } from "../../application/usecases/comments/edit/edit-comment.command";
@@ -29,10 +23,10 @@ import { DeleteCommentCommand } from "../../application/usecases/comments/delete
 import { GetTaskCommentsQuery } from "../../application/usecases/comments/get/get-task-comments.query";
 import { WorkspaceValidationGuard } from "../guards/workspace-validation.guard";
 import { AuthGuard } from "../guards/auth.guard";
-import { CreateCommentResponse } from "../../application/usecases/comments/create/create-comment.handler";
-import { EditCommentResponse } from "../../application/usecases/comments/edit/edit-comment.handler";
-import { DeleteCommentResponse } from "../../application/usecases/comments/delete/delete-comment.handler";
-import { GetTaskCommentsResponse } from "../../application/usecases/comments/get/get-task-comments.handler";
+import type { CreateCommentResponse } from "../../application/usecases/comments/create/create-comment.handler";
+import type { EditCommentResponse } from "../../application/usecases/comments/edit/edit-comment.handler";
+import type { DeleteCommentResponse } from "../../application/usecases/comments/delete/delete-comment.handler";
+import type { GetTaskCommentsResponse } from "../../application/usecases/comments/get/get-task-comments.handler";
 import type { AppRequest } from "../http/request-context";
 
 @ApiTags("task-comments")
@@ -66,10 +60,9 @@ export class TaskCommentController {
       request.parentId || null,
     );
 
-    const result = await this.commandBus.execute<
-      CreateCommentCommand,
-      CreateCommentResponse
-    >(command);
+    const result = await this.commandBus.execute<CreateCommentCommand, CreateCommentResponse>(
+      command,
+    );
 
     return {
       statusCode: HttpStatus.CREATED,
@@ -91,16 +84,11 @@ export class TaskCommentController {
     @Query("skip") skip: string = "0",
     @Query("limit") limit: string = "20",
   ): Promise<{ statusCode: number; data: GetCommentsResponse }> {
-    const query = new GetTaskCommentsQuery(
-      taskId,
-      parseInt(skip, 10),
-      parseInt(limit, 10),
-    );
+    const query = new GetTaskCommentsQuery(taskId, parseInt(skip, 10), parseInt(limit, 10));
 
-    const result = await this.queryBus.execute<
-      GetTaskCommentsQuery,
-      GetTaskCommentsResponse
-    >(query);
+    const result = await this.queryBus.execute<GetTaskCommentsQuery, GetTaskCommentsResponse>(
+      query,
+    );
 
     const commentsResponse = result.comments.map(
       (comment) =>
@@ -148,17 +136,9 @@ export class TaskCommentController {
   ): Promise<{ statusCode: number; data: EditCommentResponse }> {
     const authorId = req.user.id;
 
-    const command = new EditCommentCommand(
-      commentId,
-      taskId,
-      authorId,
-      request.content,
-    );
+    const command = new EditCommentCommand(commentId, taskId, authorId, request.content);
 
-    const result = await this.commandBus.execute<
-      EditCommentCommand,
-      EditCommentResponse
-    >(command);
+    const result = await this.commandBus.execute<EditCommentCommand, EditCommentResponse>(command);
 
     return {
       statusCode: HttpStatus.OK,
@@ -183,10 +163,9 @@ export class TaskCommentController {
 
     const command = new DeleteCommentCommand(commentId, taskId, authorId);
 
-    const result = await this.commandBus.execute<
-      DeleteCommentCommand,
-      DeleteCommentResponse
-    >(command);
+    const result = await this.commandBus.execute<DeleteCommentCommand, DeleteCommentResponse>(
+      command,
+    );
 
     return {
       statusCode: HttpStatus.OK,

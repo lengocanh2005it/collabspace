@@ -1,5 +1,5 @@
 // src/application/commands/create-task.handler.ts
-import { CommandHandler, ICommandHandler } from "@nestjs/cqrs";
+import { CommandHandler, type ICommandHandler } from "@nestjs/cqrs";
 import { Inject, BadRequestException } from "@nestjs/common";
 import { CreateTaskCommand } from "../commands/create-task.command";
 import { Task } from "../../domain/entities/Task";
@@ -9,14 +9,11 @@ import { ITaskRepository as ITaskRepositoryToken } from "../ports/ITaskRepositor
 import type { ITaskRepository } from "../ports/ITaskRepository";
 import {
   USER_REPLICA_LOOKUP_TOKEN,
-  UserReplicaLookupService,
+  type UserReplicaLookupService,
 } from "../services/user-replica-lookup.service";
 
 @CommandHandler(CreateTaskCommand)
-export class CreateTaskHandler implements ICommandHandler<
-  CreateTaskCommand,
-  string
-> {
+export class CreateTaskHandler implements ICommandHandler<CreateTaskCommand, string> {
   constructor(
     @Inject(ITaskRepositoryToken)
     private readonly taskRepository: ITaskRepository,
@@ -30,13 +27,9 @@ export class CreateTaskHandler implements ICommandHandler<
     const taskId = TaskId.create();
 
     // 1. Tự tra cứu người tạo từ danh bạ nội bộ
-    const creatorRecord = await this.userReplicaLookup.findActiveByIdAsync(
-      command.creatorId,
-    );
-    if (!creatorRecord || !creatorRecord.isActive) {
-      throw new BadRequestException(
-        "Tài khoản người tạo Task không tồn tại hoặc đã bị khóa!",
-      );
+    const creatorRecord = await this.userReplicaLookup.findActiveByIdAsync(command.creatorId);
+    if (!creatorRecord?.isActive) {
+      throw new BadRequestException("Tài khoản người tạo Task không tồn tại hoặc đã bị khóa!");
     }
 
     // 2. Tạo Snapshot chuẩn 5 tham số mới nhất

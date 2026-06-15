@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { DatabaseService } from '../infrastructure/database/database.service';
-import { AuthGrpcService } from '../integrations/auth/auth-grpc.service';
+import type { DatabaseService } from '../infrastructure/database/database.service';
+import type { AuthGrpcService } from '../integrations/auth/auth-grpc.service';
 
 type CheckStatus = 'up' | 'down' | 'disabled';
 type OverallStatus = 'ok' | 'degraded' | 'error';
@@ -59,8 +59,7 @@ export class UserHealthService {
             }
           })
         : {
-            detail:
-              'DATABASE_URL not configured; using in-memory repository mode',
+            detail: 'DATABASE_URL not configured; using in-memory repository mode',
             required: process.env.NODE_ENV === 'production',
             status: process.env.NODE_ENV === 'production' ? 'down' : 'disabled',
           },
@@ -102,8 +101,7 @@ export class UserHealthService {
       };
     } catch (error) {
       return {
-        detail:
-          error instanceof Error ? error.message : 'Unknown dependency error',
+        detail: error instanceof Error ? error.message : 'Unknown dependency error',
         required,
         responseTimeMs: Date.now() - startedAt,
         status: 'down',
@@ -121,11 +119,7 @@ export class UserHealthService {
     const optionalFailure = Object.values(checks).some(
       (check) => !check.required && check.status === 'down',
     );
-    const status: OverallStatus = requiredFailure
-      ? 'error'
-      : optionalFailure
-        ? 'degraded'
-        : 'ok';
+    const status: OverallStatus = requiredFailure ? 'error' : optionalFailure ? 'degraded' : 'ok';
 
     return {
       checks,

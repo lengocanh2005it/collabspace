@@ -1,11 +1,9 @@
-import {
+import type {
   WorkspaceActivity,
   WorkspaceActivityType,
 } from '../entities/workspace-activity.entity';
 
-export const WORKSPACE_ACTIVITY_REPOSITORY = Symbol(
-  'WORKSPACE_ACTIVITY_REPOSITORY',
-);
+export const WORKSPACE_ACTIVITY_REPOSITORY = Symbol('WORKSPACE_ACTIVITY_REPOSITORY');
 
 export interface IWorkspaceActivityRepository {
   record(data: {

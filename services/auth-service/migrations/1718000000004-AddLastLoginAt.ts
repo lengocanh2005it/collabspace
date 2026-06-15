@@ -10,8 +10,6 @@ export class AddLastLoginAt1718000000004 implements MigrationInterface {
   }
 
   async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(
-      'ALTER TABLE "users" DROP COLUMN IF EXISTS "last_login_at"',
-    );
+    await queryRunner.query('ALTER TABLE "users" DROP COLUMN IF EXISTS "last_login_at"');
   }
 }

@@ -1,13 +1,10 @@
 import type { AuthUser } from '@/domain/entities/auth-user';
-import { ConfigurationService } from '@/configuration/configuration.service';
-import {
-  EMAIL_OUTBOX,
-  type EmailOutbox,
-} from '@/domain/ports/email-outbox.port';
+import type { ConfigurationService } from '@/configuration/configuration.service';
+import { EMAIL_OUTBOX, type EmailOutbox } from '@/domain/ports/email-outbox.port';
 import { OTP_STORE, type OtpStore } from '@/domain/ports/otp-store.port';
 import type { PasswordResetTokenPayload } from '@/domain/types/password-reset-token';
 import { Inject, Injectable } from '@nestjs/common';
-import { createHash, randomBytes } from 'crypto';
+import { createHash, randomBytes } from 'node:crypto';
 
 export type PasswordResetDispatchResult = {
   email: string;
@@ -39,8 +36,7 @@ export class PasswordResetTokenService {
 
   async send(user: AuthUser): Promise<PasswordResetDispatchResult> {
     const token = this.generateToken();
-    const tokenTtlSeconds =
-      this.configurationService.getPasswordResetConfig().ttlSeconds;
+    const tokenTtlSeconds = this.configurationService.getPasswordResetConfig().ttlSeconds;
 
     await this.otpStore.assertAvailable();
 
@@ -49,9 +45,7 @@ export class PasswordResetTokenService {
     }>(this.buildUserKey(user.userId));
 
     if (existingUserPayload?.tokenHash) {
-      await this.otpStore.delete(
-        this.buildLookupKeyFromHash(existingUserPayload.tokenHash),
-      );
+      await this.otpStore.delete(this.buildLookupKeyFromHash(existingUserPayload.tokenHash));
     }
 
     await this.otpStore.setJson(
@@ -88,8 +82,7 @@ export class PasswordResetTokenService {
     }
 
     const lookupKey = this.buildLookupKey(normalizedToken);
-    const payload =
-      await this.otpStore.getJson<PasswordResetTokenPayload>(lookupKey);
+    const payload = await this.otpStore.getJson<PasswordResetTokenPayload>(lookupKey);
 
     if (!payload) {
       return null;
@@ -105,8 +98,7 @@ export class PasswordResetTokenService {
   }
 
   private generateToken(): string {
-    const byteLength =
-      this.configurationService.getPasswordResetConfig().tokenByteLength;
+    const byteLength = this.configurationService.getPasswordResetConfig().tokenByteLength;
 
     return randomBytes(byteLength).toString('base64url');
   }

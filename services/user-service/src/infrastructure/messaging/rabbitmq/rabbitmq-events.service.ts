@@ -1,23 +1,15 @@
-import {
-  Injectable,
-  OnModuleDestroy,
-  ServiceUnavailableException,
-} from '@nestjs/common';
-import {
-  ClientProxy,
-  ClientProxyFactory,
-  Transport,
-} from '@nestjs/microservices';
+import { Injectable, type OnModuleDestroy } from '@nestjs/common';
+import { type ClientProxy, ClientProxyFactory, Transport } from '@nestjs/microservices';
 import { buildConsumerQueueOptionsForQueue } from '@collabspace/shared';
 import { lastValueFrom } from 'rxjs';
-import { ConfigurationService } from '../../../configuration/configuration.service';
+import type { ConfigurationService } from '../../../configuration/configuration.service';
 import {
   USER_REGISTERED_EVENT,
-  UserRegisteredEventPayload,
+  type UserRegisteredEventPayload,
 } from '../../../domain/events/user-create.event';
 import {
   USER_PROFILE_UPDATED_EVENT,
-  UserProfileUpdatedEventPayload,
+  type UserProfileUpdatedEventPayload,
 } from '../../../domain/events/user-profile-update.event';
 
 @Injectable()
@@ -27,15 +19,11 @@ export class RabbitMqEventsService implements OnModuleDestroy {
 
   constructor(private readonly config: ConfigurationService) {}
 
-  async publishUserRegistered(
-    payload: UserRegisteredEventPayload,
-  ): Promise<void> {
+  async publishUserRegistered(payload: UserRegisteredEventPayload): Promise<void> {
     await this.broadcast(USER_REGISTERED_EVENT, payload);
   }
 
-  async publishUserProfileUpdated(
-    payload: UserProfileUpdatedEventPayload,
-  ): Promise<void> {
+  async publishUserProfileUpdated(payload: UserProfileUpdatedEventPayload): Promise<void> {
     await this.broadcast(USER_PROFILE_UPDATED_EVENT, payload);
   }
 
@@ -46,9 +34,7 @@ export class RabbitMqEventsService implements OnModuleDestroy {
     await taskClient.connect();
     await notiClient.connect();
 
-    console.log(
-      `📤 [USER SERVICE] Broadcast event: ${pattern} cho user: ${payload.userId}`,
-    );
+    console.log(`📤 [USER SERVICE] Broadcast event: ${pattern} cho user: ${payload.userId}`);
 
     await Promise.all([
       lastValueFrom(taskClient.emit(pattern, payload)),

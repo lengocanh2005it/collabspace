@@ -1,9 +1,4 @@
-import {
-  ForbiddenException,
-  Inject,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import {
   type IWorkspaceRepository,
   WORKSPACE_REPOSITORY,
@@ -23,10 +18,7 @@ export class GetWorkspaceUseCase {
   ) {}
 
   async execute(userId: string, workspaceId: string) {
-    const member = await this.memberRepo.findByWorkspaceAndUser(
-      workspaceId,
-      userId,
-    );
+    const member = await this.memberRepo.findByWorkspaceAndUser(workspaceId, userId);
     if (!member) {
       throw new ForbiddenException('You are not a member of this workspace');
     }

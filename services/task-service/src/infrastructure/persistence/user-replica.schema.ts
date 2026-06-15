@@ -1,6 +1,5 @@
 // src/infrastructure/persistence/user-replica.schema.ts
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { Document } from "mongoose";
 
 @Schema({ collection: "user_replicas" })
 export class UserReplica {

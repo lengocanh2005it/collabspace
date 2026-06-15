@@ -1,7 +1,9 @@
 export {
   WORKSPACE_INVITED_EVENT,
+  WORKSPACE_DELETED_EVENT,
   type EventEnvelopeFields,
   type WorkspaceInvitedEventPayload,
+  type WorkspaceDeletedEventPayload,
 } from "@collabspace/shared";
 
 // Notification-service-specific workspace event types
@@ -47,12 +49,4 @@ export interface WorkspaceUpdatedEventPayload {
   updatedBy: string;
   updatedByName: string;
   changes: { fieldName: string; oldValue: unknown; newValue: unknown }[];
-}
-
-export interface WorkspaceDeletedEventPayload {
-  workspaceId: string;
-  workspaceName: string;
-  deletedBy: string;
-  deletedByName: string;
-  deletedAt: Date;
 }

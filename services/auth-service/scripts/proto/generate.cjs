@@ -22,15 +22,7 @@ for (const protoFile of protoFiles) {
 
   const result = spawnSync(
     process.execPath,
-    [
-      cliPath,
-      '--path',
-      './proto',
-      '--output',
-      './src/generated/proto',
-      '--target',
-      protoFile,
-    ],
+    [cliPath, '--path', './proto', '--output', './src/generated/proto', '--target', protoFile],
     {
       cwd: rootDir,
       stdio: 'inherit',
@@ -42,6 +34,4 @@ for (const protoFile of protoFiles) {
   }
 }
 
-console.log(
-  `Generated ${protoFiles.length} proto file(s) into ${relative(rootDir, outputDir)}`,
-);
+console.log(`Generated ${protoFiles.length} proto file(s) into ${relative(rootDir, outputDir)}`);

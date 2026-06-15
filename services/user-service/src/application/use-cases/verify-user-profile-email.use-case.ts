@@ -2,7 +2,7 @@ import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { USER_PROFILE_REPOSITORY } from '../../domain/repositories/user-profile.repository';
 import type { UserProfileRepository } from '../../domain/repositories/user-profile.repository';
 import {
-  UserProfileResponseDto,
+  type UserProfileResponseDto,
   toUserProfileResponseDto,
 } from '../dto/user-profile-response.dto';
 

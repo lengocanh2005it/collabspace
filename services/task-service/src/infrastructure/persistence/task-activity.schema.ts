@@ -34,7 +34,6 @@ export class TaskActivityPersistence {
   occurredAt!: Date;
 }
 
-export const TaskActivitySchema =
-  SchemaFactory.createForClass(TaskActivityPersistence);
+export const TaskActivitySchema = SchemaFactory.createForClass(TaskActivityPersistence);
 
 TaskActivitySchema.index({ taskId: 1, occurredAt: 1 });

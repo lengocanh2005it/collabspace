@@ -1,4 +1,4 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { Test, type TestingModule } from '@nestjs/testing';
 import { CreateWorkspaceUseCase } from './create-workspace.use-case';
 import { WORKSPACE_REPOSITORY } from '../../../domain/repositories/workspace.repository';
 import { WORKSPACE_ACTIVITY_REPOSITORY } from '../../../domain/repositories/workspace-activity.repository';
@@ -32,14 +32,7 @@ describe('CreateWorkspaceUseCase', () => {
   });
 
   it('should create a workspace with owner via repository', async () => {
-    const expected = new Workspace(
-      'uuid-1',
-      'Test',
-      null,
-      'user-1',
-      new Date(),
-      new Date(),
-    );
+    const expected = new Workspace('uuid-1', 'Test', null, 'user-1', new Date(), new Date());
     mockWorkspaceRepo.createWithOwner.mockResolvedValue(expected);
 
     const result = await useCase.execute('user-1', { name: 'Test' });

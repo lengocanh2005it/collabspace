@@ -1,12 +1,9 @@
 import type { AuthUser } from '@/domain/entities/auth-user';
 import type { JwtPayload, SignAccessTokenInput } from '@/domain/types/jwt';
-import { ConfigurationService } from '@/configuration/configuration.service';
-import {
-  USER_REPOSITORY,
-  type UserRepository,
-} from '@/domain/repositories/user.repository';
+import type { ConfigurationService } from '@/configuration/configuration.service';
+import { USER_REPOSITORY, type UserRepository } from '@/domain/repositories/user.repository';
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
-import { createSecretKey } from 'crypto';
+import { createSecretKey } from 'node:crypto';
 import { readFirstString } from './jwt-payload.util';
 import { readRolesFromPayload } from './jwt-payload-roles.util';
 
@@ -66,11 +63,7 @@ export class JwtTokenService {
   }> {
     const token = this.extractBearerToken(authorizationHeader);
     const payload = await this.verifyJwt(token);
-    const userId = readFirstString(
-      payload.sub,
-      payload.userId,
-      payload.user_id,
-    );
+    const userId = readFirstString(payload.sub, payload.userId, payload.user_id);
 
     if (!userId) {
       throw new UnauthorizedException({
@@ -106,11 +99,7 @@ export class JwtTokenService {
   }> {
     const token = this.extractBearerToken(authorizationHeader);
     const payload = await this.verifyJwt(token);
-    const userId = readFirstString(
-      payload.sub,
-      payload.userId,
-      payload.user_id,
-    );
+    const userId = readFirstString(payload.sub, payload.userId, payload.user_id);
 
     if (!userId) {
       throw new UnauthorizedException({

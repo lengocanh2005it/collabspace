@@ -1,6 +1,6 @@
 import { GetTaskCommentsHandler } from "./get-task-comments.handler";
 import { GetTaskCommentsQuery } from "./get-task-comments.query";
-import { ICommentRepository } from "../../../../domain/repositories/comment.repository.interface";
+import type { ICommentRepository } from "../../../../domain/repositories/comment.repository.interface";
 import { Comment } from "../../../../domain/entities/comment.entity";
 
 describe("GetTaskCommentsHandler", () => {
@@ -37,11 +37,7 @@ describe("GetTaskCommentsHandler", () => {
   };
 
   it("should return comments for a task, filtering out deleted ones", async () => {
-    const query = new GetTaskCommentsQuery(
-      "123e4567-e89b-12d3-a456-426614174000",
-      0,
-      10,
-    );
+    const query = new GetTaskCommentsQuery("123e4567-e89b-12d3-a456-426614174000", 0, 10);
     const comments = [
       createMockComment("comment-1", false),
       createMockComment("comment-2", true), // Should be filtered out
@@ -64,11 +60,7 @@ describe("GetTaskCommentsHandler", () => {
   });
 
   it("should return empty list if no comments exist", async () => {
-    const query = new GetTaskCommentsQuery(
-      "123e4567-e89b-12d3-a456-426614174000",
-      0,
-      10,
-    );
+    const query = new GetTaskCommentsQuery("123e4567-e89b-12d3-a456-426614174000", 0, 10);
     mockCommentRepo.findByTaskIdAsync.mockResolvedValue([]);
     mockCommentRepo.countByTaskIdAsync.mockResolvedValue(0);
 

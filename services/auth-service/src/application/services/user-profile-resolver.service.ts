@@ -29,9 +29,7 @@ export class UserProfileResolverService {
       };
     } catch (error) {
       const reason = error instanceof Error ? error.message : String(error);
-      this.logger.warn(
-        `Unable to resolve profile identity for user ${userId}: ${reason}`,
-      );
+      this.logger.warn(`Unable to resolve profile identity for user ${userId}: ${reason}`);
       return { profileStatus: 'unavailable' };
     }
   }

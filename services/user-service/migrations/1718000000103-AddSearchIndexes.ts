@@ -25,14 +25,8 @@ export class AddSearchIndexes1718000000103 implements MigrationInterface {
   }
 
   async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(
-      `DROP INDEX CONCURRENTLY IF EXISTS "IDX_profiles_displayname_trgm"`,
-    );
-    await queryRunner.query(
-      `DROP INDEX CONCURRENTLY IF EXISTS "IDX_profiles_username_trgm"`,
-    );
-    await queryRunner.query(
-      `DROP INDEX CONCURRENTLY IF EXISTS "IDX_profiles_fullname_trgm"`,
-    );
+    await queryRunner.query(`DROP INDEX CONCURRENTLY IF EXISTS "IDX_profiles_displayname_trgm"`);
+    await queryRunner.query(`DROP INDEX CONCURRENTLY IF EXISTS "IDX_profiles_username_trgm"`);
+    await queryRunner.query(`DROP INDEX CONCURRENTLY IF EXISTS "IDX_profiles_fullname_trgm"`);
   }
 }

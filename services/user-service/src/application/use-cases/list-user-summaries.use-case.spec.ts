@@ -21,13 +21,9 @@ describe('ListUserSummariesUseCase', () => {
       offset: 0,
       total: 1,
     });
-    jest
-      .spyOn(repository, 'getStatusesByUserIds')
-      .mockResolvedValue([sampleUserStatus]);
+    jest.spyOn(repository, 'getStatusesByUserIds').mockResolvedValue([sampleUserStatus]);
 
-    await expect(
-      useCase.execute({ q: 'jane', limit: 20, offset: 0 }),
-    ).resolves.toEqual({
+    await expect(useCase.execute({ q: 'jane', limit: 20, offset: 0 })).resolves.toEqual({
       items: [
         expect.objectContaining({
           userId: 'user-1',

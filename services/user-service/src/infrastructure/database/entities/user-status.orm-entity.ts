@@ -1,10 +1,4 @@
-import {
-  Column,
-  Entity,
-  Index,
-  PrimaryColumn,
-  UpdateDateColumn,
-} from 'typeorm';
+import { Column, Entity, Index, PrimaryColumn, UpdateDateColumn } from 'typeorm';
 
 @Entity({ name: 'user_status' })
 @Index('UQ_user_status_user_id', ['userId'], { unique: true })

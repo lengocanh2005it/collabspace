@@ -1,12 +1,12 @@
-import { ConfigurationService } from '@/configuration/configuration.service';
+import type { ConfigurationService } from '@/configuration/configuration.service';
 import { TimeoutError, of, throwError } from 'rxjs';
 import { UserProfilesGrpcService } from './user-profiles-grpc.service';
 
 describe('UserProfilesGrpcService', () => {
   const createPendingProfileMock = jest.fn();
   const getProfileMock = jest.fn();
-  const waitForReadyMock = jest.fn(
-    (_: number, callback: (error?: Error | null) => void) => callback(null),
+  const waitForReadyMock = jest.fn((_: number, callback: (error?: Error | null) => void) =>
+    callback(null),
   );
   const configurationServiceMock = {
     getUserServiceConfig: jest.fn(() => ({
@@ -67,9 +67,7 @@ describe('UserProfilesGrpcService', () => {
   });
 
   it('maps user-service failures to USER_SERVICE_GRPC_REQUEST_FAILED', async () => {
-    createPendingProfileMock.mockReturnValue(
-      throwError(() => new Error('connection refused')),
-    );
+    createPendingProfileMock.mockReturnValue(throwError(() => new Error('connection refused')));
 
     await expect(
       service.createPendingProfile({

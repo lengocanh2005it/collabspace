@@ -1,4 +1,4 @@
-import { MigrationInterface, QueryRunner } from 'typeorm';
+import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 export class CreateAuthOutboxEvents1718000000001 implements MigrationInterface {
   name = 'CreateAuthOutboxEvents1718000000001';

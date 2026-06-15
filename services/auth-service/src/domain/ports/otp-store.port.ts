@@ -14,10 +14,6 @@ export interface OtpStore {
   increment(key: string): Promise<number>;
   ping(): Promise<boolean>;
   set(key: string, value: string, ttlSeconds?: number): Promise<'OK' | null>;
-  setJson(
-    key: string,
-    value: unknown,
-    ttlSeconds?: number,
-  ): Promise<'OK' | null>;
+  setJson(key: string, value: unknown, ttlSeconds?: number): Promise<'OK' | null>;
   ttl(key: string): Promise<number>;
 }

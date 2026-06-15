@@ -8,16 +8,9 @@ export function registerMetricsMiddleware(
   app.use((req, res, next) => {
     const start = process.hrtime.bigint();
     res.on('finish', () => {
-      const durationSeconds =
-        Number(process.hrtime.bigint() - start) / 1_000_000_000;
-      const route =
-        (req as { route?: { path?: string } }).route?.path ?? req.path;
-      metricsService.recordHttpRequest(
-        req.method,
-        route,
-        res.statusCode,
-        durationSeconds,
-      );
+      const durationSeconds = Number(process.hrtime.bigint() - start) / 1_000_000_000;
+      const route = (req as { route?: { path?: string } }).route?.path ?? req.path;
+      metricsService.recordHttpRequest(req.method, route, res.statusCode, durationSeconds);
     });
     next();
   });

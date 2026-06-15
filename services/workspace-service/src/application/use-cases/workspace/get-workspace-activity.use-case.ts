@@ -22,10 +22,7 @@ export class GetWorkspaceActivityUseCase {
     workspaceId: string,
     options?: { limit?: number; offset?: number },
   ) {
-    const member = await this.memberRepo.findByWorkspaceAndUser(
-      workspaceId,
-      userId,
-    );
+    const member = await this.memberRepo.findByWorkspaceAndUser(workspaceId, userId);
     if (!member) {
       throw new ForbiddenException('You are not a member of this workspace');
     }

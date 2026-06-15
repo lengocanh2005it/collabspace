@@ -40,9 +40,7 @@ export class Comment {
     }
 
     if (content.length > 5000) {
-      throw new BusinessRuleException(
-        "Comment content exceeds maximum length of 5000 characters",
-      );
+      throw new BusinessRuleException("Comment content exceeds maximum length of 5000 characters");
     }
 
     if (!authorId) {
@@ -114,9 +112,7 @@ export class Comment {
     }
 
     if (newContent.length > 5000) {
-      throw new BusinessRuleException(
-        "Comment content exceeds maximum length of 5000 characters",
-      );
+      throw new BusinessRuleException("Comment content exceeds maximum length of 5000 characters");
     }
 
     this.content = newContent;
@@ -157,9 +153,7 @@ export class Comment {
     }
 
     if (this.mentions.includes(userId)) {
-      throw new BusinessRuleException(
-        "User is already mentioned in this comment",
-      );
+      throw new BusinessRuleException("User is already mentioned in this comment");
     }
 
     this.mentions.push(userId);
@@ -171,9 +165,7 @@ export class Comment {
    */
   public removeMention(userId: string): void {
     if (this.isDeleted()) {
-      throw new BusinessRuleException(
-        "Cannot remove mention from a deleted comment",
-      );
+      throw new BusinessRuleException("Cannot remove mention from a deleted comment");
     }
 
     const index = this.mentions.indexOf(userId);
@@ -202,9 +194,7 @@ export class Comment {
    */
   public decrementReactionCount(): void {
     if (this.isDeleted()) {
-      throw new BusinessRuleException(
-        "Cannot remove reaction from a deleted comment",
-      );
+      throw new BusinessRuleException("Cannot remove reaction from a deleted comment");
     }
 
     if (this.reactionCount > 0) {

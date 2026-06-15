@@ -1,8 +1,8 @@
 import type { AuthLiteIdentity } from '@/domain/types/jwt';
-import { ConfigurationService } from '@/configuration/configuration.service';
-import { RedisService } from '@/infrastructure/redis/redis.service';
+import type { ConfigurationService } from '@/configuration/configuration.service';
+import type { RedisService } from '@/infrastructure/redis/redis.service';
 import { Injectable, Logger } from '@nestjs/common';
-import { createHash } from 'crypto';
+import { createHash } from 'node:crypto';
 
 @Injectable()
 export class AccessTokenVerifyLiteCacheService {
@@ -19,9 +19,7 @@ export class AccessTokenVerifyLiteCacheService {
     }
 
     try {
-      return await this.redisService.getJson<AuthLiteIdentity>(
-        this.cacheKey(token),
-      );
+      return await this.redisService.getJson<AuthLiteIdentity>(this.cacheKey(token));
     } catch (error) {
       this.logger.debug(
         `Verify lite cache read skipped: ${
@@ -32,11 +30,7 @@ export class AccessTokenVerifyLiteCacheService {
     }
   }
 
-  async write(
-    token: string,
-    identity: AuthLiteIdentity,
-    expiresAt?: number,
-  ): Promise<void> {
+  async write(token: string, identity: AuthLiteIdentity, expiresAt?: number): Promise<void> {
     if (!this.isEnabled()) {
       return;
     }
@@ -47,11 +41,7 @@ export class AccessTokenVerifyLiteCacheService {
     }
 
     try {
-      await this.redisService.setJson(
-        this.cacheKey(token),
-        identity,
-        ttlSeconds,
-      );
+      await this.redisService.setJson(this.cacheKey(token), identity, ttlSeconds);
     } catch (error) {
       this.logger.debug(
         `Verify lite cache write skipped: ${
@@ -66,8 +56,7 @@ export class AccessTokenVerifyLiteCacheService {
   }
 
   private resolveTtlSeconds(expiresAt?: number): number {
-    const { maxTtlSeconds } =
-      this.configurationService.getVerifyLiteCacheConfig();
+    const { maxTtlSeconds } = this.configurationService.getVerifyLiteCacheConfig();
 
     if (!expiresAt) {
       return maxTtlSeconds;

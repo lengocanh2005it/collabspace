@@ -1,8 +1,6 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class AddRefreshTokenUserExpiresIndex1718000000005
-  implements MigrationInterface
-{
+export class AddRefreshTokenUserExpiresIndex1718000000005 implements MigrationInterface {
   name = 'AddRefreshTokenUserExpiresIndex1718000000005';
 
   /** CONCURRENTLY indexes cannot run inside TypeORM's migration transaction. */
@@ -16,8 +14,6 @@ export class AddRefreshTokenUserExpiresIndex1718000000005
   }
 
   async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(
-      `DROP INDEX CONCURRENTLY IF EXISTS "IDX_refresh_tokens_user_expires"`,
-    );
+    await queryRunner.query(`DROP INDEX CONCURRENTLY IF EXISTS "IDX_refresh_tokens_user_expires"`);
   }
 }

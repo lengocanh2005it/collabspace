@@ -47,3 +47,9 @@ Chỉ mục tài liệu dự án (tiếng Việt có dấu). Tài liệu kỹ th
 | [team/application-backlog.md](./team/application-backlog.md) | Backlog ứng dụng |
 | [team/admin-backlog.md](./team/admin-backlog.md) | Backlog Admin Platform API — owner **Võ Trung Tín** |
 | [team/phan-phu-tho-infrastructure-backlog.md](./team/phan-phu-tho-infrastructure-backlog.md) | Backlog hạ tầng / DevOps |
+
+## Tooling
+
+| Tài liệu | Mô tả |
+|----------|--------|
+| [tooling/biome-migration.md](./tooling/biome-migration.md) | Lint & format — Biome + ESLint (workflow dev & CI) |

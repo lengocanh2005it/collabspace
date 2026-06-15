@@ -1,5 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { CreateWorkspaceDto } from '../../dto/create-workspace.dto';
+import type { CreateWorkspaceDto } from '../../dto/create-workspace.dto';
 import {
   type IWorkspaceRepository,
   WORKSPACE_REPOSITORY,

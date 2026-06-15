@@ -1,5 +1,5 @@
 import { REDIS_CLIENT } from '@/common/constants/redis.constant';
-import { Inject, Injectable, OnModuleDestroy } from '@nestjs/common';
+import { Inject, Injectable, type OnModuleDestroy } from '@nestjs/common';
 import type Redis from 'ioredis';
 import { throwRedisUnavailable } from './redis-unavailable.error';
 
@@ -40,9 +40,7 @@ export class RedisService implements OnModuleDestroy {
   }
 
   async expire(key: string, ttlSeconds: number): Promise<boolean> {
-    return this.run(
-      async () => (await this.redisClient.expire(key, ttlSeconds)) === 1,
-    );
+    return this.run(async () => (await this.redisClient.expire(key, ttlSeconds)) === 1);
   }
 
   async get(key: string): Promise<string | null> {
@@ -71,11 +69,7 @@ export class RedisService implements OnModuleDestroy {
     }
   }
 
-  async set(
-    key: string,
-    value: string,
-    ttlSeconds?: number,
-  ): Promise<'OK' | null> {
+  async set(key: string, value: string, ttlSeconds?: number): Promise<'OK' | null> {
     return this.run(async () => {
       if (ttlSeconds === undefined) {
         return this.redisClient.set(key, value);
@@ -85,11 +79,7 @@ export class RedisService implements OnModuleDestroy {
     });
   }
 
-  async setJson(
-    key: string,
-    value: unknown,
-    ttlSeconds?: number,
-  ): Promise<'OK' | null> {
+  async setJson(key: string, value: unknown, ttlSeconds?: number): Promise<'OK' | null> {
     return this.set(key, JSON.stringify(value), ttlSeconds);
   }
 

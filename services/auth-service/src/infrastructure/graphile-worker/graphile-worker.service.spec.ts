@@ -1,4 +1,4 @@
-import { WorkerUtils } from 'graphile-worker';
+import type { WorkerUtils } from 'graphile-worker';
 import { GraphileWorkerService } from './graphile-worker.service';
 
 describe('GraphileWorkerService', () => {

@@ -1,10 +1,5 @@
 import { GRAPHILE_WORKER_UTILS_TOKEN } from './graphile-worker.constants';
-import {
-  Inject,
-  Injectable,
-  Optional,
-  ServiceUnavailableException,
-} from '@nestjs/common';
+import { Inject, Injectable, Optional, ServiceUnavailableException } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import type { DbJob, Job, TaskSpec, WorkerUtils } from 'graphile-worker';
 
@@ -16,22 +11,14 @@ export class GraphileWorkerService {
     private readonly workerUtils: WorkerUtils | null,
   ) {}
 
-  async addJob(
-    taskIdentifier: string,
-    payload: unknown,
-    options?: TaskSpec,
-  ): Promise<Job> {
+  async addJob(taskIdentifier: string, payload: unknown, options?: TaskSpec): Promise<Job> {
     return this.getWorkerUtils().addJob(taskIdentifier, payload, {
       ...options,
       jobKey: options?.jobKey ?? randomUUID(),
     });
   }
 
-  async schedule(
-    taskIdentifier: string,
-    payload: unknown,
-    options?: TaskSpec,
-  ): Promise<Job> {
+  async schedule(taskIdentifier: string, payload: unknown, options?: TaskSpec): Promise<Job> {
     return this.addJob(taskIdentifier, payload, options);
   }
 

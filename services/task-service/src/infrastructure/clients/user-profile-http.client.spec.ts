@@ -11,9 +11,7 @@ describe("UserProfileHttpClient (task-service)", () => {
     jest.restoreAllMocks();
   });
 
-  function createClient(options?: {
-    serviceJwtSecret?: string;
-  }): UserProfileHttpClient {
+  function createClient(options?: { serviceJwtSecret?: string }): UserProfileHttpClient {
     const configService = {
       get: jest.fn((key: string) => {
         if (key === "USER_SERVICE_URL") {

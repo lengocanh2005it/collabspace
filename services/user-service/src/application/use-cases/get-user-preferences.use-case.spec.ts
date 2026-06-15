@@ -14,9 +14,7 @@ describe('GetUserPreferencesUseCase', () => {
   });
 
   it('returns preferences response dto', async () => {
-    jest
-      .spyOn(repository, 'getPreferences')
-      .mockResolvedValue(sampleUserPreferences);
+    jest.spyOn(repository, 'getPreferences').mockResolvedValue(sampleUserPreferences);
 
     await expect(useCase.execute('user-1')).resolves.toMatchObject({
       userId: 'user-1',

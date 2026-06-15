@@ -1,4 +1,4 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { Test, type TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
 import { CheckWorkspaceMembershipUseCase } from './check-workspace-membership.use-case';
 import { WORKSPACE_REPOSITORY } from '../../../domain/repositories/workspace.repository';
@@ -26,9 +26,7 @@ describe('CheckWorkspaceMembershipUseCase', () => {
 
   it('should throw NotFoundException when workspace does not exist', async () => {
     mockWorkspaceRepo.findById.mockResolvedValue(null);
-    await expect(useCase.execute('ws-1', 'user-1')).rejects.toThrow(
-      NotFoundException,
-    );
+    await expect(useCase.execute('ws-1', 'user-1')).rejects.toThrow(NotFoundException);
   });
 
   it('should return isMember false when user is not a member', async () => {

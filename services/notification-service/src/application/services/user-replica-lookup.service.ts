@@ -1,11 +1,11 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { UserProfileHttpClient } from "../../infrastructure/clients/user-profile-http.client";
+import type { UserProfileHttpClient } from "../../infrastructure/clients/user-profile-http.client";
 import {
   type IUserReplicaRepository,
   USER_REPLICA_REPOSITORY_TOKEN,
 } from "../ports/IUserReplicaRepository";
-import { UserReplica } from "../../infrastructure/database/schemas/user-replica.schema";
-import { MetricsService } from "../../metrics/metrics.service";
+import type { UserReplica } from "../../infrastructure/database/schemas/user-replica.schema";
+import type { MetricsService } from "../../metrics/metrics.service";
 
 export const USER_REPLICA_LOOKUP_TOKEN = Symbol("USER_REPLICA_LOOKUP");
 
@@ -18,12 +18,8 @@ export class UserReplicaLookupService {
     private readonly metricsService: MetricsService,
   ) {}
 
-  async findActiveMapByIdsAsync(
-    userIds: string[],
-  ): Promise<Map<string, UserReplica>> {
-    const uniqueIds = [
-      ...new Set(userIds.map((id) => id.trim()).filter(Boolean)),
-    ];
+  async findActiveMapByIdsAsync(userIds: string[]): Promise<Map<string, UserReplica>> {
+    const uniqueIds = [...new Set(userIds.map((id) => id.trim()).filter(Boolean))];
     const result = new Map<string, UserReplica>();
 
     if (uniqueIds.length === 0) {
@@ -40,10 +36,7 @@ export class UserReplicaLookupService {
 
     const missing = uniqueIds.filter((userId) => !result.has(userId));
 
-    if (
-      missing.length === 0 ||
-      !this.userProfileHttpClient.isFallbackEnabled()
-    ) {
+    if (missing.length === 0 || !this.userProfileHttpClient.isFallbackEnabled()) {
       return result;
     }
 

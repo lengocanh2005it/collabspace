@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { USER_PROFILE_REPOSITORY } from '../../domain/repositories/user-profile.repository';
 import type { UserProfileRepository } from '../../domain/repositories/user-profile.repository';
 import {
-  UserPreferencesResponseDto,
+  type UserPreferencesResponseDto,
   toUserPreferencesResponseDto,
 } from '../dto/user-preferences-response.dto';
 
@@ -14,8 +14,6 @@ export class GetUserPreferencesUseCase {
   ) {}
 
   async execute(userId: string): Promise<UserPreferencesResponseDto> {
-    return toUserPreferencesResponseDto(
-      await this.userProfileRepository.getPreferences(userId),
-    );
+    return toUserPreferencesResponseDto(await this.userProfileRepository.getPreferences(userId));
   }
 }

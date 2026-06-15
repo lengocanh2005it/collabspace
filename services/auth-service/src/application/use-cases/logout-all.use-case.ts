@@ -4,7 +4,7 @@ import {
   type RefreshTokenRepository,
 } from '@/domain/repositories/refresh-token.repository';
 import { Inject, Injectable } from '@nestjs/common';
-import { JwtTokenService } from '../services/jwt-token.service';
+import type { JwtTokenService } from '../services/jwt-token.service';
 
 @Injectable()
 export class LogoutAllUseCase {
@@ -14,15 +14,12 @@ export class LogoutAllUseCase {
     private readonly refreshTokenRepository: RefreshTokenRepository,
   ) {}
 
-  async execute(
-    authorizationHeader: string | undefined,
-  ): Promise<LogoutAllResult> {
-    const { userId } =
-      await this.jwtTokenService.resolveVerifiedUserContext(
-        authorizationHeader,
-      );
-    const revokedSessionCount =
-      await this.refreshTokenRepository.revokeAllForUser(userId, 'logout_all');
+  async execute(authorizationHeader: string | undefined): Promise<LogoutAllResult> {
+    const { userId } = await this.jwtTokenService.resolveVerifiedUserContext(authorizationHeader);
+    const revokedSessionCount = await this.refreshTokenRepository.revokeAllForUser(
+      userId,
+      'logout_all',
+    );
 
     return {
       revoked: true,

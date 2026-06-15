@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { USER_PROFILE_REPOSITORY } from '../../domain/repositories/user-profile.repository';
 import type { UserProfileRepository } from '../../domain/repositories/user-profile.repository';
 import {
-  UserStatusResponseDto,
+  type UserStatusResponseDto,
   toUserStatusResponseDto,
 } from '../dto/user-status-response.dto';
 
@@ -14,8 +14,7 @@ export class GetUserStatusesUseCase {
   ) {}
 
   async execute(userIds: string[]): Promise<UserStatusResponseDto[]> {
-    const statuses =
-      await this.userProfileRepository.getStatusesByUserIds(userIds);
+    const statuses = await this.userProfileRepository.getStatusesByUserIds(userIds);
     return statuses.map((status) => toUserStatusResponseDto(status));
   }
 }

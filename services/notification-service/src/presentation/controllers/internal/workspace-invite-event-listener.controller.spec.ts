@@ -1,5 +1,5 @@
-import { CommandBus } from "@nestjs/cqrs";
-import { RmqContext } from "@nestjs/microservices";
+import type { CommandBus } from "@nestjs/cqrs";
+import type { RmqContext } from "@nestjs/microservices";
 import { WorkspaceInviteEventListenerController } from "./workspace-invite-event-listener.controller";
 
 describe("WorkspaceInviteEventListenerController", () => {

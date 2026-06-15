@@ -1,4 +1,4 @@
-import { Project } from '../entities/project.entity';
+import type { Project } from '../entities/project.entity';
 
 export const PROJECT_REPOSITORY = Symbol('PROJECT_REPOSITORY');
 

@@ -1,5 +1,5 @@
 // src/application/mappers/task-activity-item.mapper.ts
-import { Comment } from "../../domain/entities/comment.entity";
+import type { Comment } from "../../domain/entities/comment.entity";
 import {
   TaskDomainEventType,
   type StoredTaskDomainEvent,
@@ -13,13 +13,11 @@ import {
 import type { TaskActivityItemData } from "../../presentation/dtos/task-activity.response";
 
 export class TaskActivityItemMapper {
-  static fromStoredEvents(
-    events: StoredTaskDomainEvent[],
-  ): TaskActivityItemData[] {
+  static fromStoredEvents(events: StoredTaskDomainEvent[]): TaskActivityItemData[] {
     const items: TaskActivityItemData[] = [];
 
     for (const event of events) {
-      const item = this.fromStoredEvent(event);
+      const item = TaskActivityItemMapper.fromStoredEvent(event);
       if (item) {
         items.push(item);
       }
@@ -28,10 +26,8 @@ export class TaskActivityItemMapper {
     return items;
   }
 
-  static fromStoredEvent(
-    event: StoredTaskDomainEvent,
-  ): TaskActivityItemData | null {
-    return this.mapEvent(
+  static fromStoredEvent(event: StoredTaskDomainEvent): TaskActivityItemData | null {
+    return TaskActivityItemMapper.mapEvent(
       event.eventId,
       event.eventType,
       event.payload as unknown as Record<string, unknown>,
@@ -46,7 +42,7 @@ export class TaskActivityItemMapper {
       actorId: comment.getAuthorId(),
       actorName: comment.getAuthorName(),
       actorAvatarUrl: comment.getAuthorAvatarUrl() ?? null,
-      summary: this.truncate(comment.getContent(), 120),
+      summary: TaskActivityItemMapper.truncate(comment.getContent(), 120),
       meta: { commentId: comment.getId() },
       occurredAt: comment.getCreatedAt().toISOString(),
     };
@@ -58,10 +54,7 @@ export class TaskActivityItemMapper {
     payload: Record<string, unknown>,
     occurredAt: Date,
   ): TaskActivityItemData | null {
-    const ts =
-      occurredAt instanceof Date
-        ? occurredAt.toISOString()
-        : String(occurredAt);
+    const ts = occurredAt instanceof Date ? occurredAt.toISOString() : String(occurredAt);
 
     switch (eventType) {
       case TaskDomainEventType.TaskCreated: {
@@ -108,17 +101,14 @@ export class TaskActivityItemMapper {
 
       case TaskDomainEventType.TaskAssigneeChanged: {
         const p = payload as unknown as TaskAssigneeChangedPayload;
-        const assigneeName =
-          p.assignedTo?.displayName ?? p.assignedTo?.fullName ?? null;
+        const assigneeName = p.assignedTo?.displayName ?? p.assignedTo?.fullName ?? null;
         return {
           id,
           type: "task_assignee_changed",
           actorId: p.assignedTo?.userId ?? null,
           actorName: assigneeName,
           actorAvatarUrl: p.assignedTo?.avatarUrl ?? null,
-          summary: assigneeName
-            ? `Assigned to ${assigneeName}`
-            : "Assignee removed",
+          summary: assigneeName ? `Assigned to ${assigneeName}` : "Assignee removed",
           meta: { assigneeId: p.assigneeId },
           occurredAt: ts,
         };
@@ -158,6 +148,6 @@ export class TaskActivityItemMapper {
   }
 
   private static truncate(text: string, max: number): string {
-    return text.length > max ? text.slice(0, max) + "…" : text;
+    return text.length > max ? `${text.slice(0, max)}…` : text;
   }
 }

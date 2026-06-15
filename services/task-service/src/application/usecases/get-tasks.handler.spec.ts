@@ -1,6 +1,6 @@
 import { GetTasksHandler } from "./get-tasks.handler";
 import { GetTasksQuery } from "../queries/get-tasks.query";
-import { ITaskRepository } from "../ports/ITaskRepository";
+import type { ITaskRepository } from "../ports/ITaskRepository";
 import { createMockTaskRepository } from "../../test-utils/mock-task-repository";
 import { Task } from "../../domain/entities/Task";
 import { TaskId } from "../../domain/value-objects/TaskId";
@@ -17,18 +17,8 @@ describe("GetTasksHandler", () => {
     handler = new GetTasksHandler(mockTaskRepo);
   });
 
-  const createMockTask = (
-    id: string,
-    status: string,
-    assigneeId: string | null,
-  ) => {
-    const creatorSnapshot = UserSnapshot.create(
-      "creator-1",
-      "c@c.c",
-      "Creator",
-      "Creator",
-      "url",
-    );
+  const createMockTask = (id: string, status: string, assigneeId: string | null) => {
+    const creatorSnapshot = UserSnapshot.create("creator-1", "c@c.c", "Creator", "Creator", "url");
     return Task.restore(
       new TaskId(id),
       "Task Title",
@@ -37,15 +27,7 @@ describe("GetTasksHandler", () => {
       "workspace-1",
       null,
       assigneeId,
-      assigneeId
-        ? UserSnapshot.create(
-            assigneeId,
-            "a@a.c",
-            "Assignee",
-            "Assignee",
-            "url",
-          )
-        : null,
+      assigneeId ? UserSnapshot.create(assigneeId, "a@a.c", "Assignee", "Assignee", "url") : null,
       creatorSnapshot,
       new Date(),
       new Date(),
@@ -69,23 +51,15 @@ describe("GetTasksHandler", () => {
     expect(result.tasks).toHaveLength(2);
     expect(result.skip).toBe(0);
     expect(result.limit).toBe(TASK_LIST_DEFAULT_LIMIT);
-    expect(mockTaskRepo.findByWorkspaceIdAsync).toHaveBeenCalledWith(
-      "workspace-1",
-      undefined,
-      { skip: 0, limit: TASK_LIST_DEFAULT_LIMIT },
-    );
-    expect(mockTaskRepo.countByWorkspaceIdAsync).toHaveBeenCalledWith(
-      "workspace-1",
-      undefined,
-    );
+    expect(mockTaskRepo.findByWorkspaceIdAsync).toHaveBeenCalledWith("workspace-1", undefined, {
+      skip: 0,
+      limit: TASK_LIST_DEFAULT_LIMIT,
+    });
+    expect(mockTaskRepo.countByWorkspaceIdAsync).toHaveBeenCalledWith("workspace-1", undefined);
   });
 
   it("should pass status filter to the repository", async () => {
-    const task = createMockTask(
-      "123e4567-e89b-12d3-a456-426614174002",
-      "TODO",
-      null,
-    );
+    const task = createMockTask("123e4567-e89b-12d3-a456-426614174002", "TODO", null);
 
     mockTaskRepo.findByWorkspaceIdAsync.mockResolvedValue([task]);
     mockTaskRepo.countByWorkspaceIdAsync.mockResolvedValue(1);
@@ -100,18 +74,13 @@ describe("GetTasksHandler", () => {
       { status: "TODO" },
       { skip: 0, limit: TASK_LIST_DEFAULT_LIMIT },
     );
-    expect(mockTaskRepo.countByWorkspaceIdAsync).toHaveBeenCalledWith(
-      "workspace-1",
-      { status: "TODO" },
-    );
+    expect(mockTaskRepo.countByWorkspaceIdAsync).toHaveBeenCalledWith("workspace-1", {
+      status: "TODO",
+    });
   });
 
   it("should pass assigneeId filter to the repository", async () => {
-    const task = createMockTask(
-      "123e4567-e89b-12d3-a456-426614174003",
-      "DOING",
-      "user-1",
-    );
+    const task = createMockTask("123e4567-e89b-12d3-a456-426614174003", "DOING", "user-1");
 
     mockTaskRepo.findByWorkspaceIdAsync.mockResolvedValue([task]);
     mockTaskRepo.countByWorkspaceIdAsync.mockResolvedValue(1);

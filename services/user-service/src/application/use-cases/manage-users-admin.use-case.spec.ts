@@ -1,5 +1,5 @@
 import type { UserProfileRepository } from '../../domain/repositories/user-profile.repository';
-import { AuthAdminHttpClient } from '../../integrations/auth/auth-admin-http.client';
+import type { AuthAdminHttpClient } from '../../integrations/auth/auth-admin-http.client';
 import { ManageUsersAdminUseCase } from './manage-users-admin.use-case';
 
 describe('ManageUsersAdminUseCase', () => {
@@ -34,7 +34,7 @@ describe('ManageUsersAdminUseCase', () => {
         },
       ],
       total: 1,
-    } as never);
+    });
 
     const result = await useCase.list('Bearer admin');
 
@@ -49,9 +49,6 @@ describe('ManageUsersAdminUseCase', () => {
     await useCase.anonymize('admin-1', 'user-1', 'Bearer admin');
 
     expect(repository.anonymize).toHaveBeenCalledWith('user-1');
-    expect(authClient.deactivateUser).toHaveBeenCalledWith(
-      'user-1',
-      'Bearer admin',
-    );
+    expect(authClient.deactivateUser).toHaveBeenCalledWith('user-1', 'Bearer admin');
   });
 });

@@ -1,5 +1,5 @@
 // src/domain/repositories/INotificationRepository.ts
-import { Notification } from "../entities/Notification";
+import type { Notification } from "../entities/Notification";
 
 /**
  * Notification Repository Interface (Port)
@@ -14,10 +14,7 @@ export interface INotificationRepository {
    */
   createAsync(notification: Notification): Promise<string>;
 
-  createBroadcastAsync(
-    notification: Notification,
-    dedupeKey: string,
-  ): Promise<boolean>;
+  createBroadcastAsync(notification: Notification, dedupeKey: string): Promise<boolean>;
 
   /**
    * Tìm notification theo ID

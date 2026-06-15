@@ -17,8 +17,7 @@ import { RabbitMqEventsService } from "./rabbitmq-events.service";
           options: {
             // Lấy URL từ file .env (Nhớ là amqp://guest:guest@localhost:5672)
             urls: [
-              configService.get<string>("RABBITMQ_URL") ||
-                "amqp://guest:guest@localhost:5672",
+              configService.get<string>("RABBITMQ_URL") || "amqp://guest:guest@localhost:5672",
             ],
 
             // Tên cái Queue mà Notification Service đang vểnh tai nghe

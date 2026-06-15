@@ -13,10 +13,7 @@ export type AuthAdminUser = {
 @Injectable()
 export class AuthAdminHttpClient {
   async listUsers(authorization: string): Promise<AuthAdminUser[]> {
-    return this.request<AuthAdminUser[]>(
-      '/api/v1/auth/admin/users',
-      authorization,
-    );
+    return this.request<AuthAdminUser[]>('/api/v1/auth/admin/users', authorization);
   }
 
   async deactivateUser(userId: string, authorization: string): Promise<void> {
@@ -36,9 +33,10 @@ export class AuthAdminHttpClient {
     authorization: string,
     init: RequestInit = {},
   ): Promise<T> {
-    const baseUrl = (
-      process.env.AUTH_SERVICE_HTTP_URL ?? 'http://auth-service:3000'
-    ).replace(/\/+$/, '');
+    const baseUrl = (process.env.AUTH_SERVICE_HTTP_URL ?? 'http://auth-service:3000').replace(
+      /\/+$/,
+      '',
+    );
     const timeoutMs = Number(process.env.AUTH_SERVICE_HTTP_TIMEOUT_MS ?? 3000);
     try {
       const response = await fetch(`${baseUrl}${path}`, {
@@ -59,10 +57,7 @@ export class AuthAdminHttpClient {
     } catch (error) {
       throw new ServiceUnavailableException({
         code: 'AUTH_ADMIN_API_UNAVAILABLE',
-        message:
-          error instanceof Error
-            ? error.message
-            : 'Auth admin API request failed',
+        message: error instanceof Error ? error.message : 'Auth admin API request failed',
       });
     }
   }

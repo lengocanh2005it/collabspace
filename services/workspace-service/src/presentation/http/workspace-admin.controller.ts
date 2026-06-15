@@ -1,21 +1,7 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Headers,
-  HttpCode,
-  Param,
-  Post,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, Param, Post, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import {
-  AdminUserId,
-  PlatformAdminGuard,
-  RequirePlatformAdmin,
-} from '@collabspace/nest-auth';
-import { ForceJoinWorkspaceDto } from '../../application/dto/workspace-admin.dto';
+import { AdminUserId, PlatformAdminGuard, RequirePlatformAdmin } from '@collabspace/nest-auth';
+import type { ForceJoinWorkspaceDto } from '../../application/dto/workspace-admin.dto';
 import { ManageWorkspacesAdminUseCase } from '../../application/use-cases/workspace/manage-workspaces-admin.use-case';
 
 @ApiTags('workspaces-admin')

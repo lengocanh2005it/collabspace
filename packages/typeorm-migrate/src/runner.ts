@@ -1,8 +1,6 @@
 import type { DataSource } from 'typeorm';
 
-export async function runServiceMigrations(
-  dataSource: DataSource,
-): Promise<void> {
+export async function runServiceMigrations(dataSource: DataSource): Promise<void> {
   await dataSource.initialize();
 
   try {
@@ -21,9 +19,7 @@ export async function runServiceMigrations(
   }
 }
 
-export async function revertLastServiceMigration(
-  dataSource: DataSource,
-): Promise<void> {
+export async function revertLastServiceMigration(dataSource: DataSource): Promise<void> {
   await dataSource.initialize();
 
   try {

@@ -1,7 +1,7 @@
-import { ConfigurationService } from '@/configuration/configuration.service';
+import type { ConfigurationService } from '@/configuration/configuration.service';
 import { UnauthorizedException } from '@nestjs/common';
-import { DataSource, Repository } from 'typeorm';
-import { RefreshTokenOrmEntity } from '@/infrastructure/database/entities/refresh-token.orm-entity';
+import type { DataSource, Repository } from 'typeorm';
+import type { RefreshTokenOrmEntity } from '@/infrastructure/database/entities/refresh-token.orm-entity';
 import { TypeOrmRefreshTokenRepository } from './typeorm-refresh-token.repository';
 
 describe('TypeOrmRefreshTokenRepository', () => {
@@ -29,9 +29,7 @@ describe('TypeOrmRefreshTokenRepository', () => {
     jest.clearAllMocks();
     (dataSourceMock.transaction as jest.Mock).mockImplementation(
       async (
-        callback: (manager: {
-          getRepository: () => Repository<RefreshTokenOrmEntity>;
-        }) => unknown,
+        callback: (manager: { getRepository: () => Repository<RefreshTokenOrmEntity> }) => unknown,
       ) =>
         callback({
           getRepository: () => repositoryMock,
@@ -62,9 +60,9 @@ describe('TypeOrmRefreshTokenRepository', () => {
         workspaceId: 'ff2344a5-f498-4a10-8f79-9b0992b87255',
       }),
     );
-    expect(
-      (repositoryMock.save as jest.Mock).mock.calls[0][0].tokenHash,
-    ).not.toBe(payload.refreshToken);
+    expect((repositoryMock.save as jest.Mock).mock.calls[0][0].tokenHash).not.toBe(
+      payload.refreshToken,
+    );
   });
 
   it('rotates an active token into the same family', async () => {
@@ -94,9 +92,7 @@ describe('TypeOrmRefreshTokenRepository', () => {
       update: jest.fn().mockReturnThis(),
       where: jest.fn().mockReturnThis(),
     };
-    (repositoryMock.createQueryBuilder as jest.Mock).mockReturnValue(
-      queryBuilderMock,
-    );
+    (repositoryMock.createQueryBuilder as jest.Mock).mockReturnValue(queryBuilderMock);
 
     const payload = await refreshTokenRepository.rotate('plain-refresh-token');
 
@@ -134,19 +130,14 @@ describe('TypeOrmRefreshTokenRepository', () => {
     };
 
     (repositoryMock.findOne as jest.Mock).mockResolvedValue(currentToken);
-    (repositoryMock.createQueryBuilder as jest.Mock).mockReturnValue(
-      queryBuilderMock,
+    (repositoryMock.createQueryBuilder as jest.Mock).mockReturnValue(queryBuilderMock);
+
+    await expect(refreshTokenRepository.rotate('reused-refresh-token')).rejects.toThrow(
+      UnauthorizedException,
     );
 
-    await expect(
-      refreshTokenRepository.rotate('reused-refresh-token'),
-    ).rejects.toThrow(UnauthorizedException);
-
-    expect(queryBuilderMock.where).toHaveBeenCalledWith(
-      'family_id = :familyId',
-      {
-        familyId: 'fam-2',
-      },
-    );
+    expect(queryBuilderMock.where).toHaveBeenCalledWith('family_id = :familyId', {
+      familyId: 'fam-2',
+    });
   });
 });

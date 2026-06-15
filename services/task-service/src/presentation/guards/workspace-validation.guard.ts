@@ -1,8 +1,8 @@
 // src/presentation/guards/workspace-validation.guard.ts
 import {
   Injectable,
-  CanActivate,
-  ExecutionContext,
+  type CanActivate,
+  type ExecutionContext,
   ForbiddenException,
   Inject,
   ServiceUnavailableException,
@@ -23,10 +23,7 @@ interface WorkspaceGuardBody {
   workspaceId?: string;
 }
 
-interface WorkspaceGuardQuery extends Record<
-  string,
-  string | string[] | undefined
-> {
+interface WorkspaceGuardQuery extends Record<string, string | string[] | undefined> {
   workspaceId?: string;
 }
 
@@ -70,10 +67,7 @@ export class WorkspaceValidationGuard implements CanActivate {
       });
     }
 
-    const userName =
-      request.user?.name ??
-      getHeaderValue(request.headers, "x-user-name") ??
-      "User";
+    const userName = request.user?.name ?? getHeaderValue(request.headers, "x-user-name") ?? "User";
 
     const workspaceId = await this.resolveWorkspaceId(request);
 
@@ -83,37 +77,25 @@ export class WorkspaceValidationGuard implements CanActivate {
     }
 
     try {
-      const membership = await this.workspaceService.getMembershipAsync(
-        workspaceId,
-        userId,
-      );
+      const membership = await this.workspaceService.getMembershipAsync(workspaceId, userId);
 
       if (membership === null) {
         throw new ForbiddenException(`Workspace ${workspaceId} not found`);
       }
 
-      if (
-        !membership.isMember ||
-        !meetsWorkspaceRole(membership.role, "member")
-      ) {
+      if (!membership.isMember || !meetsWorkspaceRole(membership.role, "member")) {
         throw new ForbiddenException(
           `User ${userId} does not have access to workspace ${workspaceId}`,
         );
       }
     } catch (error) {
-      if (
-        error instanceof ForbiddenException ||
-        error instanceof ServiceUnavailableException
-      ) {
+      if (error instanceof ForbiddenException || error instanceof ServiceUnavailableException) {
         throw error;
       }
 
       throw new ServiceUnavailableException({
         code: "WORKSPACE_SERVICE_UNAVAILABLE",
-        message:
-          error instanceof Error
-            ? error.message
-            : "Workspace service validation failed",
+        message: error instanceof Error ? error.message : "Workspace service validation failed",
       });
     }
 
@@ -123,11 +105,8 @@ export class WorkspaceValidationGuard implements CanActivate {
     return true;
   }
 
-  private async resolveWorkspaceId(
-    request: WorkspaceGuardRequest,
-  ): Promise<string | undefined> {
-    const directWorkspaceId =
-      request.body?.workspaceId || request.query?.workspaceId;
+  private async resolveWorkspaceId(request: WorkspaceGuardRequest): Promise<string | undefined> {
+    const directWorkspaceId = request.body?.workspaceId || request.query?.workspaceId;
     if (typeof directWorkspaceId === "string" && directWorkspaceId.length > 0) {
       return directWorkspaceId;
     }

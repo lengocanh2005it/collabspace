@@ -1,15 +1,12 @@
-import { ConfigurationService } from '@/configuration/configuration.service';
-import { EmailOutboxStats } from '@/domain/ports/email-outbox.port';
-import {
-  EMAIL_OUTBOX,
-  type EmailOutbox,
-} from '@/domain/ports/email-outbox.port';
+import type { ConfigurationService } from '@/configuration/configuration.service';
+import type { EmailOutboxStats } from '@/domain/ports/email-outbox.port';
+import { EMAIL_OUTBOX, type EmailOutbox } from '@/domain/ports/email-outbox.port';
 import { OTP_STORE, type OtpStore } from '@/domain/ports/otp-store.port';
 import {
   USER_PROFILE_CLIENT,
   type UserProfileClient,
 } from '@/domain/ports/user-profile-client.port';
-import { DatabaseService } from '@/infrastructure/database/database.service';
+import type { DatabaseService } from '@/infrastructure/database/database.service';
 import { Inject, Injectable } from '@nestjs/common';
 
 type CheckStatus = 'up' | 'down' | 'disabled';
@@ -154,8 +151,7 @@ export class AuthHealthService {
       };
     } catch (error) {
       return {
-        detail:
-          error instanceof Error ? error.message : 'Unknown dependency error',
+        detail: error instanceof Error ? error.message : 'Unknown dependency error',
         required,
         responseTimeMs: Date.now() - startedAt,
         status: 'down',
@@ -173,11 +169,7 @@ export class AuthHealthService {
     const optionalFailure = Object.values(checks).some(
       (check) => !check.required && check.status === 'down',
     );
-    const status: OverallStatus = requiredFailure
-      ? 'error'
-      : optionalFailure
-        ? 'degraded'
-        : 'ok';
+    const status: OverallStatus = requiredFailure ? 'error' : optionalFailure ? 'degraded' : 'ok';
 
     return {
       checks,

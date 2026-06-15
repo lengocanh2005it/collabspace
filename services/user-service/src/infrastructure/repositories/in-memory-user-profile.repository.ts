@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { UserProfile } from '../../domain/entities/user-profile.entity';
 import { UserPreferences } from '../../domain/entities/user-preferences.entity';
 import { UserStatus } from '../../domain/entities/user-status.entity';
-import {
+import type {
   CreatePendingUserProfileInput,
   ListUserProfilesInput,
   ListUserProfilesResult,
@@ -104,9 +104,7 @@ export class InMemoryUserProfileRepository implements UserProfileRepository {
     const normalized = username.trim().toLowerCase();
     return (
       this.profiles.find(
-        (profile) =>
-          profile.deletedAt === null &&
-          profile.username?.toLowerCase() === normalized,
+        (profile) => profile.deletedAt === null && profile.username?.toLowerCase() === normalized,
       ) ?? null
     );
   }
@@ -131,9 +129,7 @@ export class InMemoryUserProfileRepository implements UserProfileRepository {
   }
 
   async getStatus(userId: string): Promise<UserStatus> {
-    const existingStatus = this.statuses.find(
-      (status) => status.userId === userId,
-    );
+    const existingStatus = this.statuses.find((status) => status.userId === userId);
 
     if (existingStatus) {
       return existingStatus;
@@ -174,9 +170,7 @@ export class InMemoryUserProfileRepository implements UserProfileRepository {
     };
   }
 
-  async upsertPending(
-    input: CreatePendingUserProfileInput,
-  ): Promise<UserProfile> {
+  async upsertPending(input: CreatePendingUserProfileInput): Promise<UserProfile> {
     const existingProfile = await this.findByUserId(input.userId);
     const now = new Date();
 
@@ -195,9 +189,7 @@ export class InMemoryUserProfileRepository implements UserProfileRepository {
     );
 
     if (existingProfile) {
-      this.profiles = this.profiles.map((item) =>
-        item.userId === input.userId ? profile : item,
-      );
+      this.profiles = this.profiles.map((item) => (item.userId === input.userId ? profile : item));
       return profile;
     }
 
@@ -205,10 +197,7 @@ export class InMemoryUserProfileRepository implements UserProfileRepository {
     return profile;
   }
 
-  async updateProfile(
-    userId: string,
-    input: UpdateUserProfileInput,
-  ): Promise<UserProfile> {
+  async updateProfile(userId: string, input: UpdateUserProfileInput): Promise<UserProfile> {
     const profile = await this.findByUserId(userId);
 
     if (!profile) {
@@ -231,9 +220,7 @@ export class InMemoryUserProfileRepository implements UserProfileRepository {
       new Date(),
     );
 
-    this.profiles = this.profiles.map((item) =>
-      item.userId === userId ? updatedProfile : item,
-    );
+    this.profiles = this.profiles.map((item) => (item.userId === userId ? updatedProfile : item));
 
     return updatedProfile;
   }
@@ -253,8 +240,7 @@ export class InMemoryUserProfileRepository implements UserProfileRepository {
       input.weekStartsOn ?? preferences.weekStartsOn,
       input.emailNotificationsEnabled ?? preferences.emailNotificationsEnabled,
       input.pushNotificationsEnabled ?? preferences.pushNotificationsEnabled,
-      input.desktopNotificationsEnabled ??
-        preferences.desktopNotificationsEnabled,
+      input.desktopNotificationsEnabled ?? preferences.desktopNotificationsEnabled,
       input.digestFrequency ?? preferences.digestFrequency,
       preferences.createdAt,
       new Date(),
@@ -271,10 +257,7 @@ export class InMemoryUserProfileRepository implements UserProfileRepository {
     return updatedPreferences;
   }
 
-  async updateStatus(
-    userId: string,
-    input: UpdateUserStatusInput,
-  ): Promise<UserStatus> {
+  async updateStatus(userId: string, input: UpdateUserStatusInput): Promise<UserStatus> {
     const status = await this.getStatus(userId);
     const updatedStatus = new UserStatus(
       userId,
@@ -286,9 +269,7 @@ export class InMemoryUserProfileRepository implements UserProfileRepository {
       new Date(),
     );
 
-    this.statuses = this.statuses.map((item) =>
-      item.userId === userId ? updatedStatus : item,
-    );
+    this.statuses = this.statuses.map((item) => (item.userId === userId ? updatedStatus : item));
 
     if (!this.statuses.some((item) => item.userId === userId)) {
       this.statuses.push(updatedStatus);
@@ -318,15 +299,7 @@ export class InMemoryUserProfileRepository implements UserProfileRepository {
   }
 
   private buildDefaultStatus(userId: string): UserStatus {
-    return new UserStatus(
-      userId,
-      'offline',
-      null,
-      null,
-      null,
-      null,
-      new Date(),
-    );
+    return new UserStatus(userId, 'offline', null, null, null, null, new Date());
   }
 
   private createUsername(fullName: string): string {
@@ -334,10 +307,7 @@ export class InMemoryUserProfileRepository implements UserProfileRepository {
     return username.length > 0 ? username : 'user';
   }
 
-  private async resolveAvailableUsername(
-    fullName: string,
-    userId: string,
-  ): Promise<string> {
+  private async resolveAvailableUsername(fullName: string, userId: string): Promise<string> {
     const base = this.createUsername(fullName);
 
     for (let suffix = 0; suffix < 100; suffix += 1) {
@@ -372,8 +342,6 @@ export class InMemoryUserProfileRepository implements UserProfileRepository {
       profile.createdAt,
       now,
     );
-    this.profiles = this.profiles.map((item) =>
-      item.userId === userId ? anonymized : item,
-    );
+    this.profiles = this.profiles.map((item) => (item.userId === userId ? anonymized : item));
   }
 }

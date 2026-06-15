@@ -18,7 +18,7 @@ export type RmqChannel = {
   publish(
     exchange: string,
     routingKey: string,
-    content: RmqConsumeMessage["content"],
+    content: RmqConsumeMessage['content'],
     options?: Record<string, unknown>,
   ): boolean;
 };
@@ -48,13 +48,8 @@ export function getRmqRetryCount(message: RmqConsumeMessage): number {
   return 0;
 }
 
-export function shouldSendRmqMessageToDlq(
-  message: RmqConsumeMessage,
-  maxRetries: number,
-): boolean {
-  const safeMaxRetries = Number.isFinite(maxRetries)
-    ? Math.max(1, Math.floor(maxRetries))
-    : 5;
+export function shouldSendRmqMessageToDlq(message: RmqConsumeMessage, maxRetries: number): boolean {
+  const safeMaxRetries = Number.isFinite(maxRetries) ? Math.max(1, Math.floor(maxRetries)) : 5;
 
   return getRmqRetryCount(message) >= safeMaxRetries;
 }
@@ -67,9 +62,7 @@ export function handleRmqConsumerFailure(
   message: RmqConsumeMessage,
   maxRetries: number,
 ): void {
-  const safeMaxRetries = Number.isFinite(maxRetries)
-    ? Math.max(1, Math.floor(maxRetries))
-    : 5;
+  const safeMaxRetries = Number.isFinite(maxRetries) ? Math.max(1, Math.floor(maxRetries)) : 5;
   const retryCount = getRmqRetryCount(message);
 
   if (retryCount >= safeMaxRetries) {
@@ -78,16 +71,11 @@ export function handleRmqConsumerFailure(
   }
 
   channel.ack(message);
-  channel.publish(
-    message.fields.exchange,
-    message.fields.routingKey,
-    message.content,
-    {
-      ...message.properties,
-      headers: {
-        ...(message.properties.headers ?? {}),
-        [RETRY_COUNT_HEADER]: retryCount + 1,
-      },
+  channel.publish(message.fields.exchange, message.fields.routingKey, message.content, {
+    ...message.properties,
+    headers: {
+      ...(message.properties.headers ?? {}),
+      [RETRY_COUNT_HEADER]: retryCount + 1,
     },
-  );
+  });
 }

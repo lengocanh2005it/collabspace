@@ -159,6 +159,17 @@ pnpm run test
 
 Run `test:e2e` when changing routing, validation, bootstrap, or auth guards/integration.
 
+## Format & lint
+
+From repo root (CI gate):
+
+```sh
+pnpm run format          # Biome write
+pnpm run lint            # format:check + biome:check + ESLint type-checked
+```
+
+Per service: `pnpm run format` (Biome via `-w`), `pnpm run lint` (ESLint only). Config: root `biome.json`, `@collabspace/eslint-config`. See `docs/tooling/biome-migration.md`.
+
 ## Service JWT — S2S HTTP (user, workspace, task, notification)
 
 Internal routes (`/users/internal/*`, `/workspaces/internal/*`) use **short-lived Service JWT** only:

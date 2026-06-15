@@ -2,7 +2,7 @@ import './observability/instrumentation';
 import { assertRequiredInProduction } from '@collabspace/shared';
 import { ConfigurationService } from '@/configuration/configuration.service';
 import { Logger, ValidationPipe } from '@nestjs/common';
-import { MicroserviceOptions } from '@nestjs/microservices';
+import type { MicroserviceOptions } from '@nestjs/microservices';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { DatabaseService } from '@/infrastructure/database/database.service';
@@ -51,9 +51,7 @@ async function bootstrap() {
   const grpcConfig = configurationService.getGrpcConfig();
 
   if (grpcConfig.enabled) {
-    app.connectMicroservice<MicroserviceOptions>(
-      configurationService.getGrpcMicroserviceOptions(),
-    );
+    app.connectMicroservice<MicroserviceOptions>(configurationService.getGrpcMicroserviceOptions());
     hasConnectedMicroservice = true;
     Logger.log(`gRPC server configured on ${grpcConfig.url}`, 'Bootstrap');
   }
@@ -65,10 +63,7 @@ async function bootstrap() {
       configurationService.getRabbitMqMicroserviceOptions(),
     );
     hasConnectedMicroservice = true;
-    Logger.log(
-      `RabbitMQ consumer configured for queue ${rabbitMqConfig.queue}`,
-      'Bootstrap',
-    );
+    Logger.log(`RabbitMQ consumer configured for queue ${rabbitMqConfig.queue}`, 'Bootstrap');
   }
 
   if (hasConnectedMicroservice) {
@@ -88,9 +83,6 @@ async function bootstrap() {
   const port = configurationService.getAppConfig().port;
   await app.listen(port);
   Logger.log(`HTTP Server: http://localhost:${port}`, 'Bootstrap');
-  Logger.log(
-    `Swagger Docs: http://localhost:${port}/${swaggerPath}`,
-    'Bootstrap',
-  );
+  Logger.log(`Swagger Docs: http://localhost:${port}/${swaggerPath}`, 'Bootstrap');
 }
 bootstrap();

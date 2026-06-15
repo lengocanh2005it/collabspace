@@ -35,6 +35,7 @@ import { MarkNotificationReadHandler } from "./application/usecases/mark-notific
 import { MarkAllNotificationsReadHandler } from "./application/usecases/mark-all-notifications-read/mark-all-notifications-read.handler";
 import { CommentMentionEventListenerController } from "./presentation/controllers/internal/comment-mention-event-listener.controller";
 import { UserEventListenerController } from "./presentation/controllers/internal/user-event-listener.controller";
+import { WorkspaceDeleteEventListenerController } from "./presentation/controllers/internal/workspace-delete-event-listener.controller";
 import { CreateUserReplicaHandler } from "./application/usecases/sync-user-replica/create-user-replica.handler";
 import { SyncUserReplicaHandler } from "./application/usecases/sync-user-replica/sync-user-replica.handler";
 import {
@@ -93,6 +94,7 @@ const Handlers = [
     CommentEventListenerController,
     CommentMentionEventListenerController,
     WorkspaceInviteEventListenerController,
+    WorkspaceDeleteEventListenerController,
     UserEventListenerController,
   ],
   providers: [

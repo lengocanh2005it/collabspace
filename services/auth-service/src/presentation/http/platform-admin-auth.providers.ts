@@ -11,8 +11,7 @@ export const platformAdminAuthProviders = [
     inject: [JwtTokenService],
     useFactory: (jwtTokenService: JwtTokenService) =>
       createBearerIdentityResolver(async (authorization) => {
-        const { user } =
-          await jwtTokenService.resolveVerifiedUserContext(authorization);
+        const { user } = await jwtTokenService.resolveVerifiedUserContext(authorization);
         return {
           permissions: user.permissions,
           role: user.role,

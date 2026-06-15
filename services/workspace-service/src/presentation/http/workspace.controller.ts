@@ -29,8 +29,8 @@ import {
 } from '../../application/dto/swagger-response.dto';
 import type { Response } from 'express';
 import { UserId } from './decorators/user-id.decorator';
-import { CreateWorkspaceDto } from '../../application/dto/create-workspace.dto';
-import { UpdateWorkspaceDto } from '../../application/dto/update-workspace.dto';
+import type { CreateWorkspaceDto } from '../../application/dto/create-workspace.dto';
+import type { UpdateWorkspaceDto } from '../../application/dto/update-workspace.dto';
 import { CreateWorkspaceUseCase } from '../../application/use-cases/workspace/create-workspace.use-case';
 import { GetWorkspaceUseCase } from '../../application/use-cases/workspace/get-workspace.use-case';
 import { ListWorkspacesUseCase } from '../../application/use-cases/workspace/list-workspaces.use-case';
@@ -38,7 +38,7 @@ import { UpdateWorkspaceUseCase } from '../../application/use-cases/workspace/up
 import { DeleteWorkspaceUseCase } from '../../application/use-cases/workspace/delete-workspace.use-case';
 import { ListMembersUseCase } from '../../application/use-cases/workspace/list-members.use-case';
 import { GetWorkspaceActivityUseCase } from '../../application/use-cases/workspace/get-workspace-activity.use-case';
-import { IdempotencyService } from '../../infrastructure/idempotency/idempotency.service';
+import type { IdempotencyService } from '../../infrastructure/idempotency/idempotency.service';
 import { AuthGuard } from './guards/auth.guard';
 
 @ApiTags('workspaces')
@@ -74,10 +74,7 @@ export class WorkspaceController {
     const route = 'POST /workspaces';
 
     if (idempotencyKey?.trim()) {
-      const cached = await this.idempotencyService.findCached(
-        userId,
-        idempotencyKey.trim(),
-      );
+      const cached = await this.idempotencyService.findCached(userId, idempotencyKey.trim());
 
       if (cached) {
         response.status(cached.statusCode);
@@ -112,10 +109,7 @@ export class WorkspaceController {
   @ApiOperation({ summary: 'Get workspace by id' })
   @ApiParam({ name: 'id', format: 'uuid' })
   @ApiOkResponse({ type: WorkspaceResponseSchemaDto })
-  async getWorkspace(
-    @UserId() userId: string,
-    @Param('id', ParseUUIDPipe) workspaceId: string,
-  ) {
+  async getWorkspace(@UserId() userId: string, @Param('id', ParseUUIDPipe) workspaceId: string) {
     return this.getWorkspaceUseCase.execute(userId, workspaceId);
   }
 
@@ -146,10 +140,7 @@ export class WorkspaceController {
   @ApiOperation({ summary: 'List workspace members' })
   @ApiParam({ name: 'id', format: 'uuid' })
   @ApiOkResponse({ type: WorkspaceMemberResponseSchemaDto, isArray: true })
-  async listMembers(
-    @UserId() userId: string,
-    @Param('id', ParseUUIDPipe) workspaceId: string,
-  ) {
+  async listMembers(@UserId() userId: string, @Param('id', ParseUUIDPipe) workspaceId: string) {
     return this.listMembersUseCase.execute(userId, workspaceId);
   }
 

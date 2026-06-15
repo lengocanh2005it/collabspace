@@ -5,14 +5,14 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { randomBytes, randomUUID, scrypt, timingSafeEqual } from 'crypto';
-import { promisify } from 'util';
+import { randomBytes, randomUUID, scrypt, timingSafeEqual } from 'node:crypto';
+import { promisify } from 'node:util';
 import type { AuthLiteUser } from '@/domain/entities/auth-lite-user';
 import type { AuthUser } from '@/domain/entities/auth-user';
 import type { LoginInput } from '@/domain/types/login-input';
 import type { RegisterUserInput } from '@/domain/types/register-user-input';
 import { User } from '@/domain/entities/user.entity';
-import { UserRepository } from '@/domain/repositories/user.repository';
+import type { UserRepository } from '@/domain/repositories/user.repository';
 
 const scryptAsync = promisify(scrypt);
 
@@ -58,8 +58,7 @@ export class InMemoryUserRepository implements UserRepository {
   async findUserByEmail(email: string): Promise<AuthUser | null> {
     const normalizedEmail = this.normalizeEmail(email);
     const user = [...this.users.values()].find(
-      (candidate) =>
-        candidate.email === normalizedEmail && !candidate.deletedAt,
+      (candidate) => candidate.email === normalizedEmail && !candidate.deletedAt,
     );
 
     return user ? this.toAuthUser(user) : null;
@@ -80,9 +79,7 @@ export class InMemoryUserRepository implements UserRepository {
     const email = this.normalizeEmail(input.email);
     this.normalizeFullName(input.fullName);
     const password = this.normalizePassword(input.password);
-    const existingUser = [...this.users.values()].find(
-      (candidate) => candidate.email === email,
-    );
+    const existingUser = [...this.users.values()].find((candidate) => candidate.email === email);
 
     if (existingUser && !existingUser.deletedAt) {
       throw new ConflictException({
@@ -135,10 +132,7 @@ export class InMemoryUserRepository implements UserRepository {
       });
     }
 
-    const isPasswordValid = await this.verifyPassword(
-      password,
-      user.passwordHash,
-    );
+    const isPasswordValid = await this.verifyPassword(password, user.passwordHash);
 
     if (!isPasswordValid) {
       throw new UnauthorizedException({
@@ -161,10 +155,7 @@ export class InMemoryUserRepository implements UserRepository {
     const user = await this.getStoredUser(userId);
     const normalizedCurrentPassword = this.normalizePassword(currentPassword);
     const normalizedNewPassword = this.normalizePassword(newPassword);
-    const isPasswordValid = await this.verifyPassword(
-      normalizedCurrentPassword,
-      user.passwordHash,
-    );
+    const isPasswordValid = await this.verifyPassword(normalizedCurrentPassword, user.passwordHash);
 
     if (!isPasswordValid) {
       throw new UnauthorizedException({
@@ -214,7 +205,7 @@ export class InMemoryUserRepository implements UserRepository {
   private normalizeEmail(email: string): string {
     const normalizedEmail = email?.trim().toLowerCase();
 
-    if (!normalizedEmail || !normalizedEmail.includes('@')) {
+    if (!normalizedEmail?.includes('@')) {
       throw new BadRequestException({
         code: 'EMAIL_INVALID',
         message: 'Email is invalid',
@@ -256,10 +247,7 @@ export class InMemoryUserRepository implements UserRepository {
     return `scrypt:${salt}:${derivedKey.toString('hex')}`;
   }
 
-  private async verifyPassword(
-    password: string,
-    storedPasswordHash: string,
-  ): Promise<boolean> {
+  private async verifyPassword(password: string, storedPasswordHash: string): Promise<boolean> {
     const [algorithm, salt, hash] = storedPasswordHash.split(':');
 
     if (algorithm !== 'scrypt' || !salt || !hash) {
@@ -267,11 +255,7 @@ export class InMemoryUserRepository implements UserRepository {
     }
 
     const storedHashBuffer = Buffer.from(hash, 'hex');
-    const derivedKey = (await scryptAsync(
-      password,
-      salt,
-      storedHashBuffer.length,
-    )) as Buffer;
+    const derivedKey = (await scryptAsync(password, salt, storedHashBuffer.length)) as Buffer;
 
     return timingSafeEqual(storedHashBuffer, derivedKey);
   }

@@ -1,9 +1,4 @@
-import {
-  ConflictException,
-  Controller,
-  HttpException,
-  NotFoundException,
-} from '@nestjs/common';
+import { ConflictException, Controller, HttpException, NotFoundException } from '@nestjs/common';
 import { GrpcMethod, RpcException } from '@nestjs/microservices';
 import { status } from '@grpc/grpc-js';
 import { CreatePendingUserProfileUseCase } from '../../application/use-cases/create-pending-user-profile.use-case';
@@ -55,8 +50,7 @@ export class UserProfilesGrpcController {
     request: CreatePendingProfileRequest,
   ): Promise<CreatePendingProfileResponse> {
     try {
-      const profile =
-        await this.createPendingUserProfileUseCase.execute(request);
+      const profile = await this.createPendingUserProfileUseCase.execute(request);
       return { success: true, userId: profile.userId };
     } catch (error) {
       throw this.mapRpcError(error, 'CreatePendingProfile failed');
@@ -80,9 +74,7 @@ export class UserProfilesGrpcController {
   @GrpcMethod('UserProfilesService', 'GetProfiles')
   async getProfiles(request: GetProfilesRequest): Promise<GetProfilesResponse> {
     try {
-      const profiles = await this.bulkGetUserProfilesUseCase.execute(
-        request.userIds ?? [],
-      );
+      const profiles = await this.bulkGetUserProfilesUseCase.execute(request.userIds ?? []);
       return {
         profiles: profiles.map((profile) => ({
           avatarUrl: profile.avatarUrl ?? undefined,
@@ -99,9 +91,7 @@ export class UserProfilesGrpcController {
     if (error instanceof ConflictException) {
       const response = error.getResponse();
       const details =
-        typeof response === 'object' && response !== null
-          ? response
-          : { message: error.message };
+        typeof response === 'object' && response !== null ? response : { message: error.message };
 
       return new RpcException({
         code: status.ALREADY_EXISTS,
@@ -112,9 +102,7 @@ export class UserProfilesGrpcController {
     if (error instanceof NotFoundException) {
       const response = error.getResponse();
       const details =
-        typeof response === 'object' && response !== null
-          ? response
-          : { message: error.message };
+        typeof response === 'object' && response !== null ? response : { message: error.message };
 
       return new RpcException({
         code: status.NOT_FOUND,
@@ -125,9 +113,7 @@ export class UserProfilesGrpcController {
     if (error instanceof HttpException) {
       const response = error.getResponse();
       const details =
-        typeof response === 'object' && response !== null
-          ? response
-          : { message: error.message };
+        typeof response === 'object' && response !== null ? response : { message: error.message };
 
       return new RpcException({
         code: status.INTERNAL,

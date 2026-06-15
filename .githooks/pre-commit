@@ -16,4 +16,15 @@ if git diff --cached --name-only | grep -E '(^|/)\.env$'; then
   exit 1
 fi
 
+# Biome format/lint on staged files (services + packages)
+if command -v pnpm >/dev/null 2>&1; then
+  pnpm exec biome check --staged --assist-enabled=false --files-ignore-unknown=true --no-errors-on-unmatched
+  if [ $? -ne 0 ]; then
+    echo ""
+    echo "Biome check failed on staged files."
+    echo "Fix with: pnpm run biome:fix   (or format only: pnpm run format)"
+    exit 1
+  fi
+fi
+
 exit 0

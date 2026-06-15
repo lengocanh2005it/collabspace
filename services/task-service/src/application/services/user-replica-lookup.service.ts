@@ -1,11 +1,11 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { UserProfileHttpClient } from "../../infrastructure/clients/user-profile-http.client";
+import type { UserProfileHttpClient } from "../../infrastructure/clients/user-profile-http.client";
 import {
   type IUserReplicaRepository,
   USER_REPLICA_REPOSITORY_TOKEN,
 } from "../ports/IUserReplicaRepository";
-import { UserReplica } from "../../infrastructure/persistence/user-replica.schema";
-import { MetricsService } from "../../metrics/metrics.service";
+import type { UserReplica } from "../../infrastructure/persistence/user-replica.schema";
+import type { MetricsService } from "../../metrics/metrics.service";
 
 export const USER_REPLICA_LOOKUP_TOKEN = Symbol("USER_REPLICA_LOOKUP");
 
@@ -28,9 +28,7 @@ export class UserReplicaLookupService {
     return this.hydrateAndGetActive({ userIds: [userId] }, "findById");
   }
 
-  async findActiveByUsernameAsync(
-    username: string,
-  ): Promise<UserReplica | null> {
+  async findActiveByUsernameAsync(username: string): Promise<UserReplica | null> {
     const normalized = username.trim().toLowerCase();
     const existing = await this.userReplicaRepo.findByUsernameAsync(normalized);
 
@@ -49,8 +47,7 @@ export class UserReplicaLookupService {
       return null;
     }
 
-    const remoteReplicas =
-      await this.userProfileHttpClient.lookupReplicas(request);
+    const remoteReplicas = await this.userProfileHttpClient.lookupReplicas(request);
 
     if (remoteReplicas.length === 0) {
       return null;
@@ -84,12 +81,8 @@ export class UserReplicaLookupService {
     return record?.isActive ? record : null;
   }
 
-  async findActiveMapByUsernamesAsync(
-    usernames: string[],
-  ): Promise<Map<string, UserReplica>> {
-    const unique = [
-      ...new Set(usernames.map((u) => u.trim().toLowerCase()).filter(Boolean)),
-    ];
+  async findActiveMapByUsernamesAsync(usernames: string[]): Promise<Map<string, UserReplica>> {
+    const unique = [...new Set(usernames.map((u) => u.trim().toLowerCase()).filter(Boolean))];
     const result = new Map<string, UserReplica>();
     if (unique.length === 0) return result;
 
@@ -104,7 +97,9 @@ export class UserReplicaLookupService {
     }
 
     for (const username of missing) {
-      const remote = await this.userProfileHttpClient.lookupReplicas({ username });
+      const remote = await this.userProfileHttpClient.lookupReplicas({
+        username,
+      });
       if (remote.length === 0) continue;
       this.metricsService.recordReplicaFallback("findByUsername");
       for (const r of remote) {
@@ -134,12 +129,8 @@ export class UserReplicaLookupService {
     return result;
   }
 
-  async findActiveMapByIdsAsync(
-    userIds: string[],
-  ): Promise<Map<string, UserReplica>> {
-    const uniqueIds = [
-      ...new Set(userIds.map((id) => id.trim()).filter(Boolean)),
-    ];
+  async findActiveMapByIdsAsync(userIds: string[]): Promise<Map<string, UserReplica>> {
+    const uniqueIds = [...new Set(userIds.map((id) => id.trim()).filter(Boolean))];
     const result = new Map<string, UserReplica>();
 
     if (uniqueIds.length === 0) {
@@ -156,10 +147,7 @@ export class UserReplicaLookupService {
 
     const missing = uniqueIds.filter((userId) => !result.has(userId));
 
-    if (
-      missing.length === 0 ||
-      !this.userProfileHttpClient.isFallbackEnabled()
-    ) {
+    if (missing.length === 0 || !this.userProfileHttpClient.isFallbackEnabled()) {
       return result;
     }
 

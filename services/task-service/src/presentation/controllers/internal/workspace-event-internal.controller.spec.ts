@@ -1,5 +1,5 @@
 import type { RmqContext } from "@nestjs/microservices";
-import { WorkspaceDeletionService } from "../../../application/services/workspace-deletion.service";
+import type { WorkspaceDeletionService } from "../../../application/services/workspace-deletion.service";
 import { WorkspaceEventController } from "./workspace-event-internal.controller";
 
 describe("WorkspaceEventController", () => {
@@ -31,9 +31,7 @@ describe("WorkspaceEventController", () => {
       context,
     );
 
-    expect(deletionService.deleteWorkspaceData).toHaveBeenCalledWith(
-      "workspace-1",
-    );
+    expect(deletionService.deleteWorkspaceData).toHaveBeenCalledWith("workspace-1");
     expect(ack).toHaveBeenCalledWith(message);
   });
 

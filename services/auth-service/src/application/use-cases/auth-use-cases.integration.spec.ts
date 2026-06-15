@@ -1,4 +1,4 @@
-import { ConfigurationService } from '@/configuration/configuration.service';
+import type { ConfigurationService } from '@/configuration/configuration.service';
 import { ChangePasswordUseCase } from '@/application/use-cases/change-password.use-case';
 import { GetCurrentUserUseCase } from '@/application/use-cases/get-current-user.use-case';
 import { LoginUseCase } from '@/application/use-cases/login.use-case';
@@ -12,12 +12,10 @@ import { EmailVerificationOtpService } from '@/application/services/email-verifi
 import { JwtTokenService } from '@/application/services/jwt-token.service';
 import { SessionIssuanceService } from '@/application/services/session-issuance.service';
 import { UserProfileResolverService } from '@/application/services/user-profile-resolver.service';
-import { UserRepository } from '@/domain/repositories/user.repository';
-import { RefreshTokenRepository } from '@/domain/repositories/refresh-token.repository';
-import { AuthAdminRepository } from '@/domain/repositories/auth-admin.repository';
-import { UserProfileClient } from '@/domain/ports/user-profile-client.port';
-import { EmailOutbox } from '@/domain/ports/email-outbox.port';
-import { OtpStore } from '@/domain/ports/otp-store.port';
+import type { UserRepository } from '@/domain/repositories/user.repository';
+import type { RefreshTokenRepository } from '@/domain/repositories/refresh-token.repository';
+import type { AuthAdminRepository } from '@/domain/repositories/auth-admin.repository';
+import type { EmailOutbox } from '@/domain/ports/email-outbox.port';
 import {
   ConflictException,
   HttpException,
@@ -77,7 +75,7 @@ describe('Auth use cases (integration)', () => {
     set: jest.fn(),
     setJson: jest.fn(),
     ttl: jest.fn(),
-  } as unknown as OtpStore;
+  };
   const identityServiceMock = {
     changePassword: jest.fn(),
     findUserByEmail: jest.fn(),
@@ -94,18 +92,13 @@ describe('Auth use cases (integration)', () => {
     createPendingProfile: jest.fn(),
     getProfile: jest.fn(),
     ping: jest.fn(),
-  } as unknown as UserProfileClient;
+  };
 
   let harness: AuthTestHarness;
 
   function buildAuthHarness(): AuthTestHarness {
-    const jwtTokenService = new JwtTokenService(
-      configurationServiceMock,
-      identityServiceMock,
-    );
-    const userProfileResolverService = new UserProfileResolverService(
-      userProfileClientMock,
-    );
+    const jwtTokenService = new JwtTokenService(configurationServiceMock, identityServiceMock);
+    const userProfileResolverService = new UserProfileResolverService(userProfileClientMock);
     const sessionIssuanceService = new SessionIssuanceService(
       jwtTokenService,
       refreshTokenRepositoryMock,
@@ -122,10 +115,7 @@ describe('Auth use cases (integration)', () => {
         jwtTokenService,
         userProfileResolverService,
       ),
-      getCurrentUserUseCase: new GetCurrentUserUseCase(
-        jwtTokenService,
-        userProfileResolverService,
-      ),
+      getCurrentUserUseCase: new GetCurrentUserUseCase(jwtTokenService, userProfileResolverService),
       loginUseCase: new LoginUseCase(
         identityServiceMock,
         authAdminRepositoryMock,
@@ -193,9 +183,7 @@ describe('Auth use cases (integration)', () => {
       workspaceId: 'workspace-1',
     });
 
-    await expect(
-      harness.verifyAccessTokenUseCase.execute(`Bearer ${token}`),
-    ).resolves.toEqual({
+    await expect(harness.verifyAccessTokenUseCase.execute(`Bearer ${token}`)).resolves.toEqual({
       emailVerified: true,
       fullName: 'Admin User',
       permissions: ['users.read'],
@@ -209,9 +197,9 @@ describe('Auth use cases (integration)', () => {
   });
 
   it('rejects requests without bearer token', async () => {
-    await expect(
-      harness.verifyAccessTokenUseCase.execute(undefined),
-    ).rejects.toThrow(UnauthorizedException);
+    await expect(harness.verifyAccessTokenUseCase.execute(undefined)).rejects.toThrow(
+      UnauthorizedException,
+    );
   });
 
   it('issues access and refresh tokens on login', async () => {
@@ -278,14 +266,10 @@ describe('Auth use cases (integration)', () => {
       roles: ['user'],
       userId: 'user-3',
     });
-    jest
-      .spyOn(userProfileClientMock, 'createPendingProfile')
-      .mockResolvedValue(undefined);
+    jest.spyOn(userProfileClientMock, 'createPendingProfile').mockResolvedValue(undefined);
     jest.spyOn(otpStoreMock, 'setJson').mockResolvedValue('OK');
     jest.spyOn(otpStoreMock, 'assertAvailable').mockResolvedValue(undefined);
-    jest
-      .spyOn(emailOutboxMock, 'enqueueEmailVerificationOtp')
-      .mockResolvedValue(undefined);
+    jest.spyOn(emailOutboxMock, 'enqueueEmailVerificationOtp').mockResolvedValue(undefined);
 
     const result = await harness.registerUseCase.execute({
       email: 'new@collabspace.dev',
@@ -330,9 +314,7 @@ describe('Auth use cases (integration)', () => {
         message: 'User profiles gRPC client is not initialized',
       }),
     );
-    jest
-      .spyOn(identityServiceMock, 'rollbackNewRegistration')
-      .mockResolvedValue();
+    jest.spyOn(identityServiceMock, 'rollbackNewRegistration').mockResolvedValue();
 
     await expect(
       harness.registerUseCase.execute({
@@ -342,9 +324,7 @@ describe('Auth use cases (integration)', () => {
       }),
     ).rejects.toBeInstanceOf(ServiceUnavailableException);
 
-    expect(identityServiceMock.rollbackNewRegistration).toHaveBeenCalledWith(
-      'user-3',
-    );
+    expect(identityServiceMock.rollbackNewRegistration).toHaveBeenCalledWith('user-3');
     expect(emailOutboxMock.enqueueEmailVerificationOtp).not.toHaveBeenCalled();
   });
 
@@ -370,9 +350,7 @@ describe('Auth use cases (integration)', () => {
         message: 'User service unavailable',
       }),
     );
-    jest
-      .spyOn(identityServiceMock, 'rollbackNewRegistration')
-      .mockResolvedValue();
+    jest.spyOn(identityServiceMock, 'rollbackNewRegistration').mockResolvedValue();
 
     await expect(
       harness.registerUseCase.execute({
@@ -395,18 +373,14 @@ describe('Auth use cases (integration)', () => {
       roles: ['user'],
       userId: 'user-3',
     });
-    jest
-      .spyOn(userProfileClientMock, 'createPendingProfile')
-      .mockResolvedValue(undefined);
+    jest.spyOn(userProfileClientMock, 'createPendingProfile').mockResolvedValue(undefined);
     jest.spyOn(otpStoreMock, 'assertAvailable').mockRejectedValue(
       new ServiceUnavailableException({
         code: 'REDIS_UNAVAILABLE',
         message: 'Redis is unavailable',
       }),
     );
-    jest
-      .spyOn(identityServiceMock, 'rollbackNewRegistration')
-      .mockResolvedValue();
+    jest.spyOn(identityServiceMock, 'rollbackNewRegistration').mockResolvedValue();
 
     await expect(
       harness.registerUseCase.execute({
@@ -418,9 +392,7 @@ describe('Auth use cases (integration)', () => {
       response: { code: 'REDIS_UNAVAILABLE' },
     });
 
-    expect(identityServiceMock.rollbackNewRegistration).toHaveBeenCalledWith(
-      'user-3',
-    );
+    expect(identityServiceMock.rollbackNewRegistration).toHaveBeenCalledWith('user-3');
     expect(emailOutboxMock.enqueueEmailVerificationOtp).not.toHaveBeenCalled();
   });
 
@@ -440,14 +412,10 @@ describe('Auth use cases (integration)', () => {
       roles: ['user'],
       userId: 'user-3',
     });
-    jest
-      .spyOn(userProfileClientMock, 'createPendingProfile')
-      .mockResolvedValue(undefined);
+    jest.spyOn(userProfileClientMock, 'createPendingProfile').mockResolvedValue(undefined);
     jest.spyOn(otpStoreMock, 'setJson').mockResolvedValue('OK');
     jest.spyOn(otpStoreMock, 'assertAvailable').mockResolvedValue(undefined);
-    jest
-      .spyOn(emailOutboxMock, 'enqueueEmailVerificationOtp')
-      .mockResolvedValue(undefined);
+    jest.spyOn(emailOutboxMock, 'enqueueEmailVerificationOtp').mockResolvedValue(undefined);
 
     const result = await harness.registerUseCase.execute({
       email: 'new@collabspace.dev',
@@ -456,9 +424,7 @@ describe('Auth use cases (integration)', () => {
     });
 
     expect(result.verificationRequired).toBe(true);
-    expect(identityServiceMock.findUserByEmail).toHaveBeenCalledWith(
-      'new@collabspace.dev',
-    );
+    expect(identityServiceMock.findUserByEmail).toHaveBeenCalledWith('new@collabspace.dev');
   });
 
   it('resends verification otp for a pending user', async () => {
@@ -477,9 +443,7 @@ describe('Auth use cases (integration)', () => {
     jest.spyOn(otpStoreMock, 'set').mockResolvedValue('OK');
     jest.spyOn(otpStoreMock, 'setJson').mockResolvedValue('OK');
     jest.spyOn(otpStoreMock, 'assertAvailable').mockResolvedValue(undefined);
-    jest
-      .spyOn(emailOutboxMock, 'enqueueEmailVerificationOtp')
-      .mockResolvedValue(undefined);
+    jest.spyOn(emailOutboxMock, 'enqueueEmailVerificationOtp').mockResolvedValue(undefined);
 
     await expect(
       harness.resendEmailVerificationOtpUseCase.execute({
@@ -526,8 +490,7 @@ describe('Auth use cases (integration)', () => {
     });
     jest.spyOn(otpStoreMock, 'getJson').mockResolvedValue({
       email: 'new@collabspace.dev',
-      otpHash:
-        '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
+      otpHash: '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
     });
     jest.spyOn(identityServiceMock, 'markEmailVerified').mockResolvedValue({
       email: 'new@collabspace.dev',
@@ -596,9 +559,7 @@ describe('Auth use cases (integration)', () => {
       workspaceId: 'workspace-4',
     });
 
-    await expect(
-      harness.getCurrentUserUseCase.execute(`Bearer ${token}`),
-    ).resolves.toEqual({
+    await expect(harness.getCurrentUserUseCase.execute(`Bearer ${token}`)).resolves.toEqual({
       email: 'admin@collabspace.dev',
       emailVerified: true,
       fullName: 'Admin User',
@@ -633,9 +594,7 @@ describe('Auth use cases (integration)', () => {
       workspaceId: 'workspace-8',
     });
 
-    await expect(
-      harness.verifyAccessTokenUseCase.execute(`Bearer ${token}`),
-    ).resolves.toEqual({
+    await expect(harness.verifyAccessTokenUseCase.execute(`Bearer ${token}`)).resolves.toEqual({
       emailVerified: true,
       fullName: undefined,
       permissions: ['users.read'],
@@ -658,12 +617,8 @@ describe('Auth use cases (integration)', () => {
       roles: ['member'],
       userId: 'user-2',
     });
-    jest
-      .spyOn(identityServiceMock, 'changePassword')
-      .mockResolvedValue(undefined);
-    jest
-      .spyOn(refreshTokenRepositoryMock, 'revokeAllForUser')
-      .mockResolvedValue(2);
+    jest.spyOn(identityServiceMock, 'changePassword').mockResolvedValue(undefined);
+    jest.spyOn(refreshTokenRepositoryMock, 'revokeAllForUser').mockResolvedValue(2);
     const token = await harness.jwtTokenService.signAccessToken({
       role: 'member',
       roles: ['member'],
@@ -684,9 +639,7 @@ describe('Auth use cases (integration)', () => {
   });
 
   it('revokes refresh token on logout', async () => {
-    jest
-      .spyOn(refreshTokenRepositoryMock, 'revokeToken')
-      .mockResolvedValue(undefined);
+    jest.spyOn(refreshTokenRepositoryMock, 'revokeToken').mockResolvedValue(undefined);
 
     await expect(
       harness.logoutUseCase.execute({ refreshToken: 'refresh-token-3' }),

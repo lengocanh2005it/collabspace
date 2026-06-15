@@ -1,16 +1,12 @@
-import {
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'node:crypto';
-import { Repository } from 'typeorm';
-import {
-  type AdminPermission,
-  type AdminRole,
-  type AdminUser,
-  type AuthAdminRepository,
+import type { Repository } from 'typeorm';
+import type {
+  AdminPermission,
+  AdminRole,
+  AdminUser,
+  AuthAdminRepository,
 } from '@/domain/repositories/auth-admin.repository';
 import { PermissionOrmEntity } from '@/infrastructure/database/entities/permission.orm-entity';
 import { RolePermissionOrmEntity } from '@/infrastructure/database/entities/role-permission.orm-entity';
@@ -35,10 +31,7 @@ export class TypeOrmAuthAdminRepository implements AuthAdminRepository {
     private readonly userRoleRepository: Repository<UserRoleOrmEntity>,
   ) {}
 
-  async createRole(input: {
-    description: string;
-    name: string;
-  }): Promise<AdminRole> {
+  async createRole(input: { description: string; name: string }): Promise<AdminRole> {
     const name = this.normalizeName(input.name);
     await this.assertRoleNameAvailable(name);
     const role = await this.roleRepository.save(
@@ -51,10 +44,7 @@ export class TypeOrmAuthAdminRepository implements AuthAdminRepository {
     return this.toAdminRole(role);
   }
 
-  async createPermission(input: {
-    description: string;
-    name: string;
-  }): Promise<AdminPermission> {
+  async createPermission(input: { description: string; name: string }): Promise<AdminPermission> {
     const name = this.normalizeName(input.name);
     const existing = await this.permissionRepository.findOne({
       where: { name },
@@ -75,11 +65,8 @@ export class TypeOrmAuthAdminRepository implements AuthAdminRepository {
     return this.toAdminPermission(permission);
   }
 
-  async assignPermissionToRole(
-    roleId: string,
-    permissionId: string,
-  ): Promise<AdminRole> {
-    const [role, permission] = await Promise.all([
+  async assignPermissionToRole(roleId: string, permissionId: string): Promise<AdminRole> {
+    const [_role, permission] = await Promise.all([
       this.loadRole(roleId),
       this.permissionRepository.findOne({ where: { id: permissionId } }),
     ]);
@@ -98,10 +85,7 @@ export class TypeOrmAuthAdminRepository implements AuthAdminRepository {
 
   async assignRoleToUser(userId: string, roleId: string): Promise<AdminUser> {
     await Promise.all([this.loadUser(userId), this.loadRole(roleId)]);
-    await this.userRoleRepository.upsert({ roleId, userId }, [
-      'userId',
-      'roleId',
-    ]);
+    await this.userRoleRepository.upsert({ roleId, userId }, ['userId', 'roleId']);
     return this.toAdminUser(await this.loadUser(userId));
   }
 
@@ -114,9 +98,9 @@ export class TypeOrmAuthAdminRepository implements AuthAdminRepository {
   }
 
   async listPermissions(): Promise<AdminPermission[]> {
-    return (
-      await this.permissionRepository.find({ order: { name: 'ASC' } })
-    ).map((permission) => this.toAdminPermission(permission));
+    return (await this.permissionRepository.find({ order: { name: 'ASC' } })).map((permission) =>
+      this.toAdminPermission(permission),
+    );
   }
 
   async listUsers(): Promise<AdminUser[]> {
@@ -168,10 +152,7 @@ export class TypeOrmAuthAdminRepository implements AuthAdminRepository {
   }
 
   async recordLogin(userId: string): Promise<void> {
-    await this.userRepository.update(
-      { id: userId },
-      { lastLoginAt: new Date() },
-    );
+    await this.userRepository.update({ id: userId }, { lastLoginAt: new Date() });
   }
 
   private async assertRoleNameAvailable(name: string): Promise<void> {

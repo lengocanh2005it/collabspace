@@ -1,6 +1,6 @@
-import { UserProfile } from '../entities/user-profile.entity';
-import { UserPreferences } from '../entities/user-preferences.entity';
-import { UserStatus } from '../entities/user-status.entity';
+import type { UserProfile } from '../entities/user-profile.entity';
+import type { UserPreferences } from '../entities/user-preferences.entity';
+import type { UserStatus } from '../entities/user-status.entity';
 
 export const USER_PROFILE_REPOSITORY = Symbol('USER_PROFILE_REPOSITORY');
 
@@ -60,17 +60,8 @@ export interface UserProfileRepository {
   getStatusesByUserIds(userIds: string[]): Promise<UserStatus[]>;
   list(input: ListUserProfilesInput): Promise<ListUserProfilesResult>;
   anonymize(userId: string): Promise<void>;
-  updatePreferences(
-    userId: string,
-    input: UpdateUserPreferencesInput,
-  ): Promise<UserPreferences>;
-  updateProfile(
-    userId: string,
-    input: UpdateUserProfileInput,
-  ): Promise<UserProfile>;
-  updateStatus(
-    userId: string,
-    input: UpdateUserStatusInput,
-  ): Promise<UserStatus>;
+  updatePreferences(userId: string, input: UpdateUserPreferencesInput): Promise<UserPreferences>;
+  updateProfile(userId: string, input: UpdateUserProfileInput): Promise<UserProfile>;
+  updateStatus(userId: string, input: UpdateUserStatusInput): Promise<UserStatus>;
   upsertPending(input: CreatePendingUserProfileInput): Promise<UserProfile>;
 }

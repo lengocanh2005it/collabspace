@@ -1,16 +1,13 @@
-import { VerifyEmailOtpRequestDto } from '@/application/dto/auth-request.dto';
+import type { VerifyEmailOtpRequestDto } from '@/application/dto/auth-request.dto';
 import type { VerifyEmailOtpResult } from '@/application/dto/auth-use-case-results';
 import {
-  EmailVerificationOtpPayload,
+  type EmailVerificationOtpPayload,
   OTP_STORE,
   type OtpStore,
 } from '@/domain/ports/otp-store.port';
-import {
-  USER_REPOSITORY,
-  type UserRepository,
-} from '@/domain/repositories/user.repository';
+import { USER_REPOSITORY, type UserRepository } from '@/domain/repositories/user.repository';
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
-import { EmailVerificationOtpService } from '../services/email-verification-otp.service';
+import type { EmailVerificationOtpService } from '../services/email-verification-otp.service';
 
 @Injectable()
 export class VerifyEmailOtpUseCase {
@@ -22,9 +19,7 @@ export class VerifyEmailOtpUseCase {
     private readonly emailVerificationOtpService: EmailVerificationOtpService,
   ) {}
 
-  async execute(
-    input: VerifyEmailOtpRequestDto,
-  ): Promise<VerifyEmailOtpResult> {
+  async execute(input: VerifyEmailOtpRequestDto): Promise<VerifyEmailOtpResult> {
     const otp = input.otp?.trim();
 
     if (!input.userId || input.userId.trim().length === 0 || !otp) {
@@ -34,9 +29,7 @@ export class VerifyEmailOtpUseCase {
       });
     }
 
-    const existingUser = await this.userRepository.getAuthUserById(
-      input.userId,
-    );
+    const existingUser = await this.userRepository.getAuthUserById(input.userId);
 
     if (existingUser.emailVerified) {
       return {
@@ -65,9 +58,7 @@ export class VerifyEmailOtpUseCase {
     }
 
     const user = await this.userRepository.markEmailVerified(input.userId);
-    await this.otpStore.delete(
-      this.emailVerificationOtpService.buildOtpKey(input.userId),
-    );
+    await this.otpStore.delete(this.emailVerificationOtpService.buildOtpKey(input.userId));
 
     return {
       email: user.email,

@@ -1,10 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { USER_PROFILE_REPOSITORY } from '../../domain/repositories/user-profile.repository';
 import type { UserProfileRepository } from '../../domain/repositories/user-profile.repository';
-import {
-  type LookupUserReplicasInput,
-  type UserReplicaLookupDto,
-} from '../dto/user-replica-lookup.dto';
+import type { LookupUserReplicasInput, UserReplicaLookupDto } from '../dto/user-replica-lookup.dto';
 
 @Injectable()
 export class LookupUserReplicasUseCase {
@@ -13,12 +10,8 @@ export class LookupUserReplicasUseCase {
     private readonly userProfileRepository: UserProfileRepository,
   ) {}
 
-  async execute(
-    input: LookupUserReplicasInput,
-  ): Promise<UserReplicaLookupDto[]> {
-    const userIds = [
-      ...new Set((input.userIds ?? []).map((id) => id.trim()).filter(Boolean)),
-    ];
+  async execute(input: LookupUserReplicasInput): Promise<UserReplicaLookupDto[]> {
+    const userIds = [...new Set((input.userIds ?? []).map((id) => id.trim()).filter(Boolean))];
     const username = input.username?.trim().toLowerCase();
     const byUserId = new Map<string, UserReplicaLookupDto>();
 
@@ -31,8 +24,7 @@ export class LookupUserReplicasUseCase {
     }
 
     if (userIds.length > 0) {
-      const profiles =
-        await this.userProfileRepository.findManyByUserIds(userIds);
+      const profiles = await this.userProfileRepository.findManyByUserIds(userIds);
 
       for (const profile of profiles) {
         byUserId.set(profile.userId, this.toReplicaDto(profile));

@@ -1,15 +1,12 @@
-import { ResetPasswordRequestDto } from '@/application/dto/auth-request.dto';
+import type { ResetPasswordRequestDto } from '@/application/dto/auth-request.dto';
 import type { ResetPasswordResult } from '@/application/dto/auth-use-case-results';
 import {
   REFRESH_TOKEN_REPOSITORY,
   type RefreshTokenRepository,
 } from '@/domain/repositories/refresh-token.repository';
-import {
-  USER_REPOSITORY,
-  type UserRepository,
-} from '@/domain/repositories/user.repository';
+import { USER_REPOSITORY, type UserRepository } from '@/domain/repositories/user.repository';
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
-import { PasswordResetTokenService } from '../services/password-reset-token.service';
+import type { PasswordResetTokenService } from '../services/password-reset-token.service';
 
 @Injectable()
 export class ResetPasswordUseCase {
@@ -22,9 +19,7 @@ export class ResetPasswordUseCase {
   ) {}
 
   async execute(input: ResetPasswordRequestDto): Promise<ResetPasswordResult> {
-    const payload = await this.passwordResetTokenService.consumeToken(
-      input.token,
-    );
+    const payload = await this.passwordResetTokenService.consumeToken(input.token);
 
     if (!payload) {
       throw new UnauthorizedException({
@@ -43,11 +38,10 @@ export class ResetPasswordUseCase {
     }
 
     await this.userRepository.resetPassword(payload.userId, input.newPassword);
-    const revokedSessionCount =
-      await this.refreshTokenRepository.revokeAllForUser(
-        payload.userId,
-        'password_reset',
-      );
+    const revokedSessionCount = await this.refreshTokenRepository.revokeAllForUser(
+      payload.userId,
+      'password_reset',
+    );
 
     return {
       message: 'Password reset successfully',

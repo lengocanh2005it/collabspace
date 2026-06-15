@@ -51,9 +51,7 @@ export class UserProfileCacheService {
 
   async getProfile(userId: string): Promise<UserProfile | null | undefined> {
     const cached = await this.get<UserProfile>(this.profileKey(userId));
-    return cached === undefined || cached === null
-      ? cached
-      : reviveProfile(cached);
+    return cached === undefined || cached === null ? cached : reviveProfile(cached);
   }
 
   async setProfile(userId: string, profile: UserProfile): Promise<void> {
@@ -90,10 +88,9 @@ export class UserProfileCacheService {
     if (!this.redis || profiles.length === 0) return;
     try {
       const ttl = this.profileTtl();
+      const redis = this.redis;
       await Promise.all(
-        profiles.map((p) =>
-          this.redis!.setex(this.profileKey(p.userId), ttl, JSON.stringify(p)),
-        ),
+        profiles.map((p) => redis.setex(this.profileKey(p.userId), ttl, JSON.stringify(p))),
       );
     } catch (err) {
       this.logger.warn(
@@ -105,13 +102,9 @@ export class UserProfileCacheService {
 
   // ── preferences ──────────────────────────────────────────────────────────
 
-  async getPreferences(
-    userId: string,
-  ): Promise<UserPreferences | null | undefined> {
+  async getPreferences(userId: string): Promise<UserPreferences | null | undefined> {
     const cached = await this.get<UserPreferences>(this.prefsKey(userId));
-    return cached === undefined || cached === null
-      ? cached
-      : revivePreferences(cached);
+    return cached === undefined || cached === null ? cached : revivePreferences(cached);
   }
 
   async setPreferences(userId: string, prefs: UserPreferences): Promise<void> {
@@ -126,9 +119,7 @@ export class UserProfileCacheService {
 
   async getStatus(userId: string): Promise<UserStatus | null | undefined> {
     const cached = await this.get<UserStatus>(this.statusKey(userId));
-    return cached === undefined || cached === null
-      ? cached
-      : reviveStatus(cached);
+    return cached === undefined || cached === null ? cached : reviveStatus(cached);
   }
 
   async setStatus(userId: string, status: UserStatus): Promise<void> {
@@ -195,27 +186,21 @@ export class UserProfileCacheService {
   private profileTtl(): number {
     return Math.max(
       1,
-      Number(
-        this.configService.get<string>('USER_PROFILE_CACHE_TTL_SECONDS') ?? 300,
-      ),
+      Number(this.configService.get<string>('USER_PROFILE_CACHE_TTL_SECONDS') ?? 300),
     );
   }
 
   private prefsTtl(): number {
     return Math.max(
       1,
-      Number(
-        this.configService.get<string>('USER_PREFS_CACHE_TTL_SECONDS') ?? 600,
-      ),
+      Number(this.configService.get<string>('USER_PREFS_CACHE_TTL_SECONDS') ?? 600),
     );
   }
 
   private statusTtl(): number {
     return Math.max(
       1,
-      Number(
-        this.configService.get<string>('USER_STATUS_CACHE_TTL_SECONDS') ?? 60,
-      ),
+      Number(this.configService.get<string>('USER_STATUS_CACHE_TTL_SECONDS') ?? 60),
     );
   }
 }

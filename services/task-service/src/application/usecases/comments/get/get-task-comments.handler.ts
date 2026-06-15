@@ -1,12 +1,12 @@
 // src/application/usecases/comments/get/get-task-comments.handler.ts
-import { IQueryHandler, QueryHandler } from "@nestjs/cqrs";
+import { type IQueryHandler, QueryHandler } from "@nestjs/cqrs";
 import { Inject } from "@nestjs/common";
 import { GetTaskCommentsQuery } from "./get-task-comments.query";
 import {
   type ICommentRepository,
   COMMENT_REPOSITORY_TOKEN,
 } from "../../../../domain/repositories/comment.repository.interface";
-import { Comment } from "../../../../domain/entities/comment.entity";
+import type { Comment } from "../../../../domain/entities/comment.entity";
 
 export interface CommentResponseDto {
   id: string;
@@ -32,10 +32,9 @@ export interface GetTaskCommentsResponse {
 }
 
 @QueryHandler(GetTaskCommentsQuery)
-export class GetTaskCommentsHandler implements IQueryHandler<
-  GetTaskCommentsQuery,
-  GetTaskCommentsResponse
-> {
+export class GetTaskCommentsHandler
+  implements IQueryHandler<GetTaskCommentsQuery, GetTaskCommentsResponse>
+{
   constructor(
     @Inject(COMMENT_REPOSITORY_TOKEN)
     private readonly commentRepository: ICommentRepository,

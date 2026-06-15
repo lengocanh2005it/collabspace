@@ -2,12 +2,12 @@ import {
   Inject,
   Injectable,
   Logger,
-  OnModuleInit,
+  type OnModuleInit,
   ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common';
 import type { ClientGrpc } from '@nestjs/microservices';
-import { TimeoutError, firstValueFrom, Observable, timeout } from 'rxjs';
+import { TimeoutError, firstValueFrom, type Observable, timeout } from 'rxjs';
 
 export const AUTH_GRPC_CLIENT = 'AUTH_GRPC_CLIENT';
 
@@ -35,19 +35,14 @@ type VerifyAccessTokenLiteResponse = {
 };
 
 type AuthGrpcClient = {
-  verifyAccessToken(
-    request: VerifyAccessTokenRequest,
-  ): Observable<VerifyAccessTokenResponse>;
+  verifyAccessToken(request: VerifyAccessTokenRequest): Observable<VerifyAccessTokenResponse>;
   verifyAccessTokenLite(
     request: VerifyAccessTokenRequest,
   ): Observable<VerifyAccessTokenLiteResponse>;
 };
 
 type ReadyGrpcClient = {
-  waitForReady(
-    deadline: number,
-    callback: (error?: Error | null) => void,
-  ): void;
+  waitForReady(deadline: number, callback: (error?: Error | null) => void): void;
 };
 
 export type AuthIdentity = {
@@ -80,8 +75,7 @@ export class AuthGrpcService implements OnModuleInit {
 
   onModuleInit(): void {
     this.authService = this.client.getService<AuthGrpcClient>('AuthService');
-    this.authClient =
-      this.client.getClientByServiceName<ReadyGrpcClient>('AuthService');
+    this.authClient = this.client.getClientByServiceName<ReadyGrpcClient>('AuthService');
   }
 
   async ping(): Promise<void> {
@@ -106,10 +100,7 @@ export class AuthGrpcService implements OnModuleInit {
         });
       });
     } catch (error) {
-      const message = this.extractErrorMessage(
-        error,
-        'Auth gRPC readiness check failed',
-      );
+      const message = this.extractErrorMessage(error, 'Auth gRPC readiness check failed');
 
       if (message.toLowerCase().includes('deadline')) {
         throw new ServiceUnavailableException({
@@ -125,12 +116,9 @@ export class AuthGrpcService implements OnModuleInit {
     }
   }
 
-  async verifyAccessTokenLite(
-    authorizationHeader?: string,
-  ): Promise<AuthLiteIdentity> {
+  async verifyAccessTokenLite(authorizationHeader?: string): Promise<AuthLiteIdentity> {
     const response = await this.invokeVerify(
-      (authorization) =>
-        this.authService!.verifyAccessTokenLite({ authorization }),
+      (authorization) => this.authService!.verifyAccessTokenLite({ authorization }),
       authorizationHeader,
       'VerifyAccessTokenLite',
     );
@@ -203,9 +191,7 @@ export class AuthGrpcService implements OnModuleInit {
       }
 
       if (this.isTimeoutError(error)) {
-        this.logger.warn(
-          `AuthService.${rpcLabel} timed out after ${timeoutMs}ms`,
-        );
+        this.logger.warn(`AuthService.${rpcLabel} timed out after ${timeoutMs}ms`);
         throw new ServiceUnavailableException({
           code: 'AUTH_SERVICE_GRPC_TIMEOUT',
           message: `Auth gRPC verification timed out after ${timeoutMs}ms`,
@@ -213,20 +199,14 @@ export class AuthGrpcService implements OnModuleInit {
       }
 
       if (this.isUnauthenticatedError(error)) {
-        const message = this.extractErrorMessage(
-          error,
-          'Access token is invalid',
-        );
+        const message = this.extractErrorMessage(error, 'Access token is invalid');
         throw new UnauthorizedException({
           code: 'TOKEN_INVALID',
           message,
         });
       }
 
-      const message = this.extractErrorMessage(
-        error,
-        'Auth gRPC verification request failed',
-      );
+      const message = this.extractErrorMessage(error, 'Auth gRPC verification request failed');
       this.logger.warn(`AuthService.${rpcLabel} failed: ${message}`);
       throw new ServiceUnavailableException({
         code: 'AUTH_SERVICE_GRPC_REQUEST_FAILED',

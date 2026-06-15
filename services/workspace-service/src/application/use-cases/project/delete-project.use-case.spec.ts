@@ -1,4 +1,4 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { Test, type TestingModule } from '@nestjs/testing';
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { DeleteProjectUseCase } from './delete-project.use-case';
 import { PROJECT_REPOSITORY } from '../../../domain/repositories/project.repository';
@@ -31,9 +31,7 @@ describe('DeleteProjectUseCase', () => {
     mockMemberRepo.findByWorkspaceAndUser.mockResolvedValue(
       new WorkspaceMember('m-1', 'ws-1', 'user-1', 'member', new Date()),
     );
-    await expect(useCase.execute('user-1', 'ws-1', 'proj-1')).rejects.toThrow(
-      ForbiddenException,
-    );
+    await expect(useCase.execute('user-1', 'ws-1', 'proj-1')).rejects.toThrow(ForbiddenException);
   });
 
   it('should throw NotFoundException if project does not exist', async () => {
@@ -41,9 +39,7 @@ describe('DeleteProjectUseCase', () => {
       new WorkspaceMember('m-1', 'ws-1', 'user-1', 'admin', new Date()),
     );
     mockProjectRepo.findById.mockResolvedValue(null);
-    await expect(useCase.execute('user-1', 'ws-1', 'proj-1')).rejects.toThrow(
-      NotFoundException,
-    );
+    await expect(useCase.execute('user-1', 'ws-1', 'proj-1')).rejects.toThrow(NotFoundException);
   });
 
   it('should soft delete project if allowed', async () => {
@@ -51,16 +47,7 @@ describe('DeleteProjectUseCase', () => {
       new WorkspaceMember('m-1', 'ws-1', 'user-1', 'owner', new Date()),
     );
     mockProjectRepo.findById.mockResolvedValue(
-      new Project(
-        'proj-1',
-        'ws-1',
-        'P',
-        null,
-        'user-1',
-        false,
-        new Date(),
-        new Date(),
-      ),
+      new Project('proj-1', 'ws-1', 'P', null, 'user-1', false, new Date(), new Date()),
     );
     mockProjectRepo.softDelete.mockResolvedValue(undefined);
 

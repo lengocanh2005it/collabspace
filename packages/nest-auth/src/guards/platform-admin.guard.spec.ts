@@ -30,9 +30,7 @@ describe('PlatformAdminGuard', () => {
     });
     const request = {};
 
-    await expect(
-      guard.canActivate(createContext({}, request)),
-    ).resolves.toBe(true);
+    await expect(guard.canActivate(createContext({}, request))).resolves.toBe(true);
     expect(request).toMatchObject({
       adminIdentity: { userId: 'admin-1' },
     });
@@ -45,9 +43,9 @@ describe('PlatformAdminGuard', () => {
       userId: 'user-1',
     });
 
-    await expect(
-      guard.canActivate(createContext({}, {})),
-    ).rejects.toBeInstanceOf(ForbiddenException);
+    await expect(guard.canActivate(createContext({}, {}))).rejects.toBeInstanceOf(
+      ForbiddenException,
+    );
   });
 
   it('allows explicit permissions when RequirePermission is set', async () => {
@@ -64,8 +62,6 @@ describe('PlatformAdminGuard', () => {
       userId: 'user-1',
     });
 
-    await expect(
-      guard.canActivate(createContext({}, {})),
-    ).resolves.toBe(true);
+    await expect(guard.canActivate(createContext({}, {}))).resolves.toBe(true);
   });
 });

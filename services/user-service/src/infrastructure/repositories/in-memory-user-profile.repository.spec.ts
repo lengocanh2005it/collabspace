@@ -10,7 +10,6 @@ describe('InMemoryUserProfileRepository', () => {
 
   it('assigns a suffixed username when the base username is already taken', async () => {
     const existingUserId = randomUUID();
-    const now = new Date();
     await repository.upsertPending({
       fullName: 'Le Ngoc Anh',
       userId: existingUserId,
@@ -44,8 +43,6 @@ describe('InMemoryUserProfileRepository', () => {
     expect(updated.username).toBe(created.username);
     expect(updated.fullName).toBe('Le Ngoc Anh Updated');
     expect(updated.createdAt).toEqual(created.createdAt);
-    expect(updated.updatedAt.getTime()).toBeGreaterThanOrEqual(
-      created.updatedAt.getTime(),
-    );
+    expect(updated.updatedAt.getTime()).toBeGreaterThanOrEqual(created.updatedAt.getTime());
   });
 });

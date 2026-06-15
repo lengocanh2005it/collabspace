@@ -8,11 +8,7 @@ import {
 
 export type RequestWithId = Request & { requestId: string };
 
-export function requestIdMiddleware(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-): void {
+export function requestIdMiddleware(req: Request, res: Response, next: NextFunction): void {
   const incoming = req.headers[REQUEST_ID_HEADER];
   let requestId: string;
 

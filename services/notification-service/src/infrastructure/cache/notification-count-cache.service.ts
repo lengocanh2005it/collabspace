@@ -31,11 +31,7 @@ export class NotificationCountCacheService {
   async setUnreadCount(recipientId: string, count: number): Promise<void> {
     if (!this.redis) return;
     try {
-      await this.redis.setex(
-        this.unreadKey(recipientId),
-        this.unreadTtl(),
-        String(count),
-      );
+      await this.redis.setex(this.unreadKey(recipientId), this.unreadTtl(), String(count));
     } catch (err) {
       this.logger.warn(
         "Cache write error (unreadCount)",
@@ -63,11 +59,7 @@ export class NotificationCountCacheService {
   private unreadTtl(): number {
     return Math.max(
       1,
-      Number(
-        this.configService.get<string>(
-          "NOTIFICATION_UNREAD_CACHE_TTL_SECONDS",
-        ) ?? 30,
-      ),
+      Number(this.configService.get<string>("NOTIFICATION_UNREAD_CACHE_TTL_SECONDS") ?? 30),
     );
   }
 }

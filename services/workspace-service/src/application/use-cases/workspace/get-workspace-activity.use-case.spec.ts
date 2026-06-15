@@ -1,4 +1,4 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { Test, type TestingModule } from '@nestjs/testing';
 import { ForbiddenException } from '@nestjs/common';
 import { GetWorkspaceActivityUseCase } from './get-workspace-activity.use-case';
 import { WORKSPACE_ACTIVITY_REPOSITORY } from '../../../domain/repositories/workspace-activity.repository';
@@ -20,17 +20,13 @@ describe('GetWorkspaceActivityUseCase', () => {
         { provide: WORKSPACE_MEMBER_REPOSITORY, useValue: mockMemberRepo },
       ],
     }).compile();
-    useCase = module.get<GetWorkspaceActivityUseCase>(
-      GetWorkspaceActivityUseCase,
-    );
+    useCase = module.get<GetWorkspaceActivityUseCase>(GetWorkspaceActivityUseCase);
   });
 
   it('throws ForbiddenException when requester is not a workspace member', async () => {
     mockMemberRepo.findByWorkspaceAndUser.mockResolvedValue(null);
 
-    await expect(useCase.execute('user-1', 'ws-1')).rejects.toThrow(
-      ForbiddenException,
-    );
+    await expect(useCase.execute('user-1', 'ws-1')).rejects.toThrow(ForbiddenException);
   });
 
   it('returns workspace activity for members', async () => {
@@ -56,10 +52,7 @@ describe('GetWorkspaceActivityUseCase', () => {
       offset: 0,
     });
 
-    expect(mockMemberRepo.findByWorkspaceAndUser).toHaveBeenCalledWith(
-      'ws-1',
-      'user-1',
-    );
+    expect(mockMemberRepo.findByWorkspaceAndUser).toHaveBeenCalledWith('ws-1', 'user-1');
     expect(mockActivityRepo.findByWorkspace).toHaveBeenCalledWith('ws-1', {
       limit: 10,
       offset: 0,

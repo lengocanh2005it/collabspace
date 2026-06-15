@@ -1,5 +1,5 @@
 import { ForbiddenException, Inject, Injectable } from '@nestjs/common';
-import { InviteMemberDto } from '../../dto/invite-member.dto';
+import type { InviteMemberDto } from '../../dto/invite-member.dto';
 import {
   type IWorkspaceRepository,
   WORKSPACE_REPOSITORY,
@@ -31,10 +31,7 @@ export class InviteMemberUseCase {
   ) {}
 
   async execute(userId: string, workspaceId: string, dto: InviteMemberDto) {
-    const member = await this.memberRepo.findByWorkspaceAndUser(
-      workspaceId,
-      userId,
-    );
+    const member = await this.memberRepo.findByWorkspaceAndUser(workspaceId, userId);
     if (!member || (member.role !== 'owner' && member.role !== 'admin')) {
       throw new ForbiddenException('Only admins can invite members');
     }

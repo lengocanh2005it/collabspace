@@ -1,9 +1,9 @@
 import { ForbiddenException, NotFoundException } from "@nestjs/common";
 import { EditCommentHandler } from "./edit-comment.handler";
 import { EditCommentCommand } from "./edit-comment.command";
-import { ITaskRepository } from "../../../../application/ports/ITaskRepository";
+import type { ITaskRepository } from "../../../../application/ports/ITaskRepository";
 import { createMockTaskRepository } from "../../../../test-utils/mock-task-repository";
-import { ICommentRepository } from "../../../../domain/repositories/comment.repository.interface";
+import type { ICommentRepository } from "../../../../domain/repositories/comment.repository.interface";
 import { Task } from "../../../../domain/entities/Task";
 import { TaskId } from "../../../../domain/value-objects/TaskId";
 import { UserSnapshot } from "../../../../domain/value-objects/UserSnapshot";
@@ -30,13 +30,7 @@ describe("EditCommentHandler", () => {
   });
 
   const createMockTask = () => {
-    const creatorSnapshot = UserSnapshot.create(
-      "creator-1",
-      "c@c.c",
-      "Creator",
-      "Creator",
-      "url",
-    );
+    const creatorSnapshot = UserSnapshot.create("creator-1", "c@c.c", "Creator", "Creator", "url");
     return Task.restore(
       new TaskId("123e4567-e89b-12d3-a456-426614174000"),
       "Title",

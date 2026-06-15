@@ -6,15 +6,15 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { randomBytes, randomUUID, scrypt, timingSafeEqual } from 'crypto';
-import { promisify } from 'util';
-import { EntityManager, Repository } from 'typeorm';
+import { randomBytes, randomUUID, scrypt, timingSafeEqual } from 'node:crypto';
+import { promisify } from 'node:util';
+import type { EntityManager, Repository } from 'typeorm';
 import type { AuthLiteUser } from '@/domain/entities/auth-lite-user';
 import type { AuthUser } from '@/domain/entities/auth-user';
 import type { LoginInput } from '@/domain/types/login-input';
 import type { RegisterUserInput } from '@/domain/types/register-user-input';
 import { User } from '@/domain/entities/user.entity';
-import { UserRepository } from '@/domain/repositories/user.repository';
+import type { UserRepository } from '@/domain/repositories/user.repository';
 import { RoleOrmEntity } from '@/infrastructure/database/entities/role.orm-entity';
 import { UserRoleOrmEntity } from '@/infrastructure/database/entities/user-role.orm-entity';
 import { UserOrmEntity } from '@/infrastructure/database/entities/user.orm-entity';
@@ -88,10 +88,7 @@ export class TypeOrmUserRepository implements UserRepository {
     return this.toAuthUser(user);
   }
 
-  async markEmailVerified(
-    userId: string,
-    manager?: EntityManager,
-  ): Promise<AuthUser> {
+  async markEmailVerified(userId: string, manager?: EntityManager): Promise<AuthUser> {
     const user = await this.loadUserById(userId, manager);
 
     if (!user.emailVerifiedAt) {
@@ -163,10 +160,7 @@ export class TypeOrmUserRepository implements UserRepository {
     const password = this.normalizePassword(input.password);
     const user = await this.loadUserByEmail(email);
 
-    const isPasswordValid = await this.verifyPassword(
-      password,
-      user.passwordHash,
-    );
+    const isPasswordValid = await this.verifyPassword(password, user.passwordHash);
 
     if (!isPasswordValid) {
       throw new UnauthorizedException({
@@ -189,10 +183,7 @@ export class TypeOrmUserRepository implements UserRepository {
     const normalizedCurrentPassword = this.normalizePassword(currentPassword);
     const normalizedNewPassword = this.normalizePassword(newPassword);
     const user = await this.loadUserByIdForWrite(userId);
-    const isPasswordValid = await this.verifyPassword(
-      normalizedCurrentPassword,
-      user.passwordHash,
-    );
+    const isPasswordValid = await this.verifyPassword(normalizedCurrentPassword, user.passwordHash);
 
     if (!isPasswordValid) {
       throw new UnauthorizedException({
@@ -265,9 +256,7 @@ export class TypeOrmUserRepository implements UserRepository {
     return user;
   }
 
-  private getUserRepository(
-    manager?: EntityManager,
-  ): Repository<UserOrmEntity> {
+  private getUserRepository(manager?: EntityManager): Repository<UserOrmEntity> {
     return manager ? manager.getRepository(UserOrmEntity) : this.userRepository;
   }
 
@@ -293,10 +282,7 @@ export class TypeOrmUserRepository implements UserRepository {
     return user;
   }
 
-  private async loadUserById(
-    userId: string,
-    manager?: EntityManager,
-  ): Promise<UserOrmEntity> {
+  private async loadUserById(userId: string, manager?: EntityManager): Promise<UserOrmEntity> {
     const user = await this.getUserRepository(manager).findOne({
       relations: {
         userRoles: {
@@ -325,7 +311,7 @@ export class TypeOrmUserRepository implements UserRepository {
   private normalizeEmail(email: string): string {
     const normalizedEmail = email?.trim().toLowerCase();
 
-    if (!normalizedEmail || !normalizedEmail.includes('@')) {
+    if (!normalizedEmail?.includes('@')) {
       throw new BadRequestException({
         code: 'EMAIL_INVALID',
         message: 'Email is invalid',
@@ -381,9 +367,7 @@ export class TypeOrmUserRepository implements UserRepository {
     const permissions = user.userRoles
       .flatMap((userRole) => userRole.role?.rolePermissions ?? [])
       .map((rolePermission) => rolePermission.permission?.name)
-      .filter((permissionName): permissionName is string =>
-        Boolean(permissionName),
-      );
+      .filter((permissionName): permissionName is string => Boolean(permissionName));
 
     return {
       createdAt: user.createdAt,
@@ -398,10 +382,7 @@ export class TypeOrmUserRepository implements UserRepository {
     };
   }
 
-  private async verifyPassword(
-    password: string,
-    storedPasswordHash: string,
-  ): Promise<boolean> {
+  private async verifyPassword(password: string, storedPasswordHash: string): Promise<boolean> {
     const [algorithm, salt, hash] = storedPasswordHash.split(':');
 
     if (algorithm !== 'scrypt' || !salt || !hash) {
@@ -409,11 +390,7 @@ export class TypeOrmUserRepository implements UserRepository {
     }
 
     const storedHashBuffer = Buffer.from(hash, 'hex');
-    const derivedKey = (await scryptAsync(
-      password,
-      salt,
-      storedHashBuffer.length,
-    )) as Buffer;
+    const derivedKey = (await scryptAsync(password, salt, storedHashBuffer.length)) as Buffer;
 
     return timingSafeEqual(storedHashBuffer, derivedKey);
   }

@@ -1,6 +1,6 @@
 import { SyncUserReplicaHandler } from "./sync-user-replica.handler";
 import { SyncUserReplicaCommand } from "../commands/sync-user-replica.command";
-import { IUserReplicaRepository } from "../ports/IUserReplicaRepository";
+import type { IUserReplicaRepository } from "../ports/IUserReplicaRepository";
 
 describe("SyncUserReplicaHandler", () => {
   let handler: SyncUserReplicaHandler;
@@ -28,13 +28,10 @@ describe("SyncUserReplicaHandler", () => {
 
     await handler.execute(command);
 
-    expect(mockUserReplicaRepo.updateFieldsAsync).toHaveBeenCalledWith(
-      "user-123",
-      {
-        fullName: "Full Name",
-        displayName: "Display Name",
-        avatarUrl: "Avatar URL",
-      },
-    );
+    expect(mockUserReplicaRepo.updateFieldsAsync).toHaveBeenCalledWith("user-123", {
+      fullName: "Full Name",
+      displayName: "Display Name",
+      avatarUrl: "Avatar URL",
+    });
   });
 });

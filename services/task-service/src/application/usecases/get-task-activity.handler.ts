@@ -1,5 +1,5 @@
 // src/application/usecases/get-task-activity.handler.ts
-import { QueryHandler, IQueryHandler } from "@nestjs/cqrs";
+import { QueryHandler, type IQueryHandler } from "@nestjs/cqrs";
 import { Inject } from "@nestjs/common";
 import { GetTaskActivityQuery } from "../queries/get-task-activity.query";
 import {

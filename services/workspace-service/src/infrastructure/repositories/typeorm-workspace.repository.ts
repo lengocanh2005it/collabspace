@@ -1,14 +1,14 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import type { DataSource, Repository } from 'typeorm';
 import { Workspace } from '../../domain/entities/workspace.entity';
-import { IWorkspaceRepository } from '../../domain/repositories/workspace.repository';
+import type { IWorkspaceRepository } from '../../domain/repositories/workspace.repository';
 import { WorkspaceOrmEntity } from '../database/entities/workspace.orm-entity';
 import { WorkspaceMemberOrmEntity } from '../database/entities/workspace-member.orm-entity';
 import { ProjectOrmEntity } from '../database/entities/project.orm-entity';
-import { WorkspaceOutboxService } from '../outbox/workspace-outbox.service';
-import { WorkspaceCacheService } from '../cache/workspace-cache.service';
-import { randomUUID } from 'crypto';
+import type { WorkspaceOutboxService } from '../outbox/workspace-outbox.service';
+import type { WorkspaceCacheService } from '../cache/workspace-cache.service';
+import { randomUUID } from 'node:crypto';
 
 @Injectable()
 export class TypeOrmWorkspaceRepository implements IWorkspaceRepository {
@@ -40,8 +40,7 @@ export class TypeOrmWorkspaceRepository implements IWorkspaceRepository {
     return rows.map((row) =>
       Object.assign(this.toDomain(row), {
         memberCount: Number(
-          (row as WorkspaceOrmEntity & { memberCount?: number }).memberCount ??
-            0,
+          (row as WorkspaceOrmEntity & { memberCount?: number }).memberCount ?? 0,
         ),
       }),
     );
@@ -55,10 +54,7 @@ export class TypeOrmWorkspaceRepository implements IWorkspaceRepository {
     await this.softDeleteWorkspace(id, actorId);
   }
 
-  private async softDeleteWorkspace(
-    id: string,
-    actorId: string,
-  ): Promise<void> {
+  private async softDeleteWorkspace(id: string, actorId: string): Promise<void> {
     await this.dataSource.transaction(async (manager) => {
       const workspace = await manager.findOne(WorkspaceOrmEntity, {
         where: { id },
@@ -66,11 +62,7 @@ export class TypeOrmWorkspaceRepository implements IWorkspaceRepository {
       if (!workspace) {
         throw new NotFoundException('Workspace not found');
       }
-      await manager.update(
-        ProjectOrmEntity,
-        { workspace_id: id },
-        { is_deleted: true },
-      );
+      await manager.update(ProjectOrmEntity, { workspace_id: id }, { is_deleted: true });
       await manager.delete(WorkspaceMemberOrmEntity, { workspace_id: id });
       await manager.softDelete(WorkspaceOrmEntity, { id });
       await this.outboxService.enqueueWorkspaceDeleted(
@@ -86,11 +78,7 @@ export class TypeOrmWorkspaceRepository implements IWorkspaceRepository {
     await this.cache.deleteWorkspace(id);
   }
 
-  async adminForceJoin(
-    id: string,
-    userId: string,
-    role: 'admin',
-  ): Promise<void> {
+  async adminForceJoin(id: string, userId: string, role: 'admin'): Promise<void> {
     const workspace = await this.repo.findOne({ where: { id } });
     if (!workspace) {
       throw new NotFoundException('Workspace not found');
@@ -148,10 +136,7 @@ export class TypeOrmWorkspaceRepository implements IWorkspaceRepository {
     });
   }
 
-  async update(
-    id: string,
-    data: { name?: string; description?: string },
-  ): Promise<Workspace> {
+  async update(id: string, data: { name?: string; description?: string }): Promise<Workspace> {
     const orm = await this.repo.findOne({ where: { id } });
     if (!orm) throw new NotFoundException('Workspace not found');
     if (data.name !== undefined) orm.name = data.name;

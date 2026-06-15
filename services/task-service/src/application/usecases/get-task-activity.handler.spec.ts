@@ -34,18 +34,14 @@ describe("GetTaskActivityHandler", () => {
     mockTaskActivityRepository.findByTaskIdAsync.mockResolvedValue(items);
     mockTaskActivityRepository.countByTaskIdAsync.mockResolvedValue(3);
 
-    const result = await handler.execute(
-      new GetTaskActivityQuery("task-1", 10, 5),
-    );
+    const result = await handler.execute(new GetTaskActivityQuery("task-1", 10, 5));
 
     expect(result.items).toEqual(items);
     expect(result.total).toBe(3);
-    expect(mockTaskActivityRepository.findByTaskIdAsync).toHaveBeenCalledWith(
-      "task-1",
-      { offset: 5, limit: 10 },
-    );
-    expect(mockTaskActivityRepository.countByTaskIdAsync).toHaveBeenCalledWith(
-      "task-1",
-    );
+    expect(mockTaskActivityRepository.findByTaskIdAsync).toHaveBeenCalledWith("task-1", {
+      offset: 5,
+      limit: 10,
+    });
+    expect(mockTaskActivityRepository.countByTaskIdAsync).toHaveBeenCalledWith("task-1");
   });
 });

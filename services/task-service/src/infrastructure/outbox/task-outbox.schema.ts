@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { HydratedDocument } from "mongoose";
+import type { HydratedDocument } from "mongoose";
 
 export const TASK_OUTBOX_EVENT_TASK_ASSIGNED = "task.task_assigned";
 export const TASK_OUTBOX_EVENT_TASK_COMMENTED = "task.comment_created";
@@ -34,8 +34,7 @@ export class TaskOutboxEvent {
   processedAt!: Date | null;
 }
 
-export const TaskOutboxEventSchema =
-  SchemaFactory.createForClass(TaskOutboxEvent);
+export const TaskOutboxEventSchema = SchemaFactory.createForClass(TaskOutboxEvent);
 
 TaskOutboxEventSchema.index({ processedAt: 1, failedAt: 1, availableAt: 1 });
 TaskOutboxEventSchema.index({

@@ -4,7 +4,7 @@ import {
   type RefreshTokenRepository,
 } from '@/domain/repositories/refresh-token.repository';
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { JwtTokenService } from '../services/jwt-token.service';
+import type { JwtTokenService } from '../services/jwt-token.service';
 
 @Injectable()
 export class RevokeSessionUseCase {
@@ -18,10 +18,7 @@ export class RevokeSessionUseCase {
     authorizationHeader: string | undefined,
     familyId: string,
   ): Promise<RevokeSessionResult> {
-    const { userId } =
-      await this.jwtTokenService.resolveVerifiedUserContext(
-        authorizationHeader,
-      );
+    const { userId } = await this.jwtTokenService.resolveVerifiedUserContext(authorizationHeader);
     const revokedCount = await this.refreshTokenRepository.revokeFamilyForUser(
       userId,
       familyId,

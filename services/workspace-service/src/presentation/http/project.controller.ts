@@ -22,8 +22,8 @@ import {
   ProjectResponseSchemaDto,
 } from '../../application/dto/swagger-response.dto';
 import { UserId } from './decorators/user-id.decorator';
-import { CreateProjectDto } from '../../application/dto/create-project.dto';
-import { UpdateProjectDto } from '../../application/dto/update-project.dto';
+import type { CreateProjectDto } from '../../application/dto/create-project.dto';
+import type { UpdateProjectDto } from '../../application/dto/update-project.dto';
 import { CreateProjectUseCase } from '../../application/use-cases/project/create-project.use-case';
 import { GetProjectUseCase } from '../../application/use-cases/project/get-project.use-case';
 import { ListProjectsUseCase } from '../../application/use-cases/project/list-projects.use-case';
@@ -91,12 +91,7 @@ export class ProjectController {
     @Param('id', ParseUUIDPipe) projectId: string,
     @Body() dto: UpdateProjectDto,
   ) {
-    return this.updateProjectUseCase.execute(
-      userId,
-      workspaceId,
-      projectId,
-      dto,
-    );
+    return this.updateProjectUseCase.execute(userId, workspaceId, projectId, dto);
   }
 
   @Delete(':id')

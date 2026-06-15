@@ -1,10 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import { IsOptional, IsString, Matches, MaxLength } from 'class-validator';
-import {
-  toNullableTrimmedString,
-  toOptionalTrimmedString,
-} from './transformers';
+import { toNullableTrimmedString, toOptionalTrimmedString } from './transformers';
 
 export class UpdateCurrentUserProfileDto {
   @ApiPropertyOptional({ maxLength: 500, nullable: true })

@@ -8,9 +8,7 @@ export class TaskPriority {
   constructor(value: string) {
     const upperValue = value.toUpperCase();
     if (!["LOW", "MEDIUM", "HIGH"].includes(upperValue)) {
-      throw new BusinessRuleException(
-        `Invalid priority: ${value}. Must be LOW, MEDIUM, or HIGH.`,
-      );
+      throw new BusinessRuleException(`Invalid priority: ${value}. Must be LOW, MEDIUM, or HIGH.`);
     }
     this.value = upperValue as PriorityEnum;
   }

@@ -1,14 +1,12 @@
 import { TaskCommentNotificationPublisher } from "./task-comment-notification.publisher";
-import { TaskOutboxService } from "../../infrastructure/outbox/task-outbox.service";
+import type { TaskOutboxService } from "../../infrastructure/outbox/task-outbox.service";
 
 describe("TaskCommentNotificationPublisher", () => {
   let publisher: TaskCommentNotificationPublisher;
   let mockTaskOutboxService: jest.Mocked<
     Pick<
       TaskOutboxService,
-      | "enqueueTaskCommented"
-      | "enqueueCommentMentioned"
-      | "enqueueCommentMentionedBatch"
+      "enqueueTaskCommented" | "enqueueCommentMentioned" | "enqueueCommentMentionedBatch"
     >
   >;
 
@@ -38,12 +36,10 @@ describe("TaskCommentNotificationPublisher", () => {
     });
 
     expect(mockTaskOutboxService.enqueueTaskCommented).toHaveBeenCalledTimes(1);
-    expect(mockTaskOutboxService.enqueueCommentMentionedBatch).toHaveBeenCalledWith(
-      [
-        expect.objectContaining({ recipientId: "user-2" }),
-        expect.objectContaining({ recipientId: "user-3" }),
-      ],
-    );
+    expect(mockTaskOutboxService.enqueueCommentMentionedBatch).toHaveBeenCalledWith([
+      expect.objectContaining({ recipientId: "user-2" }),
+      expect.objectContaining({ recipientId: "user-3" }),
+    ]);
     expect(mockTaskOutboxService.enqueueCommentMentioned).not.toHaveBeenCalled();
   });
 

@@ -2,10 +2,7 @@ import { extractBearerToken, verifyServiceJwt } from './service-jwt';
 import type { VerifiedServiceJwt } from './service-jwt';
 import { ServiceAccessDeniedError } from './service-jwt.errors';
 
-export type ServiceToServiceRequestHeaders = Record<
-  string,
-  string | string[] | undefined
->;
+export type ServiceToServiceRequestHeaders = Record<string, string | string[] | undefined>;
 
 export type AssertServiceToServiceAccessOptions = {
   headers: ServiceToServiceRequestHeaders;
@@ -21,10 +18,7 @@ export type AssertServiceToServiceAccessResult = {
   verifiedJwt?: VerifiedServiceJwt;
 };
 
-function readHeader(
-  headers: ServiceToServiceRequestHeaders,
-  name: string,
-): string | undefined {
+function readHeader(headers: ServiceToServiceRequestHeaders, name: string): string | undefined {
   const value = headers[name.toLowerCase()] ?? headers[name];
 
   if (Array.isArray(value)) {
@@ -34,12 +28,8 @@ function readHeader(
   return value?.trim() || undefined;
 }
 
-function isDevelopmentBypassAllowed(
-  options: AssertServiceToServiceAccessOptions,
-): boolean {
-  return (
-    options.nodeEnv === 'development' && !options.serviceJwtSecret?.trim()
-  );
+function isDevelopmentBypassAllowed(options: AssertServiceToServiceAccessOptions): boolean {
+  return options.nodeEnv === 'development' && !options.serviceJwtSecret?.trim();
 }
 
 /**
@@ -49,9 +39,7 @@ function isDevelopmentBypassAllowed(
 export function assertServiceToServiceAccess(
   options: AssertServiceToServiceAccessOptions,
 ): AssertServiceToServiceAccessResult {
-  const bearerToken = extractBearerToken(
-    readHeader(options.headers, 'authorization'),
-  );
+  const bearerToken = extractBearerToken(readHeader(options.headers, 'authorization'));
   const serviceJwtSecret = options.serviceJwtSecret?.trim();
 
   if (bearerToken) {

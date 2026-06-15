@@ -40,6 +40,9 @@ export class UserOrmEntity {
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
   updatedAt!: Date;
 
-  @OneToMany(() => UserRoleOrmEntity, (userRole) => userRole.user)
+  @OneToMany(
+    () => UserRoleOrmEntity,
+    (userRole) => userRole.user,
+  )
   userRoles!: UserRoleOrmEntity[];
 }

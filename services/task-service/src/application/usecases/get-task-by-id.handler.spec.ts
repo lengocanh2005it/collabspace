@@ -1,6 +1,6 @@
 import { GetTaskByIdHandler } from "./get-task-by-id.handler";
 import { GetTaskByIdQuery } from "../queries/get-task-by-id.query";
-import { ITaskRepository } from "../ports/ITaskRepository";
+import type { ITaskRepository } from "../ports/ITaskRepository";
 import { createMockTaskRepository } from "../../test-utils/mock-task-repository";
 import { Task } from "../../domain/entities/Task";
 import { TaskId } from "../../domain/value-objects/TaskId";
@@ -18,13 +18,7 @@ describe("GetTaskByIdHandler", () => {
   });
 
   const createMockTask = () => {
-    const creatorSnapshot = UserSnapshot.create(
-      "creator-1",
-      "c@c.c",
-      "Creator",
-      "Creator",
-      "url",
-    );
+    const creatorSnapshot = UserSnapshot.create("creator-1", "c@c.c", "Creator", "Creator", "url");
     return Task.restore(
       new TaskId("123e4567-e89b-12d3-a456-426614174000"),
       "Task Title",
@@ -59,8 +53,6 @@ describe("GetTaskByIdHandler", () => {
     const query = new GetTaskByIdQuery("123e4567-e89b-12d3-a456-426614174000");
     mockTaskRepo.findByIdAsync.mockResolvedValue(null);
 
-    await expect(handler.execute(query)).rejects.toThrow(
-      EntityNotFoundException,
-    );
+    await expect(handler.execute(query)).rejects.toThrow(EntityNotFoundException);
   });
 });

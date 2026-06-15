@@ -1,8 +1,4 @@
-import {
-  SERVICE_IDS,
-  SERVICE_SCOPES,
-  signServiceJwt,
-} from '@collabspace/shared';
+import { SERVICE_IDS, SERVICE_SCOPES, signServiceJwt } from '@collabspace/shared';
 import { UnauthorizedException } from '@nestjs/common';
 import type { Request } from 'express';
 import { assertInternalServiceAccess } from './internal-service-access';
@@ -13,8 +9,7 @@ describe('assertInternalServiceAccess (workspace-service)', () => {
     nodeEnv: process.env.NODE_ENV,
   };
 
-  const request = (headers: Record<string, string>): Request =>
-    ({ headers }) as Request;
+  const request = (headers: Record<string, string>): Request => ({ headers }) as Request;
 
   beforeEach(() => {
     process.env.NODE_ENV = 'test';
@@ -35,9 +30,7 @@ describe('assertInternalServiceAccess (workspace-service)', () => {
     });
 
     expect(() =>
-      assertInternalServiceAccess(
-        request({ authorization: `Bearer ${token}` }),
-      ),
+      assertInternalServiceAccess(request({ authorization: `Bearer ${token}` })),
     ).not.toThrow();
   });
 
@@ -50,9 +43,7 @@ describe('assertInternalServiceAccess (workspace-service)', () => {
     });
 
     expect(() =>
-      assertInternalServiceAccess(
-        request({ authorization: `Bearer ${token}` }),
-      ),
+      assertInternalServiceAccess(request({ authorization: `Bearer ${token}` })),
     ).toThrow(
       expect.objectContaining({
         response: expect.objectContaining({
@@ -63,8 +54,6 @@ describe('assertInternalServiceAccess (workspace-service)', () => {
   });
 
   it('rejects missing credentials outside development', () => {
-    expect(() => assertInternalServiceAccess(request({}))).toThrow(
-      UnauthorizedException,
-    );
+    expect(() => assertInternalServiceAccess(request({}))).toThrow(UnauthorizedException);
   });
 });

@@ -1,9 +1,4 @@
-import {
-  ForbiddenException,
-  Inject,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import {
   type IWorkspaceRepository,
   WORKSPACE_REPOSITORY,
@@ -23,14 +18,9 @@ export class DeleteWorkspaceUseCase {
   ) {}
 
   async execute(userId: string, workspaceId: string): Promise<void> {
-    const member = await this.memberRepo.findByWorkspaceAndUser(
-      workspaceId,
-      userId,
-    );
-    if (!member || member.role !== 'owner') {
-      throw new ForbiddenException(
-        'Only workspace owners can delete a workspace',
-      );
+    const member = await this.memberRepo.findByWorkspaceAndUser(workspaceId, userId);
+    if (member?.role !== 'owner') {
+      throw new ForbiddenException('Only workspace owners can delete a workspace');
     }
 
     const workspace = await this.workspaceRepo.findById(workspaceId);

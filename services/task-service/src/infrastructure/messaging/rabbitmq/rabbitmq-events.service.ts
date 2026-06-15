@@ -1,20 +1,15 @@
-import {
-  Inject,
-  Injectable,
-  Logger,
-  OnModuleDestroy,
-} from "@nestjs/common";
-import { ClientProxy } from "@nestjs/microservices";
+import { Inject, Injectable, Logger, type OnModuleDestroy } from "@nestjs/common";
+import type { ClientProxy } from "@nestjs/microservices";
 import { lastValueFrom } from "rxjs";
 import {
   TASK_ASSIGNED_EVENT,
-  TaskAssignedEventPayload,
+  type TaskAssignedEventPayload,
 } from "../../../domain/events/task.events";
 import {
   COMMENT_MENTIONED_EVENT,
-  CommentMentionedEventPayload,
+  type CommentMentionedEventPayload,
   TASK_COMMENTED_EVENT,
-  TaskCommentedEventPayload,
+  type TaskCommentedEventPayload,
 } from "../../../domain/events/comment.events";
 
 @Injectable()
@@ -30,15 +25,11 @@ export class RabbitMqEventsService implements OnModuleDestroy {
     await this.publish(TASK_ASSIGNED_EVENT, payload);
   }
 
-  async publishTaskCommented(
-    payload: TaskCommentedEventPayload,
-  ): Promise<void> {
+  async publishTaskCommented(payload: TaskCommentedEventPayload): Promise<void> {
     await this.publish(TASK_COMMENTED_EVENT, payload);
   }
 
-  async publishCommentMentioned(
-    payload: CommentMentionedEventPayload,
-  ): Promise<void> {
+  async publishCommentMentioned(payload: CommentMentionedEventPayload): Promise<void> {
     await this.publish(COMMENT_MENTIONED_EVENT, payload);
   }
 

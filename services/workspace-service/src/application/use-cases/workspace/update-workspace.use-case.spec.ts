@@ -1,4 +1,4 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { Test, type TestingModule } from '@nestjs/testing';
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { UpdateWorkspaceUseCase } from './update-workspace.use-case';
 import { WORKSPACE_REPOSITORY } from '../../../domain/repositories/workspace.repository';
@@ -28,9 +28,9 @@ describe('UpdateWorkspaceUseCase', () => {
     mockMemberRepo.findByWorkspaceAndUser.mockResolvedValue(
       new WorkspaceMember('m-1', 'ws-1', 'user-1', 'member', new Date()),
     );
-    await expect(
-      useCase.execute('user-1', 'ws-1', { name: 'New' }),
-    ).rejects.toThrow(ForbiddenException);
+    await expect(useCase.execute('user-1', 'ws-1', { name: 'New' })).rejects.toThrow(
+      ForbiddenException,
+    );
   });
 
   it('should throw NotFoundException if workspace does not exist', async () => {
@@ -38,20 +38,13 @@ describe('UpdateWorkspaceUseCase', () => {
       new WorkspaceMember('m-1', 'ws-1', 'user-1', 'admin', new Date()),
     );
     mockWorkspaceRepo.findById.mockResolvedValue(null);
-    await expect(
-      useCase.execute('user-1', 'ws-1', { name: 'New' }),
-    ).rejects.toThrow(NotFoundException);
+    await expect(useCase.execute('user-1', 'ws-1', { name: 'New' })).rejects.toThrow(
+      NotFoundException,
+    );
   });
 
   it('should call update and return result if allowed', async () => {
-    const updated = new Workspace(
-      'ws-1',
-      'New Name',
-      null,
-      'user-1',
-      new Date(),
-      new Date(),
-    );
+    const updated = new Workspace('ws-1', 'New Name', null, 'user-1', new Date(), new Date());
     mockMemberRepo.findByWorkspaceAndUser.mockResolvedValue(
       new WorkspaceMember('m-1', 'ws-1', 'user-1', 'owner', new Date()),
     );

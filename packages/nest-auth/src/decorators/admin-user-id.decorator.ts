@@ -1,4 +1,4 @@
-import { createParamDecorator, ExecutionContext } from '@nestjs/common';
+import { createParamDecorator, type ExecutionContext } from '@nestjs/common';
 import type { AdminAuthenticatedRequest } from '../types';
 
 export const AdminUserId = createParamDecorator(

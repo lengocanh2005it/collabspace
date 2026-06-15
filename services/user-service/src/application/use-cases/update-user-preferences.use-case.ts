@@ -1,11 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
 import {
-  UpdateUserPreferencesInput,
+  type UpdateUserPreferencesInput,
   USER_PROFILE_REPOSITORY,
 } from '../../domain/repositories/user-profile.repository';
 import type { UserProfileRepository } from '../../domain/repositories/user-profile.repository';
 import {
-  UserPreferencesResponseDto,
+  type UserPreferencesResponseDto,
   toUserPreferencesResponseDto,
 } from '../dto/user-preferences-response.dto';
 

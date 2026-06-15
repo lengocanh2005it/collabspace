@@ -1,4 +1,4 @@
-import { UserProfile } from '../../domain/entities/user-profile.entity';
+import type { UserProfile } from '../../domain/entities/user-profile.entity';
 
 export type UserProfileResponseDto = {
   avatarUrl: string | null;
@@ -16,9 +16,7 @@ function toIsoString(value: Date | string): string {
   return value instanceof Date ? value.toISOString() : new Date(value).toISOString();
 }
 
-export const toUserProfileResponseDto = (
-  profile: UserProfile,
-): UserProfileResponseDto => ({
+export const toUserProfileResponseDto = (profile: UserProfile): UserProfileResponseDto => ({
   avatarUrl: profile.avatarUrl,
   bio: profile.bio,
   createdAt: toIsoString(profile.createdAt),

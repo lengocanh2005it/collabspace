@@ -1,10 +1,5 @@
-import {
-  ForbiddenException,
-  Inject,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
-import { UpdateWorkspaceDto } from '../../dto/update-workspace.dto';
+import { ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import type { UpdateWorkspaceDto } from '../../dto/update-workspace.dto';
 import {
   type IWorkspaceRepository,
   WORKSPACE_REPOSITORY,
@@ -24,14 +19,9 @@ export class UpdateWorkspaceUseCase {
   ) {}
 
   async execute(userId: string, workspaceId: string, dto: UpdateWorkspaceDto) {
-    const member = await this.memberRepo.findByWorkspaceAndUser(
-      workspaceId,
-      userId,
-    );
+    const member = await this.memberRepo.findByWorkspaceAndUser(workspaceId, userId);
     if (!member || (member.role !== 'owner' && member.role !== 'admin')) {
-      throw new ForbiddenException(
-        'Only admins or owners can update the workspace',
-      );
+      throw new ForbiddenException('Only admins or owners can update the workspace');
     }
 
     const workspace = await this.workspaceRepo.findById(workspaceId);

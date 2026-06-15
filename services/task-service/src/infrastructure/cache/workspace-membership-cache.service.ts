@@ -12,7 +12,9 @@ export class WorkspaceMembershipCacheService {
 
   constructor(
     private readonly configService: ConfigService,
-    @Optional() @Inject(REDIS_CLIENT) private readonly redis: Redis | null = null,
+    @Optional()
+    @Inject(REDIS_CLIENT)
+    private readonly redis: Redis | null = null,
   ) {}
 
   async read(
@@ -22,8 +24,8 @@ export class WorkspaceMembershipCacheService {
     if (!this.isEnabled()) return undefined;
 
     try {
-      const raw = await this.redis!.get(this.cacheKey(workspaceId, userId));
-      if (raw === null) return undefined;
+      const raw = await this.redis?.get(this.cacheKey(workspaceId, userId));
+      if (raw == null) return undefined;
       if (raw === NEGATIVE_SENTINEL) return null;
       return JSON.parse(raw) as WorkspaceMembershipSnapshot;
     } catch (err) {
@@ -46,7 +48,7 @@ export class WorkspaceMembershipCacheService {
     const value = snapshot === null ? NEGATIVE_SENTINEL : JSON.stringify(snapshot);
 
     try {
-      await this.redis!.setex(this.cacheKey(workspaceId, userId), ttl, value);
+      await this.redis?.setex(this.cacheKey(workspaceId, userId), ttl, value);
     } catch (err) {
       this.logger.warn(
         "Workspace membership cache write error",
@@ -59,7 +61,7 @@ export class WorkspaceMembershipCacheService {
     if (!this.isEnabled()) return;
     if (workspaceId && userId) {
       try {
-        await this.redis!.del(this.cacheKey(workspaceId, userId));
+        await this.redis?.del(this.cacheKey(workspaceId, userId));
       } catch (err) {
         this.logger.warn(
           "Workspace membership cache clear error",
@@ -70,10 +72,7 @@ export class WorkspaceMembershipCacheService {
   }
 
   private isEnabled(): boolean {
-    if (
-      this.configService.get<string>("WORKSPACE_MEMBERSHIP_CACHE_ENABLED") ===
-      "false"
-    ) {
+    if (this.configService.get<string>("WORKSPACE_MEMBERSHIP_CACHE_ENABLED") === "false") {
       return false;
     }
     return this.redis !== null;
@@ -86,11 +85,7 @@ export class WorkspaceMembershipCacheService {
   private ttlSeconds(): number {
     return Math.max(
       1,
-      Number(
-        this.configService.get<string>(
-          "WORKSPACE_MEMBERSHIP_CACHE_TTL_SECONDS",
-        ) ?? 60,
-      ),
+      Number(this.configService.get<string>("WORKSPACE_MEMBERSHIP_CACHE_TTL_SECONDS") ?? 60),
     );
   }
 
@@ -98,9 +93,7 @@ export class WorkspaceMembershipCacheService {
     return Math.max(
       1,
       Number(
-        this.configService.get<string>(
-          "WORKSPACE_MEMBERSHIP_NEGATIVE_CACHE_TTL_SECONDS",
-        ) ?? 15,
+        this.configService.get<string>("WORKSPACE_MEMBERSHIP_NEGATIVE_CACHE_TTL_SECONDS") ?? 15,
       ),
     );
   }

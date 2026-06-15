@@ -24,10 +24,7 @@ export class WorkspaceActivityResponseSchemaDto {
   @ApiProperty() actorName: string;
   @ApiProperty() type: string;
   @ApiProperty() summary: string;
-  @ApiProperty({ type: 'object', additionalProperties: true }) meta: Record<
-    string,
-    unknown
-  >;
+  @ApiProperty({ type: 'object', additionalProperties: true }) meta: Record<string, unknown>;
   @ApiProperty({ format: 'date-time' }) occurredAt: Date;
 }
 
@@ -57,9 +54,7 @@ export class InvitationResponseSchemaDto {
   @ApiProperty({ format: 'uuid' }) workspaceId: string;
   @ApiProperty({ format: 'uuid' }) inviterId: string;
   @ApiProperty() inviteeEmail: string;
-  @ApiPropertyOptional({ nullable: true, format: 'uuid' }) inviteeUserId:
-    | string
-    | null;
+  @ApiPropertyOptional({ nullable: true, format: 'uuid' }) inviteeUserId: string | null;
   @ApiProperty() status: string;
   @ApiProperty({ format: 'date-time' }) createdAt: Date;
   @ApiProperty({ format: 'date-time' }) expiresAt: Date;

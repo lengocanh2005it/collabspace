@@ -1,16 +1,13 @@
 import type { RegisterPendingResult } from '@/application/dto/auth-use-case-results';
-import { RegisterRequestDto } from '@/application/dto/auth-request.dto';
+import type { RegisterRequestDto } from '@/application/dto/auth-request.dto';
 import type { AuthUser } from '@/domain/entities/auth-user';
 import {
   USER_PROFILE_CLIENT,
   type UserProfileClient,
 } from '@/domain/ports/user-profile-client.port';
-import {
-  USER_REPOSITORY,
-  type UserRepository,
-} from '@/domain/repositories/user.repository';
+import { USER_REPOSITORY, type UserRepository } from '@/domain/repositories/user.repository';
 import { ConflictException, Inject, Injectable, Logger } from '@nestjs/common';
-import { EmailVerificationOtpService } from '../services/email-verification-otp.service';
+import type { EmailVerificationOtpService } from '../services/email-verification-otp.service';
 
 @Injectable()
 export class RegisterUseCase {
@@ -25,8 +22,7 @@ export class RegisterUseCase {
   ) {}
 
   async execute(input: RegisterRequestDto): Promise<RegisterPendingResult> {
-    const { user, newlyCreated } =
-      await this.registerOrRecoverPendingUser(input);
+    const { user, newlyCreated } = await this.registerOrRecoverPendingUser(input);
 
     try {
       await this.userProfileClient.createPendingProfile({
@@ -60,15 +56,9 @@ export class RegisterUseCase {
         throw error;
       }
 
-      const existingUser = await this.userRepository.findUserByEmail(
-        input.email,
-      );
+      const existingUser = await this.userRepository.findUserByEmail(input.email);
 
-      if (
-        !existingUser ||
-        existingUser.emailVerified ||
-        !existingUser.isActive
-      ) {
+      if (!existingUser || existingUser.emailVerified || !existingUser.isActive) {
         throw error;
       }
 

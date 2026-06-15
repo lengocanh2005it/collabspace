@@ -43,7 +43,9 @@ describe("WorkspaceMembershipCacheService", () => {
   });
 
   it("returns cached membership snapshot", async () => {
-    const service = createService({ WORKSPACE_MEMBERSHIP_CACHE_TTL_SECONDS: "30" });
+    const service = createService({
+      WORKSPACE_MEMBERSHIP_CACHE_TTL_SECONDS: "30",
+    });
     const snapshot = { isMember: true, role: "member" as const };
 
     await service.write(workspaceId, userId, snapshot);
@@ -58,7 +60,9 @@ describe("WorkspaceMembershipCacheService", () => {
 
   it("returns undefined after TTL expires", async () => {
     jest.useFakeTimers();
-    const service = createService({ WORKSPACE_MEMBERSHIP_CACHE_TTL_SECONDS: "30" });
+    const service = createService({
+      WORKSPACE_MEMBERSHIP_CACHE_TTL_SECONDS: "30",
+    });
     const snapshot = { isMember: true, role: "member" as const };
 
     await service.write(workspaceId, userId, snapshot);
@@ -68,14 +72,22 @@ describe("WorkspaceMembershipCacheService", () => {
   });
 
   it("can be disabled via env flag", async () => {
-    const service = createService({ WORKSPACE_MEMBERSHIP_CACHE_ENABLED: "false" });
-    await service.write(workspaceId, userId, { isMember: true, role: "member" });
+    const service = createService({
+      WORKSPACE_MEMBERSHIP_CACHE_ENABLED: "false",
+    });
+    await service.write(workspaceId, userId, {
+      isMember: true,
+      role: "member",
+    });
     expect(await service.read(workspaceId, userId)).toBeUndefined();
   });
 
   it("is disabled when no Redis client is provided", async () => {
     const service = createService({}, null);
-    await service.write(workspaceId, userId, { isMember: true, role: "member" });
+    await service.write(workspaceId, userId, {
+      isMember: true,
+      role: "member",
+    });
     expect(await service.read(workspaceId, userId)).toBeUndefined();
   });
 

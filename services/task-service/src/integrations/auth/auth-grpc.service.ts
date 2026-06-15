@@ -2,12 +2,12 @@ import {
   Inject,
   Injectable,
   Logger,
-  OnModuleInit,
+  type OnModuleInit,
   ServiceUnavailableException,
   UnauthorizedException,
 } from "@nestjs/common";
 import type { ClientGrpc } from "@nestjs/microservices";
-import { TimeoutError, firstValueFrom, Observable, timeout } from "rxjs";
+import { TimeoutError, firstValueFrom, type Observable, timeout } from "rxjs";
 import { createHash } from "node:crypto";
 
 export const AUTH_GRPC_CLIENT = "AUTH_GRPC_CLIENT";
@@ -36,9 +36,7 @@ type VerifyAccessTokenLiteResponse = {
 };
 
 type AuthGrpcClient = {
-  verifyAccessToken(
-    request: VerifyAccessTokenRequest,
-  ): Observable<VerifyAccessTokenResponse>;
+  verifyAccessToken(request: VerifyAccessTokenRequest): Observable<VerifyAccessTokenResponse>;
   verifyAccessTokenLite(
     request: VerifyAccessTokenRequest,
   ): Observable<VerifyAccessTokenLiteResponse>;
@@ -81,9 +79,7 @@ export class AuthGrpcService implements OnModuleInit {
     this.authService = this.client.getService<AuthGrpcClient>("AuthService");
   }
 
-  async verifyAccessTokenLite(
-    authorizationHeader?: string,
-  ): Promise<AuthLiteIdentity> {
+  async verifyAccessTokenLite(authorizationHeader?: string): Promise<AuthLiteIdentity> {
     const token = authorizationHeader?.trim();
     if (token) {
       const cacheKey = createHash("sha256").update(token).digest("hex");
@@ -109,7 +105,10 @@ export class AuthGrpcService implements OnModuleInit {
       if (this.liteCache.size >= LITE_CACHE_MAX) {
         this.liteCache.delete(this.liteCache.keys().next().value!);
       }
-      this.liteCache.set(cacheKey, { identity, expiresAt: Date.now() + LITE_CACHE_TTL_MS });
+      this.liteCache.set(cacheKey, {
+        identity,
+        expiresAt: Date.now() + LITE_CACHE_TTL_MS,
+      });
       return identity;
     }
 
@@ -130,8 +129,7 @@ export class AuthGrpcService implements OnModuleInit {
 
   async verifyAccessToken(authorizationHeader?: string): Promise<AuthIdentity> {
     const response = await this.invokeVerify(
-      (authorization) =>
-        this.authService!.verifyAccessToken({ authorization }),
+      (authorization) => this.authService!.verifyAccessToken({ authorization }),
       authorizationHeader,
       "VerifyAccessToken",
     );
@@ -188,9 +186,7 @@ export class AuthGrpcService implements OnModuleInit {
       }
 
       if (this.isTimeoutError(error)) {
-        this.logger.warn(
-          `AuthService.${rpcLabel} timed out after ${timeoutMs}ms`,
-        );
+        this.logger.warn(`AuthService.${rpcLabel} timed out after ${timeoutMs}ms`);
         throw new ServiceUnavailableException({
           code: "AUTH_SERVICE_GRPC_TIMEOUT",
           message: `Auth gRPC verification timed out after ${timeoutMs}ms`,
@@ -198,20 +194,14 @@ export class AuthGrpcService implements OnModuleInit {
       }
 
       if (this.isUnauthenticatedError(error)) {
-        const message = this.extractErrorMessage(
-          error,
-          "Access token is invalid",
-        );
+        const message = this.extractErrorMessage(error, "Access token is invalid");
         throw new UnauthorizedException({
           code: "TOKEN_INVALID",
           message,
         });
       }
 
-      const message = this.extractErrorMessage(
-        error,
-        "Auth gRPC verification request failed",
-      );
+      const message = this.extractErrorMessage(error, "Auth gRPC verification request failed");
       this.logger.warn(`AuthService.${rpcLabel} failed: ${message}`);
       throw new ServiceUnavailableException({
         code: "AUTH_SERVICE_GRPC_REQUEST_FAILED",

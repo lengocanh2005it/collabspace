@@ -5,18 +5,18 @@ import type {
   CommentMentionedNotificationPayload,
   TaskCommentedEventPayload,
 } from "../../domain/events/comment-events";
-import type { WorkspaceInvitedEventPayload } from "../../domain/events/workspace-events";
+import type {
+  WorkspaceInvitedEventPayload,
+  WorkspaceDeletedEventPayload,
+} from "../../domain/events/workspace-events";
 
 /**
  * Factory / Mapper: inbound RabbitMQ event payloads → CreateNotificationCommand.
  */
 export const InboundNotificationEventMapper = {
-  toTaskAssignedCommand(
-    data: TaskAssignedEventPayload,
-  ): CreateNotificationCommand {
+  toTaskAssignedCommand(data: TaskAssignedEventPayload): CreateNotificationCommand {
     const eventId =
-      data.eventId ??
-      `task_assigned:${data.taskId}:${data.recipientId}:${data.assignedAt}`;
+      data.eventId ?? `task_assigned:${data.taskId}:${data.recipientId}:${data.assignedAt}`;
 
     return new CreateNotificationCommand(
       data.recipientId,
@@ -37,11 +37,8 @@ export const InboundNotificationEventMapper = {
     );
   },
 
-  toTaskCommentedCommand(
-    data: TaskCommentedEventPayload,
-  ): CreateNotificationCommand {
-    const eventId =
-      data.eventId ?? `comment_created:${data.commentId}:${data.recipientId}`;
+  toTaskCommentedCommand(data: TaskCommentedEventPayload): CreateNotificationCommand {
+    const eventId = data.eventId ?? `comment_created:${data.commentId}:${data.recipientId}`;
 
     return new CreateNotificationCommand(
       data.recipientId,
@@ -62,11 +59,8 @@ export const InboundNotificationEventMapper = {
     );
   },
 
-  toCommentMentionedCommand(
-    data: CommentMentionedNotificationPayload,
-  ): CreateNotificationCommand {
-    const eventId =
-      data.eventId ?? `comment_mentioned:${data.commentId}:${data.recipientId}`;
+  toCommentMentionedCommand(data: CommentMentionedNotificationPayload): CreateNotificationCommand {
+    const eventId = data.eventId ?? `comment_mentioned:${data.commentId}:${data.recipientId}`;
 
     return new CreateNotificationCommand(
       data.recipientId,
@@ -87,9 +81,27 @@ export const InboundNotificationEventMapper = {
     );
   },
 
-  toWorkspaceInvitedCommand(
-    data: WorkspaceInvitedEventPayload,
+  toWorkspaceDeletedCommand(
+    data: WorkspaceDeletedEventPayload,
+    recipientId: string,
   ): CreateNotificationCommand {
+    const eventId =
+      data.eventId ?? `workspace_deleted:${data.workspaceId}:${recipientId}:${data.occurredAt}`;
+
+    return new CreateNotificationCommand(
+      recipientId,
+      data.deletedById,
+      NotificationType.WORKSPACE_DELETED,
+      "Workspace đã bị xóa",
+      `Workspace của bạn đã bị xóa`,
+      data.workspaceId,
+      "WORKSPACE",
+      { workspaceId: data.workspaceId },
+      eventId,
+    );
+  },
+
+  toWorkspaceInvitedCommand(data: WorkspaceInvitedEventPayload): CreateNotificationCommand {
     const eventId =
       data.eventId ??
       `workspace_invited:${data.workspaceId}:${data.invitedUserId}:${data.inviteEmail ?? "unknown"}`;

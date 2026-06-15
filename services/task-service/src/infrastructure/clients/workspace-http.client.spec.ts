@@ -32,9 +32,7 @@ describe("WorkspaceHttpClient", () => {
     jest.restoreAllMocks();
   });
 
-  function createClient(options?: {
-    serviceJwtSecret?: string;
-  }): WorkspaceHttpClient {
+  function createClient(options?: { serviceJwtSecret?: string }): WorkspaceHttpClient {
     const configService = {
       get: jest.fn((key: string) => {
         if (key === "WORKSPACE_SERVICE_URL") {
@@ -50,10 +48,7 @@ describe("WorkspaceHttpClient", () => {
       }),
     } as unknown as ConfigService;
 
-    const membershipCache = new WorkspaceMembershipCacheService(
-      configService,
-      createMockRedis(),
-    );
+    const membershipCache = new WorkspaceMembershipCacheService(configService, createMockRedis());
 
     return new WorkspaceHttpClient(configService, membershipCache);
   }
@@ -168,17 +163,15 @@ describe("WorkspaceHttpClient", () => {
     });
 
     const client = createClient();
-    await expect(
-      client.validateWorkspaceAsync(workspaceId, userId),
-    ).resolves.toBe(false);
+    await expect(client.validateWorkspaceAsync(workspaceId, userId)).resolves.toBe(false);
   });
 
   it("should reject when service JWT secret is missing in production", async () => {
     process.env.NODE_ENV = "production";
     const client = createClient();
 
-    await expect(
-      client.validateWorkspaceAsync(workspaceId, userId),
-    ).rejects.toThrow(ServiceUnavailableException);
+    await expect(client.validateWorkspaceAsync(workspaceId, userId)).rejects.toThrow(
+      ServiceUnavailableException,
+    );
   });
 });

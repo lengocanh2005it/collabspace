@@ -1,9 +1,4 @@
-import {
-  ForbiddenException,
-  Inject,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import {
   type IProjectRepository,
   PROJECT_REPOSITORY,
@@ -29,10 +24,7 @@ export class DeleteProjectUseCase {
   ) {}
 
   async execute(userId: string, workspaceId: string, projectId: string) {
-    const member = await this.memberRepo.findByWorkspaceAndUser(
-      workspaceId,
-      userId,
-    );
+    const member = await this.memberRepo.findByWorkspaceAndUser(workspaceId, userId);
     if (!member || (member.role !== 'owner' && member.role !== 'admin')) {
       throw new ForbiddenException('Only admins or owners can delete projects');
     }

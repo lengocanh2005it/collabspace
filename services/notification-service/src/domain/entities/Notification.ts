@@ -1,5 +1,5 @@
 // src/domain/entities/Notification.ts
-import { NotificationType } from "../value-objects/NotificationType";
+import type { NotificationType } from "../value-objects/NotificationType";
 import { NotificationStatus } from "../value-objects/NotificationStatus";
 import { randomUUID } from "node:crypto";
 import type { NotificationMetadata } from "../types/notification-metadata";
@@ -39,22 +39,22 @@ export class Notification {
     metadata?: NotificationMetadata,
   ): Notification {
     // Validation
-    if (!recipientId || !recipientId.trim()) {
+    if (!recipientId?.trim()) {
       throw new Error("Recipient ID is required");
     }
-    if (!actorId || !actorId.trim()) {
+    if (!actorId?.trim()) {
       throw new Error("Actor ID is required");
     }
-    if (!title || !title.trim()) {
+    if (!title?.trim()) {
       throw new Error("Title is required");
     }
-    if (!message || !message.trim()) {
+    if (!message?.trim()) {
       throw new Error("Message is required");
     }
-    if (!targetId || !targetId.trim()) {
+    if (!targetId?.trim()) {
       throw new Error("Target ID is required");
     }
-    if (!targetType || !targetType.trim()) {
+    if (!targetType?.trim()) {
       throw new Error("Target Type is required");
     }
 

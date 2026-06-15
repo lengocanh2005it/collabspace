@@ -1,4 +1,4 @@
-import { UserStatus } from '../../domain/entities/user-status.entity';
+import type { UserStatus } from '../../domain/entities/user-status.entity';
 
 export type UserStatusResponseDto = {
   clearAt: string | null;
@@ -10,9 +10,7 @@ export type UserStatusResponseDto = {
   userId: string;
 };
 
-export const toUserStatusResponseDto = (
-  status: UserStatus,
-): UserStatusResponseDto => ({
+export const toUserStatusResponseDto = (status: UserStatus): UserStatusResponseDto => ({
   clearAt: status.clearAt?.toISOString() ?? null,
   emoji: status.emoji,
   lastSeenAt: status.lastSeenAt?.toISOString() ?? null,

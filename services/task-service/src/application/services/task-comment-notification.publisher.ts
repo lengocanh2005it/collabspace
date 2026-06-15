@@ -1,8 +1,8 @@
-import { randomUUID } from "crypto";
+import { randomUUID } from "node:crypto";
 import { Injectable } from "@nestjs/common";
 import { CommentNotificationPolicy } from "../../domain/policies/comment-notification.policy";
 import { CommentPreview } from "../../domain/value-objects/CommentPreview";
-import { TaskOutboxService } from "../../infrastructure/outbox/task-outbox.service";
+import type { TaskOutboxService } from "../../infrastructure/outbox/task-outbox.service";
 
 export type PublishCommentNotificationsInput = {
   taskId: string;
@@ -23,18 +23,11 @@ export type PublishCommentNotificationsInput = {
 export class TaskCommentNotificationPublisher {
   constructor(private readonly taskOutboxService: TaskOutboxService) {}
 
-  async publishForNewComment(
-    input: PublishCommentNotificationsInput,
-  ): Promise<void> {
+  async publishForNewComment(input: PublishCommentNotificationsInput): Promise<void> {
     const commentPreview = CommentPreview.fromContent(input.content);
     const now = new Date().toISOString();
 
-    if (
-      CommentNotificationPolicy.shouldNotifyAssignee(
-        input.assigneeId,
-        input.authorId,
-      )
-    ) {
+    if (CommentNotificationPolicy.shouldNotifyAssignee(input.assigneeId, input.authorId)) {
       await this.taskOutboxService.enqueueTaskCommented({
         eventId: randomUUID(),
         occurredAt: now,

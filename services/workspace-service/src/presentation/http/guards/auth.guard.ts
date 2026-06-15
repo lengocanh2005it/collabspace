@@ -1,11 +1,11 @@
 import {
-  CanActivate,
-  ExecutionContext,
+  type CanActivate,
+  type ExecutionContext,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { Request } from 'express';
-import { AuthGrpcService } from '../../../integrations/auth/auth-grpc.service';
+import type { Request } from 'express';
+import type { AuthGrpcService } from '../../../integrations/auth/auth-grpc.service';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -16,8 +16,7 @@ export class AuthGuard implements CanActivate {
     const authorization = request.headers.authorization;
 
     if (authorization?.trim()) {
-      const identity =
-        await this.authGrpcService.verifyAccessTokenLite(authorization);
+      const identity = await this.authGrpcService.verifyAccessTokenLite(authorization);
       // @ts-expect-error inject authenticated user
       request.user = { id: identity.userId };
       return true;

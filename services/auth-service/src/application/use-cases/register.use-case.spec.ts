@@ -1,10 +1,8 @@
 import { EmailVerificationOtpService } from '@/application/services/email-verification-otp.service';
 import { RegisterUseCase } from '@/application/use-cases/register.use-case';
-import { EmailOutbox } from '@/domain/ports/email-outbox.port';
-import { OtpStore } from '@/domain/ports/otp-store.port';
-import { UserProfileClient } from '@/domain/ports/user-profile-client.port';
+import type { EmailOutbox } from '@/domain/ports/email-outbox.port';
 import { InMemoryUserRepository } from '@/infrastructure/repositories/in-memory-user.repository';
-import { ConfigurationService } from '@/configuration/configuration.service';
+import type { ConfigurationService } from '@/configuration/configuration.service';
 import { ConflictException, ServiceUnavailableException } from '@nestjs/common';
 
 describe('RegisterUseCase', () => {
@@ -35,13 +33,13 @@ describe('RegisterUseCase', () => {
     set: jest.fn(),
     setJson: jest.fn(),
     ttl: jest.fn(),
-  } as unknown as OtpStore;
+  };
 
   const userProfileClientMock = {
     createPendingProfile: jest.fn(),
     getProfile: jest.fn(),
     ping: jest.fn(),
-  } as unknown as UserProfileClient;
+  };
 
   let userRepository: InMemoryUserRepository;
   let registerUseCase: RegisterUseCase;
@@ -61,15 +59,11 @@ describe('RegisterUseCase', () => {
     );
     jest.spyOn(otpStoreMock, 'assertAvailable').mockResolvedValue(undefined);
     jest.spyOn(otpStoreMock, 'setJson').mockResolvedValue('OK');
-    jest
-      .spyOn(emailOutboxMock, 'enqueueEmailVerificationOtp')
-      .mockResolvedValue(undefined);
+    jest.spyOn(emailOutboxMock, 'enqueueEmailVerificationOtp').mockResolvedValue(undefined);
   });
 
   it('registers a new user and queues verification email', async () => {
-    jest
-      .spyOn(userProfileClientMock, 'createPendingProfile')
-      .mockResolvedValue(undefined);
+    jest.spyOn(userProfileClientMock, 'createPendingProfile').mockResolvedValue(undefined);
 
     const result = await registerUseCase.execute({
       email: 'new@collabspace.dev',
@@ -102,9 +96,7 @@ describe('RegisterUseCase', () => {
       }),
     ).rejects.toBeInstanceOf(ServiceUnavailableException);
 
-    await expect(
-      userRepository.findUserByEmail('rollback@collabspace.dev'),
-    ).resolves.toBeNull();
+    await expect(userRepository.findUserByEmail('rollback@collabspace.dev')).resolves.toBeNull();
     expect(emailOutboxMock.enqueueEmailVerificationOtp).not.toHaveBeenCalled();
   });
 
@@ -136,9 +128,7 @@ describe('RegisterUseCase', () => {
       }),
     ).rejects.toBeInstanceOf(ServiceUnavailableException);
 
-    await expect(
-      userRepository.findUserByEmail('pending@collabspace.dev'),
-    ).resolves.toMatchObject({
+    await expect(userRepository.findUserByEmail('pending@collabspace.dev')).resolves.toMatchObject({
       email: 'pending@collabspace.dev',
       emailVerified: false,
     });

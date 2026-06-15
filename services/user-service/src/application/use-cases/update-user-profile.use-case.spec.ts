@@ -1,9 +1,6 @@
-jest.mock(
-  '../../infrastructure/messaging/rabbitmq/rabbitmq-events.service',
-  () => ({
-    RabbitMqEventsService: jest.fn(),
-  }),
-);
+jest.mock('../../infrastructure/messaging/rabbitmq/rabbitmq-events.service', () => ({
+  RabbitMqEventsService: jest.fn(),
+}));
 
 import { UpdateUserProfileUseCase } from './update-user-profile.use-case';
 import {
@@ -22,10 +19,7 @@ describe('UpdateUserProfileUseCase', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     repository = createUserProfileRepositoryMock();
-    useCase = new UpdateUserProfileUseCase(
-      repository,
-      rabbitMqEventsMock as never,
-    );
+    useCase = new UpdateUserProfileUseCase(repository, rabbitMqEventsMock as never);
   });
 
   it('updates profile and publishes user_profile_updated event', async () => {
@@ -33,9 +27,7 @@ describe('UpdateUserProfileUseCase', () => {
     jest.spyOn(repository, 'updateProfile').mockResolvedValue(updated);
     rabbitMqEventsMock.publishUserProfileUpdated.mockResolvedValue(undefined);
 
-    await expect(
-      useCase.execute('user-1', { bio: 'Updated bio' }),
-    ).resolves.toMatchObject({
+    await expect(useCase.execute('user-1', { bio: 'Updated bio' })).resolves.toMatchObject({
       userId: 'user-1',
       bio: 'Updated bio',
     });

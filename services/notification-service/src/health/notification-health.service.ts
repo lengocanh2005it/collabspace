@@ -1,8 +1,8 @@
 import { Injectable } from "@nestjs/common";
 import { InjectConnection } from "@nestjs/mongoose";
-import { Connection } from "mongoose";
+import type { Connection } from "mongoose";
 import * as amqp from "amqplib";
-import { ConfigurationService } from "../configuration/configuration.service";
+import type { ConfigurationService } from "../configuration/configuration.service";
 
 type CheckStatus = "up" | "down" | "disabled";
 type OverallStatus = "ok" | "degraded" | "error";
@@ -87,8 +87,7 @@ export class NotificationHealthService {
       };
     } catch (error) {
       return {
-        detail:
-          error instanceof Error ? error.message : "Unknown dependency error",
+        detail: error instanceof Error ? error.message : "Unknown dependency error",
         required,
         responseTimeMs: Date.now() - startedAt,
         status: "down",
@@ -106,11 +105,7 @@ export class NotificationHealthService {
     const optionalFailure = Object.values(checks).some(
       (check) => !check.required && check.status === "down",
     );
-    const status: OverallStatus = requiredFailure
-      ? "error"
-      : optionalFailure
-        ? "degraded"
-        : "ok";
+    const status: OverallStatus = requiredFailure ? "error" : optionalFailure ? "degraded" : "ok";
 
     return {
       checks,

@@ -1,13 +1,6 @@
 // src/presentation/dtos/create-task.request.ts
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import {
-  IsString,
-  IsNotEmpty,
-  IsOptional,
-  IsIn,
-  IsArray,
-  IsDateString,
-} from "class-validator";
+import { IsString, IsNotEmpty, IsOptional, IsIn, IsArray, IsDateString } from "class-validator";
 
 export class CreateTaskRequest {
   @ApiProperty({ example: "Implement login screen" })

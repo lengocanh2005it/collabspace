@@ -1,4 +1,4 @@
-import { ExecutionContext, UnauthorizedException } from '@nestjs/common';
+import { type ExecutionContext, UnauthorizedException } from '@nestjs/common';
 import type { AuthGrpcService } from '../../../integrations/auth/auth-grpc.service';
 import type { AuthenticatedRequest } from '../authenticated-request';
 import { AuthGuard } from './auth.guard';
@@ -14,9 +14,7 @@ describe('AuthGuard', () => {
     }
   });
 
-  function createContext(
-    request: Partial<AuthenticatedRequest>,
-  ): ExecutionContext {
+  function createContext(request: Partial<AuthenticatedRequest>): ExecutionContext {
     return {
       switchToHttp: () => ({
         getRequest: () => request,
@@ -46,9 +44,7 @@ describe('AuthGuard', () => {
     const result = await guard.canActivate(createContext(request));
 
     expect(result).toBe(true);
-    expect(authGrpcService.verifyAccessTokenLite).toHaveBeenCalledWith(
-      'Bearer token',
-    );
+    expect(authGrpcService.verifyAccessTokenLite).toHaveBeenCalledWith('Bearer token');
     expect(authGrpcService.verifyAccessToken).not.toHaveBeenCalled();
     expect(request.user).toEqual({
       emailVerified: true,
@@ -94,8 +90,6 @@ describe('AuthGuard', () => {
 
     const request = { headers: {} } as unknown as AuthenticatedRequest;
 
-    await expect(guard.canActivate(createContext(request))).rejects.toThrow(
-      UnauthorizedException,
-    );
+    await expect(guard.canActivate(createContext(request))).rejects.toThrow(UnauthorizedException);
   });
 });

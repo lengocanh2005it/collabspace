@@ -5,7 +5,7 @@ import { NestFactory } from "@nestjs/core";
 import { Logger, ValidationPipe } from "@nestjs/common";
 import { AppModule } from "./app.module";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
-import { MicroserviceOptions, Transport } from "@nestjs/microservices";
+import { type MicroserviceOptions, Transport } from "@nestjs/microservices";
 import { buildConsumerQueueOptions } from "@collabspace/shared";
 import { ConfigurationService } from "./configuration/configuration.service";
 import { MetricsService } from "./metrics/metrics.service";
@@ -14,17 +14,9 @@ import { registerMetricsMiddleware } from "./metrics/register-metrics.middleware
 import compression from "compression";
 async function bootstrap() {
   const logger = new Logger("Bootstrap");
-  assertRequiredInProduction(
-    "SERVICE_JWT_SECRET",
-    process.env.SERVICE_JWT_SECRET,
-  );
-  if (
-    process.env.NODE_ENV === "production" &&
-    process.env.WORKSPACE_CLIENT_MODE !== "http"
-  ) {
-    throw new Error(
-      "FATAL: WORKSPACE_CLIENT_MODE must be http when NODE_ENV=production",
-    );
+  assertRequiredInProduction("SERVICE_JWT_SECRET", process.env.SERVICE_JWT_SECRET);
+  if (process.env.NODE_ENV === "production" && process.env.WORKSPACE_CLIENT_MODE !== "http") {
+    throw new Error("FATAL: WORKSPACE_CLIENT_MODE must be http when NODE_ENV=production");
   }
 
   const app = await NestFactory.create(AppModule);
@@ -35,10 +27,8 @@ async function bootstrap() {
   const rmqConfig = configService.getRabbitMqConfig();
 
   if (rmqConfig.enabled) {
-    const dlxExchange =
-      process.env.RABBITMQ_DLX_EXCHANGE ?? "collabspace_dlx";
-    const dlxRoutingKey =
-      process.env.RABBITMQ_DLX_ROUTING_KEY ?? `${rmqConfig.queue}.dlq`;
+    const dlxExchange = process.env.RABBITMQ_DLX_EXCHANGE ?? "collabspace_dlx";
+    const dlxRoutingKey = process.env.RABBITMQ_DLX_ROUTING_KEY ?? `${rmqConfig.queue}.dlq`;
 
     app.connectMicroservice<MicroserviceOptions>({
       transport: Transport.RMQ,
@@ -71,13 +61,15 @@ async function bootstrap() {
     }),
   );
 
-  const corsOrigins = (process.env.CORS_ORIGINS ?? 'http://localhost:5173,http://localhost:3000,http://localhost')
-    .split(',')
+  const corsOrigins = (
+    process.env.CORS_ORIGINS ?? "http://localhost:5173,http://localhost:3000,http://localhost"
+  )
+    .split(",")
     .map((s) => s.trim());
   app.enableCors({
     origin: corsOrigins,
-    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Request-Id'],
+    methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "Accept", "X-Request-Id"],
     credentials: true,
   });
 

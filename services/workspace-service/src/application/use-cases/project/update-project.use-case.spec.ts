@@ -1,4 +1,4 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { Test, type TestingModule } from '@nestjs/testing';
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { UpdateProjectUseCase } from './update-project.use-case';
 import { PROJECT_REPOSITORY } from '../../../domain/repositories/project.repository';
@@ -28,9 +28,9 @@ describe('UpdateProjectUseCase', () => {
     mockMemberRepo.findByWorkspaceAndUser.mockResolvedValue(
       new WorkspaceMember('m-1', 'ws-1', 'user-1', 'member', new Date()),
     );
-    await expect(
-      useCase.execute('user-1', 'ws-1', 'proj-1', { name: 'New' }),
-    ).rejects.toThrow(ForbiddenException);
+    await expect(useCase.execute('user-1', 'ws-1', 'proj-1', { name: 'New' })).rejects.toThrow(
+      ForbiddenException,
+    );
   });
 
   it('should throw NotFoundException if project does not exist', async () => {
@@ -38,9 +38,9 @@ describe('UpdateProjectUseCase', () => {
       new WorkspaceMember('m-1', 'ws-1', 'user-1', 'admin', new Date()),
     );
     mockProjectRepo.findById.mockResolvedValue(null);
-    await expect(
-      useCase.execute('user-1', 'ws-1', 'proj-1', { name: 'New' }),
-    ).rejects.toThrow(NotFoundException);
+    await expect(useCase.execute('user-1', 'ws-1', 'proj-1', { name: 'New' })).rejects.toThrow(
+      NotFoundException,
+    );
   });
 
   it('should call update and return result if allowed', async () => {
@@ -58,16 +58,7 @@ describe('UpdateProjectUseCase', () => {
       new WorkspaceMember('m-1', 'ws-1', 'user-1', 'owner', new Date()),
     );
     mockProjectRepo.findById.mockResolvedValue(
-      new Project(
-        'proj-1',
-        'ws-1',
-        'Old',
-        null,
-        'user-1',
-        false,
-        new Date(),
-        new Date(),
-      ),
+      new Project('proj-1', 'ws-1', 'Old', null, 'user-1', false, new Date(), new Date()),
     );
     mockProjectRepo.update.mockResolvedValue(updated);
 

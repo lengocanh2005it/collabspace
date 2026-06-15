@@ -1,12 +1,6 @@
 // src/presentation/dtos/change-task-status.request.ts
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import {
-  IsString,
-  IsNotEmpty,
-  IsEnum,
-  IsUUID,
-  IsOptional,
-} from "class-validator";
+import { IsString, IsNotEmpty, IsEnum, IsUUID, IsOptional } from "class-validator";
 
 export class ChangeTaskStatusRequest {
   @ApiPropertyOptional({

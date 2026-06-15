@@ -1,4 +1,4 @@
-import { UserSummaryResponseDto } from './user-summary-response.dto';
+import type { UserSummaryResponseDto } from './user-summary-response.dto';
 
 export type PaginatedUserSummaryResponseDto = {
   items: UserSummaryResponseDto[];

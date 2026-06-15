@@ -1,5 +1,5 @@
-import { ConfigurationService } from '@/configuration/configuration.service';
-import { DataSource } from 'typeorm';
+import type { ConfigurationService } from '@/configuration/configuration.service';
+import type { DataSource } from 'typeorm';
 import { AuthOutboxService } from './auth-outbox.service';
 
 describe('AuthOutboxService', () => {
@@ -17,9 +17,8 @@ describe('AuthOutboxService', () => {
       getRepository: jest.fn(() => repositoryMock),
     },
     query: jest.fn(),
-    transaction: jest.fn(
-      async (runInTransaction: (manager: { query: jest.Mock }) => unknown) =>
-        runInTransaction({ query: jest.fn() }),
+    transaction: jest.fn(async (runInTransaction: (manager: { query: jest.Mock }) => unknown) =>
+      runInTransaction({ query: jest.fn() }),
     ),
   } as unknown as DataSource;
   const configurationServiceMock = {
@@ -66,17 +65,13 @@ describe('AuthOutboxService', () => {
   });
 
   it('reclaims stale claims and returns the reclaimed count', async () => {
-    jest
-      .spyOn(dataSourceMock, 'query')
-      .mockResolvedValueOnce([[{ id: 'event-1' }], 1]);
+    jest.spyOn(dataSourceMock, 'query').mockResolvedValueOnce([[{ id: 'event-1' }], 1]);
 
     await expect(service.reclaimStaleClaims()).resolves.toBe(1);
   });
 
   it('returns zero when TypeORM pg driver yields [rows, rowCount] with no matches', async () => {
-    const queryMock = jest
-      .spyOn(dataSourceMock, 'query')
-      .mockResolvedValue([[], 0]);
+    const queryMock = jest.spyOn(dataSourceMock, 'query').mockResolvedValue([[], 0]);
 
     await expect(service.reclaimStaleClaims()).resolves.toBe(0);
     await expect(service.markExhaustedClaims()).resolves.toBe(0);
@@ -84,9 +79,7 @@ describe('AuthOutboxService', () => {
   });
 
   it('marks exhausted claims separately', async () => {
-    jest
-      .spyOn(dataSourceMock, 'query')
-      .mockResolvedValueOnce([[{ id: 'event-9' }], 1]);
+    jest.spyOn(dataSourceMock, 'query').mockResolvedValueOnce([[{ id: 'event-9' }], 1]);
 
     await expect(service.markExhaustedClaims()).resolves.toBe(1);
   });
@@ -141,9 +134,8 @@ describe('AuthOutboxService', () => {
       });
     jest
       .spyOn(dataSourceMock, 'transaction')
-      .mockImplementation(
-        async (runInTransaction: (manager: { query: jest.Mock }) => unknown) =>
-          runInTransaction({ query: managerQuery }),
+      .mockImplementation(async (runInTransaction: (manager: { query: jest.Mock }) => unknown) =>
+        runInTransaction({ query: managerQuery }),
       );
 
     await expect(service.claimPendingBatch(1)).resolves.toEqual([

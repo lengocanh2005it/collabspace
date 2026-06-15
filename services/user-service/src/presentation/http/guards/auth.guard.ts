@@ -1,10 +1,10 @@
 import {
-  CanActivate,
-  ExecutionContext,
+  type CanActivate,
+  type ExecutionContext,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { AuthGrpcService } from '../../../integrations/auth/auth-grpc.service';
+import type { AuthGrpcService } from '../../../integrations/auth/auth-grpc.service';
 import type { AuthenticatedRequest } from '../authenticated-request';
 
 @Injectable()
@@ -16,8 +16,7 @@ export class AuthGuard implements CanActivate {
     const authorization = request.headers.authorization;
 
     if (authorization?.trim()) {
-      const identity =
-        await this.authGrpcService.verifyAccessTokenLite(authorization);
+      const identity = await this.authGrpcService.verifyAccessTokenLite(authorization);
       request.user = {
         emailVerified: identity.emailVerified,
         id: identity.userId,

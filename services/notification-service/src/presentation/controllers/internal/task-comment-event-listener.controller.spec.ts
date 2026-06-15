@@ -1,6 +1,6 @@
 import { CommentEventListenerController } from "./task-comment-event-listener.controller";
-import { CommandBus } from "@nestjs/cqrs";
-import { RmqContext } from "@nestjs/microservices";
+import type { CommandBus } from "@nestjs/cqrs";
+import type { RmqContext } from "@nestjs/microservices";
 
 describe("CommentEventListenerController", () => {
   let controller: CommentEventListenerController;
@@ -63,9 +63,7 @@ describe("CommentEventListenerController", () => {
     const payload = {} as any;
     mockCommandBus.execute.mockRejectedValue(new Error("DB Error"));
 
-    await expect(
-      controller.handleTaskCommented(payload, mockRmqContext),
-    ).resolves.not.toThrow();
+    await expect(controller.handleTaskCommented(payload, mockRmqContext)).resolves.not.toThrow();
     expect(mockChannel.ack).toHaveBeenCalledWith(mockMessage);
     expect(mockChannel.publish).toHaveBeenCalled();
     expect(mockChannel.nack).not.toHaveBeenCalled();

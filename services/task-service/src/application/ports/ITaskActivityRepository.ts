@@ -11,10 +11,7 @@ export type TaskActivityListOptions = {
 };
 
 export interface ITaskActivityRepository {
-  appendFromEventsAsync(
-    taskId: string,
-    events: StoredTaskDomainEvent[],
-  ): Promise<void>;
+  appendFromEventsAsync(taskId: string, events: StoredTaskDomainEvent[]): Promise<void>;
   appendFromCommentAsync(comment: Comment): Promise<void>;
   findByTaskIdAsync(
     taskId: string,

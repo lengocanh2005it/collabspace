@@ -1,6 +1,6 @@
 import { UpdateTaskDetailsHandler } from "./update-task-details.handler";
 import { UpdateTaskDetailsCommand } from "../commands/update-task-details.command";
-import { ITaskRepository } from "../ports/ITaskRepository";
+import type { ITaskRepository } from "../ports/ITaskRepository";
 import { createMockTaskRepository } from "../../test-utils/mock-task-repository";
 import { Task } from "../../domain/entities/Task";
 import { TaskId } from "../../domain/value-objects/TaskId";
@@ -19,13 +19,7 @@ describe("UpdateTaskDetailsHandler", () => {
   });
 
   const createMockTask = () => {
-    const creatorSnapshot = UserSnapshot.create(
-      "creator-1",
-      "c@c.c",
-      "Creator",
-      "Creator",
-      "url",
-    );
+    const creatorSnapshot = UserSnapshot.create("creator-1", "c@c.c", "Creator", "Creator", "url");
     return Task.restore(
       new TaskId("123e4567-e89b-12d3-a456-426614174000"),
       "Old Title",
@@ -67,9 +61,7 @@ describe("UpdateTaskDetailsHandler", () => {
     );
     mockTaskRepo.loadAggregateByIdAsync.mockResolvedValue(null);
 
-    await expect(handler.execute(command)).rejects.toThrow(
-      EntityNotFoundException,
-    );
+    await expect(handler.execute(command)).rejects.toThrow(EntityNotFoundException);
     expect(mockTaskRepo.saveAsync).not.toHaveBeenCalled();
   });
 
@@ -83,9 +75,7 @@ describe("UpdateTaskDetailsHandler", () => {
 
     mockTaskRepo.loadAggregateByIdAsync.mockResolvedValue(task);
 
-    await expect(handler.execute(command)).rejects.toThrow(
-      BusinessRuleException,
-    );
+    await expect(handler.execute(command)).rejects.toThrow(BusinessRuleException);
     expect(mockTaskRepo.saveAsync).not.toHaveBeenCalled();
   });
 });

@@ -1,7 +1,4 @@
-import {
-  SERVICE_IDS,
-  SERVICE_SCOPES,
-} from './service-jwt.constants';
+import { SERVICE_IDS, SERVICE_SCOPES } from './service-jwt.constants';
 import { ServiceAccessDeniedError } from './service-jwt.errors';
 import { signServiceJwt } from './service-jwt';
 import { assertServiceToServiceAccess } from './service-to-service-access';

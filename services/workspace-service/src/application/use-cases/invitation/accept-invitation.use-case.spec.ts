@@ -1,4 +1,4 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { Test, type TestingModule } from '@nestjs/testing';
 import { AcceptInvitationUseCase } from './accept-invitation.use-case';
 import { INVITATION_REPOSITORY } from '../../../domain/repositories/invitation.repository';
 import { WORKSPACE_ACTIVITY_REPOSITORY } from '../../../domain/repositories/workspace-activity.repository';
@@ -26,10 +26,7 @@ describe('AcceptInvitationUseCase', () => {
     mockInvitationRepo.acceptAndJoinWorkspace.mockResolvedValue(expected);
 
     const result = await useCase.execute('user-2', 'inv-1');
-    expect(mockInvitationRepo.acceptAndJoinWorkspace).toHaveBeenCalledWith(
-      'inv-1',
-      'user-2',
-    );
+    expect(mockInvitationRepo.acceptAndJoinWorkspace).toHaveBeenCalledWith('inv-1', 'user-2');
     expect(result).toBe(expected);
   });
 });

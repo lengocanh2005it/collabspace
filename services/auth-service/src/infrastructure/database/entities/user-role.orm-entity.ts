@@ -11,15 +11,23 @@ export class UserRoleOrmEntity {
   @PrimaryColumn({ name: 'user_id', type: 'uuid' })
   userId!: string;
 
-  @ManyToOne(() => RoleOrmEntity, (role) => role.userRoles, {
-    onDelete: 'CASCADE',
-  })
+  @ManyToOne(
+    () => RoleOrmEntity,
+    (role) => role.userRoles,
+    {
+      onDelete: 'CASCADE',
+    },
+  )
   @JoinColumn({ name: 'role_id' })
   role!: RoleOrmEntity;
 
-  @ManyToOne(() => UserOrmEntity, (user) => user.userRoles, {
-    onDelete: 'CASCADE',
-  })
+  @ManyToOne(
+    () => UserOrmEntity,
+    (user) => user.userRoles,
+    {
+      onDelete: 'CASCADE',
+    },
+  )
   @JoinColumn({ name: 'user_id' })
   user!: UserOrmEntity;
 }

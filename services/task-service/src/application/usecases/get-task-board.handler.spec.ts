@@ -40,14 +40,10 @@ describe("GetTaskBoardHandler", () => {
       makeTask("00000000-0000-4000-8000-000000000003", "DONE"),
     ]);
 
-    const result = await handler.execute(
-      new GetTaskBoardQuery("workspace-1", "project-1"),
-    );
+    const result = await handler.execute(new GetTaskBoardQuery("workspace-1", "project-1"));
 
     expect(result.total).toBe(3);
-    expect(result.columns.map((column) => column.tasks.length)).toEqual([
-      1, 1, 1,
-    ]);
+    expect(result.columns.map((column) => column.tasks.length)).toEqual([1, 1, 1]);
     expect(repository.findByWorkspaceIdAsync).toHaveBeenCalledWith(
       "workspace-1",
       { projectId: "project-1" },

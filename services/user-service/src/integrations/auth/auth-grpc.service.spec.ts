@@ -5,8 +5,8 @@ import { AuthGrpcService } from './auth-grpc.service';
 describe('AuthGrpcService', () => {
   const verifyAccessTokenMock = jest.fn();
   const verifyAccessTokenLiteMock = jest.fn();
-  const waitForReadyMock = jest.fn(
-    (_: number, callback: (error?: Error | null) => void) => callback(null),
+  const waitForReadyMock = jest.fn((_: number, callback: (error?: Error | null) => void) =>
+    callback(null),
   );
   const clientMock = {
     getClientByServiceName: jest.fn(() => ({
@@ -44,9 +44,7 @@ describe('AuthGrpcService', () => {
       }),
     );
 
-    await expect(
-      service.verifyAccessTokenLite('Bearer token-1'),
-    ).resolves.toEqual({
+    await expect(service.verifyAccessTokenLite('Bearer token-1')).resolves.toEqual({
       emailVerified: true,
       role: 'member',
       roles: ['member'],
@@ -86,17 +84,15 @@ describe('AuthGrpcService', () => {
       })),
     );
 
-    await expect(
-      service.verifyAccessToken('Bearer invalid-token'),
-    ).rejects.toBeInstanceOf(UnauthorizedException);
+    await expect(service.verifyAccessToken('Bearer invalid-token')).rejects.toBeInstanceOf(
+      UnauthorizedException,
+    );
   });
 
   it('maps timeout errors to AUTH_SERVICE_GRPC_TIMEOUT', async () => {
     verifyAccessTokenMock.mockReturnValue(throwError(() => new TimeoutError()));
 
-    await expect(
-      service.verifyAccessToken('Bearer token-1'),
-    ).rejects.toMatchObject({
+    await expect(service.verifyAccessToken('Bearer token-1')).rejects.toMatchObject({
       response: expect.objectContaining({
         code: 'AUTH_SERVICE_GRPC_TIMEOUT',
       }),
@@ -104,13 +100,9 @@ describe('AuthGrpcService', () => {
   });
 
   it('maps dependency failures to ServiceUnavailableException', async () => {
-    verifyAccessTokenMock.mockReturnValue(
-      throwError(() => new Error('connect ECONNREFUSED')),
-    );
+    verifyAccessTokenMock.mockReturnValue(throwError(() => new Error('connect ECONNREFUSED')));
 
-    await expect(
-      service.verifyAccessToken('Bearer token-1'),
-    ).rejects.toMatchObject({
+    await expect(service.verifyAccessToken('Bearer token-1')).rejects.toMatchObject({
       response: expect.objectContaining({
         code: 'AUTH_SERVICE_GRPC_REQUEST_FAILED',
       }),

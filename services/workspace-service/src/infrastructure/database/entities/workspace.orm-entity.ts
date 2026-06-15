@@ -34,12 +34,21 @@ export class WorkspaceOrmEntity {
   @DeleteDateColumn({ type: 'timestamptz', nullable: true })
   deleted_at: Date | null;
 
-  @OneToMany(() => WorkspaceMemberOrmEntity, (member) => member.workspace)
+  @OneToMany(
+    () => WorkspaceMemberOrmEntity,
+    (member) => member.workspace,
+  )
   members: WorkspaceMemberOrmEntity[];
 
-  @OneToMany(() => ProjectOrmEntity, (project) => project.workspace)
+  @OneToMany(
+    () => ProjectOrmEntity,
+    (project) => project.workspace,
+  )
   projects: ProjectOrmEntity[];
 
-  @OneToMany(() => InvitationOrmEntity, (invitation) => invitation.workspace)
+  @OneToMany(
+    () => InvitationOrmEntity,
+    (invitation) => invitation.workspace,
+  )
   invitations: InvitationOrmEntity[];
 }

@@ -1,8 +1,8 @@
-import { AuthIdentity } from '@/domain/types/jwt';
+import type { AuthIdentity } from '@/domain/types/jwt';
 import { Injectable } from '@nestjs/common';
-import { JwtTokenService } from '../services/jwt-token.service';
+import type { JwtTokenService } from '../services/jwt-token.service';
 import { readFirstString } from '../services/jwt-payload.util';
-import { UserProfileResolverService } from '../services/user-profile-resolver.service';
+import type { UserProfileResolverService } from '../services/user-profile-resolver.service';
 
 @Injectable()
 export class VerifyAccessTokenUseCase {
@@ -13,11 +13,8 @@ export class VerifyAccessTokenUseCase {
 
   async execute(authorizationHeader?: string): Promise<AuthIdentity> {
     const { payload, user, userId } =
-      await this.jwtTokenService.resolveVerifiedUserContext(
-        authorizationHeader,
-      );
-    const profileIdentity =
-      await this.userProfileResolverService.resolve(userId);
+      await this.jwtTokenService.resolveVerifiedUserContext(authorizationHeader);
+    const profileIdentity = await this.userProfileResolverService.resolve(userId);
 
     return {
       emailVerified: user.emailVerified,

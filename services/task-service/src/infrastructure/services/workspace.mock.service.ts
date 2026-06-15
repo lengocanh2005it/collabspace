@@ -153,10 +153,7 @@ export class WorkspaceMockService implements IWorkspaceClient {
    * @param workspaceId Workspace ID
    * @returns True always (workspace-service is the source of truth)
    */
-  validateWorkspaceAsync(
-    workspaceId: string,
-    _userId?: string,
-  ): Promise<boolean> {
+  validateWorkspaceAsync(workspaceId: string, _userId?: string): Promise<boolean> {
     // Auto-register if unknown so subsequent member checks also pass
     if (!this.mockWorkspaces.has(workspaceId)) {
       this.registerDynamicWorkspace(workspaceId);
@@ -207,8 +204,6 @@ export class WorkspaceMockService implements IWorkspaceClient {
     };
   }
 
-
-
   /**
    * Get workspace member info
    * @param workspaceId Workspace ID
@@ -221,9 +216,7 @@ export class WorkspaceMockService implements IWorkspaceClient {
   ): Promise<WorkspaceMember | null> {
     const workspace = this.mockWorkspaces.get(workspaceId);
     if (!workspace) return null;
-    return Promise.resolve(
-      workspace.members.find((member) => member.userId === userId) || null,
-    );
+    return Promise.resolve(workspace.members.find((member) => member.userId === userId) || null);
   }
 
   /**

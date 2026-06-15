@@ -1,24 +1,16 @@
 import {
-  CanActivate,
-  ExecutionContext,
+  type CanActivate,
+  type ExecutionContext,
   ForbiddenException,
   Inject,
   Injectable,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import {
-  hasPlatformPermission,
-  isPlatformAdmin,
-} from '@collabspace/shared';
+import { hasPlatformPermission, isPlatformAdmin } from '@collabspace/shared';
 import type { Request } from 'express';
-import {
-  REQUIRE_PERMISSION_KEY,
-} from '../constants';
+import { REQUIRE_PERMISSION_KEY } from '../constants';
 import { PLATFORM_IDENTITY_RESOLVER } from '../tokens';
-import type {
-  AdminAuthenticatedRequest,
-  PlatformIdentityResolver,
-} from '../types';
+import type { AdminAuthenticatedRequest, PlatformIdentityResolver } from '../types';
 
 @Injectable()
 export class PlatformAdminGuard implements CanActivate {
@@ -29,21 +21,17 @@ export class PlatformAdminGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context
-      .switchToHttp()
-      .getRequest<AdminAuthenticatedRequest>();
+    const request = context.switchToHttp().getRequest<AdminAuthenticatedRequest>();
     const identity = await this.identityResolver.resolve(request);
-    const requiredPermissions = this.reflector.getAllAndOverride<string[]>(
-      REQUIRE_PERMISSION_KEY,
-      [context.getHandler(), context.getClass()],
-    );
+    const requiredPermissions = this.reflector.getAllAndOverride<string[]>(REQUIRE_PERMISSION_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
 
     if (requiredPermissions?.length) {
       const allowed =
         isPlatformAdmin(identity) ||
-        requiredPermissions.some((permission) =>
-          hasPlatformPermission(identity, permission),
-        );
+        requiredPermissions.some((permission) => hasPlatformPermission(identity, permission));
       if (!allowed) {
         throw new ForbiddenException({
           code: 'PERMISSION_DENIED',

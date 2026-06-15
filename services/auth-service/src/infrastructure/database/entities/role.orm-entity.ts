@@ -20,6 +20,9 @@ export class RoleOrmEntity {
   )
   rolePermissions!: RolePermissionOrmEntity[];
 
-  @OneToMany(() => UserRoleOrmEntity, (userRole) => userRole.role)
+  @OneToMany(
+    () => UserRoleOrmEntity,
+    (userRole) => userRole.role,
+  )
   userRoles!: UserRoleOrmEntity[];
 }

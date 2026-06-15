@@ -1,12 +1,9 @@
-import { QueryHandler, IQueryHandler } from "@nestjs/cqrs";
+import { QueryHandler, type IQueryHandler } from "@nestjs/cqrs";
 import { Inject } from "@nestjs/common";
 import { GetTaskBoardQuery } from "../queries/get-task-board.query";
 import { ITaskRepository as ITaskRepositoryToken } from "../ports/ITaskRepository";
 import type { ITaskRepository } from "../ports/ITaskRepository";
-import {
-  buildTaskListFilter,
-  TASK_BOARD_DEFAULT_LIMIT,
-} from "../ports/task-list-filter";
+import { buildTaskListFilter, TASK_BOARD_DEFAULT_LIMIT } from "../ports/task-list-filter";
 import { TaskMapper } from "../../infrastructure/mappers/task.mapper";
 import {
   GetTaskBoardResponse,
@@ -24,11 +21,9 @@ export class GetTaskBoardHandler implements IQueryHandler<GetTaskBoardQuery> {
 
   async execute(query: GetTaskBoardQuery): Promise<GetTaskBoardResponse> {
     const filter = buildTaskListFilter({ projectId: query.projectId });
-    const tasks = await this.taskRepository.findByWorkspaceIdAsync(
-      query.workspaceId,
-      filter,
-      { limit: TASK_BOARD_DEFAULT_LIMIT },
-    );
+    const tasks = await this.taskRepository.findByWorkspaceIdAsync(query.workspaceId, filter, {
+      limit: TASK_BOARD_DEFAULT_LIMIT,
+    });
 
     const columns: TaskBoardColumn[] = BOARD_STATUSES.map((status) => ({
       status,

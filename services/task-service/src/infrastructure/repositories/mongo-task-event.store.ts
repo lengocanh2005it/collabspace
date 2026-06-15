@@ -1,9 +1,9 @@
 // src/infrastructure/repositories/mongo-task-event.store.ts
 import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import { Model } from "mongoose";
-import { ITaskEventStore } from "../../application/ports/ITaskEventStore";
-import {
+import type { Model } from "mongoose";
+import type { ITaskEventStore } from "../../application/ports/ITaskEventStore";
+import type {
   StoredTaskDomainEvent,
   UncommittedTaskDomainEvent,
 } from "../../domain/events/task-domain.events";
@@ -18,10 +18,7 @@ export class MongoTaskEventStore implements ITaskEventStore {
   ) {}
 
   async loadStream(streamId: string): Promise<StoredTaskDomainEvent[]> {
-    const docs = await this.eventModel
-      .find({ streamId })
-      .sort({ version: 1 })
-      .exec();
+    const docs = await this.eventModel.find({ streamId }).sort({ version: 1 }).exec();
 
     return docs.map((doc) => this.toStoredEvent(doc));
   }
@@ -53,13 +50,11 @@ export class MongoTaskEventStore implements ITaskEventStore {
       );
     }
 
-    const storedEvents: StoredTaskDomainEvent[] = events.map(
-      (event, index) => ({
-        ...event,
-        streamId,
-        version: expectedVersion + index + 1,
-      }),
-    );
+    const storedEvents: StoredTaskDomainEvent[] = events.map((event, index) => ({
+      ...event,
+      streamId,
+      version: expectedVersion + index + 1,
+    }));
 
     try {
       await this.eventModel.insertMany(

@@ -1,4 +1,4 @@
-import { INestApplication } from "@nestjs/common";
+import type { INestApplication } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 import { CommandBus, QueryBus } from "@nestjs/cqrs";
 import request from "supertest";

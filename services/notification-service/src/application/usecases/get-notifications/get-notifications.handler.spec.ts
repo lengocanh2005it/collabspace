@@ -1,11 +1,11 @@
 import { GetNotificationsHandler } from "./get-notifications.handler";
 import { GetNotificationsQuery } from "./get-notifications.query";
-import { INotificationRepository } from "../../../domain/repositories/INotificationRepository";
+import type { INotificationRepository } from "../../../domain/repositories/INotificationRepository";
 import { Notification } from "../../../domain/entities/Notification";
 import { NotificationType } from "../../../domain/value-objects/NotificationType";
 import { NotificationStatus } from "../../../domain/value-objects/NotificationStatus";
-import { UserReplicaLookupService } from "../../services/user-replica-lookup.service";
-import { NotificationCountCacheService } from "../../../infrastructure/cache/notification-count-cache.service";
+import type { UserReplicaLookupService } from "../../services/user-replica-lookup.service";
+import type { NotificationCountCacheService } from "../../../infrastructure/cache/notification-count-cache.service";
 
 const noopCountCache = {
   getUnreadCount: jest.fn().mockResolvedValue(null),
@@ -16,9 +16,7 @@ const noopCountCache = {
 describe("GetNotificationsHandler", () => {
   let handler: GetNotificationsHandler;
   let mockRepository: jest.Mocked<INotificationRepository>;
-  let mockUserReplicaLookup: jest.Mocked<
-    Pick<UserReplicaLookupService, "findActiveMapByIdsAsync">
-  >;
+  let mockUserReplicaLookup: jest.Mocked<Pick<UserReplicaLookupService, "findActiveMapByIdsAsync">>;
 
   beforeEach(() => {
     mockRepository = {
@@ -64,8 +62,8 @@ describe("GetNotificationsHandler", () => {
       "recipient-123",
       "actor-123",
       NotificationType.TASK_ASSIGNED,
-      "Title " + id,
-      "Message " + id,
+      `Title ${id}`,
+      `Message ${id}`,
       "task-123",
       "TASK",
       NotificationStatus.UNREAD,
@@ -91,8 +89,6 @@ describe("GetNotificationsHandler", () => {
     expect(result.total).toBe(42);
     expect(result.unreadCount).toBe(5);
     expect(result.notifications[0].actor.name).toBe("Actor");
-    expect(result.notifications[0].actor.avatarUrl).toBe(
-      "https://cdn.example.com/a.png",
-    );
+    expect(result.notifications[0].actor.avatarUrl).toBe("https://cdn.example.com/a.png");
   });
 });

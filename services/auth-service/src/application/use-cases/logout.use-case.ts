@@ -1,4 +1,4 @@
-import { LogoutRequestDto } from '@/application/dto/auth-request.dto';
+import type { LogoutRequestDto } from '@/application/dto/auth-request.dto';
 import {
   REFRESH_TOKEN_REPOSITORY,
   type RefreshTokenRepository,
@@ -15,10 +15,7 @@ export class LogoutUseCase {
 
   async execute(input: LogoutRequestDto): Promise<{ revoked: true }> {
     assertRefreshTokenPresent(input.refreshToken);
-    await this.refreshTokenRepository.revokeToken(
-      input.refreshToken,
-      'logged_out',
-    );
+    await this.refreshTokenRepository.revokeToken(input.refreshToken, 'logged_out');
 
     return { revoked: true };
   }

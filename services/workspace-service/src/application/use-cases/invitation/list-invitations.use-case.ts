@@ -29,21 +29,14 @@ export class ListInvitationsUseCase {
     private readonly memberRepo: IWorkspaceMemberRepository,
   ) {}
 
-  async execute(
-    userId: string,
-    workspaceId: string,
-  ): Promise<ListInvitationResponse[]> {
-    const requestingMember = await this.memberRepo.findByWorkspaceAndUser(
-      workspaceId,
-      userId,
-    );
+  async execute(userId: string, workspaceId: string): Promise<ListInvitationResponse[]> {
+    const requestingMember = await this.memberRepo.findByWorkspaceAndUser(workspaceId, userId);
 
     if (!requestingMember) {
       throw new ForbiddenException('You are not a member of this workspace');
     }
 
-    const invitations =
-      await this.invitationRepo.findPendingByWorkspace(workspaceId);
+    const invitations = await this.invitationRepo.findPendingByWorkspace(workspaceId);
 
     return invitations.map((invitation) => this.toResponse(invitation));
   }

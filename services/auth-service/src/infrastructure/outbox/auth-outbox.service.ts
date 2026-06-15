@@ -1,9 +1,9 @@
-import { ConfigurationService } from '@/configuration/configuration.service';
+import type { ConfigurationService } from '@/configuration/configuration.service';
 import { unwrapQueryRows } from '@collabspace/shared';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { randomUUID } from 'node:crypto';
-import { DataSource, EntityManager } from 'typeorm';
+import type { DataSource, EntityManager } from 'typeorm';
 import {
   AUTH_OUTBOX_EVENT_EMAIL_VERIFICATION_OTP,
   AUTH_OUTBOX_EVENT_PASSWORD_RESET_EMAIL,
@@ -31,12 +31,9 @@ type ClaimedOutboxEvent = {
   payload: Record<string, unknown>;
 };
 
-function normalizeClaimedOutboxRow(
-  row: Record<string, unknown>,
-): ClaimedOutboxEvent | null {
+function normalizeClaimedOutboxRow(row: Record<string, unknown>): ClaimedOutboxEvent | null {
   const rawId = row.id;
-  const id =
-    typeof rawId === 'string' ? rawId : rawId != null ? String(rawId) : '';
+  const id = typeof rawId === 'string' ? rawId : rawId != null ? String(rawId) : '';
   if (id.length === 0) {
     return null;
   }
@@ -48,9 +45,7 @@ function normalizeClaimedOutboxRow(
 
   const rawAttemptCount = row.attemptCount ?? row.attempt_count;
   const attemptCount =
-    typeof rawAttemptCount === 'number'
-      ? rawAttemptCount
-      : Number(rawAttemptCount ?? 0);
+    typeof rawAttemptCount === 'number' ? rawAttemptCount : Number(rawAttemptCount ?? 0);
 
   return {
     id,
@@ -82,30 +77,19 @@ export class AuthOutboxService {
     payload: AuthEmailVerificationOtpOutboxPayload,
     manager?: EntityManager,
   ): Promise<void> {
-    await this.enqueueEvent(
-      AUTH_OUTBOX_EVENT_EMAIL_VERIFICATION_OTP,
-      payload,
-      manager,
-    );
+    await this.enqueueEvent(AUTH_OUTBOX_EVENT_EMAIL_VERIFICATION_OTP, payload, manager);
   }
 
   async enqueuePasswordResetEmail(
     payload: AuthPasswordResetEmailOutboxPayload,
     manager?: EntityManager,
   ): Promise<void> {
-    await this.enqueueEvent(
-      AUTH_OUTBOX_EVENT_PASSWORD_RESET_EMAIL,
-      payload,
-      manager,
-    );
+    await this.enqueueEvent(AUTH_OUTBOX_EVENT_PASSWORD_RESET_EMAIL, payload, manager);
   }
 
   async claimPendingBatch(limit?: number): Promise<ClaimedOutboxEvent[]> {
-    const batchSize =
-      limit ?? this.configurationService.getOutboxConfig().batchSize;
-    const tablePath = this.dataSource.getMetadata(
-      AuthOutboxEventOrmEntity,
-    ).tablePath;
+    const batchSize = limit ?? this.configurationService.getOutboxConfig().batchSize;
+    const tablePath = this.dataSource.getMetadata(AuthOutboxEventOrmEntity).tablePath;
 
     return this.dataSource.transaction(async (manager) => {
       const candidates = unwrapQueryRows<{ id: string }>(
@@ -169,9 +153,7 @@ export class AuthOutboxService {
       return;
     }
 
-    const tablePath = this.dataSource.getMetadata(
-      AuthOutboxEventOrmEntity,
-    ).tablePath;
+    const tablePath = this.dataSource.getMetadata(AuthOutboxEventOrmEntity).tablePath;
     await this.dataSource.query(
       `
         UPDATE ${tablePath}
@@ -188,11 +170,8 @@ export class AuthOutboxService {
   }
 
   async getStats(): Promise<AuthOutboxStats> {
-    const tablePath = this.dataSource.getMetadata(
-      AuthOutboxEventOrmEntity,
-    ).tablePath;
-    const { staleClaimThresholdMs } =
-      this.configurationService.getOutboxConfig();
+    const tablePath = this.dataSource.getMetadata(AuthOutboxEventOrmEntity).tablePath;
+    const { staleClaimThresholdMs } = this.configurationService.getOutboxConfig();
     const rows = unwrapQueryRows<{
       failedCount: number;
       oldestFailedAt: Date | string | null;
@@ -265,9 +244,7 @@ export class AuthOutboxService {
   }
 
   async markProcessed(id: string): Promise<void> {
-    const tablePath = this.dataSource.getMetadata(
-      AuthOutboxEventOrmEntity,
-    ).tablePath;
+    const tablePath = this.dataSource.getMetadata(AuthOutboxEventOrmEntity).tablePath;
     const rows = unwrapQueryRows<{ id: string }>(
       await this.dataSource.query(
         `
@@ -285,17 +262,11 @@ export class AuthOutboxService {
     );
 
     if (rows.length === 0) {
-      throw new Error(
-        `Outbox event ${id} was not found when marking processed`,
-      );
+      throw new Error(`Outbox event ${id} was not found when marking processed`);
     }
   }
 
-  async markFailed(
-    id: string,
-    attemptCount: number,
-    error: string,
-  ): Promise<void> {
+  async markFailed(id: string, attemptCount: number, error: string): Promise<void> {
     if (typeof id !== 'string' || id.length === 0) {
       return;
     }
@@ -307,9 +278,7 @@ export class AuthOutboxService {
     await this.getRepository().update(
       { id },
       {
-        ...(isPermanentFailure
-          ? {}
-          : { availableAt: this.getRetryAvailableAt(safeAttemptCount) }),
+        ...(isPermanentFailure ? {} : { availableAt: this.getRetryAvailableAt(safeAttemptCount) }),
         claimedAt: null,
         failedAt: isPermanentFailure ? new Date() : null,
         lastError: error,
@@ -319,11 +288,8 @@ export class AuthOutboxService {
   }
 
   async reclaimStaleClaims(): Promise<number> {
-    const tablePath = this.dataSource.getMetadata(
-      AuthOutboxEventOrmEntity,
-    ).tablePath;
-    const { staleClaimThresholdMs } =
-      this.configurationService.getOutboxConfig();
+    const tablePath = this.dataSource.getMetadata(AuthOutboxEventOrmEntity).tablePath;
+    const { staleClaimThresholdMs } = this.configurationService.getOutboxConfig();
 
     const rows = unwrapQueryRows<{ id: string }>(
       await this.dataSource.query(
@@ -347,9 +313,7 @@ export class AuthOutboxService {
   }
 
   async markExhaustedClaims(): Promise<number> {
-    const tablePath = this.dataSource.getMetadata(
-      AuthOutboxEventOrmEntity,
-    ).tablePath;
+    const tablePath = this.dataSource.getMetadata(AuthOutboxEventOrmEntity).tablePath;
     const { maxAttempts } = this.configurationService.getOutboxConfig();
 
     const exhaustedRows = unwrapQueryRows<{ id: string }>(
@@ -373,9 +337,7 @@ export class AuthOutboxService {
   }
 
   async releaseInFlightClaimsOnStartup(): Promise<number> {
-    const tablePath = this.dataSource.getMetadata(
-      AuthOutboxEventOrmEntity,
-    ).tablePath;
+    const tablePath = this.dataSource.getMetadata(AuthOutboxEventOrmEntity).tablePath;
     const rows = unwrapQueryRows<{ id: string }>(
       await this.dataSource.query(
         `
@@ -427,9 +389,7 @@ export class AuthOutboxService {
   }
 
   private getRepository(manager?: EntityManager) {
-    return (manager ?? this.dataSource.manager).getRepository(
-      AuthOutboxEventOrmEntity,
-    );
+    return (manager ?? this.dataSource.manager).getRepository(AuthOutboxEventOrmEntity);
   }
 
   private async enqueueEvent(
@@ -458,8 +418,7 @@ export class AuthOutboxService {
   }
 
   private getRetryDelayMs(attemptCount: number): number {
-    const safeAttemptCount =
-      Number.isFinite(attemptCount) && attemptCount > 0 ? attemptCount : 1;
+    const safeAttemptCount = Number.isFinite(attemptCount) && attemptCount > 0 ? attemptCount : 1;
     const baseDelayMs = 5_000;
     const cappedExponent = Math.min(Math.max(safeAttemptCount - 1, 0), 6);
     const delayMs = baseDelayMs * 2 ** cappedExponent;

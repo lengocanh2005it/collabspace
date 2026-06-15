@@ -1,8 +1,8 @@
 import { DeleteAttachmentHandler } from "./delete-attachment.handler";
 import { DeleteAttachmentCommand } from "../commands/delete-attachment.command";
-import { ITaskRepository } from "../ports/ITaskRepository";
+import type { ITaskRepository } from "../ports/ITaskRepository";
 import { createMockTaskRepository } from "../../test-utils/mock-task-repository";
-import { AzureBlobService } from "../../infrastructure/services/azure-blob.service";
+import type { AzureBlobService } from "../../infrastructure/services/azure-blob.service";
 import { Task } from "../../domain/entities/Task";
 import { TaskId } from "../../domain/value-objects/TaskId";
 import { UserSnapshot } from "../../domain/value-objects/UserSnapshot";
@@ -25,13 +25,7 @@ describe("DeleteAttachmentHandler", () => {
   });
 
   const createMockTask = () => {
-    const creatorSnapshot = UserSnapshot.create(
-      "creator-1",
-      "c@c.c",
-      "Creator",
-      "Creator",
-      "url",
-    );
+    const creatorSnapshot = UserSnapshot.create("creator-1", "c@c.c", "Creator", "Creator", "url");
     return Task.restore(
       new TaskId("123e4567-e89b-12d3-a456-426614174000"),
       "Title",
@@ -60,9 +54,7 @@ describe("DeleteAttachmentHandler", () => {
 
     await handler.execute(command);
 
-    expect(mockAzureBlobService.deleteFile).toHaveBeenCalledWith(
-      "https://azure.blob/test.jpg",
-    );
+    expect(mockAzureBlobService.deleteFile).toHaveBeenCalledWith("https://azure.blob/test.jpg");
     expect(mockTaskRepo.saveAsync).toHaveBeenCalledWith(task);
   });
 
@@ -74,9 +66,7 @@ describe("DeleteAttachmentHandler", () => {
 
     mockTaskRepo.loadAggregateByIdAsync.mockResolvedValue(null);
 
-    await expect(handler.execute(command)).rejects.toThrow(
-      EntityNotFoundException,
-    );
+    await expect(handler.execute(command)).rejects.toThrow(EntityNotFoundException);
     expect(mockAzureBlobService.deleteFile).not.toHaveBeenCalled();
     expect(mockTaskRepo.saveAsync).not.toHaveBeenCalled();
   });

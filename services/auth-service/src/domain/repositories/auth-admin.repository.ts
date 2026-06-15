@@ -24,15 +24,9 @@ export type AdminUser = {
 };
 
 export interface AuthAdminRepository {
-  assignPermissionToRole(
-    roleId: string,
-    permissionId: string,
-  ): Promise<AdminRole>;
+  assignPermissionToRole(roleId: string, permissionId: string): Promise<AdminRole>;
   assignRoleToUser(userId: string, roleId: string): Promise<AdminUser>;
-  createPermission(input: {
-    description: string;
-    name: string;
-  }): Promise<AdminPermission>;
+  createPermission(input: { description: string; name: string }): Promise<AdminPermission>;
   createRole(input: { description: string; name: string }): Promise<AdminRole>;
   deleteRole(roleId: string): Promise<void>;
   listPermissions(): Promise<AdminPermission[]>;
@@ -40,8 +34,5 @@ export interface AuthAdminRepository {
   listUsers(): Promise<AdminUser[]>;
   recordLogin(userId: string): Promise<void>;
   setUserActive(userId: string, isActive: boolean): Promise<AdminUser>;
-  updateRole(
-    roleId: string,
-    input: { description?: string; name?: string },
-  ): Promise<AdminRole>;
+  updateRole(roleId: string, input: { description?: string; name?: string }): Promise<AdminRole>;
 }

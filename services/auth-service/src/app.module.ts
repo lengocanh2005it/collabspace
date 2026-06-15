@@ -102,10 +102,7 @@ import { InMemoryAuthAdminRepository } from '@/infrastructure/repositories/in-me
       useFactory: (
         typeOrmUserRepository: TypeOrmUserRepository,
         inMemoryUserRepository: InMemoryUserRepository,
-      ) =>
-        process.env.DATABASE_URL
-          ? typeOrmUserRepository
-          : inMemoryUserRepository,
+      ) => (process.env.DATABASE_URL ? typeOrmUserRepository : inMemoryUserRepository),
     },
     {
       provide: AUTH_ADMIN_REPOSITORY,

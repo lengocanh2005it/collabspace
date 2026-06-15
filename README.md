@@ -186,6 +186,20 @@ pnpm run test
 
 Or per service: `cd services/<name> && pnpm run build && pnpm run test`.
 
+### Lint & format (Biome + ESLint)
+
+From **repo root** (same gate as CI):
+
+```powershell
+pnpm run lint            # format:check + Biome lint + ESLint type-checked
+pnpm run format          # Biome write (services + packages)
+pnpm run biome:fix       # Biome auto-fix (format + safe lint fixes)
+```
+
+Inside a single service, `pnpm run lint` runs **ESLint only** for that package; `pnpm run format` delegates to root Biome. Always run **`pnpm run lint` from root** before opening a PR.
+
+Pre-commit (after `pnpm install`): `biome check --staged` on staged files. Details: [docs/tooling/biome-migration.md](docs/tooling/biome-migration.md), [.claude/docs/development-workflows.md](.claude/docs/development-workflows.md).
+
 ### Verify MVP demo (E2E script)
 
 Requires Docker stack with **Traefik** + databases + migrations + seed:
@@ -337,7 +351,7 @@ Chart docs: [infrastructure/helm/README.md](infrastructure/helm/README.md). **Pr
 
 GitHub Actions workflows:
 
-1. `.github/workflows/ci.yml` — install, build, test on PRs and `main`.
+1. `.github/workflows/ci.yml` — `lint` (`pnpm run lint:ci`) then build + test on PRs and `main`.
 2. `.github/workflows/docker-deploy.yml` — build five service images, push GHCR; **Helm deploy on k3s Droplet** via SSH (`infrastructure/deploy/helm-deploy-ci.sh`).
 
 Lộ trình production: [docs/deployment-k3s-phases.md](docs/deployment-k3s-phases.md). URL prod/local: [docs/service-urls.md](docs/service-urls.md). Compose legacy: [docs/deployment-digitalocean-droplet.md](docs/deployment-digitalocean-droplet.md).
@@ -346,7 +360,8 @@ Lộ trình production: [docs/deployment-k3s-phases.md](docs/deployment-k3s-phas
 
 ```
 collabspace/
-├── package.json             # pnpm workspace root (build/test all)
+├── package.json             # pnpm workspace root (build/test/lint/format)
+├── biome.json               # Biome format + lint (services + packages)
 ├── pnpm-workspace.yaml
 ├── CLAUDE.md                # Primary agent guide (Cursor / Claude Code)
 ├── AGENTS.md                # Cross-tool agent index

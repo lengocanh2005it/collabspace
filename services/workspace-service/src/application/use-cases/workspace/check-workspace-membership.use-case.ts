@@ -24,19 +24,13 @@ export class CheckWorkspaceMembershipUseCase {
     private readonly memberRepo: IWorkspaceMemberRepository,
   ) {}
 
-  async execute(
-    workspaceId: string,
-    userId: string,
-  ): Promise<WorkspaceMembershipResult> {
+  async execute(workspaceId: string, userId: string): Promise<WorkspaceMembershipResult> {
     const workspace = await this.workspaceRepo.findById(workspaceId);
     if (!workspace) {
       throw new NotFoundException('Workspace not found');
     }
 
-    const member = await this.memberRepo.findByWorkspaceAndUser(
-      workspaceId,
-      userId,
-    );
+    const member = await this.memberRepo.findByWorkspaceAndUser(workspaceId, userId);
 
     return {
       workspaceId,

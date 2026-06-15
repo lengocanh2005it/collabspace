@@ -1,5 +1,5 @@
-import { CommandBus } from "@nestjs/cqrs";
-import { RmqContext } from "@nestjs/microservices";
+import type { CommandBus } from "@nestjs/cqrs";
+import type { RmqContext } from "@nestjs/microservices";
 import { UserEventListenerController } from "./user-event-listener.controller";
 import type { MetricsService } from "../../../metrics/metrics.service";
 

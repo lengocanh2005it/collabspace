@@ -8,7 +8,6 @@ import { TaskController } from "./presentation/controllers/task.controller";
 import { HealthController } from "./presentation/controllers/health.controller";
 import { TaskCommentController } from "./presentation/controllers/task-comment.controller";
 import { TaskHealthService } from "./health/task-health.service";
-import { TaskEventController } from "./presentation/controllers/internal/task-event-internal.controller";
 import { UserEventController } from "./presentation/controllers/internal/user-event-internal.controller";
 import { WorkspaceEventController } from "./presentation/controllers/internal/workspace-event-internal.controller";
 
@@ -46,10 +45,7 @@ import { TaskCommentNotificationPublisher } from "./application/services/task-co
 import { WorkspaceDeletionService } from "./application/services/workspace-deletion.service";
 import { TaskOutboxService } from "./infrastructure/outbox/task-outbox.service";
 import { TaskOutboxProcessor } from "./infrastructure/outbox/task-outbox.processor";
-import {
-  TaskOutboxEvent,
-  TaskOutboxEventSchema,
-} from "./infrastructure/outbox/task-outbox.schema";
+import { TaskOutboxEvent, TaskOutboxEventSchema } from "./infrastructure/outbox/task-outbox.schema";
 import { IdempotencyService } from "./infrastructure/idempotency/idempotency.service";
 import {
   IdempotencyKeyRecord,
@@ -65,10 +61,7 @@ import { ITaskRepository } from "./application/ports/ITaskRepository";
 import { EventSourcedMongoTaskRepository } from "./infrastructure/repositories/event-sourced-mongo-task.repository";
 import { MongoTaskEventStore } from "./infrastructure/repositories/mongo-task-event.store";
 import { ITaskEventStore } from "./application/ports/ITaskEventStore";
-import {
-  TaskSchema,
-  TaskPersistence,
-} from "./infrastructure/persistence/task.schema";
+import { TaskSchema, TaskPersistence } from "./infrastructure/persistence/task.schema";
 import {
   TaskEventPersistence,
   TaskEventSchema,
@@ -81,14 +74,8 @@ import { ITaskActivityRepository } from "./application/ports/ITaskActivityReposi
 import { MongoTaskActivityRepository } from "./infrastructure/repositories/mongo-task-activity.repository";
 import { COMMENT_REPOSITORY_TOKEN } from "./domain/repositories/comment.repository.interface";
 import { CommentRepository } from "./infrastructure/repositories/comment.repository";
-import {
-  TaskComment,
-  TaskCommentSchema,
-} from "./infrastructure/persistence/task-comment.schema";
-import {
-  UserReplica,
-  UserReplicaSchema,
-} from "./infrastructure/persistence/user-replica.schema";
+import { TaskComment, TaskCommentSchema } from "./infrastructure/persistence/task-comment.schema";
+import { UserReplica, UserReplicaSchema } from "./infrastructure/persistence/user-replica.schema";
 import { USER_REPLICA_REPOSITORY_TOKEN } from "./application/ports/IUserReplicaRepository"; // Dùng Symbol 2-trong-1
 import { UserReplicaRepository } from "./infrastructure/repositories/mongo-user-replica.repository";
 
@@ -153,7 +140,6 @@ const Handlers = [
     HealthController,
     TaskController,
     TaskCommentController,
-    TaskEventController,
     UserEventController,
     WorkspaceEventController,
   ],
@@ -185,7 +171,7 @@ const Handlers = [
         }
 
         if (configService.get<string>("NODE_ENV") === "production") {
-          throw new Error('FATAL: Mock workspace service is prohibited in production!');
+          throw new Error("FATAL: Mock workspace service is prohibited in production!");
         }
 
         return mockClient;

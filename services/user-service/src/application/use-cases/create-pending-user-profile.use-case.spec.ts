@@ -1,9 +1,6 @@
-jest.mock(
-  '../../infrastructure/messaging/rabbitmq/rabbitmq-events.service',
-  () => ({
-    RabbitMqEventsService: jest.fn(),
-  }),
-);
+jest.mock('../../infrastructure/messaging/rabbitmq/rabbitmq-events.service', () => ({
+  RabbitMqEventsService: jest.fn(),
+}));
 
 import { CreatePendingUserProfileUseCase } from './create-pending-user-profile.use-case';
 import {
@@ -22,16 +19,11 @@ describe('CreatePendingUserProfileUseCase', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     repository = createUserProfileRepositoryMock();
-    useCase = new CreatePendingUserProfileUseCase(
-      repository,
-      rabbitMqEventsMock as never,
-    );
+    useCase = new CreatePendingUserProfileUseCase(repository, rabbitMqEventsMock as never);
   });
 
   it('upserts pending profile and publishes user_registered event', async () => {
-    jest
-      .spyOn(repository, 'upsertPending')
-      .mockResolvedValue(sampleUserProfile);
+    jest.spyOn(repository, 'upsertPending').mockResolvedValue(sampleUserProfile);
     rabbitMqEventsMock.publishUserRegistered.mockResolvedValue(undefined);
 
     await expect(
@@ -52,12 +44,8 @@ describe('CreatePendingUserProfileUseCase', () => {
   });
 
   it('returns profile when event publish fails', async () => {
-    jest
-      .spyOn(repository, 'upsertPending')
-      .mockResolvedValue(sampleUserProfile);
-    rabbitMqEventsMock.publishUserRegistered.mockRejectedValue(
-      new Error('broker down'),
-    );
+    jest.spyOn(repository, 'upsertPending').mockResolvedValue(sampleUserProfile);
+    rabbitMqEventsMock.publishUserRegistered.mockRejectedValue(new Error('broker down'));
 
     await expect(
       useCase.execute({ fullName: 'Jane Doe', userId: 'user-1' }),

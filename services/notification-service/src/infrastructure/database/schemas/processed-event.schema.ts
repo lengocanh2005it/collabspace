@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { HydratedDocument } from "mongoose";
+import type { HydratedDocument } from "mongoose";
 
 export type ProcessedEventDocument = HydratedDocument<ProcessedEvent>;
 
@@ -12,7 +12,6 @@ export class ProcessedEvent {
   processedAt!: Date;
 }
 
-export const ProcessedEventSchema =
-  SchemaFactory.createForClass(ProcessedEvent);
+export const ProcessedEventSchema = SchemaFactory.createForClass(ProcessedEvent);
 
 ProcessedEventSchema.index({ processedAt: 1 }, { expireAfterSeconds: 604800 });

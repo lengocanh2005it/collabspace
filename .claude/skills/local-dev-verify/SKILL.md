@@ -49,6 +49,25 @@ For cross-service changes:
 - Verify every affected service.
 - Check proto/event/docs alignment.
 
+## Lint & format (repo root)
+
+Before push (matches CI `lint` job):
+
+```sh
+pnpm run lint            # format:check + biome:check + lint:types (from repo root)
+```
+
+Per-service `pnpm run lint` is ESLint only — not the full CI gate.
+
+Format only:
+
+```sh
+pnpm run format          # Biome write (services + packages)
+pnpm run biome:fix       # Biome format + lint auto-fix
+```
+
+Pre-commit runs `biome check --staged` on staged files. Details: `.claude/docs/development-workflows.md`, `docs/tooling/biome-migration.md`.
+
 ## Commands
 
 Auth:

@@ -1,8 +1,8 @@
 import type { AuthUser } from '@/domain/entities/auth-user';
 import { Injectable } from '@nestjs/common';
-import { JwtTokenService } from '../services/jwt-token.service';
+import type { JwtTokenService } from '../services/jwt-token.service';
 import { readFirstString } from '../services/jwt-payload.util';
-import { UserProfileResolverService } from '../services/user-profile-resolver.service';
+import type { UserProfileResolverService } from '../services/user-profile-resolver.service';
 
 @Injectable()
 export class GetCurrentUserUseCase {
@@ -20,12 +20,8 @@ export class GetCurrentUserUseCase {
     }
   > {
     const { payload, user } =
-      await this.jwtTokenService.resolveVerifiedUserContext(
-        authorizationHeader,
-      );
-    const profileIdentity = await this.userProfileResolverService.resolve(
-      user.userId,
-    );
+      await this.jwtTokenService.resolveVerifiedUserContext(authorizationHeader);
+    const profileIdentity = await this.userProfileResolverService.resolve(user.userId);
 
     return {
       ...user,

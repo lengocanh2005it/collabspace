@@ -1,11 +1,5 @@
 import { Transform } from 'class-transformer';
-import {
-  ArrayMaxSize,
-  ArrayNotEmpty,
-  IsArray,
-  IsString,
-  MaxLength,
-} from 'class-validator';
+import { ArrayMaxSize, ArrayNotEmpty, IsArray, IsString, MaxLength } from 'class-validator';
 import { toCsvArray, toUniqueStringArray } from './transformers';
 
 export class PresenceQueryDto {

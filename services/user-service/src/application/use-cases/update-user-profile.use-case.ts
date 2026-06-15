@@ -1,14 +1,14 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import {
-  UpdateUserProfileInput,
+  type UpdateUserProfileInput,
   USER_PROFILE_REPOSITORY,
 } from '../../domain/repositories/user-profile.repository';
 import type { UserProfileRepository } from '../../domain/repositories/user-profile.repository';
 import {
-  UserProfileResponseDto,
+  type UserProfileResponseDto,
   toUserProfileResponseDto,
 } from '../dto/user-profile-response.dto';
-import { RabbitMqEventsService } from '../../infrastructure/messaging/rabbitmq/rabbitmq-events.service';
+import type { RabbitMqEventsService } from '../../infrastructure/messaging/rabbitmq/rabbitmq-events.service';
 
 @Injectable()
 export class UpdateUserProfileUseCase {
@@ -20,14 +20,8 @@ export class UpdateUserProfileUseCase {
     private readonly rabbitMqEvents: RabbitMqEventsService,
   ) {}
 
-  async execute(
-    userId: string,
-    input: UpdateUserProfileInput,
-  ): Promise<UserProfileResponseDto> {
-    const updatedProfile = await this.userProfileRepository.updateProfile(
-      userId,
-      input,
-    );
+  async execute(userId: string, input: UpdateUserProfileInput): Promise<UserProfileResponseDto> {
+    const updatedProfile = await this.userProfileRepository.updateProfile(userId, input);
 
     try {
       await this.rabbitMqEvents.publishUserProfileUpdated({

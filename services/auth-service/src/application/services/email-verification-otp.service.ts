@@ -1,16 +1,13 @@
 import type { AuthUser } from '@/domain/entities/auth-user';
-import { ConfigurationService } from '@/configuration/configuration.service';
+import type { ConfigurationService } from '@/configuration/configuration.service';
+import { EMAIL_OUTBOX, type EmailOutbox } from '@/domain/ports/email-outbox.port';
 import {
-  EMAIL_OUTBOX,
-  type EmailOutbox,
-} from '@/domain/ports/email-outbox.port';
-import {
-  EmailVerificationOtpPayload,
+  type EmailVerificationOtpPayload,
   OTP_STORE,
   type OtpStore,
 } from '@/domain/ports/otp-store.port';
 import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
-import { createHash, randomInt } from 'crypto';
+import { createHash, randomInt } from 'node:crypto';
 
 export type { EmailVerificationOtpPayload };
 
@@ -40,8 +37,7 @@ export class EmailVerificationOtpService {
 
   async send(user: AuthUser): Promise<EmailVerificationOtpDispatchResult> {
     const otp = this.generateOtp();
-    const otpTtlSeconds =
-      this.configurationService.getEmailVerificationConfig().otpTtlSeconds;
+    const otpTtlSeconds = this.configurationService.getEmailVerificationConfig().otpTtlSeconds;
 
     await this.otpStore.assertAvailable();
     await this.otpStore.setJson(
@@ -67,8 +63,7 @@ export class EmailVerificationOtpService {
   }
 
   async assertResendAllowed(userId: string): Promise<void> {
-    const emailVerificationConfig =
-      this.configurationService.getEmailVerificationConfig();
+    const emailVerificationConfig = this.configurationService.getEmailVerificationConfig();
     const cooldownKey = `email-verification:resend:cooldown:${userId}`;
     const attemptsKey = `email-verification:resend:attempts:${userId}`;
 
@@ -86,10 +81,7 @@ export class EmailVerificationOtpService {
     const attempts = await this.otpStore.increment(attemptsKey);
 
     if (attempts === 1) {
-      await this.otpStore.expire(
-        attemptsKey,
-        emailVerificationConfig.resendWindowSeconds,
-      );
+      await this.otpStore.expire(attemptsKey, emailVerificationConfig.resendWindowSeconds);
     }
 
     if (attempts > emailVerificationConfig.resendMaxAttempts) {
@@ -103,16 +95,11 @@ export class EmailVerificationOtpService {
       );
     }
 
-    await this.otpStore.set(
-      cooldownKey,
-      '1',
-      emailVerificationConfig.resendCooldownSeconds,
-    );
+    await this.otpStore.set(cooldownKey, '1', emailVerificationConfig.resendCooldownSeconds);
   }
 
   private generateOtp(): string {
-    const { otpLength } =
-      this.configurationService.getEmailVerificationConfig();
+    const { otpLength } = this.configurationService.getEmailVerificationConfig();
     const max = 10 ** otpLength;
     const otp = randomInt(0, max);
 

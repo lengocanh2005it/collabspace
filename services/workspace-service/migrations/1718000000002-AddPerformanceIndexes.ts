@@ -15,11 +15,7 @@ export class AddPerformanceIndexes1718000000002 implements MigrationInterface {
   }
 
   async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(
-      `DROP INDEX IF EXISTS "IDX_invitations_workspace_status"`,
-    );
-    await queryRunner.query(
-      `DROP INDEX IF EXISTS "IDX_projects_workspace_deleted"`,
-    );
+    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_invitations_workspace_status"`);
+    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_projects_workspace_deleted"`);
   }
 }

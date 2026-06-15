@@ -1,14 +1,14 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import {
-  CreatePendingUserProfileInput,
+  type CreatePendingUserProfileInput,
   USER_PROFILE_REPOSITORY,
 } from '../../domain/repositories/user-profile.repository';
 import type { UserProfileRepository } from '../../domain/repositories/user-profile.repository';
 import {
-  UserProfileResponseDto,
+  type UserProfileResponseDto,
   toUserProfileResponseDto,
 } from '../dto/user-profile-response.dto';
-import { RabbitMqEventsService } from '../../infrastructure/messaging/rabbitmq/rabbitmq-events.service';
+import type { RabbitMqEventsService } from '../../infrastructure/messaging/rabbitmq/rabbitmq-events.service';
 
 @Injectable()
 export class CreatePendingUserProfileUseCase {
@@ -20,9 +20,7 @@ export class CreatePendingUserProfileUseCase {
     private readonly rabbitMqEvents: RabbitMqEventsService,
   ) {}
 
-  async execute(
-    input: CreatePendingUserProfileInput,
-  ): Promise<UserProfileResponseDto> {
+  async execute(input: CreatePendingUserProfileInput): Promise<UserProfileResponseDto> {
     const profile = await this.userProfileRepository.upsertPending(input);
 
     try {

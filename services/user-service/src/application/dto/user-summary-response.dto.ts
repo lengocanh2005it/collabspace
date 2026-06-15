@@ -1,5 +1,5 @@
-import { UserProfile } from '../../domain/entities/user-profile.entity';
-import { UserStatus } from '../../domain/entities/user-status.entity';
+import type { UserProfile } from '../../domain/entities/user-profile.entity';
+import type { UserStatus } from '../../domain/entities/user-status.entity';
 
 export type UserSummaryResponseDto = {
   avatarUrl: string | null;
