@@ -96,7 +96,12 @@ ${pull_secret_block}
             runAsNonRoot: false
           image: ${image}
           imagePullPolicy: Always
-          command: ["/bin/sh", "-c", "${MIGRATE_PREPARE} && ${cmd}"]
+          command:
+            - /bin/sh
+            - -c
+            - |
+              ${MIGRATE_PREPARE}
+              exec ${cmd}
           envFrom:
             - configMapRef:
                 name: ${deployment}-config
