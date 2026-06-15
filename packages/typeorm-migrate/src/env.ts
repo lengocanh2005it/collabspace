@@ -60,5 +60,9 @@ export function migrationsGlobFromMigrateDir(migrateDirname: string): string {
   const parentName = basename(resolve(migrateDirname, '..'));
   const runningFromSource =
     basename(migrateDirname) === 'src' && parentName !== 'dist';
-  return join(migrationsDir, runningFromSource ? '*.{ts,js}' : '*.js');
+  // Require 13-digit JS timestamp prefix (excludes legacy 001-foo files in old images).
+  const pattern = runningFromSource
+    ? '[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]-*.{ts,js}'
+    : '[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]-*.js';
+  return join(migrationsDir, pattern);
 }

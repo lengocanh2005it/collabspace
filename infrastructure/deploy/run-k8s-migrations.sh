@@ -45,6 +45,8 @@ if [[ -z "$GHCR_OWNER" ]]; then
   exit 1
 fi
 
+MIGRATE_PREPARE='rm -rf migrations; for f in dist/migrations/*.js; do case "$(basename "$f")" in [0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]-*) ;; *) rm -f "$f";; esac; done'
+
 declare -A MIGRATE_CMD=(
   [auth-service]="node dist/src/migrate.js"
   [user-service]="node dist/src/migrate.js"
@@ -94,7 +96,7 @@ ${pull_secret_block}
             runAsNonRoot: false
           image: ${image}
           imagePullPolicy: Always
-          command: ["/bin/sh", "-c", "rm -rf migrations && ${cmd}"]
+          command: ["/bin/sh", "-c", "${MIGRATE_PREPARE} && ${cmd}"]
           envFrom:
             - configMapRef:
                 name: ${deployment}-config

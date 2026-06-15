@@ -6,18 +6,15 @@ import {
 } from './env';
 
 describe('typeorm-migrate env helpers', () => {
-  it('migrationsGlobFromMigrateDir uses ts+js glob from src', () => {
-    const glob = migrationsGlobFromMigrateDir(
+  it('migrationsGlobFromMigrateDir requires 13-digit timestamp prefix', () => {
+    const fromSrc = migrationsGlobFromMigrateDir(
       join('/app/services/user-service', 'src'),
     );
-    expect(glob).toMatch(/migrations[/\\]\*\.\{ts,js\}$/);
-  });
-
-  it('migrationsGlobFromMigrateDir uses js glob from dist/src', () => {
-    const glob = migrationsGlobFromMigrateDir(
+    const fromDist = migrationsGlobFromMigrateDir(
       join('/app/services/user-service/dist', 'src'),
     );
-    expect(glob).toMatch(/migrations[/\\]\*\.js$/);
+    expect(fromSrc).toContain('[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]-*.{ts,js}');
+    expect(fromDist).toContain('[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]-*.js');
   });
 
   it('toBoolean parses common truthy strings', () => {
