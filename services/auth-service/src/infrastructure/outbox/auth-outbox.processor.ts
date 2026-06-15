@@ -16,6 +16,7 @@ export class AuthOutboxProcessor implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(AuthOutboxProcessor.name);
   private readonly publishRegistry: AuthOutboxPublishRegistry;
   private isProcessing = false;
+  private pendingWake = false;
   private timer: NodeJS.Timeout | null = null;
 
   constructor(
@@ -62,28 +63,35 @@ export class AuthOutboxProcessor implements OnModuleInit, OnModuleDestroy {
   }
 
   async processPendingEvents(): Promise<void> {
-    if (this.isProcessing || !this.dataSource.isInitialized) {
+    if (!this.dataSource.isInitialized) {
+      return;
+    }
+
+    this.pendingWake = true;
+    if (this.isProcessing) {
       return;
     }
 
     this.isProcessing = true;
 
     try {
-      await runOutboxPollCycle(
-        {
-          reclaimStaleClaims: async () => {
-            const exhaustedCount =
-              await this.authOutboxService.markExhaustedClaims();
-            if (exhaustedCount > 0) {
-              this.logger.warn(
-                `Marked ${exhaustedCount} exhausted auth outbox event(s) as failed`,
-              );
-            }
+      while (this.pendingWake) {
+        this.pendingWake = false;
 
-            return this.authOutboxService.reclaimStaleClaims();
-          },
-          claimPendingBatch: () => this.authOutboxService.claimPendingBatch(),
-          publish: async (event) => {
+        const exhaustedCount =
+          await this.authOutboxService.markExhaustedClaims();
+        if (exhaustedCount > 0) {
+          this.logger.warn(
+            `Marked ${exhaustedCount} exhausted auth outbox event(s) as failed`,
+          );
+        }
+
+        await runOutboxPollCycle(
+          {
+            reclaimStaleClaims: () =>
+              this.authOutboxService.reclaimStaleClaims(),
+            claimPendingBatch: () => this.authOutboxService.claimPendingBatch(),
+            publish: async (event) => {
             const { publishTimeoutMs } =
               this.configurationService.getOutboxConfig();
             const recipient =
@@ -116,13 +124,23 @@ export class AuthOutboxProcessor implements OnModuleInit, OnModuleDestroy {
           markProcessed: (id) => this.authOutboxService.markProcessed(id),
           markFailed: (id, attemptCount, message) =>
             this.authOutboxService.markFailed(id, attemptCount, message),
-          logLabel: 'auth outbox',
-          safeMarkFailed: true,
-        },
-        this.logger,
+            logLabel: 'auth outbox',
+            safeMarkFailed: true,
+          },
+          this.logger,
+        );
+      }
+    } catch (error) {
+      this.logger.error(
+        `Auth outbox processing failed: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`,
       );
     } finally {
       this.isProcessing = false;
+      if (this.pendingWake) {
+        void this.processPendingEvents();
+      }
     }
   }
 }

@@ -108,4 +108,26 @@ describe('AuthOutboxService', () => {
       'Outbox event event-4 is not in failed state',
     );
   });
+
+  it('normalizes pg QueryResult rows when claiming pending events', async () => {
+    jest.spyOn(dataSourceMock, 'query').mockResolvedValue({
+      rows: [
+        {
+          attemptCount: 1,
+          eventType: 'auth.email_verification_otp',
+          id: 'event-5',
+          payload: { email: 'member@example.com', otp: '123456' },
+        },
+      ],
+    });
+
+    await expect(service.claimPendingBatch(1)).resolves.toEqual([
+      {
+        attemptCount: 1,
+        eventType: 'auth.email_verification_otp',
+        id: 'event-5',
+        payload: { email: 'member@example.com', otp: '123456' },
+      },
+    ]);
+  });
 });

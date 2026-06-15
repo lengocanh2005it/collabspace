@@ -6,6 +6,36 @@ import type { UserPreferences } from '../../domain/entities/user-preferences.ent
 import type { UserStatus } from '../../domain/entities/user-status.entity';
 import { REDIS_CLIENT } from './redis-client.token';
 
+function reviveDate(value: Date | string): Date {
+  return value instanceof Date ? value : new Date(value);
+}
+
+function reviveProfile(raw: UserProfile): UserProfile {
+  return {
+    ...raw,
+    createdAt: reviveDate(raw.createdAt),
+    updatedAt: reviveDate(raw.updatedAt),
+    deletedAt: raw.deletedAt ? reviveDate(raw.deletedAt) : null,
+  };
+}
+
+function revivePreferences(raw: UserPreferences): UserPreferences {
+  return {
+    ...raw,
+    createdAt: reviveDate(raw.createdAt),
+    updatedAt: reviveDate(raw.updatedAt),
+  };
+}
+
+function reviveStatus(raw: UserStatus): UserStatus {
+  return {
+    ...raw,
+    clearAt: raw.clearAt ? reviveDate(raw.clearAt) : null,
+    lastSeenAt: raw.lastSeenAt ? reviveDate(raw.lastSeenAt) : null,
+    updatedAt: reviveDate(raw.updatedAt),
+  };
+}
+
 @Injectable()
 export class UserProfileCacheService {
   private readonly logger = new Logger(UserProfileCacheService.name);
@@ -20,7 +50,10 @@ export class UserProfileCacheService {
   // ── profile ──────────────────────────────────────────────────────────────
 
   async getProfile(userId: string): Promise<UserProfile | null | undefined> {
-    return this.get<UserProfile>(this.profileKey(userId));
+    const cached = await this.get<UserProfile>(this.profileKey(userId));
+    return cached === undefined || cached === null
+      ? cached
+      : reviveProfile(cached);
   }
 
   async setProfile(userId: string, profile: UserProfile): Promise<void> {
@@ -41,7 +74,7 @@ export class UserProfileCacheService {
       for (let i = 0; i < userIds.length; i++) {
         const raw = values[i];
         if (raw !== null) {
-          result.set(userIds[i], JSON.parse(raw) as UserProfile);
+          result.set(userIds[i], reviveProfile(JSON.parse(raw) as UserProfile));
         }
       }
     } catch (err) {
@@ -75,7 +108,10 @@ export class UserProfileCacheService {
   async getPreferences(
     userId: string,
   ): Promise<UserPreferences | null | undefined> {
-    return this.get<UserPreferences>(this.prefsKey(userId));
+    const cached = await this.get<UserPreferences>(this.prefsKey(userId));
+    return cached === undefined || cached === null
+      ? cached
+      : revivePreferences(cached);
   }
 
   async setPreferences(userId: string, prefs: UserPreferences): Promise<void> {
@@ -89,7 +125,10 @@ export class UserProfileCacheService {
   // ── status ────────────────────────────────────────────────────────────────
 
   async getStatus(userId: string): Promise<UserStatus | null | undefined> {
-    return this.get<UserStatus>(this.statusKey(userId));
+    const cached = await this.get<UserStatus>(this.statusKey(userId));
+    return cached === undefined || cached === null
+      ? cached
+      : reviveStatus(cached);
   }
 
   async setStatus(userId: string, status: UserStatus): Promise<void> {

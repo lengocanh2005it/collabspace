@@ -33,11 +33,35 @@ type ClaimedOutboxEvent = {
   payload: Record<string, unknown>;
 };
 
+function unwrapQueryRows<T extends Record<string, unknown>>(
+  result: unknown,
+): T[] {
+  if (Array.isArray(result)) {
+    return result as T[];
+  }
+
+  if (
+    typeof result === 'object' &&
+    result !== null &&
+    Array.isArray((result as { rows?: unknown }).rows)
+  ) {
+    return (result as { rows: T[] }).rows;
+  }
+
+  return [];
+}
+
 function normalizeClaimedOutboxRow(
   row: Record<string, unknown>,
 ): ClaimedOutboxEvent | null {
-  const id = row.id;
-  if (typeof id !== 'string' || id.length === 0) {
+  const rawId = row.id;
+  const id =
+    typeof rawId === 'string'
+      ? rawId
+      : rawId != null
+        ? String(rawId)
+        : '';
+  if (id.length === 0) {
     return null;
   }
 
@@ -104,8 +128,9 @@ export class AuthOutboxService {
     const batchSize = limit ?? this.configurationService.getOutboxConfig().batchSize;
     const tablePath = this.dataSource.getMetadata(AuthOutboxEventOrmEntity).tablePath;
 
-    const rows = (await this.dataSource.query(
-      `
+    const rawRows = unwrapQueryRows<Record<string, unknown>>(
+      await this.dataSource.query(
+        `
         WITH candidate_events AS (
           SELECT id
           FROM ${tablePath}
@@ -127,19 +152,68 @@ export class AuthOutboxService {
         WHERE outbox.id = candidate_events.id
         RETURNING outbox.id, outbox.event_type AS "eventType", outbox.payload, outbox.attempt_count AS "attemptCount"
       `,
-      [batchSize],
-    )) as Array<Record<string, unknown>>;
+        [batchSize],
+      ),
+    );
 
-    return rows
-      .map((row) => normalizeClaimedOutboxRow(row))
-      .filter((row): row is ClaimedOutboxEvent => row !== null);
+    const claimed: ClaimedOutboxEvent[] = [];
+    const orphanClaimIds: string[] = [];
+
+    for (const row of rawRows) {
+      const normalized = normalizeClaimedOutboxRow(row);
+      if (normalized) {
+        claimed.push(normalized);
+        continue;
+      }
+
+      const rawId = row.id;
+      if (rawId != null) {
+        orphanClaimIds.push(String(rawId));
+      }
+    }
+
+    if (orphanClaimIds.length > 0) {
+      await this.releaseClaimsByIds(orphanClaimIds);
+    }
+
+    return claimed;
+  }
+
+  async releaseClaimsByIds(ids: string[]): Promise<void> {
+    if (ids.length === 0) {
+      return;
+    }
+
+    const tablePath = this.dataSource.getMetadata(AuthOutboxEventOrmEntity).tablePath;
+    await this.dataSource.query(
+      `
+        UPDATE ${tablePath}
+        SET claimed_at = NULL,
+            available_at = NOW(),
+            last_error = 'claim normalization release',
+            updated_at = NOW()
+        WHERE id = ANY($1::uuid[])
+          AND processed_at IS NULL
+          AND failed_at IS NULL
+      `,
+      [ids],
+    );
   }
 
   async getStats(): Promise<AuthOutboxStats> {
     const tablePath = this.dataSource.getMetadata(AuthOutboxEventOrmEntity).tablePath;
     const { staleClaimThresholdMs } = this.configurationService.getOutboxConfig();
-    const rows = (await this.dataSource.query(
-      `
+    const rows = unwrapQueryRows<{
+      failedCount: number;
+      oldestFailedAt: Date | string | null;
+      oldestPendingAt: Date | string | null;
+      pendingCount: number;
+      processedCount: number;
+      processingCount: number;
+      staleProcessingCount: number;
+    }>(
+      await this.dataSource.query(
+        `
         SELECT
           COUNT(*) FILTER (
             WHERE processed_at IS NULL
@@ -175,16 +249,9 @@ export class AuthOutboxService {
           ) AS "oldestFailedAt"
         FROM ${tablePath}
       `,
-      [staleClaimThresholdMs],
-    )) as Array<{
-      failedCount: number;
-      oldestFailedAt: Date | string | null;
-      oldestPendingAt: Date | string | null;
-      pendingCount: number;
-      processedCount: number;
-      processingCount: number;
-      staleProcessingCount: number;
-    }>;
+        [staleClaimThresholdMs],
+      ),
+    );
 
     const row = rows[0] ?? {
       failedCount: 0,
@@ -209,8 +276,9 @@ export class AuthOutboxService {
 
   async markProcessed(id: string): Promise<void> {
     const tablePath = this.dataSource.getMetadata(AuthOutboxEventOrmEntity).tablePath;
-    const rows = (await this.dataSource.query(
-      `
+    const rows = unwrapQueryRows<{ id: string }>(
+      await this.dataSource.query(
+        `
         UPDATE ${tablePath}
         SET claimed_at = NULL,
             failed_at = NULL,
@@ -220,8 +288,9 @@ export class AuthOutboxService {
         WHERE id = $1
         RETURNING id
       `,
-      [id],
-    )) as Array<{ id: string }>;
+        [id],
+      ),
+    );
 
     if (rows.length === 0) {
       throw new Error(`Outbox event ${id} was not found when marking processed`);
@@ -260,8 +329,9 @@ export class AuthOutboxService {
     const { staleClaimThresholdMs } =
       this.configurationService.getOutboxConfig();
 
-    const rows = (await this.dataSource.query(
-      `
+    const rows = unwrapQueryRows<{ id: string }>(
+      await this.dataSource.query(
+        `
         UPDATE ${tablePath}
         SET claimed_at = NULL,
             available_at = NOW(),
@@ -273,8 +343,9 @@ export class AuthOutboxService {
           AND claimed_at <= NOW() - (($1::bigint || ' milliseconds')::interval)
         RETURNING id
       `,
-      [staleClaimThresholdMs, 'stale claim recovered for retry'],
-    )) as Array<{ id: string }>;
+        [staleClaimThresholdMs, 'stale claim recovered for retry'],
+      ),
+    );
 
     return rows.length;
   }
@@ -283,8 +354,9 @@ export class AuthOutboxService {
     const tablePath = this.dataSource.getMetadata(AuthOutboxEventOrmEntity).tablePath;
     const { maxAttempts } = this.configurationService.getOutboxConfig();
 
-    const exhaustedRows = (await this.dataSource.query(
-      `
+    const exhaustedRows = unwrapQueryRows<{ id: string }>(
+      await this.dataSource.query(
+        `
         UPDATE ${tablePath}
         SET claimed_at = NULL,
             failed_at = NOW(),
@@ -292,22 +364,25 @@ export class AuthOutboxService {
             updated_at = NOW()
         WHERE processed_at IS NULL
           AND failed_at IS NULL
+          AND claimed_at IS NULL
           AND attempt_count >= $2
         RETURNING id
       `,
-      [
-        `outbox publish exceeded max attempts (${maxAttempts})`,
-        maxAttempts,
-      ],
-    )) as Array<{ id: string }>;
+        [
+          `outbox publish exceeded max attempts (${maxAttempts})`,
+          maxAttempts,
+        ],
+      ),
+    );
 
     return exhaustedRows.length;
   }
 
   async releaseInFlightClaimsOnStartup(): Promise<number> {
     const tablePath = this.dataSource.getMetadata(AuthOutboxEventOrmEntity).tablePath;
-    const rows = (await this.dataSource.query(
-      `
+    const rows = unwrapQueryRows<{ id: string }>(
+      await this.dataSource.query(
+        `
         UPDATE ${tablePath}
         SET claimed_at = NULL,
             available_at = NOW(),
@@ -318,7 +393,8 @@ export class AuthOutboxService {
           AND claimed_at IS NOT NULL
         RETURNING id
       `,
-    )) as Array<{ id: string }>;
+      ),
+    );
 
     return rows.length;
   }
@@ -394,27 +470,31 @@ export class AuthOutboxService {
   }
 
   async getDevOtp(email: string): Promise<string | null> {
-    const rows = await this.dataSource.query<Array<{ otp: string }>>(
-      `SELECT payload->>'otp' AS otp
+    const rows = unwrapQueryRows<{ otp: string }>(
+      await this.dataSource.query(
+        `SELECT payload->>'otp' AS otp
        FROM auth_outbox_events
        WHERE event_type = $1
          AND payload->>'email' = $2
        ORDER BY created_at DESC
        LIMIT 1`,
-      [AUTH_OUTBOX_EVENT_EMAIL_VERIFICATION_OTP, email],
+        [AUTH_OUTBOX_EVENT_EMAIL_VERIFICATION_OTP, email],
+      ),
     );
     return rows[0]?.otp ?? null;
   }
 
   async getDevPasswordResetToken(email: string): Promise<string | null> {
-    const rows = await this.dataSource.query<Array<{ token: string }>>(
-      `SELECT payload->>'token' AS token
+    const rows = unwrapQueryRows<{ token: string }>(
+      await this.dataSource.query(
+        `SELECT payload->>'token' AS token
        FROM auth_outbox_events
        WHERE event_type = $1
          AND payload->>'email' = $2
        ORDER BY created_at DESC
        LIMIT 1`,
-      [AUTH_OUTBOX_EVENT_PASSWORD_RESET_EMAIL, email],
+        [AUTH_OUTBOX_EVENT_PASSWORD_RESET_EMAIL, email],
+      ),
     );
     return rows[0]?.token ?? null;
   }
