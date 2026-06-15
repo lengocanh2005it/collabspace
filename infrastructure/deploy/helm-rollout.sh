@@ -28,46 +28,14 @@ fi
 # CI/workflow may export IMAGE_TAG before this script; phase0.env must not override it.
 ci_image_tag="${IMAGE_TAG:-}"
 
-# Returns "true" when a service had its image rebuilt in this CI run.
-# Defaults to "true" when CHANGED_* vars are not set (manual / local runs).
-service_was_changed() {
-  case "$1" in
-    auth-service)         echo "${CHANGED_AUTH:-true}" ;;
-    user-service)         echo "${CHANGED_USER:-true}" ;;
-    workspace-service)    echo "${CHANGED_WORKSPACE:-true}" ;;
-    task-service)         echo "${CHANGED_TASK:-true}" ;;
-    notification-service) echo "${CHANGED_NOTIFICATION:-true}" ;;
-    *) echo "true" ;;
-  esac
-}
-
-all_services_changed() {
-  local svc
-  for svc in auth-service user-service workspace-service task-service notification-service; do
-    [[ "$(service_was_changed "$svc")" == "true" ]] || return 1
-  done
-  return 0
-}
-
-any_service_changed() {
-  local svc
-  for svc in auth-service user-service workspace-service task-service notification-service; do
-    [[ "$(service_was_changed "$svc")" == "true" ]] && return 0
-  done
-  return 1
-}
+APP_SERVICES=(auth-service user-service workspace-service task-service notification-service)
 
 if [[ -f "$PHASE0_ENV" ]]; then
-  if [[ -n "$ci_image_tag" ]] && any_service_changed && ! all_services_changed; then
-    echo "==> Partial image deploy — keeping per-service tags in values-prod.yaml"
-    echo "    (only rebuilt services get helm --set apps.<svc>.image.tag=${ci_image_tag})"
+  echo "==> Refreshing values-prod.yaml from phase0.env..."
+  if [[ -n "$ci_image_tag" ]]; then
+    IMAGE_TAG="$ci_image_tag" bash "$SCRIPT_DIR/prepare-prod-values.sh"
   else
-    echo "==> Refreshing values-prod.yaml from phase0.env..."
-    if [[ -n "$ci_image_tag" ]]; then
-      IMAGE_TAG="$ci_image_tag" bash "$SCRIPT_DIR/prepare-prod-values.sh"
-    else
-      bash "$SCRIPT_DIR/prepare-prod-values.sh"
-    fi
+    bash "$SCRIPT_DIR/prepare-prod-values.sh"
   fi
 fi
 
@@ -92,16 +60,14 @@ helm_image_tag_sets() {
     return
   fi
   local svc
-  for svc in auth-service user-service workspace-service task-service notification-service; do
-    if [[ "$(service_was_changed "$svc")" == "true" ]]; then
-      printf '%s\n' "--set" "apps.${svc}.image.tag=${IMAGE_TAG}"
-    fi
+  for svc in "${APP_SERVICES[@]}"; do
+    printf '%s\n' "--set" "apps.${svc}.image.tag=${IMAGE_TAG}"
   done
 }
 
 echo "==> Helm rollout (release=${RELEASE}, namespace=${APP_NS})"
 if [[ -n "${IMAGE_TAG:-}" ]]; then
-  echo "    Image tag override: ${IMAGE_TAG}"
+  echo "    Image tag (all app services): ${IMAGE_TAG}"
 fi
 
 adopt_namespace_for_helm() {
@@ -198,21 +164,13 @@ helm upgrade --install "$RELEASE" "$CHART_DIR" \
 
 # Persist the deployed image tag back into values-prod.yaml so that
 # subsequent helm-only deploys (no IMAGE_TAG) don't revert to an old tag.
-# Only when CI/workflow explicitly passed a non-empty IMAGE_TAG.
 if [[ -n "${ci_image_tag:-}" ]]; then
-  changed_svcs=()
-  for _svc in auth-service user-service workspace-service task-service notification-service; do
-    [[ "$(service_was_changed "$_svc")" == "true" ]] && changed_svcs+=("$_svc")
-  done
-
-  if [[ ${#changed_svcs[@]} -gt 0 ]]; then
-    echo "==> Persisting image tag ${IMAGE_TAG} for: ${changed_svcs[*]}..."
-    services_py="[$(printf '"%s",' "${changed_svcs[@]}" | sed 's/,$//')]"
-    python3 - <<PYEOF
+  echo "==> Persisting image tag ${IMAGE_TAG} for all app services..."
+  python3 - <<PYEOF
 import re
 
 tag = "${IMAGE_TAG}"
-services = ${services_py}
+services = ["auth-service", "user-service", "workspace-service", "task-service", "notification-service"]
 
 with open("${VALUES_PROD}", "r") as f:
     content = f.read()
@@ -227,7 +185,6 @@ with open("${VALUES_PROD}", "w") as f:
 
 print(f"Updated image tags to {tag} for: {', '.join(services)}")
 PYEOF
-  fi
 fi
 
 echo "==> Reconciling RabbitMQ consumer queues (DLX)..."
@@ -293,36 +250,78 @@ prune_stuck_terminating_pods() {
   done < <(kubectl get pods -n "$APP_NS" -l "app=${dep}" --no-headers 2>/dev/null | awk '$3 ~ /Terminating/ {print $1}')
 }
 
+# Read one numeric deployment status field (empty / missing → 0).
+deploy_status_int() {
+  local dep="$1"
+  local jsonpath="$2"
+  local val
+  val="$(kubectl get deployment "$dep" -n "$APP_NS" -o "jsonpath={${jsonpath}}" 2>/dev/null || true)"
+  if [[ -z "$val" || ! "$val" =~ ^[0-9]+$ ]]; then
+    echo 0
+  else
+    echo "$val"
+  fi
+}
+
+rollout_pod_summary() {
+  local dep="$1"
+  kubectl get pods -n "$APP_NS" -l "app=${dep}" --no-headers 2>/dev/null \
+    | awk '{printf "%s(%s/%s) ", $1, $3, $2}' \
+    | sed 's/ $//'
+}
+
+report_rollout_diagnostics() {
+  local dep="$1"
+  kubectl get pods -n "$APP_NS" -l "app=${dep}" -o wide 2>/dev/null || true
+  local pod
+  for pod in $(kubectl get pods -n "$APP_NS" -l "app=${dep}" -o jsonpath='{.items[*].metadata.name}' 2>/dev/null); do
+    [[ -z "$pod" ]] && continue
+    echo "--- ${pod} (last 25 log lines) ---"
+    kubectl logs -n "$APP_NS" "$pod" --tail=25 2>/dev/null || true
+    echo "--- ${pod} (events) ---"
+    kubectl describe pod -n "$APP_NS" "$pod" 2>/dev/null | awk '/^Events:/,0' || true
+  done
+  kubectl describe deployment "$dep" -n "$APP_NS" 2>/dev/null | tail -40 || true
+}
+
 wait_deployment_rollout() {
   local dep="$1"
   local timeout="${2:-420}"
   local poll=15
   local waited=0
   local last_report=-30
+  local diagnostics_at=120
 
   prune_stuck_terminating_pods "$dep"
 
   while [[ "$waited" -lt "$timeout" ]]; do
-    local status desired updated available generation observed
-    status="$(kubectl get deployment "$dep" -n "$APP_NS" \
-      -o jsonpath='{.spec.replicas} {.status.updatedReplicas} {.status.availableReplicas} {.metadata.generation} {.status.observedGeneration}' \
-      2>/dev/null || true)"
-    read -r desired updated available generation observed <<<"$status"
+    local desired updated available generation observed pod_summary
+    desired="$(deploy_status_int "$dep" '.spec.replicas')"
+    updated="$(deploy_status_int "$dep" '.status.updatedReplicas')"
+    available="$(deploy_status_int "$dep" '.status.availableReplicas')"
+    generation="$(deploy_status_int "$dep" '.metadata.generation')"
+    observed="$(deploy_status_int "$dep" '.status.observedGeneration')"
 
-    desired="${desired:-0}"
-    updated="${updated:-0}"
-    available="${available:-0}"
-    generation="${generation:-0}"
-    observed="${observed:-0}"
-
-    if [[ -n "$status" && "$observed" -ge "$generation" && "$updated" -ge "$desired" && "$available" -ge "$desired" ]]; then
+    if [[ "$observed" -ge "$generation" && "$updated" -ge "$desired" && "$available" -ge "$desired" && "$desired" -gt 0 ]]; then
       echo "deployment/${dep} successfully rolled out (${available}/${desired} available)."
       return 0
     fi
 
     if [[ "$waited" -eq 0 || $((waited - last_report)) -ge 30 ]]; then
-      echo "Waiting for deployment/${dep}: ${available}/${desired} available, ${updated}/${desired} updated (${waited}s/${timeout}s)"
+      pod_summary="$(rollout_pod_summary "$dep")"
+      echo "Waiting for deployment/${dep}: ${available}/${desired} available, ${updated}/${desired} updated, observed/gen ${observed}/${generation} (${waited}s/${timeout}s) pods: ${pod_summary:-none}"
+      if [[ "$pod_summary" == *ImagePullBackOff* || "$pod_summary" == *ErrImagePull* ]]; then
+        echo "ERROR: ${dep} ImagePullBackOff — tag missing on GHCR or ghcr-credentials invalid."
+        report_rollout_diagnostics "$dep"
+        return 1
+      fi
       last_report="$waited"
+    fi
+
+    if [[ "$waited" -ge "$diagnostics_at" && "$diagnostics_at" -gt 0 ]]; then
+      echo "WARN: ${dep} rollout slow — dumping diagnostics..."
+      report_rollout_diagnostics "$dep"
+      diagnostics_at=0
     fi
 
     sleep "$poll"
@@ -331,25 +330,19 @@ wait_deployment_rollout() {
   done
 
   echo "ERROR: deployment/${dep} rollout timed out after ${timeout}s"
-  kubectl get pods -n "$APP_NS" -l "app=${dep}" -o wide || true
-  kubectl describe deployment "$dep" -n "$APP_NS" | tail -40 || true
+  report_rollout_diagnostics "$dep"
   return 1
 }
 
 echo "==> Waiting for application rollouts..."
 # Roll core services in parallel; notification-service last (RabbitMQ consumer often
 # leaves old pods stuck in Terminating on small single-node clusters).
-# Skip wait for services whose image was not rebuilt in this CI run.
 core_deps=(auth-service user-service workspace-service task-service)
 rollout_pids=()
 for dep in "${core_deps[@]}"; do
   if kubectl get deployment "$dep" -n "$APP_NS" >/dev/null 2>&1; then
-    if [[ "$(service_was_changed "$dep")" == "true" ]]; then
-      wait_deployment_rollout "$dep" 420 &
-      rollout_pids+=($!)
-    else
-      echo "deployment/${dep} unchanged — skipping rollout wait"
-    fi
+    wait_deployment_rollout "$dep" 420 &
+    rollout_pids+=($!)
   fi
 done
 rollout_failed=0
@@ -362,13 +355,9 @@ if [[ "$rollout_failed" -gt 0 ]]; then
 fi
 
 if kubectl get deployment notification-service -n "$APP_NS" >/dev/null 2>&1; then
-  if [[ "$(service_was_changed notification-service)" == "true" ]]; then
-    if ! wait_deployment_rollout notification-service 600; then
-      echo "ERROR: notification-service failed to roll out."
-      exit 1
-    fi
-  else
-    echo "deployment/notification-service unchanged — skipping rollout wait"
+  if ! wait_deployment_rollout notification-service 600; then
+    echo "ERROR: notification-service failed to roll out."
+    exit 1
   fi
 fi
 

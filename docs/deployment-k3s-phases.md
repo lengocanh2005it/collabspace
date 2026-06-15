@@ -245,7 +245,7 @@ File: `.github/workflows/docker-deploy.yml`
 
 | Job | Việc |
 |-----|------|
-| `build-images` | Build & push 5 image GHCR (tag = commit SHA) |
+| `build-images` | Build & push **cả 5** image GHCR (cùng tag = commit SHA; `fail-fast: true`) |
 | `deploy` | SSH Droplet → `helm-deploy-ci.sh` → `verify-k8s-readiness.sh` |
 
 Workflow `CI` (`.github/workflows/ci.yml`) chạy riêng trên PR/push: `pnpm build` + `test`.

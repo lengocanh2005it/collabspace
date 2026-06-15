@@ -36,11 +36,6 @@ jobs:
   detect-changes:
     runs-on: ubuntu-latest
     outputs:
-      auth-service: ${{ steps.filter.outputs.auth-service }}
-      user-service: ${{ steps.filter.outputs.user-service }}
-      workspace-service: ${{ steps.filter.outputs.workspace-service }}
-      task-service: ${{ steps.filter.outputs.task-service }}
-      notification-service: ${{ steps.filter.outputs.notification-service }}
       any-service: ${{ steps.filter.outputs.any-service }}
       postgres-migrations: ${{ steps.filter.outputs.postgres-migrations }}
     steps:
@@ -49,39 +44,6 @@ jobs:
         id: filter
         with:
           filters: |
-            auth-service:
-              - 'services/auth-service/**'
-              - 'packages/shared/**'
-              - 'packages/typeorm-migrate/**'
-              - 'infrastructure/docker/Dockerfile.service'
-              - 'package.json'
-              - 'pnpm-workspace.yaml'
-            user-service:
-              - 'services/user-service/**'
-              - 'packages/shared/**'
-              - 'packages/typeorm-migrate/**'
-              - 'infrastructure/docker/Dockerfile.service'
-              - 'package.json'
-              - 'pnpm-workspace.yaml'
-            workspace-service:
-              - 'services/workspace-service/**'
-              - 'packages/shared/**'
-              - 'packages/typeorm-migrate/**'
-              - 'infrastructure/docker/Dockerfile.service'
-              - 'package.json'
-              - 'pnpm-workspace.yaml'
-            task-service:
-              - 'services/task-service/**'
-              - 'packages/shared/**'
-              - 'infrastructure/docker/Dockerfile.service'
-              - 'package.json'
-              - 'pnpm-workspace.yaml'
-            notification-service:
-              - 'services/notification-service/**'
-              - 'packages/shared/**'
-              - 'infrastructure/docker/Dockerfile.service'
-              - 'package.json'
-              - 'pnpm-workspace.yaml'
             any-service:
               - 'services/**'
               - 'packages/typeorm-migrate/**'
@@ -103,7 +65,7 @@ jobs:
       github.event_name == 'workflow_dispatch' ||
       needs.detect-changes.outputs.any-service == 'true'
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         service:
           - auth-service
@@ -112,28 +74,11 @@ jobs:
           - task-service
           - notification-service
     steps:
-      - name: Check if this service changed
-        id: changed
-        shell: bash
-        run: |
-          case "${{ matrix.service }}" in
-            auth-service)         c="${{ needs.detect-changes.outputs.auth-service }}" ;;
-            user-service)         c="${{ needs.detect-changes.outputs.user-service }}" ;;
-            workspace-service)    c="${{ needs.detect-changes.outputs.workspace-service }}" ;;
-            task-service)         c="${{ needs.detect-changes.outputs.task-service }}" ;;
-            notification-service) c="${{ needs.detect-changes.outputs.notification-service }}" ;;
-            *) c="false" ;;
-          esac
-          [[ "${{ github.event_name }}" == "workflow_dispatch" ]] && c="true"
-          echo "value=$c" >> "$GITHUB_OUTPUT"
-
       - name: Checkout
-        if: steps.changed.outputs.value == 'true'
         uses: actions/checkout@v4
 
       - name: Set image variables
         id: vars
-        if: steps.changed.outputs.value == 'true'
         shell: bash
         run: |
           owner="${GITHUB_REPOSITORY_OWNER,,}"
@@ -143,11 +88,9 @@ jobs:
           echo "image=ghcr.io/$owner/collabspace-${{ matrix.service }}" >> "$GITHUB_OUTPUT"
 
       - name: Set up Docker Buildx
-        if: steps.changed.outputs.value == 'true'
         uses: docker/setup-buildx-action@v3
 
       - name: Login to GHCR
-        if: steps.changed.outputs.value == 'true'
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
@@ -155,7 +98,6 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push ${{ matrix.service }}
-        if: steps.changed.outputs.value == 'true'
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -221,8 +163,7 @@ jobs:
       - name: Compute deploy image tag
         id: deploy-tag
         run: |
-          # Chỉ truyền IMAGE_TAG khi có images thực sự được build.
-          # Nếu chỉ có helm/infra changes, build-images bị skip → dùng tag từ values-prod.yaml.
+          # Một SHA cho cả 5 app images khi build chạy; helm-only deploy giữ tag trong values-prod.yaml.
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]] || \
              [[ "${{ needs.detect-changes.outputs.any-service }}" == "true" ]]; then
             echo "tag=${{ github.event.inputs.image_tag || github.sha }}" >> "$GITHUB_OUTPUT"
@@ -266,7 +207,6 @@ jobs:
             export GITHUB_TOKEN="${GITHUB_TOKEN}"
 
             # Deliberately no fallback. If git-sync-private-repo.sh fails, CI fails.
-            # This is intentional: a partial deployment is worse than a visible CI failure.
             start=$SECONDS
             bash /opt/collabspace/infrastructure/deploy/git-sync-private-repo.sh
             echo "Repo sync finished in $((SECONDS - start))s"
@@ -280,17 +220,12 @@ jobs:
           GHCR_USERNAME: ${{ secrets.GHCR_USERNAME }}
           GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
           SKIP_HELM_DEP_UPDATE: "true"
-          CHANGED_AUTH: ${{ (github.event_name == 'workflow_dispatch' || needs.detect-changes.outputs.auth-service == 'true') && 'true' || '' }}
-          CHANGED_USER: ${{ (github.event_name == 'workflow_dispatch' || needs.detect-changes.outputs.user-service == 'true') && 'true' || '' }}
-          CHANGED_WORKSPACE: ${{ (github.event_name == 'workflow_dispatch' || needs.detect-changes.outputs.workspace-service == 'true') && 'true' || '' }}
-          CHANGED_TASK: ${{ (github.event_name == 'workflow_dispatch' || needs.detect-changes.outputs.task-service == 'true') && 'true' || '' }}
-          CHANGED_NOTIFICATION: ${{ (github.event_name == 'workflow_dispatch' || needs.detect-changes.outputs.notification-service == 'true') && 'true' || '' }}
         with:
           host: ${{ secrets.DROPLET_HOST }}
           username: ${{ secrets.DROPLET_USER }}
           key: ${{ secrets.DROPLET_SSH_KEY }}
           command_timeout: 25m
-          envs: IMAGE_TAG,RUN_K8S_MIGRATIONS,GHCR_OWNER,GHCR_USERNAME,GHCR_TOKEN,SKIP_HELM_DEP_UPDATE,CHANGED_AUTH,CHANGED_USER,CHANGED_WORKSPACE,CHANGED_TASK,CHANGED_NOTIFICATION
+          envs: IMAGE_TAG,RUN_K8S_MIGRATIONS,GHCR_OWNER,GHCR_USERNAME,GHCR_TOKEN,SKIP_HELM_DEP_UPDATE
           script: |
             set -euo pipefail
             export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
