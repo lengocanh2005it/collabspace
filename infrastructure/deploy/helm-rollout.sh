@@ -31,11 +31,11 @@ ci_image_tag="${IMAGE_TAG:-}"
 APP_SERVICES=(auth-service user-service workspace-service task-service notification-service)
 
 if [[ -f "$PHASE0_ENV" ]]; then
-  echo "==> Refreshing values-prod.yaml from phase0.env..."
   if [[ -n "$ci_image_tag" ]]; then
+    echo "==> Refreshing values-prod.yaml with IMAGE_TAG=${ci_image_tag}..."
     IMAGE_TAG="$ci_image_tag" bash "$SCRIPT_DIR/prepare-prod-values.sh"
   else
-    bash "$SCRIPT_DIR/prepare-prod-values.sh"
+    echo "==> Helm-only deploy — keeping image tags in values-prod.yaml (no prepare-prod-values)."
   fi
 fi
 

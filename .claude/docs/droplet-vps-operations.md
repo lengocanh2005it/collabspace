@@ -26,7 +26,7 @@ Hướng dẫn cho AI agents khi debug/deploy **production k3s trên DigitalOcea
 4. SSH Droplet step 2 → `helm-deploy-ci.sh` → `helm-rollout.sh` (một `IMAGE_TAG` cho cả 5 app; timeout ~420s/service, notification 600s)
 5. SSH Droplet step 3 → `run-demo-e2e-prod.sh` (includes `verify-k8s-readiness.sh`)
 
-Helm-only push (chỉ chart/infra, không đổi `services/**`) → bỏ qua build, giữ tag trong `values-prod.yaml` trên Droplet.
+Helm-only push (chỉ chart/infra, không có `IMAGE_TAG` từ CI) → giữ tag image trong `values-prod.yaml` trên Droplet; mỗi push `main` vẫn build cả 5 image cùng commit SHA.
 
 GitHub secrets cần có: `DROPLET_HOST`, `DROPLET_USER`, `DROPLET_SSH_KEY`, `GHCR_USERNAME`, `GHCR_TOKEN`.
 
