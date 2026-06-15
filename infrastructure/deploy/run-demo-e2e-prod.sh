@@ -12,18 +12,10 @@ bash "$SCRIPT_DIR/verify-k8s-readiness.sh"
 echo "==> Brief stabilization for gRPC / RabbitMQ consumers..."
 sleep 10
 
-# Guard on empty IP resolution
-DROPLET_IP=$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="ExternalIP")].address}' 2>/dev/null || true)
-if [[ -z "$DROPLET_IP" ]]; then
-  DROPLET_IP=$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}' 2>/dev/null || true)
-fi
-
-if [[ -z "$DROPLET_IP" ]]; then
-  echo "ERROR: Could not resolve Droplet IP via kubectl. Is kubeconfig set?" >&2
-  exit 1
-fi
-
-export BASE_URL="${BASE_URL:-http://${DROPLET_IP}/api/v1}"
+# On the Droplet, Traefik is reachable on loopback. Avoid overwriting BASE_URL with raw
+# IPv6 node addresses (curl requires http://[ipv6]/...).
+export BASE_URL="${BASE_URL:-http://127.0.0.1/api/v1}"
+echo "==> Demo E2E BASE_URL=${BASE_URL}"
 export DEMO_E2E_OTP_SCRIPT="${DEMO_E2E_OTP_SCRIPT:-$SCRIPT_DIR/read-auth-otp-from-outbox.sh}"
 chmod +x "$DEMO_E2E_OTP_SCRIPT"
 

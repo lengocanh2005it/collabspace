@@ -255,4 +255,5 @@ jobs:
             export SKIP_HELM_DEP_UPDATE
             bash infrastructure/deploy/helm-deploy-ci.sh
             echo "==> MVP demo E2E smoke (7 steps via Traefik)..."
+            export BASE_URL=http://127.0.0.1/api/v1
             bash infrastructure/deploy/run-demo-e2e-prod.sh
