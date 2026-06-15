@@ -19,6 +19,11 @@ export class AzureBlobService {
 
     if (!connectionString) {
       this.isMockMode = true;
+      if (process.env.NODE_ENV === 'production') {
+        throw new Error(
+          'FATAL: AZURE_STORAGE_CONNECTION_STRING is required when NODE_ENV=production',
+        );
+      }
       this.logger.warn(
         '⚠️ Azure Blob Storage not configured - running in MOCK MODE (file uploads not persisted)',
       );
@@ -33,6 +38,13 @@ export class AzureBlobService {
         this.containerName,
       );
     } catch (error) {
+      if (process.env.NODE_ENV === 'production') {
+        throw new Error(
+          `FATAL: Azure Blob Storage initialization failed in production: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+        );
+      }
       this.isMockMode = true;
       this.logger.error(
         `Failed to initialize Azure Blob Storage client: ${error instanceof Error ? error.message : String(error)}. Falling back to MOCK MODE.`,

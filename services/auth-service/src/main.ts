@@ -1,4 +1,5 @@
 import './observability/instrumentation';
+import { assertRequiredInProduction } from '@collabspace/shared';
 import { ConfigurationService } from '@/configuration/configuration.service';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { MicroserviceOptions } from '@nestjs/microservices';
@@ -13,6 +14,8 @@ import { registerMetricsMiddleware } from './metrics/register-metrics.middleware
 import compression from 'compression';
 
 async function bootstrap() {
+  assertRequiredInProduction('BREVO_API_KEY', process.env.BREVO_API_KEY);
+
   const app = await NestFactory.create(AppModule);
   app.use(compression());
   app.setGlobalPrefix('api/v1');

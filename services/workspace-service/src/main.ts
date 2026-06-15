@@ -1,4 +1,5 @@
 import './observability/instrumentation';
+import { assertRequiredInProduction } from '@collabspace/shared';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe, Logger } from '@nestjs/common';
@@ -11,6 +12,11 @@ import { registerMetricsMiddleware } from './metrics/register-metrics.middleware
 import compression from 'compression';
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
+  assertRequiredInProduction(
+    'SERVICE_JWT_SECRET',
+    process.env.SERVICE_JWT_SECRET,
+  );
+
   const app = await NestFactory.create(AppModule);
   app.use(compression());
 

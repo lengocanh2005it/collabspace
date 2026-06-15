@@ -1,5 +1,7 @@
 # Legacy Kubernetes Manifests
 
+> **DEPRECATED — do not use for new deployments.** These plain YAML files predate the Helm chart and contain unsafe defaults (`DATABASE_SYNCHRONIZE=true` in workspace deployment, hardcoded passwords in exporters). Use Helm + Vault/ESO instead.
+
 These plain YAML files were the original CollabSpace K8s deployment (Agent BRAVO).
 
 **Preferred deployment path:** [Helm chart](../helm/README.md) — includes Prometheus, Grafana (`/grafana`), Loki, Promtail ([docs/observability.md](../../docs/observability.md)).
@@ -17,6 +19,8 @@ These plain YAML files were the original CollabSpace K8s deployment (Agent BRAVO
 - **HashiCorp Vault + ESO:** `infrastructure/vault/k8s/` — set `global.externalSecrets.enabled: true` in Helm values
 
 ## Using legacy YAML (reference only)
+
+**Warning:** `workspace-deployment.yaml` sets `DATABASE_SYNCHRONIZE: "true"` — never use in production. `exporters-deployment.yaml` embeds demo credentials (`postgres:postgres`, `admin:password`) — replace before any real cluster.
 
 ```bash
 kubectl apply -f infrastructure/k8s/

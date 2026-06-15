@@ -26,8 +26,9 @@ pnpm test
 
 1. **Task Management:** Create, update, and manage the lifecycle of tasks within workspaces.
 2. **Comments:** Attach rich-text comments to tasks.
-3. **Workspace Validation:** Dynamically validates workspace affiliations (currently simulating valid UUIDs via `WorkspaceMockService` for E2E flows until the gRPC client is finalized).
-4. **Event Publisher:** Publishes critical workflow events to the `collabspace_exchange` RabbitMQ direct exchange to trigger notifications.
+3. **Workspace Validation:** Validates workspace membership via `WorkspaceHttpClient` when `WORKSPACE_CLIENT_MODE=http` (required in production). Mock mode is development-only.
+4. **Attachments:** Azure Blob when `AZURE_STORAGE_CONNECTION_STRING` is set; mock URLs in local dev only (production fails startup without storage).
+5. **Event Publisher:** Publishes critical workflow events to the `collabspace_exchange` RabbitMQ direct exchange to trigger notifications.
 
 ## API Endpoints
 
@@ -52,4 +53,7 @@ All endpoints are prefixed with `/api/v1/tasks`. Requests require an `X-User-Id`
 - `NODE_ENV`: Application environment (e.g., `production`, `development`)
 - `PORT`: Service port (default: 3000)
 - `MONGO_URI`: MongoDB connection string (e.g., `mongodb://localhost:27017/collabspace_task?authSource=admin`)
-- `RABBITMQ_URL`: RabbitMQ connection string
+- `WORKSPACE_CLIENT_MODE`: `http` (production) or `mock` (local dev only)
+- `WORKSPACE_SERVICE_URL`: Base URL for workspace internal HTTP API
+- `SERVICE_JWT_SECRET`: Shared secret for service-to-service JWT (required in production)
+- `AZURE_STORAGE_CONNECTION_STRING`: Blob storage for task attachments (required in production)

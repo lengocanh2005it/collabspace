@@ -1,10 +1,10 @@
 ﻿# Notification Service
 
-The Notification Service acts as the real-time event dispatcher for CollabSpace. It consumes domain events asynchronously via RabbitMQ and delivers them to users via WebSockets and persistent storage.
+The Notification Service consumes domain events asynchronously via RabbitMQ and persists notifications for HTTP list/read APIs.
 
 ## Tech Stack
-- **Framework:** NestJS
-- **Database/Cache:** Redis / MongoDB
+- **Framework:** NestJS + CQRS
+- **Database:** MongoDB (notifications, idempotency)
 - **Messaging:** RabbitMQ (via amqplib)
 - **Containerization:** Docker (Alpine Node.js 20)
 
@@ -24,8 +24,8 @@ pnpm test
 ## Core Responsibilities
 
 1. **Event Consumer:** Listens to the `collabspace_exchange` RabbitMQ direct exchange for cross-service events.
-2. **Real-time Delivery:** Pushes events directly to connected clients via WebSockets (`/notifications/ws`).
-3. **Notification Persistence:** Stores historical notifications to ensure delivery even when clients are offline.
+2. **Notification Persistence:** Stores notifications for `GET /api/v1/notifications` and mark-read.
+3. **Real-time WebSockets:** **Not implemented yet.** Helm may expose `WS_ENABLED` / `WS_PATH` env vars for a future gateway route; clients should use HTTP polling until WS ships.
 
 ## API Endpoints
 
@@ -34,12 +34,11 @@ All HTTP endpoints are prefixed with `/api/v1/notifications`.
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/api/v1/notifications/health` | GET | Health check (no auth required) |
-| `/api/v1/notifications` | GET | Fetch unread notifications |
+| `/api/v1/notifications` | GET | Fetch notifications (paginated) |
 | `/api/v1/notifications/:id/read` | PATCH | Mark a specific notification as read |
-| `/notifications/ws` | WS | WebSocket connection for real-time delivery |
 
 ## Internal Contracts
-- **RabbitMQ Consumer:** Listens to the following routing keys:
+- **RabbitMQ Consumer:** Listens to routing keys such as:
   - `task_assigned` (Published by `task-service`)
   - `workspace_invited` (Published by `workspace-service`)
   - `comment_created` (Published by `task-service`)
@@ -48,8 +47,8 @@ All HTTP endpoints are prefixed with `/api/v1/notifications`.
 
 - `NODE_ENV`: Application environment (e.g., `production`, `development`)
 - `PORT`: Service port (default: 3000)
-- `REDIS_HOST`: Redis instance host
-- `REDIS_PORT`: Redis instance port
-- `REDIS_PASSWORD`: Redis authentication password
-- `MONGO_URI`: MongoDB connection string (if persisting past Redis eviction)
+- `AUTH_SERVICE_GRPC_URL`: Auth gRPC for JWT verification
+- `SERVICE_JWT_SECRET`: Shared secret for service-to-service HTTP (required in production)
+- `MONGO_URI`: MongoDB connection string
 - `RABBITMQ_URL`: RabbitMQ connection string
+- `WS_ENABLED`: Reserved for future WebSocket gateway (currently unused in code)

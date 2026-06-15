@@ -19,9 +19,9 @@ Tài liệu này liệt kê **việc còn lại về logic code / API / test / d
 | **Demo E2E script** | ✅ `scripts/demo-e2e.sh` + `scripts/demo-e2e.ps1` — 7 bước qua Traefik |
 | **Activity feed task** | ✅ `GET /api/v1/tasks/:id/activity` (`get-task-activity.handler.ts`) |
 | **OpenAPI 5/5** | ✅ Swagger UI 5 service + response schemas; public gateway `/swagger/<service>` — [service-urls.md](../service-urls.md) |
-| **Không có `TODO`/`FIXME`** trong `services/**` | Gap chủ yếu: e2e per service, contract test, workspace activity |
-| **Thiếu lớn nhất (app)** | E2E workspace/task/notification; CI smoke; contract test tự động |
-| **Rủi ro cấu hình** | `WORKSPACE_CLIENT_MODE` ≠ `http` → task dùng mock workspace (bỏ qua membership thật) |
+| **Không có `TODO`/`FIXME`** trong `services/**` | Gap chủ yếu: contract test tự động, frontend UI |
+| **Thiếu lớn nhất (app)** | Contract test; frontend MVP UI |
+| **Rủi ro cấu hình** | Đã harden: prod yêu cầu `BREVO_API_KEY`, `SERVICE_JWT_SECRET`, `DATABASE_URL`, Azure Blob; `WORKSPACE_CLIENT_MODE=http` bắt buộc trên task prod |
 
 ### Phân công (theo [README.md](../../README.md#team))
 
@@ -37,9 +37,9 @@ Tài liệu này liệt kê **việc còn lại về logic code / API / test / d
 ## Ưu tiên chung (cả team)
 
 ```text
-P0  Gắn demo-e2e vào CI smoke              →  Phú Thọ + Tín
-P1  E2E per service (workspace/task/notif) →  Tiến + Tín
-P1  Workspace activity feed                →  gap product (Tín)
+P0  Gắn demo-e2e vào CI smoke              →  ✅ workflow docker-deploy.yml
+P1  E2E per service (workspace/task/notif) →  workspace e2e stub ✅; task/notif có spec
+P1  Workspace activity feed                →  ✅ `GET /api/v1/workspaces/:id/activity`
 P1  OpenAPI 5/5 + response schemas          →  ✅ Done (`/swagger`, gateway expose)
 P1  Contract test (Pact / event schema)     →  cross-team
 P2  Tech debt (Kafka dead code, console.log, mock paths) →  theo service
@@ -241,8 +241,8 @@ Chi tiết infra: [phan-phu-tho-infrastructure-backlog.md](./phan-phu-tho-infras
 |---------|-----------|-----------|--------|
 | auth-service | Done | — (repository specs + use-case integration + Swagger + e2e flow ✅) | Anh |
 | user-service | Done | — (12/12 use-case specs + internal/auth-events tests ✅) | Anh |
-| workspace-service | Done | E2E, outbox test, list-invitations spec + Swagger | Tiến |
-| task-service | Done | Board test, e2e, workspace mock guard, workspace activity | Tín (+ Tiến integration) |
+| workspace-service | Done | outbox test, Swagger; e2e health stub ✅ | Tiến |
+| task-service | Done | Board test, e2e, prod guards (workspace http, blob, SERVICE_JWT) | Tín (+ Tiến integration) |
 | notification-service | Done | mark-all test, e2e, Kafka cleanup | Tín |
 
 ---
@@ -252,7 +252,7 @@ Chi tiết infra: [phan-phu-tho-infrastructure-backlog.md](./phan-phu-tho-infras
 | Hạng mục | Ghi chú | Gợi ý owner |
 |----------|---------|-------------|
 | **Contract test tự động** | Pact hoặc schema test event JSON; hiện chỉ doc + `@collabspace/shared` | Cả team |
-| **CI smoke `demo-e2e`** | Script Done; chưa gate PR | Phú Thọ + Tín |
+| **CI smoke `demo-e2e`** | ✅ Gate trên `main` deploy (`docker-deploy.yml`) | Phú Thọ + Tín |
 | Structured logging + `requestId` trong log line | Phase C middleware có; chưa inject mọi log line; gRPC chưa propagate | Tín + Anh |
 | OpenAPI 5/5 services | ✅ UI + response schemas; prod URLs: [service-urls.md](../service-urls.md) | — |
 | Chuẩn hóa API prefix | task/notification: `api` + `v1/...` controller vs `api/v1` global ở auth/user/workspace | Cả team (breaking nếu đổi) |

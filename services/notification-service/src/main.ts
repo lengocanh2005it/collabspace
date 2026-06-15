@@ -1,4 +1,5 @@
 import { NestFactory } from "@nestjs/core";
+import { assertRequiredInProduction } from "@collabspace/shared";
 import { AppModule } from "./app.module";
 import { MicroserviceOptions, Transport } from "@nestjs/microservices";
 import { buildConsumerQueueOptions } from "@collabspace/shared";
@@ -7,6 +8,11 @@ import { ValidationPipe } from "@nestjs/common";
 import compression from "compression";
 
 async function bootstrap() {
+  assertRequiredInProduction(
+    "SERVICE_JWT_SECRET",
+    process.env.SERVICE_JWT_SECRET,
+  );
+
   const app = await NestFactory.create(AppModule);
   app.use(compression());
 

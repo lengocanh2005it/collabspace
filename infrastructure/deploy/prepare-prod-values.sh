@@ -39,6 +39,8 @@ required=(
   RABBITMQ_ERLANG_COOKIE
   PROD_DOMAIN
   AZURE_STORAGE_CONNECTION_STRING
+  BREVO_SENDER_EMAIL
+  BREVO_SENDER_NAME
 )
 
 missing=()
@@ -78,8 +80,8 @@ replacements = {
     'erlangCookie: "REPLACE_ME_ERLANG_COOKIE"': f'erlangCookie: "{os.environ["RABBITMQ_ERLANG_COOKIE"]}"',
     "rabbitmqUsername: collabspace": f'rabbitmqUsername: {os.environ["RABBITMQ_USERNAME"]}',
     "username: collabspace": f'username: {os.environ["RABBITMQ_USERNAME"]}',
-    "BREVO_SENDER_EMAIL: REPLACE_ME_BREVO_SENDER_EMAIL": f'BREVO_SENDER_EMAIL: {os.environ.get("BREVO_SENDER_EMAIL", "")}',
-    "BREVO_SENDER_NAME: REPLACE_ME_BREVO_SENDER_NAME": f'BREVO_SENDER_NAME: {os.environ.get("BREVO_SENDER_NAME", "CollabSpace")}',
+    "BREVO_SENDER_EMAIL: REPLACE_ME_BREVO_SENDER_EMAIL": f'BREVO_SENDER_EMAIL: "{os.environ.get("BREVO_SENDER_EMAIL", "")}"',
+    "BREVO_SENDER_NAME: REPLACE_ME_BREVO_SENDER_NAME": f'BREVO_SENDER_NAME: "{os.environ.get("BREVO_SENDER_NAME", "CollabSpace")}"',
 }
 
 for old, new in replacements.items():

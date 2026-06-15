@@ -205,6 +205,8 @@ jobs:
 
       - name: Compute run migrations
         id: run-migrations
+        # RUN_K8S_MIGRATIONS=true runs Postgres migration Jobs after Helm rollout.
+        # Auto-enabled when auth/user/workspace TypeORM migrations change; manual via workflow_dispatch.
         run: |
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
             if [[ "${{ github.event.inputs.run_migrations }}" == "true" ]]; then

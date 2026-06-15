@@ -1,7 +1,8 @@
 import { SendEmailJobPayload } from '@/infrastructure/emails/email-job.types';
 import { ConfigurationService } from '@/configuration/configuration.service';
 import { BrevoEmailClient } from '@/infrastructure/emails/brevo-email.client';
-import { Injectable, Logger } from '@nestjs/common';
+import { isNodeProduction } from '@collabspace/shared';
+import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
 
 export type EmailSendResult = {
   accepted: string[];
@@ -19,6 +20,13 @@ export class EmailsSenderService {
     const normalized = this.normalizeOptions(options);
 
     if (!this.isBrevoConfigured()) {
+      if (isNodeProduction()) {
+        throw new ServiceUnavailableException({
+          code: 'EMAIL_DELIVERY_UNAVAILABLE',
+          message: 'Brevo email delivery is not configured (BREVO_API_KEY missing)',
+        });
+      }
+
       this.logger.log(
         `Mock email (BREVO_API_KEY not set) → ${normalized.to}: ${normalized.subject}`,
       );

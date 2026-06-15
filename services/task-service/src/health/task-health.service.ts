@@ -90,8 +90,32 @@ export class TaskHealthService {
                 );
               }
             })
+          : process.env.NODE_ENV === "production"
+            ? await this.runCheck(true, async () => {
+                throw new Error(
+                  "Workspace client runs in mock mode (not allowed in production)",
+                );
+              })
+            : {
+                detail: "Workspace client runs in mock mode",
+                required: false,
+                status: "disabled",
+              },
+      attachmentStorage:
+        this.configService.get<string>("NODE_ENV") === "production"
+          ? await this.runCheck(true, async () => {
+              const connectionString = this.configService.get<string>(
+                "AZURE_STORAGE_CONNECTION_STRING",
+              );
+              if (
+                !connectionString?.trim() ||
+                connectionString.includes("your_")
+              ) {
+                throw new Error("Azure Blob Storage is not configured");
+              }
+            })
           : {
-              detail: "Workspace client runs in mock mode",
+              detail: "Azure Blob optional in development (mock mode allowed)",
               required: false,
               status: "disabled",
             },

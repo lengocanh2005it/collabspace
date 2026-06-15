@@ -25,6 +25,11 @@ if [[ ! -f "$VALUES_PROD" ]]; then
   exit 1
 fi
 
+if [[ -f "$PHASE0_ENV" ]]; then
+  echo "==> Refreshing values-prod.yaml from phase0.env..."
+  bash "$SCRIPT_DIR/prepare-prod-values.sh"
+fi
+
 cd "$APP_DIR"
 
 # CI/workflow may export IMAGE_TAG before this script; phase0.env must not override it.
@@ -292,6 +297,15 @@ fi
 
 echo "==> Post-rollout stabilization (S2S clients)..."
 sleep "${POST_ROLLOUT_STABILIZATION_SEC:-8}"
+
+if [[ -f "$PHASE0_ENV" ]] && [[ -n "${BREVO_API_KEY:-}" && -n "${BREVO_SENDER_EMAIL:-}" ]]; then
+  echo "==> Syncing Brevo sender ConfigMap (helm may reset defaults)..."
+  kubectl patch configmap auth-service-config -n "$APP_NS" --type merge \
+    -p "{\"data\":{\"BREVO_SENDER_EMAIL\":\"${BREVO_SENDER_EMAIL}\",\"BREVO_SENDER_NAME\":\"${BREVO_SENDER_NAME:-CollabSpace}\",\"EMAIL_DELIVERY_TIMEOUT_MS\":\"15000\"}}" \
+    || echo "WARN: Brevo ConfigMap patch failed (non-fatal)."
+  kubectl rollout restart deployment/auth-service -n "$APP_NS" 2>/dev/null || true
+  kubectl rollout status deployment/auth-service -n "$APP_NS" --timeout=180s 2>/dev/null || true
+fi
 
 echo "==> Pruning unused container images..."
 crictl rmi --prune 2>/dev/null && echo "Image prune done." || echo "WARN: crictl prune failed (non-fatal)."

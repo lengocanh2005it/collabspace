@@ -104,6 +104,7 @@ spec:
         - name: mongodb-exporter
           image: percona/mongodb_exporter:latest
           args:
+            # Legacy demo credentials — replace before use; prefer Helm observability stack.
             - --mongodb.uri=mongodb://admin:password@mongo:27017
           ports:
             - containerPort: 9216

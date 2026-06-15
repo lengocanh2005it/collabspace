@@ -1,5 +1,6 @@
 import "./observability/instrumentation";
 import "reflect-metadata";
+import { assertRequiredInProduction } from "@collabspace/shared";
 import { NestFactory } from "@nestjs/core";
 import { Logger, ValidationPipe } from "@nestjs/common";
 import { AppModule } from "./app.module";
@@ -13,6 +14,19 @@ import { registerMetricsMiddleware } from "./metrics/register-metrics.middleware
 import compression from "compression";
 async function bootstrap() {
   const logger = new Logger("Bootstrap");
+  assertRequiredInProduction(
+    "SERVICE_JWT_SECRET",
+    process.env.SERVICE_JWT_SECRET,
+  );
+  if (
+    process.env.NODE_ENV === "production" &&
+    process.env.WORKSPACE_CLIENT_MODE !== "http"
+  ) {
+    throw new Error(
+      "FATAL: WORKSPACE_CLIENT_MODE must be http when NODE_ENV=production",
+    );
+  }
+
   const app = await NestFactory.create(AppModule);
   app.use(compression());
 

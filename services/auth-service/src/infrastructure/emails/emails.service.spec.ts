@@ -116,7 +116,7 @@ describe('EmailsService', () => {
     );
   });
 
-  it('falls back to direct smtp when graphile worker is disabled', async () => {
+  it('falls back to direct Brevo send when graphile worker is disabled', async () => {
     (
       configurationServiceMock.getGraphileWorkerConfig as jest.Mock
     ).mockReturnValue({

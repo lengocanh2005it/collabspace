@@ -53,6 +53,11 @@ export class AzureBlobService implements OnModuleInit {
 
       // ── Guard: skip real Azure setup if connection string is missing or is a placeholder ──
       if (!connectionString || connectionString.includes("your_")) {
+        if (process.env.NODE_ENV === "production") {
+          throw new Error(
+            "FATAL: AZURE_STORAGE_CONNECTION_STRING is required when NODE_ENV=production",
+          );
+        }
         this.logger.warn(
           "⚠️  Azure Blob Storage not configured - running in MOCK MODE (file uploads not persisted)",
         );
@@ -113,6 +118,11 @@ export class AzureBlobService implements OnModuleInit {
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
+      if (process.env.NODE_ENV === "production") {
+        throw new Error(
+          `FATAL: Azure Blob Storage connection failed in production: ${errorMessage}`,
+        );
+      }
       this.logger.error(
         `Failed to connect to Azure Blob Storage: ${errorMessage}`,
       );

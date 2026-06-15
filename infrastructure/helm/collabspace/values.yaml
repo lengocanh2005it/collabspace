@@ -572,6 +572,6 @@ apps:
       RABBITMQ_PREFETCH_COUNT: "50"
       REDIS_HOST: redis-master
       NOTIFICATION_UNREAD_CACHE_TTL_SECONDS: "30"
-      WS_ENABLED: "true"
+      WS_ENABLED: "false"
       WS_PATH: /notifications/ws
       USER_SERVICE_URL: http://user-service:3000

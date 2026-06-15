@@ -48,7 +48,9 @@ describe('EmailsSenderService', () => {
     expect(result.messageId).toBe('brevo-123');
   });
 
-  it('does not call Brevo when API key is not configured', async () => {
+  it('does not call Brevo when API key is not configured (non-production)', async () => {
+    const originalNodeEnv = process.env.NODE_ENV;
+    process.env.NODE_ENV = 'development';
     const service = buildService({ apiKey: '' });
 
     const result = await service.send({
@@ -59,5 +61,26 @@ describe('EmailsSenderService', () => {
 
     expect(sendTransactionalEmailMock).not.toHaveBeenCalled();
     expect(result.messageId).toBe('mock');
+    process.env.NODE_ENV = originalNodeEnv;
+  });
+
+  it('rejects mock send in production when API key is missing', async () => {
+    const originalNodeEnv = process.env.NODE_ENV;
+    process.env.NODE_ENV = 'production';
+    const service = buildService({ apiKey: '' });
+
+    await expect(
+      service.send({
+        to: 'user@example.com',
+        subject: 'Verify',
+        text: 'code 123',
+      }),
+    ).rejects.toMatchObject({
+      response: expect.objectContaining({
+        code: 'EMAIL_DELIVERY_UNAVAILABLE',
+      }),
+    });
+
+    process.env.NODE_ENV = originalNodeEnv;
   });
 });
