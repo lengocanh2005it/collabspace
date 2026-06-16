@@ -23,8 +23,8 @@ Hướng dẫn cho AI agents khi debug/deploy **production k3s trên DigitalOcea
 1. Push `main` → `.github/workflows/docker-deploy.yml`
 2. Build **cả 5** images (`infrastructure/docker/Dockerfile.service`) → cùng tag GHCR = commit SHA
 3. SSH Droplet step 1 → `git-sync-private-repo.sh`
-4. SSH Droplet step 2 → `helm-deploy-ci.sh` → `helm-rollout.sh` (một `IMAGE_TAG` cho cả 5 app; timeout ~420s/service, notification 600s)
-5. SSH Droplet step 3 → `run-demo-e2e-prod.sh` (includes `verify-k8s-readiness.sh`)
+4. SSH Droplet step 2 → `helm-deploy-ci.sh` → `helm-rollout.sh` (một `IMAGE_TAG` cho cả 5 app; **không** migrate/seed)
+5. (Tùy chọn) `workflow_dispatch` + `run_e2e=true` → `run-demo-e2e-prod.sh`
 
 Helm-only push (chỉ chart/infra, không có `IMAGE_TAG` từ CI) → giữ tag image trong `values-prod.yaml` trên Droplet; mỗi push `main` vẫn build cả 5 image cùng commit SHA.
 
@@ -100,7 +100,7 @@ export IMAGE_TAG=<commit-sha>
 bash infrastructure/deploy/helm-rollout.sh
 ```
 
-**CI workflow:** mặc định **không** migrate, **không** seed. Migration Jobs chỉ chạy khi push đổi `migrations/**`, `packages/typeorm-migrate/**`, hoặc `run-k8s-migrations.sh`. Seed chỉ qua `run-k8s-seed.sh` / `run-k8s-full-reset.sh` (thủ công).
+**CI workflow:** chỉ build image + Helm rollout. **Không** migrate, **không** seed từ GitHub Actions. Migration/seed chỉ chạy thủ công trên Droplet: `run-k8s-migrations.sh`, `run-k8s-seed.sh`, `run-k8s-full-reset.sh`.
 
 Vault/ESO (khi đổi secret keys): `infrastructure/vault/scripts/seed-vault-k3s-from-phase0.sh`, apply `external-secrets.prod.yaml`, force ESO sync — xem `infrastructure/vault/README.md`.
 

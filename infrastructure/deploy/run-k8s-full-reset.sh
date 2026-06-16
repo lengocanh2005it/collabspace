@@ -101,7 +101,6 @@ psql_exec() {
 if [[ "$SKIP_WIPE" != "true" ]]; then
   k8s_job_log "Step 1/5: wipe application data"
   bash "$SCRIPT_DIR/wipe-prod-data.sh"
-  # wipe-prod-data scales apps back up — scale down again for migrate window
   scale_writers_to_zero
 else
   k8s_job_log "Step 1/5: SKIP_WIPE=true — keeping existing databases"
@@ -127,6 +126,9 @@ if ! APP_DIR="$APP_DIR" APP_NS="$APP_NS" IMAGE_TAG="$IMAGE_TAG" VALUES_PROD="$VA
   k8s_job_log "ERROR: seed failed — see job logs above"
   exit 1
 fi
+
+k8s_job_log "Reconciling RabbitMQ (DLX queues + event bindings)..."
+bash "$SCRIPT_DIR/reconcile-rabbitmq-queues.sh"
 
 k8s_job_log "Step 5/5: restore app deployments"
 restore_replicas
