@@ -127,10 +127,7 @@ if ! APP_DIR="$APP_DIR" APP_NS="$APP_NS" IMAGE_TAG="$IMAGE_TAG" VALUES_PROD="$VA
   exit 1
 fi
 
-k8s_job_log "Reconciling RabbitMQ (DLX queues + event bindings)..."
-bash "$SCRIPT_DIR/reconcile-rabbitmq-queues.sh"
-
-k8s_job_log "Step 5/5: restore app deployments"
+k8s_job_log "Step 5/5: restore app deployments (apps declare RabbitMQ queues on startup)"
 restore_replicas
 
 k8s_job_log "Waiting for core pods..."

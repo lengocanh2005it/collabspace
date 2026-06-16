@@ -60,39 +60,23 @@ else
   echo "  Redis pod not found — skipped."
 fi
 
-RABBITMQ_POD="${RABBITMQ_POD:-rabbitmq-0}"
-RABBITMQ_VHOST="${RABBITMQ_VHOST:-collabspace}"
+echo "==> Wiping RabbitMQ (delete data volume, fresh start)..."
+RABBITMQ_STS="${RABBITMQ_STS:-rabbitmq}"
+if kubectl get statefulset "$RABBITMQ_STS" -n "$NS" >/dev/null 2>&1; then
+  kubectl scale "statefulset/${RABBITMQ_STS}" -n "$NS" --replicas=0
+  kubectl wait --for=delete pod -l app.kubernetes.io/name=rabbitmq -n "$NS" --timeout=180s 2>/dev/null || true
 
-echo "==> Wiping RabbitMQ vhost ${RABBITMQ_VHOST}..."
-if kubectl get pod -n "$NS" "$RABBITMQ_POD" >/dev/null 2>&1; then
-  RABBITMQ_USER="$(kubectl exec -n "$NS" "$RABBITMQ_POD" -- printenv RABBITMQ_USERNAME 2>/dev/null || true)"
-  RABBITMQ_USER="${RABBITMQ_USER:-collabspace}"
+  while IFS= read -r pvc; do
+    [[ -z "$pvc" ]] && continue
+    echo "  - ${pvc}"
+    kubectl delete "$pvc" -n "$NS" --timeout=120s 2>/dev/null || true
+  done < <(kubectl get pvc -n "$NS" -o name 2>/dev/null | grep -i rabbitmq || true)
 
-  while IFS= read -r queue; do
-    [[ -z "$queue" || "$queue" == "name" ]] && continue
-    echo "  - queue ${queue}"
-    kubectl exec -n "$NS" "$RABBITMQ_POD" -- \
-      rabbitmqctl delete_queue "$queue" -p "$RABBITMQ_VHOST" 2>/dev/null || true
-  done < <(
-    kubectl exec -n "$NS" "$RABBITMQ_POD" -- \
-      rabbitmqctl -q list_queues -p "$RABBITMQ_VHOST" name 2>/dev/null || true
-  )
-
-  for exchange in collabspace_exchange collabspace_dlx; do
-    kubectl exec -n "$NS" "$RABBITMQ_POD" -- \
-      rabbitmqctl delete_exchange -p "$RABBITMQ_VHOST" "$exchange" 2>/dev/null || true
-  done
-
-  if kubectl exec -n "$NS" "$RABBITMQ_POD" -- rabbitmqctl list_vhosts -q name 2>/dev/null | grep -qx "$RABBITMQ_VHOST"; then
-    :
-  else
-    kubectl exec -n "$NS" "$RABBITMQ_POD" -- rabbitmqctl add_vhost "$RABBITMQ_VHOST"
-  fi
-  kubectl exec -n "$NS" "$RABBITMQ_POD" -- \
-    rabbitmqctl set_permissions -p "$RABBITMQ_VHOST" "$RABBITMQ_USER" ".*" ".*" ".*" 2>/dev/null || true
-  echo "  RabbitMQ vhost ${RABBITMQ_VHOST} wiped."
+  kubectl scale "statefulset/${RABBITMQ_STS}" -n "$NS" --replicas=1
+  kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=rabbitmq -n "$NS" --timeout=300s
+  echo "  RabbitMQ restarted with empty data volume (vhost collabspace from chart config)."
 else
-  echo "  RabbitMQ pod not found — skipped."
+  echo "  RabbitMQ StatefulSet not found — skipped."
 fi
 
 echo "==> App deployments remain at 0 until migrate/seed completes."
@@ -102,7 +86,7 @@ echo "All application data wiped:"
 echo "  PostgreSQL: collabspace_auth, collabspace_user, collabspace_workspace"
 echo "  MongoDB:    collabspace_task, collabspace_notification"
 echo "  Redis:      FLUSHALL"
-echo "  RabbitMQ:   vhost ${RABBITMQ_VHOST:-collabspace} (all queues + app exchanges)"
+echo "  RabbitMQ:   PVC wiped + StatefulSet restarted (empty volume)"
 echo ""
 echo "Next: bash infrastructure/deploy/run-k8s-full-reset.sh  (wipe + bootstrap + migrate + seed)"
 echo "  Or: bash infrastructure/deploy/run-k8s-migrations.sh && bash infrastructure/deploy/run-k8s-seed.sh"
