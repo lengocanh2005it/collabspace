@@ -87,7 +87,7 @@ describe('UpdateMemberRoleUseCase', () => {
 
     await useCase.execute('user-actor', 'ws-1', 'user-target', {
       role: 'manager',
-    } as UpdateMemberRoleDto);
+    });
 
     expect(mockMemberRepo.updateRoleByWorkspaceAndUser).not.toHaveBeenCalled();
     expect(mockActivityRepo.record).not.toHaveBeenCalled();

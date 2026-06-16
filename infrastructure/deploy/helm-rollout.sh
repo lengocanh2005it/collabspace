@@ -191,10 +191,6 @@ echo "==> Reconciling RabbitMQ consumer queues (DLX)..."
 bash "$SCRIPT_DIR/reconcile-rabbitmq-queues.sh"
 
 restore_app_replicas() {
-  if [[ "${REPLICAS_RESTORED:-}" == "1" ]]; then
-    return 0
-  fi
-  REPLICAS_RESTORED=1
   echo "==> Restoring app replica counts from values-prod..."
   for dep in auth-service user-service workspace-service task-service notification-service; do
     replicas="$(grep -A20 "^  ${dep}:" "$VALUES_PROD" | grep -m1 'replicas:' | awk '{print $2}' || echo 1)"
@@ -231,6 +227,7 @@ if [[ "${RUN_K8S_MIGRATIONS:-false}" == "true" ]]; then
   fi
 
   restore_app_replicas
+  trap - EXIT
 
   if [[ "$migration_failed" -eq 1 ]]; then
     exit 1

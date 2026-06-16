@@ -25,7 +25,7 @@ export class UpdateMemberRoleUseCase {
     dto: UpdateMemberRoleDto,
   ): Promise<void> {
     const actor = await this.memberRepo.findByWorkspaceAndUser(workspaceId, actorId);
-    if (!actor || actor.role !== 'owner') {
+    if (actor?.role !== 'owner') {
       throw new ForbiddenException('Only the workspace owner can update member roles');
     }
 

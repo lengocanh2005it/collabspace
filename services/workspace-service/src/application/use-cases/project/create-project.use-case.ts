@@ -26,8 +26,8 @@ export class CreateProjectUseCase {
 
   async execute(userId: string, workspaceId: string, dto: CreateProjectDto) {
     const member = await this.memberRepo.findByWorkspaceAndUser(workspaceId, userId);
-    if (!member) {
-      throw new ForbiddenException('You are not a member of this workspace');
+    if (!member || (member.role !== 'owner' && member.role !== 'manager')) {
+      throw new ForbiddenException('Only workspace owner or manager can create projects');
     }
 
     const project = await this.projectRepo.create({
