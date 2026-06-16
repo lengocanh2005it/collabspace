@@ -35,6 +35,18 @@ export class TypeOrmWorkspaceMemberRepository implements IWorkspaceMemberReposit
     }
   }
 
+  async updateRoleByWorkspaceAndUser(
+    workspaceId: string,
+    userId: string,
+    role: string,
+  ): Promise<void> {
+    const result = await this.repo.update({ workspace_id: workspaceId, user_id: userId }, { role });
+
+    if (!result.affected) {
+      throw new NotFoundException('Workspace member not found');
+    }
+  }
+
   async countByWorkspaceAndRole(workspaceId: string, role: string): Promise<number> {
     return this.repo.count({ where: { workspace_id: workspaceId, role } });
   }

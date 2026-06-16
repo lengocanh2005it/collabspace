@@ -27,7 +27,7 @@ describe('DeleteProjectUseCase', () => {
     useCase = module.get<DeleteProjectUseCase>(DeleteProjectUseCase);
   });
 
-  it('should throw ForbiddenException if user is not the workspace owner', async () => {
+  it('should throw ForbiddenException if user is not the workspace owner/manager', async () => {
     mockMemberRepo.findByWorkspaceAndUser.mockResolvedValue(
       new WorkspaceMember('m-1', 'ws-1', 'user-1', 'member', new Date()),
     );
@@ -45,6 +45,20 @@ describe('DeleteProjectUseCase', () => {
   it('should soft delete project if allowed', async () => {
     mockMemberRepo.findByWorkspaceAndUser.mockResolvedValue(
       new WorkspaceMember('m-1', 'ws-1', 'user-1', 'owner', new Date()),
+    );
+    mockProjectRepo.findById.mockResolvedValue(
+      new Project('proj-1', 'ws-1', 'P', null, 'user-1', false, new Date(), new Date()),
+    );
+    mockProjectRepo.softDelete.mockResolvedValue(undefined);
+
+    const result = await useCase.execute('user-1', 'ws-1', 'proj-1');
+    expect(mockProjectRepo.softDelete).toHaveBeenCalledWith('proj-1', 'ws-1');
+    expect(result).toEqual({ status: 'deleted' });
+  });
+
+  it('should allow a workspace manager to delete project', async () => {
+    mockMemberRepo.findByWorkspaceAndUser.mockResolvedValue(
+      new WorkspaceMember('m-1', 'ws-1', 'user-1', 'manager', new Date()),
     );
     mockProjectRepo.findById.mockResolvedValue(
       new Project('proj-1', 'ws-1', 'P', null, 'user-1', false, new Date(), new Date()),

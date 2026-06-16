@@ -38,9 +38,11 @@ import { UpdateWorkspaceUseCase } from '../../application/use-cases/workspace/up
 import { DeleteWorkspaceUseCase } from '../../application/use-cases/workspace/delete-workspace.use-case';
 import { ListMembersUseCase } from '../../application/use-cases/workspace/list-members.use-case';
 import { RemoveMemberUseCase } from '../../application/use-cases/workspace/remove-member.use-case';
+import { UpdateMemberRoleUseCase } from '../../application/use-cases/workspace/update-member-role.use-case';
 import { GetWorkspaceActivityUseCase } from '../../application/use-cases/workspace/get-workspace-activity.use-case';
 import { IdempotencyService } from '../../infrastructure/idempotency/idempotency.service';
 import { AuthGuard } from './guards/auth.guard';
+import { UpdateMemberRoleDto } from '../../application/dto/update-member-role.dto';
 
 @ApiTags('workspaces')
 @ApiBearerAuth()
@@ -55,6 +57,7 @@ export class WorkspaceController {
     private readonly deleteWorkspaceUseCase: DeleteWorkspaceUseCase,
     private readonly listMembersUseCase: ListMembersUseCase,
     private readonly removeMemberUseCase: RemoveMemberUseCase,
+    private readonly updateMemberRoleUseCase: UpdateMemberRoleUseCase,
     private readonly getWorkspaceActivityUseCase: GetWorkspaceActivityUseCase,
     private readonly idempotencyService: IdempotencyService,
   ) {}
@@ -157,6 +160,19 @@ export class WorkspaceController {
     @Param('userId', ParseUUIDPipe) targetUserId: string,
   ): Promise<void> {
     await this.removeMemberUseCase.execute(actorId, workspaceId, targetUserId);
+  }
+
+  @Patch(':id/members/:userId')
+  @ApiOperation({ summary: 'Promote/demote a workspace member role' })
+  @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiParam({ name: 'userId', format: 'uuid' })
+  async updateMemberRole(
+    @UserId() actorId: string,
+    @Param('id', ParseUUIDPipe) workspaceId: string,
+    @Param('userId', ParseUUIDPipe) targetUserId: string,
+    @Body() dto: UpdateMemberRoleDto,
+  ): Promise<void> {
+    await this.updateMemberRoleUseCase.execute(actorId, workspaceId, targetUserId, dto);
   }
 
   @Get(':id/activity')

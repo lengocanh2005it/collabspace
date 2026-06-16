@@ -24,7 +24,7 @@ describe('UpdateProjectUseCase', () => {
     useCase = module.get<UpdateProjectUseCase>(UpdateProjectUseCase);
   });
 
-  it('should throw ForbiddenException if user is not the workspace owner', async () => {
+  it('should throw ForbiddenException if user is not the workspace owner/manager', async () => {
     mockMemberRepo.findByWorkspaceAndUser.mockResolvedValue(
       new WorkspaceMember('m-1', 'ws-1', 'user-1', 'member', new Date()),
     );
@@ -65,6 +65,34 @@ describe('UpdateProjectUseCase', () => {
     const result = await useCase.execute('user-1', 'ws-1', 'proj-1', {
       name: 'New Name',
     });
+    expect(mockProjectRepo.update).toHaveBeenCalledWith('proj-1', 'ws-1', {
+      name: 'New Name',
+      description: undefined,
+    });
+    expect(result).toBe(updated);
+  });
+
+  it('should allow a workspace manager to update project', async () => {
+    const updated = new Project(
+      'proj-1',
+      'ws-1',
+      'New Name',
+      null,
+      'user-1',
+      false,
+      new Date(),
+      new Date(),
+    );
+
+    mockMemberRepo.findByWorkspaceAndUser.mockResolvedValue(
+      new WorkspaceMember('m-1', 'ws-1', 'user-1', 'manager', new Date()),
+    );
+    mockProjectRepo.findById.mockResolvedValue(
+      new Project('proj-1', 'ws-1', 'Old', null, 'user-1', false, new Date(), new Date()),
+    );
+    mockProjectRepo.update.mockResolvedValue(updated);
+
+    const result = await useCase.execute('user-1', 'ws-1', 'proj-1', { name: 'New Name' });
     expect(mockProjectRepo.update).toHaveBeenCalledWith('proj-1', 'ws-1', {
       name: 'New Name',
       description: undefined,

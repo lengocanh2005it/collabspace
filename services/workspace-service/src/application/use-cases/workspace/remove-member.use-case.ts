@@ -43,13 +43,25 @@ export class RemoveMemberUseCase {
       return;
     }
 
-    if (actor.role !== 'owner') {
-      throw new ForbiddenException('Only the workspace owner can remove members');
+    if (actor.role === 'owner') {
+      await this.memberRepo.removeByWorkspaceAndUser(workspaceId, targetUserId);
+      await this.recordRemoval(workspaceId, actorId, targetUserId, target.role, false);
+      await this.workspaceCache.deleteWorkspaceList(targetUserId);
+      return;
     }
 
-    await this.memberRepo.removeByWorkspaceAndUser(workspaceId, targetUserId);
-    await this.recordRemoval(workspaceId, actorId, targetUserId, target.role, false);
-    await this.workspaceCache.deleteWorkspaceList(targetUserId);
+    if (actor.role === 'manager') {
+      if (target.role !== 'member') {
+        throw new ForbiddenException('Workspace managers can remove only members');
+      }
+
+      await this.memberRepo.removeByWorkspaceAndUser(workspaceId, targetUserId);
+      await this.recordRemoval(workspaceId, actorId, targetUserId, target.role, false);
+      await this.workspaceCache.deleteWorkspaceList(targetUserId);
+      return;
+    }
+
+    throw new ForbiddenException('Only the workspace owner or manager can remove members');
   }
 
   private async recordRemoval(
