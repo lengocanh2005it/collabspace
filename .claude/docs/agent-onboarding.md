@@ -64,6 +64,7 @@ services/
 | Secrets (Vault, ESO, shared env) | `infrastructure/vault/README.md`, `docs/production-hardening.md` |
 | NestJS style, DTOs, tests | `.claude/docs/coding-conventions.md` |
 | Product features & status | `docs/features.md` |
+| **Roles & permissions** | `docs/roles-and-permissions.md` |
 | MVP build order (agent) | `.claude/docs/mvp-roadmap.md` |
 | MVP demo acceptance | `docs/mvp-demo-scope.md` |
 | Observability (Grafana/Loki/k6) | `docs/observability.md` |

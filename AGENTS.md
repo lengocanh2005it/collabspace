@@ -32,6 +32,7 @@ After editing `.claude/skills/`, run `bash scripts/sync-agent-docs.sh` (or `pwsh
 | `.claude/docs/droplet-vps-operations.md` | **Droplet VPS** — SSH, CI deploy, probe/NODE_PATH, rollout timeout |
 | `.claude/docs/coding-conventions.md` | NestJS, DTO, TypeORM, test style |
 | `docs/features.md` | Product features and status (canonical) |
+| `docs/roles-and-permissions.md` | **Platform admin vs workspace owner/manager/member** |
 | `docs/api-routes.md` | HTTP route index, gateway headers, internal API rules |
 | `docs/service-urls.md` | Prod/local URLs: API, Swagger, Grafana, dashboards |
 | `docs/cross-service-data.md` | Read models, replicas, S2S patterns (human, VI) |

@@ -63,4 +63,14 @@ pnpm run seed
 | DB entity (ORM) | `infrastructure/database/entities/` |
 | Event name/payload | `domain/events/` |
 
-Deep docs: `@../../.claude/docs/service-architecture.md` (workspace section), `@../../.claude/docs/service-contracts.md`
+Deep docs: `@../../.claude/docs/service-architecture.md` (workspace section), `@../../.claude/docs/service-contracts.md`, `@../../docs/roles-and-permissions.md`
+
+## Workspace roles
+
+Membership `workspace_members.role`: **`owner` > `manager` > `member`**. Không dùng workspace `admin` (nhầm platform admin).
+
+- **owner** — tạo workspace; sửa/xóa workspace; promote/demote manager (**planned**); remove manager/member
+- **manager** — invite; sửa/xóa project; remove member (**planned**)
+- **member** — dùng task/project/comment trong workspace
+
+Platform `admin` (`auth-service`) là lớp khác — xem `docs/roles-and-permissions.md`.

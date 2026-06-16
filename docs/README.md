@@ -7,6 +7,7 @@ Chỉ mục tài liệu dự án (tiếng Việt có dấu). Tài liệu kỹ th
 | Tài liệu | Mô tả |
 |----------|--------|
 | [features.md](./features.md) | Tính năng và trạng thái implement (nguồn chính) |
+| [roles-and-permissions.md](./roles-and-permissions.md) | **Platform vs workspace roles** — admin, owner, manager, member |
 | [mvp-demo-scope.md](./mvp-demo-scope.md) | Phạm vi demo MVP và tiêu chí chấp nhận |
 
 ## Kiến trúc & hợp đồng

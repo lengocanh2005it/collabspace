@@ -274,19 +274,21 @@ All services compile seed to **`dist/seed/seed.js`**; images copy `scripts/load-
 
 What gets seeded:
 
-- **auth-service** — roles, permissions, verified demo users
+- **auth-service** — roles, permissions, **12** verified demo users
 - **user-service** — profiles, preferences, status; optional RabbitMQ replica sync
-- **workspace-service** — demo workspace, members (User A owner + User B member), MVP project
-- **task-service** — user replicas, 3 tasks + event store entries, sample `@mention` comment
-- **notification-service** — sample TASK_ASSIGNED + COMMENT_MENTIONED notifications for User B
+- **workspace-service** — **4 workspaces**, **6 projects**, members, **1 pending invitation**
+- **task-service** — user replicas, **15 tasks** + event store, **4 comments**
+- **notification-service** — **8** sample notifications (UNREAD / READ / ARCHIVED)
 
 Demo accounts after seed:
 
-- `tho@collabspace.dev` / `collabspace123`
-- `ngocanh@collabspace.dev` / `collabspace123` (User A)
-- `quangtien@collabspace.dev` / `collabspace123` (User B)
-- `trungtin@collabspace.dev` / `collabspace123`
-- `reviewer@collabspace.dev` / `collabspace123`
+- `tho@collabspace.dev` / `collabspace123` (platform admin)
+- `ngocanh@collabspace.dev` / `collabspace123` (User A — workspace owner)
+- `quangtien@collabspace.dev` / `collabspace123` (User B — workspace member)
+- `trungtin@collabspace.dev` / `collabspace123` (platform admin)
+- `reviewer@collabspace.dev` / `collabspace123` (platform viewer + workspace member)
+
+Trạng thái workspace role trong seed hiện tại: **owner/member** (Phase 0–5). Vai trò **manager** là **Planned** cho Phase 5+ seed tiếp theo.
 
 Run migrations before seeding. Requires Postgres (auth, user, workspace) and MongoDB (task, notification).
 

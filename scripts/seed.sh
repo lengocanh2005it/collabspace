@@ -24,4 +24,6 @@ run_service_seed "notification-service" "$ROOT_DIR/services/notification-service
 
 echo ""
 echo "Seed pipeline completed successfully."
-echo "Demo User A: ngocanh@collabspace.dev | User B: quangtien@collabspace.dev | Password: collabspace123"
+echo "Seed: 12 users, 4 workspaces — see scripts/demo-seed-data.json and README.md"
+echo "Quick logins: ngocanh@ / quangtien@ (MVP) | tho@ / trungtin@ (platform admin) | dev.eve@ (pending invite)"
+echo "Password: collabspace123"
