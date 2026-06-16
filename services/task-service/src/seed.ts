@@ -3,7 +3,6 @@ import { join } from "node:path";
 import mongoose from "mongoose";
 import {
   avatarUrlFor,
-  collectDemoNotifications,
   getDemoWorkspaces,
   loadDemoSeedData,
   userSnapshot,
