@@ -31,4 +31,5 @@ run_service_seed "notification-service" "$ROOT_DIR/services/notification-service
 
 echo ""
 echo "Seed pipeline completed."
-echo "Demo users: ngocanh@collabspace.dev / quangtien@collabspace.dev — password collabspace123"
+echo "Demo workspace owner: ngocanh@collabspace.dev | member: quangtien@collabspace.dev"
+echo "Platform admins: tho@collabspace.dev, trungtin@collabspace.dev — password collabspace123"

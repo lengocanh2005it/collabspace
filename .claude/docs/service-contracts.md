@@ -66,8 +66,9 @@ Important identity fields:
 ## Platform Admin HTTP Contract
 
 All platform admin routes require a fully verified bearer token and either the
-platform role `admin` or permission `auth.manage`. A workspace membership role
-named `admin` does not grant platform administration. Rejected callers receive
+platform role `admin` or permission `auth.manage`. Workspace membership uses
+`owner`, `manager`, or `member` — never workspace `admin` (removed; see
+[docs/roles-and-permissions.md](../../docs/roles-and-permissions.md)). Rejected callers receive
 `403` with code `PLATFORM_ADMIN_REQUIRED`.
 
 Auth service:
@@ -452,9 +453,10 @@ Suggested payload:
 ```
 
 Email-only invitations may omit `recipientId` / `invitedUserId` and include
-`inviteEmail` instead. In that case `notification-service` acknowledges the
-event but does not create an in-app notification because there is no user id to
-store as `recipientId`.
+`inviteEmail` instead. `notification-service` resolves `inviteEmail` against the
+local `user_replicas` collection (case-insensitive) and creates an in-app
+notification when a registered active user is found; otherwise it acknowledges
+the event without creating a notification.
 
 ### TASK_ASSIGNED
 
@@ -569,22 +571,26 @@ Minimum HTTP routes to close MVP:
 - `POST /invitations/{invitationId}/accept`
 - `POST /invitations/{invitationId}/reject`
 - `GET /workspaces/{id}/members`
-- `PATCH /workspaces/{id}/members/{userId}` — body `{ role: "admin" | "member" }`; owner may set admin/member; admin may demote members only; owner role immutable
-- `DELETE /workspaces/{id}/members/{userId}` — remove member or leave workspace; owner cannot be removed
+- `PATCH /workspaces/{id}/members/{userId}` — body `{ role: "manager" | "member" }`; **only owner**; target cannot be `owner` (**Planned**)
+- `DELETE /workspaces/{id}/members/{userId}` — remove member/manager or leave; owner cannot be removed
 
 Minimum domain concepts:
 
 - Workspace: id, name, description, ownerId, createdAt, updatedAt, deletedAt.
 - Membership: workspaceId, userId, role, joinedAt.
 - Invitation: workspaceId, invitedEmail or invitedUserId, invitedByUserId, role, status, expiresAt.
-- Roles: owner, admin, member.
+- Workspace roles: `owner`, `manager`, `member` (hierarchy: owner > manager > member).
+- Platform roles (`auth-service`): `admin`, `member`, `viewer` — **separate** from workspace membership. See [docs/roles-and-permissions.md](../../docs/roles-and-permissions.md).
 
 Authorization baseline:
 
-- Any authenticated user can create a workspace.
-- Only owner/admin can invite members.
-- Only members can list workspace members.
-- Owner cannot be accidentally removed without explicit transfer/ownership handling.
+- Any authenticated user can create a workspace (creator becomes `owner`).
+- `owner` or `manager` can invite; invitees join as `member`.
+- `owner` can update workspace settings and delete workspace; `manager` cannot.
+- `owner` can promote/demote between `member` and `manager` (**Planned**).
+- `owner` can remove `manager` or `member`; `manager` can remove `member` only.
+- Only members can list workspace members and activity.
+- Owner cannot be removed without ownership transfer (not in MVP).
 
 Internal service-to-service (not for browser clients):
 

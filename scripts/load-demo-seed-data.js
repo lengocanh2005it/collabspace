@@ -1,6 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.loadDemoSeedData = loadDemoSeedData;
+exports.getDemoWorkspaces = getDemoWorkspaces;
+exports.getPrimaryDemoWorkspace = getPrimaryDemoWorkspace;
+exports.collectDemoNotifications = collectDemoNotifications;
 exports.avatarUrlFor = avatarUrlFor;
 exports.userSnapshot = userSnapshot;
 const node_fs_1 = require("node:fs");
@@ -21,6 +24,41 @@ function loadDemoSeedData() {
     }
     throw new Error(`Could not find ${DEMO_SEED_FILENAME}. Run seed scripts from the repository root or a service directory.`);
 }
+function legacyDemoToWorkspace(demo) {
+    return {
+        workspaceId: demo.workspaceId,
+        workspaceName: demo.workspaceName,
+        workspaceDescription: demo.workspaceDescription,
+        ownerUserId: demo.ownerUserId,
+        members: demo.members,
+        projects: [
+            {
+                projectId: demo.projectId,
+                projectName: demo.projectName,
+                projectDescription: demo.projectDescription,
+                tasks: demo.tasks,
+                sampleComments: demo.sampleComment ? [demo.sampleComment] : [],
+            },
+        ],
+        sampleNotifications: demo.sampleNotifications,
+    };
+}
+function getDemoWorkspaces(data) {
+    if (data.workspaces && data.workspaces.length > 0) {
+        return data.workspaces;
+    }
+    if (data.demo) {
+        return [legacyDemoToWorkspace(data.demo)];
+    }
+    throw new Error('demo-seed-data.json must define workspaces[] or legacy demo');
+}
+/** Primary MVP workspace (first entry). */
+function getPrimaryDemoWorkspace(data) {
+    return getDemoWorkspaces(data)[0];
+}
+function collectDemoNotifications(data) {
+    return getDemoWorkspaces(data).flatMap((workspace) => workspace.sampleNotifications ?? []);
+}
 function avatarUrlFor(user) {
     return `https://api.dicebear.com/9.x/initials/svg?seed=${user.avatarSeed}`;
 }
@@ -33,4 +71,3 @@ function userSnapshot(user) {
         avatarUrl: avatarUrlFor(user),
     };
 }
-//# sourceMappingURL=load-demo-seed-data.js.map

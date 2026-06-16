@@ -20,6 +20,7 @@ Read before broad changes:
 - **Droplet VPS ops:** `.claude/docs/droplet-vps-operations.md`
 - Conventions: `.claude/docs/coding-conventions.md`
 - Product features: `docs/features.md`
+- **Roles & permissions:** `docs/roles-and-permissions.md`
 - API routes & gateway: `docs/api-routes.md`
 - Service & infra URLs: `docs/service-urls.md`
 - Trust boundaries (Phase B): `docs/production-hardening.md`, `.claude/docs/service-contracts.md` → Auth Header Propagation

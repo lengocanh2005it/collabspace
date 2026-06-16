@@ -13,6 +13,7 @@ Read these files as needed:
 
 - `README.md`
 - `docs/features.md`
+- `docs/roles-and-permissions.md` (platform admin vs workspace owner/manager/member)
 - `docs/mvp-demo-scope.md`
 - `.claude/docs/project-architecture.md`
 - `.claude/docs/service-architecture.md` (per-service folder layout and patterns)
@@ -46,7 +47,7 @@ Read these files as needed:
 
 - Auth credentials, roles, permissions, sessions, JWT, OTP: `services/auth-service`.
 - User profiles, usernames, display names, user search, profile hydration: `services/user-service`.
-- Workspace CRUD, membership, invitations, workspace roles: `services/workspace-service`.
+- Workspace CRUD, membership, invitations, workspace roles (`owner` / `manager` / `member`): `services/workspace-service`.
 - Projects, boards, tasks, comments, mentions, activity: `services/task-service`.
 - Notification persistence, notification list/read API, event consumption: `services/notification-service`.
 - Gateway routing: `api-gateway`.

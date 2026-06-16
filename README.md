@@ -142,17 +142,27 @@ docker-compose -f docker-compose.yml -f docker-compose.db.yml -f docker-compose.
 
 ### Seeded Development Accounts
 
-After `./scripts/seed.sh` (or the per-service commands below), demo data includes:
+After `./scripts/seed.sh`, **12 accounts** (password `collabspace123` for all) and **4 workspaces** are available. Source of truth: [`scripts/demo-seed-data.json`](scripts/demo-seed-data.json).
 
-| Name | Email | Username | Role | Password |
-|------|-------|----------|------|----------|
-| Phan Phu Tho | `tho@collabspace.dev` | `phan.phu.tho` | `admin` | `collabspace123` |
-| Le Ngoc Anh (User A) | `ngocanh@collabspace.dev` | `le.ngoc.anh` | `member` | `collabspace123` |
-| Ngo Quang Tien (User B) | `quangtien@collabspace.dev` | `ngo.quang.tien` | `member` | `collabspace123` |
-| Vo Trung Tin | `trungtin@collabspace.dev` | `vo.trung.tin` | `member` | `collabspace123` |
-| Demo Reviewer | `reviewer@collabspace.dev` | `demo.reviewer` | `viewer` | `collabspace123` |
+| Email | Platform role | Workspace memberships | Use for |
+|-------|---------------|----------------------|---------|
+| `tho@collabspace.dev` | admin | Infra Ops **owner** | Platform admin + ops workspace |
+| `trungtin@collabspace.dev` | admin | Infra Ops member | `/admin/*` UI, broadcast |
+| `ngocanh@collabspace.dev` | member | Demo **owner**, Product Lab + Infra Ops member | **User A** MVP flow |
+| `quangtien@collabspace.dev` | member | Demo + Product Lab **owner** | **User B**, second workspace owner |
+| `reviewer@collabspace.dev` | viewer | Demo member | Read-only platform + browse workspace |
+| `qa.alice@collabspace.dev` | member | Demo member | QA / board regression |
+| `dev.bob@collabspace.dev` | member | Product Lab member | Assignee + mentions |
+| `pm.carol@collabspace.dev` | member | Demo + Product Lab member | Unassigned tasks, triage |
+| `designer.dana@collabspace.dev` | member | Product Lab member | Design-system tasks |
+| `solo.owner@collabspace.dev` | member | Solo Sandbox **owner** | Single-user workspace |
+| `viewer.only@collabspace.dev` | viewer | *(none)* | Expect 403 on workspace APIs |
+| `dev.eve@collabspace.dev` | member | *(pending invite)* | `/invitations/me` accept flow |
 
-Also seeded: demo workspace **CollabSpace Demo**, project **MVP Sprint**, 3 tasks (one assigned to User B), sample `@ngo.quang.tien` comment, and sample notifications for User B.
+**Workspaces:** CollabSpace Demo · Product Lab · Infra Ops · Solo Sandbox  
+**Data:** 6 projects · 15 tasks · 4 comments · 8 notifications · 1 pending invitation
+
+**Roles:** Platform `admin` | `member` | `viewer` (auth) — tách khỏi workspace `owner` | `manager` | `member`. Chi tiết: [docs/roles-and-permissions.md](docs/roles-and-permissions.md).
 
 Source of truth: [`scripts/demo-seed-data.json`](scripts/demo-seed-data.json).
 

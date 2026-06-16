@@ -1,4 +1,11 @@
 {
+  "_meta": {
+    "roleModel": "Platform: admin | member | viewer. Workspace: owner | manager (planned) | member. See docs/roles-and-permissions.md.",
+    "accountCount": 12,
+    "workspaceCount": 4,
+    "platformAdmins": ["tho@collabspace.dev", "trungtin@collabspace.dev"],
+    "defaultPasswordNote": "All accounts use defaultPassword unless changed locally."
+  },
   "defaultPassword": "collabspace123",
   "users": [
     {
@@ -8,7 +15,7 @@
       "fullName": "Phan Phu Tho",
       "username": "phan.phu.tho",
       "roleNames": ["admin"],
-      "bio": "Infrastructure engineer managing Docker, CI/CD, API gateway, monitoring, tracing, and logging.",
+      "bio": "Platform admin — infra, CI/CD, gateway. Workspace owner of Infra Ops.",
       "preferredLanguage": "vi",
       "preferredTimezone": "Asia/Saigon",
       "avatarSeed": "Phan%20Phu%20Tho"
@@ -20,7 +27,7 @@
       "fullName": "Le Ngoc Anh",
       "username": "le.ngoc.anh",
       "roleNames": ["member"],
-      "bio": "Owns JWT auth, RBAC, and user profile APIs for the collaboration platform.",
+      "bio": "User A — workspace owner (CollabSpace Demo). Auth & user APIs.",
       "preferredLanguage": "vi",
       "preferredTimezone": "Asia/Saigon",
       "avatarSeed": "Le%20Ngoc%20Anh"
@@ -32,7 +39,7 @@
       "fullName": "Ngo Quang Tien",
       "username": "ngo.quang.tien",
       "roleNames": ["member"],
-      "bio": "Builds workspace CRUD flows, member invitations, and workspace membership management.",
+      "bio": "User B — member in Demo; owner of Product Lab. Frontend lead.",
       "preferredLanguage": "vi",
       "preferredTimezone": "Asia/Saigon",
       "avatarSeed": "Ngo%20Quang%20Tien"
@@ -43,8 +50,8 @@
       "email": "trungtin@collabspace.dev",
       "fullName": "Vo Trung Tin",
       "username": "vo.trung.tin",
-      "roleNames": ["member"],
-      "bio": "Focuses on task workflows, comments, notifications, and event-driven delivery.",
+      "roleNames": ["admin"],
+      "bio": "Platform admin — tasks, notifications, /admin/* APIs.",
       "preferredLanguage": "vi",
       "preferredTimezone": "Asia/Saigon",
       "avatarSeed": "Vo%20Trung%20Tin"
@@ -56,87 +63,448 @@
       "fullName": "Demo Reviewer",
       "username": "demo.reviewer",
       "roleNames": ["viewer"],
-      "bio": "Read-only stakeholder account for reviewing workspace, task, and notification flows in demos.",
+      "bio": "Platform viewer + Demo workspace member (read-heavy stakeholder).",
       "preferredLanguage": "en",
       "preferredTimezone": "UTC",
       "avatarSeed": "Demo%20Reviewer"
+    },
+    {
+      "id": "66666666-6666-4666-8666-666666666666",
+      "profileId": "f6666666-6666-4666-8666-666666666666",
+      "email": "qa.alice@collabspace.dev",
+      "fullName": "QA Alice",
+      "username": "qa.alice",
+      "roleNames": ["member"],
+      "bio": "QA engineer — regression, board moves, notification checks.",
+      "preferredLanguage": "en",
+      "preferredTimezone": "Asia/Saigon",
+      "avatarSeed": "QA%20Alice"
+    },
+    {
+      "id": "77777777-7777-4777-8777-777777777777",
+      "profileId": "f7777777-7777-4777-8777-777777777777",
+      "email": "dev.bob@collabspace.dev",
+      "fullName": "Dev Bob",
+      "username": "dev.bob",
+      "roleNames": ["member"],
+      "bio": "Backend developer in Product Lab; good for assignee & comment tests.",
+      "preferredLanguage": "en",
+      "preferredTimezone": "Asia/Saigon",
+      "avatarSeed": "Dev%20Bob"
+    },
+    {
+      "id": "88888888-8888-4888-8888-888888888888",
+      "profileId": "f8888888-8888-4888-8888-888888888888",
+      "email": "pm.carol@collabspace.dev",
+      "fullName": "PM Carol",
+      "username": "pm.carol",
+      "roleNames": ["member"],
+      "bio": "Product manager in Demo + Product Lab — triage and unassigned tasks.",
+      "preferredLanguage": "en",
+      "preferredTimezone": "Asia/Saigon",
+      "avatarSeed": "PM%20Carol"
+    },
+    {
+      "id": "99999999-9999-4999-8999-999999999999",
+      "profileId": "f9999999-9999-4999-8999-999999999999",
+      "email": "designer.dana@collabspace.dev",
+      "fullName": "Designer Dana",
+      "username": "designer.dana",
+      "roleNames": ["member"],
+      "bio": "Design system owner in Product Lab.",
+      "preferredLanguage": "en",
+      "preferredTimezone": "Europe/London",
+      "avatarSeed": "Designer%20Dana"
+    },
+    {
+      "id": "61000000-0000-4000-8000-000000000001",
+      "profileId": "71000000-0000-4000-8000-000000000001",
+      "email": "solo.owner@collabspace.dev",
+      "fullName": "Solo Owner",
+      "username": "solo.owner",
+      "roleNames": ["member"],
+      "bio": "Single-member workspace — tests owner-only flows in isolation.",
+      "preferredLanguage": "en",
+      "preferredTimezone": "UTC",
+      "avatarSeed": "Solo%20Owner"
+    },
+    {
+      "id": "61000000-0000-4000-8000-000000000002",
+      "profileId": "71000000-0000-4000-8000-000000000002",
+      "email": "viewer.only@collabspace.dev",
+      "fullName": "Viewer Only",
+      "username": "viewer.only",
+      "roleNames": ["viewer"],
+      "bio": "Platform viewer with no workspace membership — expect 403 on workspace APIs.",
+      "preferredLanguage": "en",
+      "preferredTimezone": "UTC",
+      "avatarSeed": "Viewer%20Only"
+    },
+    {
+      "id": "61000000-0000-4000-8000-000000000003",
+      "profileId": "71000000-0000-4000-8000-000000000003",
+      "email": "dev.eve@collabspace.dev",
+      "fullName": "Dev Eve",
+      "username": "dev.eve",
+      "roleNames": ["member"],
+      "bio": "Has account but only a pending workspace invite — tests /invitations/me accept flow.",
+      "preferredLanguage": "en",
+      "preferredTimezone": "Asia/Saigon",
+      "avatarSeed": "Dev%20Eve"
     }
   ],
-  "demo": {
-    "workspaceId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
-    "workspaceName": "CollabSpace Demo",
-    "workspaceDescription": "Shared workspace for the MVP demo story (User A invites User B).",
-    "ownerUserId": "22222222-2222-4222-8222-222222222222",
-    "members": [
-      {
-        "userId": "22222222-2222-4222-8222-222222222222",
-        "role": "owner"
-      },
-      {
-        "userId": "33333333-3333-4333-8333-333333333333",
-        "role": "member"
-      }
-    ],
-    "projectId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
-    "projectName": "MVP Sprint",
-    "projectDescription": "Starter project with three demo tasks.",
-    "tasks": [
-      {
-        "id": "cccccccc-ccc1-4cc1-8cc1-ccccccccccc1",
-        "title": "Wire auth verify headers for gateway",
-        "description": "Ensure Traefik forward-auth receives X-User-Id and related headers.",
-        "status": "TODO",
-        "priority": "HIGH",
-        "labels": ["gateway", "auth"],
-        "assigneeUserId": "33333333-3333-4333-8333-333333333333",
-        "createdByUserId": "22222222-2222-4222-8222-222222222222"
-      },
-      {
-        "id": "cccccccc-ccc2-4cc2-8cc2-ccccccccccc2",
-        "title": "Document API routes per service",
-        "description": "Keep docs/api-routes.md aligned with implemented controllers.",
-        "status": "TODO",
-        "priority": "MEDIUM",
-        "labels": ["docs"],
-        "assigneeUserId": null,
-        "createdByUserId": "22222222-2222-4222-8222-222222222222"
-      },
-      {
-        "id": "cccccccc-ccc3-4cc3-8cc3-ccccccccccc3",
-        "title": "Validate notification consumers",
-        "description": "Smoke-test task_assigned and comment_mentioned flows.",
-        "status": "DONE",
-        "priority": "LOW",
-        "labels": ["notifications"],
-        "assigneeUserId": null,
-        "createdByUserId": "22222222-2222-4222-8222-222222222222"
-      }
-    ],
-    "sampleComment": {
-      "taskId": "cccccccc-ccc1-4cc1-8cc1-ccccccccccc1",
-      "authorUserId": "22222222-2222-4222-8222-222222222222",
-      "content": "Please pick this up @ngo.quang.tien and move it to in progress when you start.",
-      "mentionUserIds": ["33333333-3333-4333-8333-333333333333"]
+  "workspaces": [
+    {
+      "workspaceId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      "workspaceName": "CollabSpace Demo",
+      "workspaceDescription": "Primary MVP workspace — User A owner, mixed task states, pending invite for Eve.",
+      "ownerUserId": "22222222-2222-4222-8222-222222222222",
+      "members": [
+        { "userId": "22222222-2222-4222-8222-222222222222", "role": "owner" },
+        { "userId": "33333333-3333-4333-8333-333333333333", "role": "member" },
+        { "userId": "55555555-5555-4555-8555-555555555555", "role": "member" },
+        { "userId": "88888888-8888-4888-8888-888888888888", "role": "member" },
+        { "userId": "66666666-6666-4666-8666-666666666666", "role": "member" }
+      ],
+      "pendingInvitations": [
+        {
+          "id": "f1111111-1111-4111-8111-111111111111",
+          "email": "dev.eve@collabspace.dev",
+          "inviterUserId": "22222222-2222-4222-8222-222222222222"
+        }
+      ],
+      "projects": [
+        {
+          "projectId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+          "projectName": "MVP Sprint",
+          "projectDescription": "Core demo tasks — assign, mention, notifications.",
+          "tasks": [
+            {
+              "id": "cccccccc-ccc1-4cc1-8cc1-ccccccccccc1",
+              "title": "Wire auth verify headers for gateway",
+              "description": "Ensure Traefik forward-auth receives X-User-Id and related headers.",
+              "status": "DOING",
+              "priority": "HIGH",
+              "labels": ["gateway", "auth"],
+              "assigneeUserId": "33333333-3333-4333-8333-333333333333",
+              "createdByUserId": "22222222-2222-4222-8222-222222222222"
+            },
+            {
+              "id": "cccccccc-ccc2-4cc2-8cc2-ccccccccccc2",
+              "title": "Document API routes per service",
+              "description": "Keep docs/api-routes.md aligned with implemented controllers.",
+              "status": "TODO",
+              "priority": "MEDIUM",
+              "labels": ["docs"],
+              "assigneeUserId": null,
+              "createdByUserId": "22222222-2222-4222-8222-222222222222"
+            },
+            {
+              "id": "cccccccc-ccc3-4cc3-8cc3-ccccccccccc3",
+              "title": "Validate notification consumers",
+              "description": "Smoke-test task_assigned and comment_mentioned flows.",
+              "status": "DONE",
+              "priority": "LOW",
+              "labels": ["notifications"],
+              "assigneeUserId": "66666666-6666-4666-8666-666666666666",
+              "createdByUserId": "22222222-2222-4222-8222-222222222222"
+            }
+          ],
+          "sampleComments": [
+            {
+              "taskId": "cccccccc-ccc1-4cc1-8cc1-ccccccccccc1",
+              "authorUserId": "22222222-2222-4222-8222-222222222222",
+              "content": "Please pick this up @ngo.quang.tien and move it to in progress when you start.",
+              "mentionUserIds": ["33333333-3333-4333-8333-333333333333"]
+            },
+            {
+              "taskId": "cccccccc-ccc2-4cc2-8cc2-ccccccccccc2",
+              "authorUserId": "88888888-8888-4888-8888-888888888888",
+              "content": "I'll groom this after the gateway task lands.",
+              "mentionUserIds": []
+            }
+          ]
+        },
+        {
+          "projectId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbb2",
+          "projectName": "QA Hardening",
+          "projectDescription": "Regression checklist and smoke scripts.",
+          "tasks": [
+            {
+              "id": "cccccccc-ccc4-4cc4-8cc4-ccccccccccc4",
+              "title": "Run feature-verify.ps1 on staging",
+              "description": "Full script after each deploy.",
+              "status": "TODO",
+              "priority": "HIGH",
+              "labels": ["qa"],
+              "assigneeUserId": "66666666-6666-4666-8666-666666666666",
+              "createdByUserId": "88888888-8888-4888-8888-888888888888"
+            },
+            {
+              "id": "cccccccc-ccc5-4cc5-8cc5-ccccccccccc5",
+              "title": "Archive notification UX check",
+              "description": "Verify archive tab and mark-read on click.",
+              "status": "TODO",
+              "priority": "MEDIUM",
+              "labels": ["qa", "notifications"],
+              "assigneeUserId": null,
+              "createdByUserId": "66666666-6666-4666-8666-666666666666"
+            }
+          ]
+        }
+      ],
+      "sampleNotifications": [
+        {
+          "recipientId": "33333333-3333-4333-8333-333333333333",
+          "actorId": "22222222-2222-4222-8222-222222222222",
+          "type": "TASK_ASSIGNED",
+          "title": "Task assigned to you",
+          "message": "Le Ngoc Anh assigned you: Wire auth verify headers for gateway",
+          "targetId": "cccccccc-ccc1-4cc1-8cc1-ccccccccccc1",
+          "targetType": "TASK",
+          "status": "UNREAD"
+        },
+        {
+          "recipientId": "33333333-3333-4333-8333-333333333333",
+          "actorId": "22222222-2222-4222-8222-222222222222",
+          "type": "COMMENT_MENTIONED",
+          "title": "You were mentioned",
+          "message": "Le Ngoc Anh mentioned you in a comment on Wire auth verify headers for gateway",
+          "targetId": "cccccccc-ccc1-4cc1-8cc1-ccccccccccc1",
+          "targetType": "COMMENT",
+          "status": "READ"
+        },
+        {
+          "recipientId": "61000000-0000-4000-8000-000000000003",
+          "actorId": "22222222-2222-4222-8222-222222222222",
+          "type": "WORKSPACE_INVITED",
+          "title": "Workspace invitation",
+          "message": "You were invited to CollabSpace Demo",
+          "targetId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+          "targetType": "WORKSPACE",
+          "status": "UNREAD"
+        }
+      ]
     },
-    "sampleNotifications": [
-      {
-        "recipientId": "33333333-3333-4333-8333-333333333333",
-        "actorId": "22222222-2222-4222-8222-222222222222",
-        "type": "TASK_ASSIGNED",
-        "title": "Task assigned to you",
-        "message": "Le Ngoc Anh assigned you: Wire auth verify headers for gateway",
-        "targetId": "cccccccc-ccc1-4cc1-8cc1-ccccccccccc1",
-        "targetType": "TASK"
-      },
-      {
-        "recipientId": "33333333-3333-4333-8333-333333333333",
-        "actorId": "22222222-2222-4222-8222-222222222222",
-        "type": "COMMENT_MENTIONED",
-        "title": "You were mentioned",
-        "message": "Le Ngoc Anh mentioned you in a comment on Wire auth verify headers for gateway",
-        "targetId": "cccccccc-ccc1-4cc1-8cc1-ccccccccccc1",
-        "targetType": "COMMENT"
-      }
-    ]
-  }
+    {
+      "workspaceId": "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+      "workspaceName": "Product Lab",
+      "workspaceDescription": "Second workspace — Quang Tien owner, cross-team backlog.",
+      "ownerUserId": "33333333-3333-4333-8333-333333333333",
+      "members": [
+        { "userId": "33333333-3333-4333-8333-333333333333", "role": "owner" },
+        { "userId": "22222222-2222-4222-8222-222222222222", "role": "member" },
+        { "userId": "77777777-7777-4777-8777-777777777777", "role": "member" },
+        { "userId": "88888888-8888-4888-8888-888888888888", "role": "member" },
+        { "userId": "99999999-9999-4999-8999-999999999999", "role": "member" }
+      ],
+      "projects": [
+        {
+          "projectId": "dddddddd-dddd-4ddd-8ddd-ddddddddddd1",
+          "projectName": "Feature Backlog",
+          "projectDescription": "Upcoming product slices.",
+          "tasks": [
+            {
+              "id": "dddddddd-ddd1-4dd1-8dd1-dddddddddddd1",
+              "title": "Command palette server search",
+              "description": "Wire taskApi.search in palette.",
+              "status": "DONE",
+              "priority": "HIGH",
+              "labels": ["frontend"],
+              "assigneeUserId": "33333333-3333-4333-8333-333333333333",
+              "createdByUserId": "88888888-8888-4888-8888-888888888888"
+            },
+            {
+              "id": "dddddddd-ddd2-4dd2-8dd2-dddddddddddd2",
+              "title": "Kanban comment count badge",
+              "description": "Show commentCount on cards.",
+              "status": "DOING",
+              "priority": "MEDIUM",
+              "labels": ["frontend", "tasks"],
+              "assigneeUserId": "77777777-7777-4777-8777-777777777777",
+              "createdByUserId": "33333333-3333-4333-8333-333333333333"
+            },
+            {
+              "id": "dddddddd-ddd3-4dd3-8dd3-dddddddddddd3",
+              "title": "Workspace switcher persistence",
+              "description": "Remember last active workspace in local storage.",
+              "status": "TODO",
+              "priority": "LOW",
+              "labels": ["ux"],
+              "assigneeUserId": null,
+              "createdByUserId": "88888888-8888-4888-8888-888888888888"
+            },
+            {
+              "id": "dddddddd-ddd4-4dd4-8dd4-dddddddddddd4",
+              "title": "Activity feed pagination",
+              "description": "Load more on workspace activity tab.",
+              "status": "TODO",
+              "priority": "MEDIUM",
+              "labels": ["workspace"],
+              "assigneeUserId": "22222222-2222-4222-8222-222222222222",
+              "createdByUserId": "33333333-3333-4333-8333-333333333333"
+            }
+          ],
+          "sampleComments": [
+            {
+              "taskId": "dddddddd-ddd2-4dd2-8dd2-dddddddddddd2",
+              "authorUserId": "77777777-7777-4777-8777-777777777777",
+              "content": "@designer.dana can you confirm icon size on the card?",
+              "mentionUserIds": ["99999999-9999-4999-8999-999999999999"]
+            }
+          ]
+        },
+        {
+          "projectId": "dddddddd-dddd-4ddd-8ddd-ddddddddddd2",
+          "projectName": "Design System",
+          "projectDescription": "Shared UI tokens and components.",
+          "tasks": [
+            {
+              "id": "dddddddd-ddd5-4dd5-8dd5-dddddddddddd5",
+              "title": "Role badge colors for owner vs member",
+              "description": "Align StatusBadge with workspace roles.",
+              "status": "DOING",
+              "priority": "MEDIUM",
+              "labels": ["design"],
+              "assigneeUserId": "99999999-9999-4999-8999-999999999999",
+              "createdByUserId": "99999999-9999-4999-8999-999999999999"
+            },
+            {
+              "id": "dddddddd-ddd6-4dd6-8dd6-dddddddddddd6",
+              "title": "Dark mode contrast audit",
+              "description": "Check slate palette on Kanban columns.",
+              "status": "TODO",
+              "priority": "LOW",
+              "labels": ["design", "a11y"],
+              "assigneeUserId": null,
+              "createdByUserId": "99999999-9999-4999-8999-999999999999"
+            }
+          ]
+        }
+      ],
+      "sampleNotifications": [
+        {
+          "recipientId": "77777777-7777-4777-8777-777777777777",
+          "actorId": "33333333-3333-4333-8333-333333333333",
+          "type": "TASK_ASSIGNED",
+          "title": "Task assigned to you",
+          "message": "Ngo Quang Tien assigned you: Kanban comment count badge",
+          "targetId": "dddddddd-ddd2-4dd2-8dd2-dddddddddddd2",
+          "targetType": "TASK",
+          "status": "UNREAD"
+        },
+        {
+          "recipientId": "99999999-9999-4999-8999-999999999999",
+          "actorId": "77777777-7777-4777-8777-777777777777",
+          "type": "COMMENT_MENTIONED",
+          "title": "You were mentioned",
+          "message": "Dev Bob mentioned you on Kanban comment count badge",
+          "targetId": "dddddddd-ddd2-4dd2-8dd2-dddddddddddd2",
+          "targetType": "COMMENT",
+          "status": "UNREAD"
+        }
+      ]
+    },
+    {
+      "workspaceId": "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
+      "workspaceName": "Infra Ops",
+      "workspaceDescription": "Platform operations workspace — Tho owner.",
+      "ownerUserId": "11111111-1111-4111-8111-111111111111",
+      "members": [
+        { "userId": "11111111-1111-4111-8111-111111111111", "role": "owner" },
+        { "userId": "44444444-4444-4444-8444-444444444444", "role": "member" },
+        { "userId": "22222222-2222-4222-8222-222222222222", "role": "member" }
+      ],
+      "projects": [
+        {
+          "projectId": "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeee1",
+          "projectName": "Platform Runbook",
+          "projectDescription": "Deploy, observability, backups.",
+          "tasks": [
+            {
+              "id": "eeeeeeee-eee1-4ee1-8ee1-eeeeeeeeeee1",
+              "title": "Grafana dashboard for API latency",
+              "description": "Panel per service + gateway.",
+              "status": "DOING",
+              "priority": "HIGH",
+              "labels": ["observability"],
+              "assigneeUserId": "11111111-1111-4111-8111-111111111111",
+              "createdByUserId": "11111111-1111-4111-8111-111111111111"
+            },
+            {
+              "id": "eeeeeeee-eee2-4ee2-8ee2-eeeeeeeeeee2",
+              "title": "Vault ESO sync drill",
+              "description": "Rotate JWT_SECRET in dev cluster.",
+              "status": "TODO",
+              "priority": "HIGH",
+              "labels": ["security"],
+              "assigneeUserId": "44444444-4444-4444-8444-444444444444",
+              "createdByUserId": "11111111-1111-4111-8111-111111111111"
+            },
+            {
+              "id": "eeeeeeee-eee3-4ee3-8ee3-eeeeeeeeeee3",
+              "title": "k6 load test baseline",
+              "description": "Record p95 for login + list workspaces.",
+              "status": "DONE",
+              "priority": "MEDIUM",
+              "labels": ["perf"],
+              "assigneeUserId": null,
+              "createdByUserId": "22222222-2222-4222-8222-222222222222"
+            }
+          ]
+        }
+      ],
+      "sampleNotifications": [
+        {
+          "recipientId": "44444444-4444-4444-8444-444444444444",
+          "actorId": "11111111-1111-4111-8111-111111111111",
+          "type": "TASK_ASSIGNED",
+          "title": "Task assigned to you",
+          "message": "Phan Phu Tho assigned you: Vault ESO sync drill",
+          "targetId": "eeeeeeee-eee2-4ee2-8ee2-eeeeeeeeeee2",
+          "targetType": "TASK",
+          "status": "UNREAD"
+        },
+        {
+          "recipientId": "11111111-1111-4111-8111-111111111111",
+          "actorId": "44444444-4444-4444-8444-444444444444",
+          "type": "TASK_ASSIGNED",
+          "title": "Task assigned to you",
+          "message": "Archived example — platform admin inbox",
+          "targetId": "eeeeeeee-eee3-4ee3-8ee3-eeeeeeeeeee3",
+          "targetType": "TASK",
+          "status": "ARCHIVED"
+        }
+      ]
+    },
+    {
+      "workspaceId": "ffffffff-ffff-4fff-8fff-ffffffffffff",
+      "workspaceName": "Solo Sandbox",
+      "workspaceDescription": "Single-owner workspace for isolated testing.",
+      "ownerUserId": "61000000-0000-4000-8000-000000000001",
+      "members": [
+        { "userId": "61000000-0000-4000-8000-000000000001", "role": "owner" }
+      ],
+      "projects": [
+        {
+          "projectId": "ffffffff-ffff-4fff-8fff-fffffffffff1",
+          "projectName": "Personal Tasks",
+          "projectDescription": "Scratch tasks.",
+          "tasks": [
+            {
+              "id": "ffffffff-fff1-4ff1-8ff1-ffffffffff1",
+              "title": "Try create workspace flow from scratch",
+              "description": "Compare with seeded Solo Sandbox.",
+              "status": "TODO",
+              "priority": "LOW",
+              "labels": ["sandbox"],
+              "assigneeUserId": null,
+              "createdByUserId": "61000000-0000-4000-8000-000000000001"
+            }
+          ]
+        }
+      ],
+      "sampleNotifications": []
+    }
+  ]
 }

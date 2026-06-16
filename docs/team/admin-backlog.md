@@ -16,7 +16,7 @@ Tài liệu chốt **phạm vi backend** cho Admin UI (team đã có frontend ri
 | **Backend admin HTTP** | ✅ **Done** — A1–A7, AUTH-1→12, USER-1/2, WS-1→3, NOTIF-1, USER-T1 |
 | **Shared guard** | ✅ `@collabspace/nest-auth` — `PlatformAdminGuard`, `@RequirePlatformAdmin()`, `@RequirePermission()`, `@AdminUserId()` |
 | Admin UI handoff | Backend sẵn sàng — checklist § Đồng bộ Admin UI chờ team UI |
-| Workspace `admin` | Role **trong workspace** — **khác** platform admin |
+| Workspace membership | `owner`, `manager` (**Planned**), `member` — tách khỏi platform `admin`; xem [roles-and-permissions.md](../roles-and-permissions.md) |
 
 **Implementation refs:** `packages/nest-auth`, `auth-admin.controller.ts`, `users-admin.controller.ts`, `workspace-admin.controller.ts`, `notification-admin.controller.ts`, `BroadcastJobService`, event `workspace_deleted`.
 
@@ -159,7 +159,7 @@ Fan-out: `BroadcastJobService` (persisted jobs, batch 100, recipient dedupe, `Id
 | `phone` column | Chưa có schema |
 | Audit log DB | MVP: structured log only |
 | Hard delete | GDPR soft delete + anonymize |
-| `force-join` role `observer` | Chỉ `admin` — mở rộng sau nếu product cần |
+| `force-join` role | Luôn `member` trên workspace (platform admin điều tra, không thay owner) |
 
 ---
 
@@ -168,6 +168,7 @@ Fan-out: `BroadcastJobService` (persisted jobs, batch 100, recipient dedupe, `Id
 | Tài liệu | Mục đích |
 |----------|----------|
 | [features.md](../features.md) | § Platform Administration |
+| [roles-and-permissions.md](../roles-and-permissions.md) | Platform vs workspace roles |
 | [application-backlog.md](./application-backlog.md) | Backlog MVP end-user |
 | [api-routes.md](../api-routes.md) | Route HTTP + admin |
 | [service-contracts.md](../../.claude/docs/service-contracts.md) | Hợp đồng chính thức |

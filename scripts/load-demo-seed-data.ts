@@ -16,7 +16,7 @@ export type DemoSeedUser = {
 
 export type DemoSeedWorkspaceMember = {
   userId: string;
-  role: string;
+  role: 'owner' | 'member';
 };
 
 export type DemoSeedTask = {
@@ -30,35 +30,78 @@ export type DemoSeedTask = {
   createdByUserId: string;
 };
 
+export type DemoSeedComment = {
+  taskId: string;
+  authorUserId: string;
+  content: string;
+  mentionUserIds: string[];
+};
+
+export type DemoSeedNotification = {
+  recipientId: string;
+  actorId: string;
+  type: string;
+  title: string;
+  message: string;
+  targetId: string;
+  targetType: string;
+  status?: 'UNREAD' | 'READ' | 'ARCHIVED';
+};
+
+export type DemoSeedPendingInvitation = {
+  id: string;
+  email: string;
+  inviterUserId: string;
+};
+
+export type DemoSeedProject = {
+  projectId: string;
+  projectName: string;
+  projectDescription: string;
+  tasks: DemoSeedTask[];
+  sampleComments?: DemoSeedComment[];
+};
+
+export type DemoSeedWorkspace = {
+  workspaceId: string;
+  workspaceName: string;
+  workspaceDescription: string;
+  ownerUserId: string;
+  members: DemoSeedWorkspaceMember[];
+  projects: DemoSeedProject[];
+  pendingInvitations?: DemoSeedPendingInvitation[];
+  sampleNotifications?: DemoSeedNotification[];
+};
+
+/** @deprecated flat MVP shape — use workspaces[] */
+export type DemoSeedLegacyDemo = {
+  workspaceId: string;
+  workspaceName: string;
+  workspaceDescription: string;
+  ownerUserId: string;
+  members: DemoSeedWorkspaceMember[];
+  projectId: string;
+  projectName: string;
+  projectDescription: string;
+  tasks: DemoSeedTask[];
+  sampleComment?: DemoSeedComment;
+  sampleNotifications?: DemoSeedNotification[];
+};
+
+export type DemoSeedDataMeta = {
+  roleModel?: string;
+  accountCount?: number;
+  workspaceCount?: number;
+  platformAdmins?: string[];
+};
+
 export type DemoSeedData = {
+  _meta?: DemoSeedDataMeta;
   defaultPassword: string;
   users: DemoSeedUser[];
-  demo: {
-    workspaceId: string;
-    workspaceName: string;
-    workspaceDescription: string;
-    ownerUserId: string;
-    members: DemoSeedWorkspaceMember[];
-    projectId: string;
-    projectName: string;
-    projectDescription: string;
-    tasks: DemoSeedTask[];
-    sampleComment: {
-      taskId: string;
-      authorUserId: string;
-      content: string;
-      mentionUserIds: string[];
-    };
-    sampleNotifications: Array<{
-      recipientId: string;
-      actorId: string;
-      type: string;
-      title: string;
-      message: string;
-      targetId: string;
-      targetType: string;
-    }>;
-  };
+  workspaces?: DemoSeedWorkspace[];
+  /** @deprecated use workspaces */
+  demo?: DemoSeedLegacyDemo;
 };
 
 const DEMO_SEED_FILENAME = 'demo-seed-data.json';
@@ -81,6 +124,45 @@ export function loadDemoSeedData(): DemoSeedData {
   throw new Error(
     `Could not find ${DEMO_SEED_FILENAME}. Run seed scripts from the repository root or a service directory.`,
   );
+}
+
+function legacyDemoToWorkspace(demo: DemoSeedLegacyDemo): DemoSeedWorkspace {
+  return {
+    workspaceId: demo.workspaceId,
+    workspaceName: demo.workspaceName,
+    workspaceDescription: demo.workspaceDescription,
+    ownerUserId: demo.ownerUserId,
+    members: demo.members,
+    projects: [
+      {
+        projectId: demo.projectId,
+        projectName: demo.projectName,
+        projectDescription: demo.projectDescription,
+        tasks: demo.tasks,
+        sampleComments: demo.sampleComment ? [demo.sampleComment] : [],
+      },
+    ],
+    sampleNotifications: demo.sampleNotifications,
+  };
+}
+
+export function getDemoWorkspaces(data: DemoSeedData): DemoSeedWorkspace[] {
+  if (data.workspaces && data.workspaces.length > 0) {
+    return data.workspaces;
+  }
+  if (data.demo) {
+    return [legacyDemoToWorkspace(data.demo)];
+  }
+  throw new Error('demo-seed-data.json must define workspaces[] or legacy demo');
+}
+
+/** Primary MVP workspace (first entry). */
+export function getPrimaryDemoWorkspace(data: DemoSeedData): DemoSeedWorkspace {
+  return getDemoWorkspaces(data)[0];
+}
+
+export function collectDemoNotifications(data: DemoSeedData): DemoSeedNotification[] {
+  return getDemoWorkspaces(data).flatMap((workspace) => workspace.sampleNotifications ?? []);
 }
 
 export function avatarUrlFor(user: DemoSeedUser): string {
