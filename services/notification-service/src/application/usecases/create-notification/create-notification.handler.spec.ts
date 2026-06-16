@@ -26,6 +26,7 @@ describe("CreateNotificationHandler", () => {
     };
     mockProcessedEventRepository = {
       tryClaim: jest.fn().mockResolvedValue(true),
+      releaseClaim: jest.fn().mockResolvedValue(undefined),
     };
 
     handler = new CreateNotificationHandler(
@@ -77,5 +78,46 @@ describe("CreateNotificationHandler", () => {
 
     expect(result.notificationId).toBe("");
     expect(mockRepository.createAsync).not.toHaveBeenCalled();
+  });
+
+  it("releases the idempotency claim when notification persistence fails", async () => {
+    const command = new CreateNotificationCommand(
+      "recipient-123",
+      "actor-123",
+      NotificationType.TASK_ASSIGNED,
+      "New Task",
+      "You have a new task",
+      "task-123",
+      "TASK",
+      { workspaceId: "ws-123" },
+      "evt-will-fail",
+    );
+
+    mockProcessedEventRepository.tryClaim.mockResolvedValue(true);
+    mockRepository.createAsync.mockRejectedValue(new Error("MongoDB write failed"));
+
+    await expect(handler.execute(command)).rejects.toThrow("MongoDB write failed");
+
+    expect(mockProcessedEventRepository.releaseClaim).toHaveBeenCalledWith("evt-will-fail");
+  });
+
+  it("does not call releaseClaim when there is no eventId", async () => {
+    const command = new CreateNotificationCommand(
+      "recipient-123",
+      "actor-123",
+      NotificationType.TASK_ASSIGNED,
+      "New Task",
+      "You have a new task",
+      "task-123",
+      "TASK",
+      { workspaceId: "ws-123" },
+      // no eventId
+    );
+
+    mockRepository.createAsync.mockRejectedValue(new Error("MongoDB write failed"));
+
+    await expect(handler.execute(command)).rejects.toThrow("MongoDB write failed");
+
+    expect(mockProcessedEventRepository.releaseClaim).not.toHaveBeenCalled();
   });
 });

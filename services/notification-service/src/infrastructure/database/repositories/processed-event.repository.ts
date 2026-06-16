@@ -31,4 +31,8 @@ export class ProcessedEventRepository implements IProcessedEventRepository {
       throw error;
     }
   }
+
+  async releaseClaim(eventId: string): Promise<void> {
+    await this.processedEventModel.deleteOne({ eventId });
+  }
 }
