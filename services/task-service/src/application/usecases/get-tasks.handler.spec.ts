@@ -6,15 +6,20 @@ import { Task } from "../../domain/entities/Task";
 import { TaskId } from "../../domain/value-objects/TaskId";
 import { UserSnapshot } from "../../domain/value-objects/UserSnapshot";
 import { TASK_LIST_DEFAULT_LIMIT } from "../ports/task-list-filter";
+import type { TaskCommentCountService } from "../services/task-comment-count.service";
 
 describe("GetTasksHandler", () => {
   let handler: GetTasksHandler;
   let mockTaskRepo: jest.Mocked<ITaskRepository>;
+  let mockCommentCountService: jest.Mocked<Pick<TaskCommentCountService, "attachCommentCounts">>;
 
   beforeEach(() => {
     mockTaskRepo = createMockTaskRepository();
+    mockCommentCountService = {
+      attachCommentCounts: jest.fn().mockImplementation(async (tasks) => tasks),
+    };
 
-    handler = new GetTasksHandler(mockTaskRepo);
+    handler = new GetTasksHandler(mockTaskRepo, mockCommentCountService as TaskCommentCountService);
   });
 
   const createMockTask = (id: string, status: string, assigneeId: string | null) => {

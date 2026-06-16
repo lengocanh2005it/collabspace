@@ -3,6 +3,7 @@ import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { RejectInvitationUseCase } from './reject-invitation.use-case';
 import { INVITATION_REPOSITORY } from '../../../domain/repositories/invitation.repository';
 import { WORKSPACE_ACTIVITY_REPOSITORY } from '../../../domain/repositories/workspace-activity.repository';
+import { AuthHttpClient } from '../../../integrations/auth/auth-http.client';
 import { Invitation } from '../../../domain/entities/invitation.entity';
 
 describe('RejectInvitationUseCase', () => {
@@ -13,6 +14,9 @@ describe('RejectInvitationUseCase', () => {
     updateStatus: jest.fn(),
   };
   const mockActivityRepo = { record: jest.fn().mockResolvedValue(undefined) };
+  const mockAuthHttpClient = {
+    getCurrentUserEmail: jest.fn().mockResolvedValue('a@b.com'),
+  };
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -21,6 +25,7 @@ describe('RejectInvitationUseCase', () => {
         RejectInvitationUseCase,
         { provide: INVITATION_REPOSITORY, useValue: mockInvitationRepo },
         { provide: WORKSPACE_ACTIVITY_REPOSITORY, useValue: mockActivityRepo },
+        { provide: AuthHttpClient, useValue: mockAuthHttpClient },
       ],
     }).compile();
     useCase = module.get<RejectInvitationUseCase>(RejectInvitationUseCase);

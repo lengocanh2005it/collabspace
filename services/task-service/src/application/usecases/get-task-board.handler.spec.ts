@@ -5,10 +5,17 @@ import { Task } from "../../domain/entities/Task";
 import { TaskId } from "../../domain/value-objects/TaskId";
 import { UserSnapshot } from "../../domain/value-objects/UserSnapshot";
 import { TASK_BOARD_DEFAULT_LIMIT } from "../ports/task-list-filter";
+import type { TaskCommentCountService } from "../services/task-comment-count.service";
 
 describe("GetTaskBoardHandler", () => {
   const repository = createMockTaskRepository();
-  const handler = new GetTaskBoardHandler(repository);
+  const commentCountService: jest.Mocked<Pick<TaskCommentCountService, "attachCommentCounts">> = {
+    attachCommentCounts: jest.fn().mockImplementation(async (tasks) => tasks),
+  };
+  const handler = new GetTaskBoardHandler(
+    repository,
+    commentCountService as TaskCommentCountService,
+  );
 
   beforeEach(() => jest.clearAllMocks());
 
