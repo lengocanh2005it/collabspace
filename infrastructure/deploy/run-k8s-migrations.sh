@@ -6,6 +6,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=lib/k8s-job-wait.sh
 source "$SCRIPT_DIR/lib/k8s-job-wait.sh"
+# shellcheck source=lib/scale-app-services.sh
+source "$SCRIPT_DIR/lib/scale-app-services.sh"
 
 export KUBECONFIG="${KUBECONFIG:-/etc/rancher/k3s/k3s.yaml}"
 APP_NS="${APP_NS:-collabspace}"
@@ -117,6 +119,13 @@ EOF
 }
 
 wait_postgres
+
+if [[ "${SKIP_APP_SCALE_DOWN:-false}" != "true" ]]; then
+  ensure_app_services_stopped "$APP_NS"
+else
+  k8s_job_log "SKIP_APP_SCALE_DOWN=true — apps already stopped by caller"
+  terminate_postgres_app_sessions "$APP_NS"
+fi
 
 for svc in auth-service user-service workspace-service; do
   apply_migration_job "$svc"

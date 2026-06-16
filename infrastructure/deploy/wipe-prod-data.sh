@@ -1,15 +1,23 @@
 #!/usr/bin/env bash
-# Wipe application data on k3s (PostgreSQL + MongoDB + Redis). DESTRUCTIVE.
+# Wipe application data on k3s (PostgreSQL + MongoDB + Redis + RabbitMQ). DESTRUCTIVE.
+# Prerequisite: all app Deployments scaled to 0 (call ensure_app_services_stopped first).
 set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=lib/k8s-job-wait.sh
+source "$SCRIPT_DIR/lib/k8s-job-wait.sh"
+# shellcheck source=lib/scale-app-services.sh
+source "$SCRIPT_DIR/lib/scale-app-services.sh"
 
 export KUBECONFIG="${KUBECONFIG:-/etc/rancher/k3s/k3s.yaml}"
 NS="${APP_NS:-collabspace}"
 
-echo "==> Scaling app deployments to 0 (stop writers)..."
-for dep in auth-service user-service workspace-service task-service notification-service; do
-  kubectl scale deployment "$dep" -n "$NS" --replicas=0 2>/dev/null || true
-done
-sleep 5
+if [[ "${SKIP_APP_SCALE_DOWN:-false}" != "true" ]]; then
+  ensure_app_services_stopped "$NS"
+else
+  k8s_job_log "SKIP_APP_SCALE_DOWN=true — assuming app deployments already at 0"
+  terminate_postgres_app_sessions "$NS"
+fi
 
 PGPASS=$(kubectl get secret postgres -n "$NS" -o jsonpath='{.data.postgres-password}' | base64 -d)
 
@@ -23,6 +31,7 @@ for db in collabspace_auth collabspace_user collabspace_workspace; do
   psql_exec -c \
     "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '${db}' AND pid <> pg_backend_pid();" \
     >/dev/null 2>&1 || true
+  sleep 1
   psql_exec -c "DROP DATABASE IF EXISTS \"${db}\";"
   psql_exec -c "CREATE DATABASE \"${db}\";"
 done
@@ -86,8 +95,7 @@ else
   echo "  RabbitMQ pod not found — skipped."
 fi
 
-# Keep deployments at 0 — caller (run-k8s-full-reset / run-k8s-seed) restores replicas.
-echo "==> App deployments remain scaled to 0 (writers stopped)."
+echo "==> App deployments remain at 0 until migrate/seed completes."
 
 echo ""
 echo "All application data wiped:"

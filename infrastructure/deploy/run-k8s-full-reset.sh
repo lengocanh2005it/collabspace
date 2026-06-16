@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Full data reset on k3s: wipe → schema bootstrap → migrate → seed → restore apps.
+# Full data reset on k3s: stop apps → wipe → schema bootstrap → migrate → seed → restore apps.
 # Verbose logging; prints job logs immediately on failure.
 #
 # Usage (on Droplet):
@@ -15,6 +15,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=lib/k8s-job-wait.sh
 source "$SCRIPT_DIR/lib/k8s-job-wait.sh"
+# shellcheck source=lib/scale-app-services.sh
+source "$SCRIPT_DIR/lib/scale-app-services.sh"
 
 export KUBECONFIG="${KUBECONFIG:-/etc/rancher/k3s/k3s.yaml}"
 APP_DIR="${APP_DIR:-/opt/collabspace}"
@@ -39,7 +41,7 @@ k8s_job_log "run-k8s-full-reset (namespace=${APP_NS}, IMAGE_TAG=${IMAGE_TAG}, SK
 
 restore_replicas() {
   k8s_job_log "Restoring deployment replicas from values-prod..."
-  for dep in auth-service user-service workspace-service task-service notification-service; do
+  for dep in "${COLLABSPACE_APP_DEPLOYMENTS[@]}"; do
     local replicas
     replicas="$(grep -A20 "^  ${dep}:" "$VALUES_PROD" 2>/dev/null | grep -m1 'replicas:' | awk '{print $2}' || echo 1)"
     if kubectl get deployment "$dep" -n "$APP_NS" >/dev/null 2>&1; then
@@ -47,16 +49,6 @@ restore_replicas() {
       k8s_job_log "  scaled ${dep} → ${replicas:-1}"
     fi
   done
-}
-
-trap restore_replicas EXIT
-
-scale_writers_to_zero() {
-  k8s_job_log "Scaling app deployments to 0 (stop writers)..."
-  for dep in auth-service user-service workspace-service task-service notification-service; do
-    kubectl scale "deployment/${dep}" -n "$APP_NS" --replicas=0 2>/dev/null || true
-  done
-  sleep 5
 }
 
 bootstrap_auth_schema_sql() {
@@ -98,32 +90,40 @@ psql_exec() {
   kubectl exec -i -n "$APP_NS" postgres-0 -- env PGPASSWORD="$PGPASS" psql -U postgres -v ON_ERROR_STOP=1 "$@"
 }
 
+k8s_job_log "Step 0/5: stop all app services (scale to 0, wait for pods)"
+ensure_app_services_stopped "$APP_NS"
+
 if [[ "$SKIP_WIPE" != "true" ]]; then
-  k8s_job_log "Step 1/5: wipe application data"
-  bash "$SCRIPT_DIR/wipe-prod-data.sh"
-  scale_writers_to_zero
+  k8s_job_log "Step 1/5: wipe application data (Postgres, Mongo, Redis, RabbitMQ)"
+  SKIP_APP_SCALE_DOWN=true bash "$SCRIPT_DIR/wipe-prod-data.sh"
 else
   k8s_job_log "Step 1/5: SKIP_WIPE=true — keeping existing databases"
-  scale_writers_to_zero
+  terminate_postgres_app_sessions "$APP_NS"
 fi
 
 PGPASS="$(kubectl get secret postgres -n "$APP_NS" -o jsonpath='{.data.postgres-password}' | base64 -d)"
 
 k8s_job_log "Step 2/5: bootstrap empty Postgres schemas"
+ensure_app_services_stopped "$APP_NS"
 bootstrap_auth_schema_sql
 bootstrap_workspace_schema_sync
+ensure_app_services_stopped "$APP_NS"
 
 k8s_job_log "Step 3/5: run TypeORM migrations (auth → user → workspace)"
+ensure_app_services_stopped "$APP_NS"
 if ! APP_DIR="$APP_DIR" APP_NS="$APP_NS" IMAGE_TAG="$IMAGE_TAG" VALUES_PROD="$VALUES_PROD" PHASE0_ENV="$PHASE0_ENV" \
-  bash "$SCRIPT_DIR/run-k8s-migrations.sh"; then
+  SKIP_APP_SCALE_DOWN=true bash "$SCRIPT_DIR/run-k8s-migrations.sh"; then
   k8s_job_log "ERROR: migrations failed — see job logs above"
+  k8s_job_log "Apps remain scaled to 0 — fix and re-run or restore manually"
   exit 1
 fi
 
 k8s_job_log "Step 4/5: seed demo data"
+ensure_app_services_stopped "$APP_NS"
 if ! APP_DIR="$APP_DIR" APP_NS="$APP_NS" IMAGE_TAG="$IMAGE_TAG" VALUES_PROD="$VALUES_PROD" PHASE0_ENV="$PHASE0_ENV" \
-  bash "$SCRIPT_DIR/run-k8s-seed.sh"; then
+  SKIP_APP_SCALE_DOWN=true SKIP_RESTORE_REPLICAS=true bash "$SCRIPT_DIR/run-k8s-seed.sh"; then
   k8s_job_log "ERROR: seed failed — see job logs above"
+  k8s_job_log "Apps remain scaled to 0 — fix and re-run or restore manually"
   exit 1
 fi
 
@@ -132,7 +132,6 @@ bash "$SCRIPT_DIR/reconcile-rabbitmq-queues.sh"
 
 k8s_job_log "Step 5/5: restore app deployments"
 restore_replicas
-trap - EXIT
 
 k8s_job_log "Waiting for core pods..."
 sleep 20

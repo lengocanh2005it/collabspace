@@ -6,6 +6,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=lib/k8s-job-wait.sh
 source "$SCRIPT_DIR/lib/k8s-job-wait.sh"
+# shellcheck source=lib/scale-app-services.sh
+source "$SCRIPT_DIR/lib/scale-app-services.sh"
 
 export KUBECONFIG="${KUBECONFIG:-/etc/rancher/k3s/k3s.yaml}"
 APP_DIR="${APP_DIR:-/opt/collabspace}"
@@ -151,16 +153,17 @@ EOF
 }
 
 scale_seed_writers_to_zero() {
-  echo "==> Scaling app deployments to 0 (seed window — avoid RabbitMQ queue conflicts)..."
-  for dep in auth-service user-service workspace-service task-service notification-service; do
-    kubectl scale deployment "$dep" -n "$APP_NS" --replicas=0 2>/dev/null || true
-  done
-  sleep 8
+  if [[ "${SKIP_APP_SCALE_DOWN:-false}" == "true" ]]; then
+    echo "==> SKIP_APP_SCALE_DOWN=true — apps already stopped by caller"
+    terminate_postgres_app_sessions "$APP_NS"
+    return 0
+  fi
+  ensure_app_services_stopped "$APP_NS"
 }
 
 restore_seed_replicas() {
   echo "==> Restoring app replica counts after seed..."
-  for dep in auth-service user-service workspace-service task-service notification-service; do
+  for dep in "${COLLABSPACE_APP_DEPLOYMENTS[@]}"; do
     local replicas
     replicas="$(grep -A20 "^  ${dep}:" "$VALUES_PROD" | grep -m1 'replicas:' | awk '{print $2}' || echo 1)"
     if kubectl get deployment "$dep" -n "$APP_NS" >/dev/null 2>&1; then
@@ -184,7 +187,11 @@ for q in task-service notification-service; do
     rabbitmqctl delete_queue "$q" -p collabspace 2>/dev/null || true
 done
 
-restore_seed_replicas
+if [[ "${SKIP_RESTORE_REPLICAS:-false}" != "true" ]]; then
+  restore_seed_replicas
+else
+  echo "==> SKIP_RESTORE_REPLICAS=true — caller will restore deployments"
+fi
 
 echo "All demo seeds completed."
 echo "Demo users: ngocanh@collabspace.dev / quangtien@collabspace.dev — password collabspace123"

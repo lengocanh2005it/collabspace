@@ -104,7 +104,7 @@ bash infrastructure/deploy/helm-rollout.sh
 
 Vault/ESO (khi đổi secret keys): `infrastructure/vault/scripts/seed-vault-k3s-from-phase0.sh`, apply `external-secrets.prod.yaml`, force ESO sync — xem `infrastructure/vault/README.md`.
 
-**Reset data + migrate + seed (verbose):** `bash infrastructure/deploy/run-k8s-full-reset.sh` — wipe PG/Mongo/Redis, bootstrap auth/workspace schema, chạy migration Jobs với log mỗi 5s; fail thì in `kubectl logs` ngay. Chỉ migrate+seed: `SKIP_WIPE=true bash .../run-k8s-full-reset.sh`.
+**Reset data + migrate + seed (verbose):** `bash infrastructure/deploy/run-k8s-full-reset.sh` — **scale 5 app Deployments về 0 và đợi pod tắt hẳn** trước khi wipe PG/Mongo/Redis/RabbitMQ; bootstrap auth/workspace schema; migration Jobs (log mỗi 5s); seed; reconcile RabbitMQ; restore replicas. Fail giữ apps ở 0 để retry. Chỉ migrate+seed: `SKIP_WIPE=true bash .../run-k8s-full-reset.sh`. Helper: `vps-full-reset-now.sh`.
 
 **Migration trong helm-rollout (tùy chọn):** `RUN_K8S_MIGRATIONS=true bash infrastructure/deploy/helm-rollout.sh` — scale down auth/user/workspace, chạy Jobs, restore replicas. Mặc định `false` (CI và deploy tay thường ngày).
 
