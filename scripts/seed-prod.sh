@@ -20,7 +20,8 @@ run_service_seed() {
 }
 
 echo "CollabSpace prod-style seed pipeline from $ROOT_DIR"
-echo "Order: auth-service -> user-service -> workspace-service -> task-service -> notification-service"
+echo "Order: auth → user → workspace → task (user_replicas) → notification (user_replicas)"
+echo "Source: scripts/demo-seed-data.json — DB only, no RabbitMQ"
 echo ""
 
 run_service_seed "auth-service" "$ROOT_DIR/services/auth-service"

@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
-# Full data reset on k3s: stop apps → wipe → schema bootstrap → migrate → seed → restore apps.
-# Verbose logging; prints job logs immediately on failure.
+# Full data reset on k3s:
+#   stop apps → wipe DB + Redis + RabbitMQ PVC → bootstrap PG → migrate → seed (DB only) → restore apps
+#
+# Seed does not use RabbitMQ (user_replicas written directly in task/notification Mongo).
+# RabbitMQ reset = delete PVC + restart StatefulSet; queues created when apps start.
 #
 # Usage (on Droplet):
 #   export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
@@ -94,7 +97,7 @@ k8s_job_log "Step 0/5: stop all app services (scale to 0, wait for pods)"
 ensure_app_services_stopped "$APP_NS"
 
 if [[ "$SKIP_WIPE" != "true" ]]; then
-  k8s_job_log "Step 1/5: wipe application data (Postgres, Mongo, Redis, RabbitMQ)"
+  k8s_job_log "Step 1/5: wipe data (Postgres, Mongo, Redis, RabbitMQ PVC)"
   SKIP_APP_SCALE_DOWN=true bash "$SCRIPT_DIR/wipe-prod-data.sh"
 else
   k8s_job_log "Step 1/5: SKIP_WIPE=true — keeping existing databases"
@@ -118,7 +121,7 @@ if ! APP_DIR="$APP_DIR" APP_NS="$APP_NS" IMAGE_TAG="$IMAGE_TAG" VALUES_PROD="$VA
   exit 1
 fi
 
-k8s_job_log "Step 4/5: seed demo data"
+k8s_job_log "Step 4/5: seed demo data (Postgres + Mongo; user_replicas in task/notification)"
 ensure_app_services_stopped "$APP_NS"
 if ! APP_DIR="$APP_DIR" APP_NS="$APP_NS" IMAGE_TAG="$IMAGE_TAG" VALUES_PROD="$VALUES_PROD" PHASE0_ENV="$PHASE0_ENV" \
   SKIP_APP_SCALE_DOWN=true SKIP_RESTORE_REPLICAS=true bash "$SCRIPT_DIR/run-k8s-seed.sh"; then

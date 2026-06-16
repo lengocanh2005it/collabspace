@@ -8,6 +8,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/lib/k8s-job-wait.sh"
 # shellcheck source=lib/scale-app-services.sh
 source "$SCRIPT_DIR/lib/scale-app-services.sh"
+# shellcheck source=lib/wipe-rabbitmq-volume.sh
+source "$SCRIPT_DIR/lib/wipe-rabbitmq-volume.sh"
 
 export KUBECONFIG="${KUBECONFIG:-/etc/rancher/k3s/k3s.yaml}"
 NS="${APP_NS:-collabspace}"
@@ -61,23 +63,7 @@ else
 fi
 
 echo "==> Wiping RabbitMQ (delete data volume, fresh start)..."
-RABBITMQ_STS="${RABBITMQ_STS:-rabbitmq}"
-if kubectl get statefulset "$RABBITMQ_STS" -n "$NS" >/dev/null 2>&1; then
-  kubectl scale "statefulset/${RABBITMQ_STS}" -n "$NS" --replicas=0
-  kubectl wait --for=delete pod -l app.kubernetes.io/name=rabbitmq -n "$NS" --timeout=180s 2>/dev/null || true
-
-  while IFS= read -r pvc; do
-    [[ -z "$pvc" ]] && continue
-    echo "  - ${pvc}"
-    kubectl delete "$pvc" -n "$NS" --timeout=120s 2>/dev/null || true
-  done < <(kubectl get pvc -n "$NS" -o name 2>/dev/null | grep -i rabbitmq || true)
-
-  kubectl scale "statefulset/${RABBITMQ_STS}" -n "$NS" --replicas=1
-  kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=rabbitmq -n "$NS" --timeout=300s
-  echo "  RabbitMQ restarted with empty data volume (vhost collabspace from chart config)."
-else
-  echo "  RabbitMQ StatefulSet not found — skipped."
-fi
+wipe_rabbitmq_volume "$NS"
 
 echo "==> App deployments remain at 0 until migrate/seed completes."
 

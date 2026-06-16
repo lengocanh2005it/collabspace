@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
-# Seed demo data on k3s (auth → user → workspace → task → notification).
-# Requires images built with seed:prod and scripts/demo-seed-data.json in the image.
+# Seed demo data on k3s — database only (Postgres + Mongo). No RabbitMQ.
+#
+# Order: auth → user → workspace → task (user_replicas + tasks) → notification (user_replicas + notifications).
+# Data source: scripts/demo-seed-data.json (host ConfigMap mount when present under APP_DIR).
+# RabbitMQ: wiped separately in wipe-prod-data.sh (PVC delete + restart); apps declare queues on startup.
+#
+# Env: SKIP_APP_SCALE_DOWN, SKIP_RESTORE_REPLICAS, IMAGE_TAG, APP_DIR, APP_NS
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -14,6 +19,17 @@ APP_DIR="${APP_DIR:-/opt/collabspace}"
 APP_NS="${APP_NS:-collabspace}"
 PHASE0_ENV="${PHASE0_ENV:-/opt/collabspace/infrastructure/deploy/phase0.env}"
 VALUES_PROD="${VALUES_PROD:-/opt/collabspace/infrastructure/helm/collabspace/values-prod.yaml}"
+
+SEED_SERVICES=(
+  auth-service
+  user-service
+  workspace-service
+  task-service
+  notification-service
+)
+
+SEED_CMD="node dist/seed/seed.js"
+USE_HOST_SEED_DATA=false
 
 external_image_tag="${IMAGE_TAG:-}"
 if [[ -f "$PHASE0_ENV" ]]; then
@@ -40,23 +56,21 @@ fi
 
 IMAGE_TAG="${IMAGE_TAG:-latest}"
 
-SEED_CMD="node dist/seed/seed.js"
-USE_HOST_SEED_DATA=false
-
 sync_demo_seed_configmap() {
   local seed_file="$APP_DIR/scripts/demo-seed-data.json"
   if [[ ! -f "$seed_file" ]]; then
+    echo "==> No host demo-seed-data.json at ${seed_file} — using JSON baked into image"
     return 0
   fi
   kubectl create configmap demo-seed-data \
     --from-file=demo-seed-data.json="$seed_file" \
     -n "$APP_NS" --dry-run=client -o yaml | kubectl apply -f -
   USE_HOST_SEED_DATA=true
-  echo "==> demo-seed-data ConfigMap synced from ${seed_file} (overrides image seed JSON)"
+  echo "==> demo-seed-data ConfigMap synced from ${seed_file}"
 }
 
 wait_datastores() {
-  echo "==> Waiting for datastores..."
+  echo "==> Waiting for Postgres + Mongo (seed does not use RabbitMQ)..."
   kubectl wait --for=condition=Ready pod -l app.kubernetes.io/name=postgresql -n "$APP_NS" --timeout=300s
   kubectl wait --for=condition=Ready pod -l app.kubernetes.io/name=mongodb -n "$APP_NS" --timeout=300s
 }
@@ -81,27 +95,31 @@ resolve_seed_image() {
   printf 'ghcr.io/%s/collabspace-%s:%s\n' "$GHCR_OWNER" "$deployment" "$IMAGE_TAG"
 }
 
+build_seed_env_block() {
+  local block="          env:
+            - name: RABBITMQ_ENABLED
+              value: \"false\""
+  if [[ "$USE_HOST_SEED_DATA" == "true" ]]; then
+    block="${block}
+            - name: DEMO_SEED_DATA_PATH
+              value: /seed/demo-seed-data.json"
+  fi
+  printf '%s' "$block"
+}
+
 apply_seed_job() {
   local deployment="$1"
   local image
   image="$(resolve_seed_image "$deployment")"
-  local cmd="${SEED_CMD}"
   local job_name="seed-${deployment}-$(date +%s)"
   local pull_secret_block=""
-  local seed_env_block=""
+  local seed_env_block
   local seed_mount_block=""
   local seed_volumes_block=""
 
-  seed_env_block="          env:
-            - name: RABBITMQ_ENABLED
-              value: \"false\""
+  seed_env_block="$(build_seed_env_block)"
 
   if [[ "$USE_HOST_SEED_DATA" == "true" ]]; then
-    seed_env_block="          env:
-            - name: RABBITMQ_ENABLED
-              value: \"false\"
-            - name: DEMO_SEED_DATA_PATH
-              value: /seed/demo-seed-data.json"
     seed_mount_block="          volumeMounts:
             - name: demo-seed-data
               mountPath: /seed/demo-seed-data.json
@@ -140,7 +158,7 @@ ${pull_secret_block}
         - name: seed
           image: ${image}
           imagePullPolicy: Always
-          command: ["/bin/sh", "-c", "${cmd}"]
+          command: ["/bin/sh", "-c", "${SEED_CMD}"]
 ${seed_env_block}
           envFrom:
             - configMapRef:
@@ -178,11 +196,12 @@ restore_seed_replicas() {
   done
 }
 
+echo "==> k8s seed pipeline (DB only — user_replicas in task + notification Mongo)"
 wait_datastores
 sync_demo_seed_configmap
 scale_seed_writers_to_zero
 
-for svc in auth-service user-service workspace-service task-service notification-service; do
+for svc in "${SEED_SERVICES[@]}"; do
   apply_seed_job "$svc"
 done
 
@@ -192,5 +211,9 @@ else
   echo "==> SKIP_RESTORE_REPLICAS=true — caller will restore deployments"
 fi
 
+echo ""
 echo "All demo seeds completed."
-echo "Demo users: ngocanh@collabspace.dev / quangtien@collabspace.dev — password collabspace123"
+echo "  Postgres: auth users, user profiles, workspaces/projects/members"
+echo "  Mongo:    task-service user_replicas + tasks; notification-service user_replicas + notifications"
+echo "  RabbitMQ: unchanged by seed — wipe PVC in full-reset; apps declare queues on startup"
+echo "Demo: ngocanh@collabspace.dev / quangtien@collabspace.dev — password collabspace123"

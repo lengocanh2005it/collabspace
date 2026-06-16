@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-# Chạy migration Postgres trên k3s (auth → user → workspace).
-# Gọi từ helm-deploy-phase3.sh sau khi PostgreSQL Ready.
+# Chạy migration Postgres trên k3s (auth → user → workspace). Postgres only — no RabbitMQ.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

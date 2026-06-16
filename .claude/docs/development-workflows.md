@@ -275,10 +275,12 @@ All services compile seed to **`dist/seed/seed.js`**; images copy `scripts/load-
 What gets seeded:
 
 - **auth-service** — roles, permissions, **20** verified demo users
-- **user-service** — profiles, preferences, status; optional RabbitMQ replica sync
+- **user-service** — profiles, preferences, status (source of truth; no RabbitMQ)
 - **workspace-service** — **4 workspaces**, **9 projects**, members (owner/manager/member mix), **1 pending invitation**
-- **task-service** — user replicas, **87 tasks** + event store, **13 comments**
-- **notification-service** — **32** sample notifications (UNREAD / READ / ARCHIVED)
+- **task-service** — **`user_replicas`** (all demo users) + **87 tasks** + event store + **13 comments**
+- **notification-service** — **`user_replicas`** (all demo users) + **32** sample notifications (UNREAD / READ / ARCHIVED)
+
+**k3s full reset:** `bash infrastructure/deploy/run-k8s-full-reset.sh` — stops apps, wipes Postgres/Mongo/Redis, **deletes RabbitMQ PVC** and restarts empty volume, migrate, seed (above), restore apps. RabbitMQ queues are created when apps start, not during seed.
 
 Demo accounts after seed:
 

@@ -5,7 +5,8 @@ SCRIPT_DIR=$(CDPATH= cd -- "$(dirname "$0")" && pwd)
 ROOT_DIR=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)
 
 echo "Running CollabSpace seed pipeline from $ROOT_DIR"
-echo "Order: auth-service -> user-service -> workspace-service -> task-service -> notification-service"
+echo "Order: auth → user → workspace → task (user_replicas) → notification (user_replicas)"
+echo "Source: scripts/demo-seed-data.json — DB only, no RabbitMQ"
 echo "Dev (ts-node): default. Prod-style (dist/seed): SEED_MODE=prod $0"
 echo ""
 
