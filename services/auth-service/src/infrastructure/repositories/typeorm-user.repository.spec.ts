@@ -31,7 +31,7 @@ function buildAuthUserOrmEntity(overrides: Partial<UserOrmEntity> = {}): UserOrm
     userRoles: [
       {
         role: {
-          name: 'member',
+          name: 'user',
           rolePermissions: [{ permission: { name: 'users.read' } }],
         },
       },
@@ -103,7 +103,7 @@ describe('TypeOrmUserRepository', () => {
       userId: 'user-1',
       email: 'member@example.com',
       emailVerified: true,
-      role: 'member',
+      role: 'user',
     });
   });
 

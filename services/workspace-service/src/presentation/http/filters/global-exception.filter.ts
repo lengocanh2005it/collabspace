@@ -42,12 +42,24 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       response.setHeader('X-Request-Id', requestId);
     }
 
-    response.status(status).json({
+    const exceptionResponse =
+      exception instanceof HttpException ? exception.getResponse() : undefined;
+
+    const responseBody: Record<string, unknown> = {
       statusCode: status,
       timestamp: new Date().toISOString(),
       path: request.url,
-      message,
       ...(requestId ? { requestId } : {}),
-    });
+    };
+
+    if (typeof exceptionResponse === 'string') {
+      responseBody.message = exceptionResponse;
+    } else if (exceptionResponse && typeof exceptionResponse === 'object') {
+      Object.assign(responseBody, exceptionResponse);
+    } else {
+      responseBody.message = message;
+    }
+
+    response.status(status).json(responseBody);
   }
 }

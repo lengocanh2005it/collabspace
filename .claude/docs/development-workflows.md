@@ -286,13 +286,13 @@ Demo accounts after seed:
 - `ngocanh@collabspace.dev` / `collabspace123` (User A — workspace owner)
 - `quangtien@collabspace.dev` / `collabspace123` (User B — workspace member)
 - `trungtin@collabspace.dev` / `collabspace123` (platform admin)
-- `reviewer@collabspace.dev` / `collabspace123` (platform viewer + workspace member)
+- `reviewer@collabspace.dev` / `collabspace123` (platform user + workspace member)
 - `qa.alice@collabspace.dev` / `collabspace123` (workspace member)
 - `dev.bob@collabspace.dev` / `collabspace123` (workspace member)
 - `pm.carol@collabspace.dev` / `collabspace123` (workspace manager)
 - `designer.dana@collabspace.dev` / `collabspace123` (workspace member)
 - `solo.owner@collabspace.dev` / `collabspace123` (Solo workspace owner)
-- `viewer.only@collabspace.dev` / `collabspace123` (platform viewer — no workspace)
+- `viewer.only@collabspace.dev` / `collabspace123` (platform user — no workspace)
 - `dev.eve@collabspace.dev` / `collabspace123` (workspace invitation pending)
 - `dev.alex@collabspace.dev` / `collabspace123` (workspace member)
 - `dev.felix@collabspace.dev` / `collabspace123` (workspace member)
@@ -301,7 +301,7 @@ Demo accounts after seed:
 - `pm.helen@collabspace.dev` / `collabspace123` (workspace member)
 - `designer.ian@collabspace.dev` / `collabspace123` (workspace member)
 - `member.khanh@collabspace.dev` / `collabspace123` (workspace member)
-- `viewer.maria@collabspace.dev` / `collabspace123` (platform viewer — member in some workspaces)
+- `viewer.maria@collabspace.dev` / `collabspace123` (platform user — member in some workspaces)
 
 Trạng thái workspace role trong seed hiện tại: **owner/manager/member** (Phase 5).
 

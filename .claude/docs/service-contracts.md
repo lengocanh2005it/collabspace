@@ -580,7 +580,7 @@ Minimum domain concepts:
 - Membership: workspaceId, userId, role, joinedAt.
 - Invitation: workspaceId, invitedEmail or invitedUserId, invitedByUserId, role, status, expiresAt.
 - Workspace roles: `owner`, `manager`, `member` (hierarchy: owner > manager > member).
-- Platform roles (`auth-service`): `admin`, `member`, `viewer` — **separate** from workspace membership. See [docs/roles-and-permissions.md](../../docs/roles-and-permissions.md).
+- Platform roles (`auth-service`): `admin`, `user` — **separate** from workspace membership. See [docs/roles-and-permissions.md](../../docs/roles-and-permissions.md).
 
 Authorization baseline:
 

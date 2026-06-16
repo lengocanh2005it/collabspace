@@ -95,9 +95,9 @@ const SEED_ROLES: SeedRole[] = [
   },
   {
     description:
-      'Standard platform collaborator (end-user APIs; workspace owner/member is separate)',
+      'Standard platform user — collaboration APIs; workspace owner/manager/member is separate',
     id: '82000000-0000-4000-8000-000000000002',
-    name: 'member',
+    name: 'user',
     permissionNames: [
       'users.read',
       'users.write',
@@ -107,12 +107,6 @@ const SEED_ROLES: SeedRole[] = [
       'tasks.write',
       'notifications.read',
     ],
-  },
-  {
-    description: 'Read-only stakeholder for demos and reviews',
-    id: '82000000-0000-4000-8000-000000000003',
-    name: 'viewer',
-    permissionNames: ['users.read', 'workspaces.read', 'tasks.read', 'notifications.read'],
   },
 ];
 

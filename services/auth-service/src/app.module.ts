@@ -44,8 +44,10 @@ import { MetricsModule } from '@/metrics/metrics.module';
 import { AuthGrpcController } from '@/presentation/grpc/auth.grpc.controller';
 import { AuthController } from '@/presentation/http/auth.controller';
 import { AuthAdminController } from '@/presentation/http/auth-admin.controller';
+import { InternalAuthController } from '@/presentation/http/internal-auth.controller';
 import { platformAdminAuthProviders } from '@/presentation/http/platform-admin-auth.providers';
 import { ManageAuthAdminUseCase } from '@/application/use-cases/manage-auth-admin.use-case';
+import { LookupAccountByEmailUseCase } from '@/application/use-cases/lookup-account-by-email.use-case';
 import { AUTH_ADMIN_REPOSITORY } from '@/domain/repositories/auth-admin.repository';
 import { TypeOrmAuthAdminRepository } from '@/infrastructure/repositories/typeorm-auth-admin.repository';
 import { InMemoryAuthAdminRepository } from '@/infrastructure/repositories/in-memory-auth-admin.repository';
@@ -63,7 +65,7 @@ import { InMemoryAuthAdminRepository } from '@/infrastructure/repositories/in-me
     RefreshTokensModule,
     RedisModule,
   ],
-  controllers: [AuthController, AuthAdminController, AuthGrpcController],
+  controllers: [AuthController, AuthAdminController, InternalAuthController, AuthGrpcController],
   providers: [
     JwtTokenService,
     UserProfileResolverService,
@@ -87,6 +89,7 @@ import { InMemoryAuthAdminRepository } from '@/infrastructure/repositories/in-me
     LogoutOthersUseCase,
     LogoutAllUseCase,
     ManageAuthAdminUseCase,
+    LookupAccountByEmailUseCase,
     ...platformAdminAuthProviders,
     TypeOrmUserRepository,
     InMemoryUserRepository,

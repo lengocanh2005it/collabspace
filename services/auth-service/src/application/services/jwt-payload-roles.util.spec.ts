@@ -6,6 +6,6 @@ describe('readRolesFromPayload', () => {
   });
 
   it('falls back to single role claim', () => {
-    expect(readRolesFromPayload({ role: 'member' })).toEqual(['member']);
+    expect(readRolesFromPayload({ role: 'user' })).toEqual(['user']);
   });
 });

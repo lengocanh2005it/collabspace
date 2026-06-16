@@ -9,8 +9,8 @@ describe('ForgotPasswordUseCase', () => {
     emailVerified: true,
     isActive: true,
     permissions: [],
-    role: 'member',
-    roles: ['member'],
+    role: 'user',
+    roles: ['user'],
     userId: 'user-1',
     workspaceId: null,
   };

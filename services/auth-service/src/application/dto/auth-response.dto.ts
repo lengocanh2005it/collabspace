@@ -67,10 +67,10 @@ export class MeResponseDto {
   })
   profileStatus?: 'available' | 'unavailable';
 
-  @ApiPropertyOptional({ example: 'member' })
+  @ApiPropertyOptional({ example: 'user' })
   role?: string;
 
-  @ApiProperty({ example: ['member'], type: [String] })
+  @ApiProperty({ example: ['user'], type: [String] })
   roles: string[];
 
   @ApiProperty({ format: 'uuid' })
@@ -118,10 +118,10 @@ export class VerifyAccessResponseDto {
   })
   profileStatus: 'available' | 'unavailable';
 
-  @ApiPropertyOptional({ nullable: true, example: 'member' })
+  @ApiPropertyOptional({ nullable: true, example: 'user' })
   role: string | null;
 
-  @ApiProperty({ example: ['member'], type: [String] })
+  @ApiProperty({ example: ['user'], type: [String] })
   roles: string[];
 
   @ApiPropertyOptional({ nullable: true, example: 'member.example' })

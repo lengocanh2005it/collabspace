@@ -37,7 +37,7 @@ describe('AppController (e2e)', () => {
       }
 
       return {
-        role: 'member',
+        role: 'user',
         userId: 'user-1',
         workspaceId: 'workspace-1',
       };

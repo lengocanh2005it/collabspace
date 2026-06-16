@@ -40,8 +40,8 @@ describe('VerifyAccessTokenLiteUseCase', () => {
     (verifyLiteCache.read as jest.Mock).mockResolvedValue(null);
     (jwtTokenService.resolveVerifiedLiteUserContext as jest.Mock).mockResolvedValue({
       userId: 'user-2',
-      roles: ['member'],
-      role: 'member',
+      roles: ['user'],
+      role: 'user',
       emailVerified: false,
       workspaceId: 'ws-1',
       expiresAt: Math.floor(Date.now() / 1000) + 3600,
@@ -52,8 +52,8 @@ describe('VerifyAccessTokenLiteUseCase', () => {
 
     expect(result).toEqual({
       userId: 'user-2',
-      roles: ['member'],
-      role: 'member',
+      roles: ['user'],
+      role: 'user',
       emailVerified: false,
       workspaceId: 'ws-1',
     });

@@ -1,4 +1,4 @@
-import { ForbiddenException, Inject, Injectable } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Inject, Injectable } from '@nestjs/common';
 import type { InviteMemberDto } from '../../dto/invite-member.dto';
 import {
   type IWorkspaceRepository,
@@ -16,6 +16,15 @@ import {
   type IWorkspaceActivityRepository,
   WORKSPACE_ACTIVITY_REPOSITORY,
 } from '../../../domain/repositories/workspace-activity.repository';
+import { AuthHttpClient } from '../../../integrations/auth/auth-http.client';
+
+function normalizeInviteEmail(email: string): string {
+  return email.trim().toLowerCase();
+}
+
+function isPlatformAdminAccount(roles: string[], permissions: string[]): boolean {
+  return roles.includes('admin') || permissions.includes('auth.manage');
+}
 
 @Injectable()
 export class InviteMemberUseCase {
@@ -28,6 +37,7 @@ export class InviteMemberUseCase {
     private readonly invitationRepo: IInvitationRepository,
     @Inject(WORKSPACE_ACTIVITY_REPOSITORY)
     private readonly activityRepo: IWorkspaceActivityRepository,
+    private readonly authHttpClient: AuthHttpClient,
   ) {}
 
   async execute(userId: string, workspaceId: string, dto: InviteMemberDto) {
@@ -36,11 +46,51 @@ export class InviteMemberUseCase {
       throw new ForbiddenException('Only the workspace owner or manager can invite members');
     }
 
+    const inviteeEmail = normalizeInviteEmail(dto.email);
+    if (!inviteeEmail) {
+      throw new BadRequestException({
+        code: 'INVITE_EMAIL_REQUIRED',
+        message: 'Email is required',
+      });
+    }
+
+    const pendingInvite = await this.invitationRepo.findPendingByWorkspaceAndEmail(
+      workspaceId,
+      inviteeEmail,
+    );
+    if (pendingInvite) {
+      throw new BadRequestException({
+        code: 'INVITE_ALREADY_PENDING',
+        message: 'An invitation is already pending for this email address.',
+      });
+    }
+
+    const account = await this.authHttpClient.lookupAccountByEmail(inviteeEmail);
+    if (account) {
+      if (isPlatformAdminAccount(account.roles, account.permissions)) {
+        throw new BadRequestException({
+          code: 'INVITE_PLATFORM_ADMIN',
+          message: 'Platform admin accounts cannot be invited to a workspace.',
+        });
+      }
+
+      const existingMember = await this.memberRepo.findByWorkspaceAndUser(
+        workspaceId,
+        account.userId,
+      );
+      if (existingMember) {
+        throw new BadRequestException({
+          code: 'INVITE_ALREADY_MEMBER',
+          message: 'This person is already a member of this workspace.',
+        });
+      }
+    }
+
     const workspace = await this.workspaceRepo.findById(workspaceId);
     const invitation = await this.invitationRepo.createAndPublishInvited({
       workspaceId,
       inviterId: userId,
-      inviteeEmail: dto.email,
+      inviteeEmail,
       workspaceName: workspace?.name,
     });
 
@@ -49,8 +99,8 @@ export class InviteMemberUseCase {
       actorId: userId,
       actorName: null,
       type: 'member_invited',
-      summary: `${dto.email} was invited to the workspace`,
-      meta: { inviteeEmail: dto.email, invitationId: invitation.id },
+      summary: `${inviteeEmail} was invited to the workspace`,
+      meta: { inviteeEmail, invitationId: invitation.id },
     });
 
     return invitation;

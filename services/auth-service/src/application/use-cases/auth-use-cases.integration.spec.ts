@@ -242,8 +242,8 @@ describe('Auth use cases (integration)', () => {
       emailVerified: true,
       isActive: true,
       permissions: ['users.read'],
-      role: 'member',
-      roles: ['member'],
+      role: 'user',
+      roles: ['user'],
       userId: 'user-2',
     });
 
@@ -253,7 +253,7 @@ describe('Auth use cases (integration)', () => {
 
     expect(session.refreshToken).toBe('refresh-token-2');
     expect(session.userId).toBe('user-2');
-    expect(session.role).toBe('member');
+    expect(session.role).toBe('user');
   });
 
   it('registers a new user, creates a pending profile, and queues OTP email', async () => {
@@ -580,16 +580,16 @@ describe('Auth use cases (integration)', () => {
       emailVerified: true,
       isActive: true,
       permissions: ['users.read'],
-      role: 'member',
-      roles: ['member'],
+      role: 'user',
+      roles: ['user'],
       userId: 'user-8',
     });
     jest
       .spyOn(userProfileClientMock, 'getProfile')
       .mockRejectedValue(new Error('profile service unavailable'));
     const token = await harness.jwtTokenService.signAccessToken({
-      role: 'member',
-      roles: ['member'],
+      role: 'user',
+      roles: ['user'],
       userId: 'user-8',
       workspaceId: 'workspace-8',
     });
@@ -599,8 +599,8 @@ describe('Auth use cases (integration)', () => {
       fullName: undefined,
       permissions: ['users.read'],
       profileStatus: 'unavailable',
-      role: 'member',
-      roles: ['member'],
+      role: 'user',
+      roles: ['user'],
       userId: 'user-8',
       username: undefined,
       workspaceId: 'workspace-8',
@@ -613,15 +613,15 @@ describe('Auth use cases (integration)', () => {
       emailVerified: true,
       isActive: true,
       permissions: ['users.read'],
-      role: 'member',
-      roles: ['member'],
+      role: 'user',
+      roles: ['user'],
       userId: 'user-2',
     });
     jest.spyOn(identityServiceMock, 'changePassword').mockResolvedValue(undefined);
     jest.spyOn(refreshTokenRepositoryMock, 'revokeAllForUser').mockResolvedValue(2);
     const token = await harness.jwtTokenService.signAccessToken({
-      role: 'member',
-      roles: ['member'],
+      role: 'user',
+      roles: ['user'],
       userId: 'user-2',
       workspaceId: 'workspace-2',
     });

@@ -22,7 +22,7 @@ describe('ManageUsersAdminUseCase', () => {
         email: 'user@example.com',
         emailVerified: true,
         isActive: true,
-        roles: ['member'],
+        roles: ['user'],
       },
     ]);
     repository.list.mockResolvedValue({

@@ -85,8 +85,8 @@ describe('AuthController (e2e)', () => {
             emailVerified: true,
             isActive: true,
             permissions: ['users.read'],
-            role: 'member',
-            roles: ['member'],
+            role: 'user',
+            roles: ['user'],
             userId: 'user-123',
           },
     );
@@ -95,8 +95,8 @@ describe('AuthController (e2e)', () => {
       emailVerified: true,
       isActive: true,
       permissions: ['users.read'],
-      role: 'member',
-      roles: ['member'],
+      role: 'user',
+      roles: ['user'],
       userId: 'user-123',
     });
     identityServiceMock.findUserByEmail.mockResolvedValue({
@@ -104,8 +104,8 @@ describe('AuthController (e2e)', () => {
       emailVerified: false,
       isActive: true,
       permissions: ['users.read'],
-      role: 'member',
-      roles: ['member'],
+      role: 'user',
+      roles: ['user'],
       userId: 'user-123',
     });
     identityServiceMock.register.mockResolvedValue({
@@ -113,8 +113,8 @@ describe('AuthController (e2e)', () => {
       emailVerified: false,
       isActive: true,
       permissions: ['users.read'],
-      role: 'member',
-      roles: ['member'],
+      role: 'user',
+      roles: ['user'],
       userId: 'user-123',
     });
     identityServiceMock.markEmailVerified.mockResolvedValue({
@@ -122,8 +122,8 @@ describe('AuthController (e2e)', () => {
       emailVerified: true,
       isActive: true,
       permissions: ['users.read'],
-      role: 'member',
-      roles: ['member'],
+      role: 'user',
+      roles: ['user'],
       userId: 'user-123',
     });
     identityServiceMock.changePassword.mockResolvedValue(undefined);
@@ -254,8 +254,8 @@ describe('AuthController (e2e)', () => {
 
   it('/api/v1/auth/verify (GET) returns identity headers for valid JWT', async () => {
     const token = await jwtTokenService.signAccessToken({
-      role: 'member',
-      roles: ['member'],
+      role: 'user',
+      roles: ['user'],
       userId: 'user-123',
       workspaceId: 'workspace-456',
     });
@@ -269,8 +269,8 @@ describe('AuthController (e2e)', () => {
     expect(response.headers['x-user-id']).toBe('user-123');
     expect(response.headers['x-user-name']).toBe('Member Example');
     expect(response.headers['x-username']).toBe('member.example');
-    expect(response.headers['x-role']).toBe('member');
-    expect(response.headers['x-roles']).toBe('member');
+    expect(response.headers['x-role']).toBe('user');
+    expect(response.headers['x-roles']).toBe('user');
     expect(response.headers['x-permissions']).toBe('users.read');
     expect(response.headers['x-email-verified']).toBe('true');
     expect(response.headers['x-workspace-id']).toBe('workspace-456');
@@ -280,8 +280,8 @@ describe('AuthController (e2e)', () => {
       fullName: 'Member Example',
       permissions: ['users.read'],
       profileStatus: 'available',
-      role: 'member',
-      roles: ['member'],
+      role: 'user',
+      roles: ['user'],
       username: 'member.example',
       userId: 'user-123',
       workspaceId: 'workspace-456',
@@ -290,8 +290,8 @@ describe('AuthController (e2e)', () => {
 
   it('/api/v1/auth/me (GET) returns current user', async () => {
     const token = await jwtTokenService.signAccessToken({
-      role: 'member',
-      roles: ['member'],
+      role: 'user',
+      roles: ['user'],
       userId: 'user-123',
       workspaceId: 'workspace-456',
     });
@@ -308,18 +308,18 @@ describe('AuthController (e2e)', () => {
       isActive: true,
       permissions: ['users.read'],
       profileStatus: 'available',
-      role: 'member',
-      roles: ['member'],
+      role: 'user',
+      roles: ['user'],
       userId: 'user-123',
       username: 'member.example',
       workspaceId: 'workspace-456',
     });
   });
 
-  it('/api/v1/auth/admin/roles rejects a member', async () => {
+  it('/api/v1/auth/admin/roles rejects a platform user', async () => {
     const token = await jwtTokenService.signAccessToken({
-      role: 'member',
-      roles: ['member'],
+      role: 'user',
+      roles: ['user'],
       userId: 'user-123',
     });
 
@@ -377,8 +377,8 @@ describe('AuthController (e2e)', () => {
       emailVerified: true,
       isActive: false,
       permissions: ['users.read'],
-      role: 'member',
-      roles: ['member'],
+      role: 'user',
+      roles: ['user'],
       userId: 'user-123',
     });
 
@@ -443,8 +443,8 @@ describe('AuthController (e2e)', () => {
 
   it('/api/v1/auth/change-password (POST) changes password for authenticated user', async () => {
     const token = await jwtTokenService.signAccessToken({
-      role: 'member',
-      roles: ['member'],
+      role: 'user',
+      roles: ['user'],
       userId: 'user-123',
       workspaceId: 'workspace-456',
     });

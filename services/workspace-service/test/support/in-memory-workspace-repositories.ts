@@ -176,6 +176,17 @@ export function createInMemoryWorkspaceRepositories(): InMemoryWorkspaceReposito
         (invitation) => invitation.workspaceId === workspaceId && invitation.status === 'pending',
       );
     },
+    async findPendingByWorkspaceAndEmail(workspaceId, email) {
+      const normalizedEmail = email.trim().toLowerCase();
+      return (
+        invitations.find(
+          (invitation) =>
+            invitation.workspaceId === workspaceId &&
+            invitation.status === 'pending' &&
+            invitation.inviteeEmail.trim().toLowerCase() === normalizedEmail,
+        ) ?? null
+      );
+    },
     async findPendingForInvitee(email, userId) {
       const normalizedEmail = email.trim().toLowerCase();
       return invitations.filter(

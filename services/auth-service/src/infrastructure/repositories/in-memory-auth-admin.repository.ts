@@ -122,7 +122,7 @@ export class InMemoryAuthAdminRepository implements AuthAdminRepository {
       });
     const role = this.roles[index];
     if (
-      ['admin', 'member', 'viewer'].includes(role.name) ||
+      ['admin', 'user'].includes(role.name) ||
       this.users.some((user) => user.roles.includes(role.name))
     ) {
       throw new ConflictException({

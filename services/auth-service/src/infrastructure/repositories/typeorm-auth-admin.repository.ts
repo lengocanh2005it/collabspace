@@ -14,7 +14,7 @@ import { RoleOrmEntity } from '@/infrastructure/database/entities/role.orm-entit
 import { UserRoleOrmEntity } from '@/infrastructure/database/entities/user-role.orm-entity';
 import { UserOrmEntity } from '@/infrastructure/database/entities/user.orm-entity';
 
-const PROTECTED_ROLES = new Set(['admin', 'member', 'viewer']);
+const PROTECTED_ROLES = new Set(['admin', 'user']);
 
 @Injectable()
 export class TypeOrmAuthAdminRepository implements AuthAdminRepository {

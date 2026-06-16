@@ -38,8 +38,8 @@ describe('WorkspaceAdminController (http)', () => {
 
   it('rejects non-admin callers', async () => {
     identityResolver.resolve.mockResolvedValue({
-      role: 'member',
-      roles: ['member'],
+      role: 'user',
+      roles: ['user'],
       userId: 'user-1',
     });
 

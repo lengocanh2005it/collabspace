@@ -13,10 +13,10 @@ export class AuthSessionResponseDto {
   @ApiProperty({ example: 'refresh-token-uuid' })
   refreshToken: string;
 
-  @ApiPropertyOptional({ example: 'member' })
+  @ApiPropertyOptional({ example: 'user' })
   role?: string;
 
-  @ApiProperty({ example: ['member'], type: [String] })
+  @ApiProperty({ example: ['user'], type: [String] })
   roles: string[];
 
   @ApiProperty({ format: 'uuid' })
