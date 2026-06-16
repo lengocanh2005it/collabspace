@@ -6,7 +6,9 @@ import { WorkspaceInviteEventListenerController } from "./workspace-invite-event
 describe("WorkspaceInviteEventListenerController", () => {
   let controller: WorkspaceInviteEventListenerController;
   let mockCommandBus: jest.Mocked<CommandBus>;
-  let mockUserReplicaLookup: jest.Mocked<Pick<UserReplicaLookupService, "findActiveUserIdByEmailAsync">>;
+  let mockUserReplicaLookup: jest.Mocked<
+    Pick<UserReplicaLookupService, "findActiveUserIdByEmailAsync">
+  >;
   let mockRmqContext: jest.Mocked<RmqContext>;
   let mockChannel: { ack: jest.Mock; nack: jest.Mock };
   let mockMessage: Record<string, never>;

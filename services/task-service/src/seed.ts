@@ -301,8 +301,12 @@ async function main(): Promise<void> {
 
     await seedUserReplicas(demoData.users, userReplicas);
 
-    const taskSummary: Array<{ taskId: string; title: string; status: string; workspaceId: string }> =
-      [];
+    const taskSummary: Array<{
+      taskId: string;
+      title: string;
+      status: string;
+      workspaceId: string;
+    }> = [];
 
     for (const workspace of getDemoWorkspaces(demoData)) {
       for (const project of workspace.projects) {

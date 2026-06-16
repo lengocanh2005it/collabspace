@@ -92,7 +92,12 @@ async function seedWorkspaceBundle(
   memberRepo: Repository<WorkspaceMemberOrmEntity>,
   projectRepo: Repository<ProjectOrmEntity>,
   invitationRepo: Repository<InvitationOrmEntity>,
-): Promise<{ workspaceId: string; workspaceName: string; projectCount: number; memberCount: number }> {
+): Promise<{
+  workspaceId: string;
+  workspaceName: string;
+  projectCount: number;
+  memberCount: number;
+}> {
   let workspace = await workspaceRepo.findOne({
     where: { id: workspaceSeed.workspaceId },
   });

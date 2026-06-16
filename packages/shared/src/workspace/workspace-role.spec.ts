@@ -1,8 +1,4 @@
-import {
-  meetsWorkspaceRole,
-  normalizeWorkspaceRole,
-  parseWorkspaceRole,
-} from './workspace-role';
+import { meetsWorkspaceRole, normalizeWorkspaceRole, parseWorkspaceRole } from './workspace-role';
 
 describe('workspace role contract', () => {
   describe('meetsWorkspaceRole', () => {
