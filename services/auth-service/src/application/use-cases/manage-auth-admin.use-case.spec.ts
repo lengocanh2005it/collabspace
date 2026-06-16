@@ -4,6 +4,7 @@ import type { RefreshTokenRepository } from '@/domain/repositories/refresh-token
 
 describe('ManageAuthAdminUseCase', () => {
   const adminRepository = {
+    assignPermissionToRole: jest.fn(),
     assignRoleToUser: jest.fn(),
     createPermission: jest.fn(),
     createRole: jest.fn(),
@@ -11,6 +12,7 @@ describe('ManageAuthAdminUseCase', () => {
     listPermissions: jest.fn(),
     listRoles: jest.fn(),
     listUsers: jest.fn(),
+    removePermissionFromRole: jest.fn(),
     setUserActive: jest.fn(),
     updateRole: jest.fn(),
   } as unknown as jest.Mocked<AuthAdminRepository>;
@@ -43,6 +45,21 @@ describe('ManageAuthAdminUseCase', () => {
 
     expect(adminRepository.listRoles).toHaveBeenCalled();
     expect(adminRepository.listPermissions).toHaveBeenCalled();
+  });
+
+  it('unassigns permissions through the repository', async () => {
+    adminRepository.removePermissionFromRole.mockResolvedValue({
+      description: 'Support',
+      id: 'role-1',
+      name: 'support',
+      permissions: [],
+    });
+
+    await expect(useCase.unassignPermission('role-1', 'perm-1')).resolves.toMatchObject({
+      id: 'role-1',
+      permissions: [],
+    });
+    expect(adminRepository.removePermissionFromRole).toHaveBeenCalledWith('role-1', 'perm-1');
   });
 
   it('revokes sessions after assigning a role', async () => {

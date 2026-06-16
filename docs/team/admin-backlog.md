@@ -120,6 +120,7 @@ Fan-out: `BroadcastJobService` (persisted jobs, batch 100, recipient dedupe, `Id
 | auth | `POST` | `/api/v1/auth/admin/roles` | [x] |
 | auth | `POST` | `/api/v1/auth/admin/permissions` | [x] |
 | auth | `POST` | `/api/v1/auth/admin/roles/:roleId/permissions` | [x] |
+| auth | `DELETE` | `/api/v1/auth/admin/roles/:roleId/permissions/:permissionId` | [x] |
 | auth | `POST` | `/api/v1/auth/admin/users/:userId/roles` | [x] |
 | auth | `GET` | `/api/v1/auth/admin/roles` | [x] |
 | auth | `GET` | `/api/v1/auth/admin/permissions` | [x] |

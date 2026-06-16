@@ -15,6 +15,17 @@ export class BulkGetUserProfilesUseCase {
 
   async execute(userIds: string[]): Promise<UserProfileResponseDto[]> {
     const profiles = await this.userProfileRepository.findManyByUserIds(userIds);
-    return profiles.map((profile) => toUserProfileResponseDto(profile));
+    if (profiles.length === 0) {
+      return [];
+    }
+
+    const statuses = await this.userProfileRepository.getStatusesByUserIds(
+      profiles.map((profile) => profile.userId),
+    );
+    const statusByUserId = new Map(statuses.map((status) => [status.userId, status]));
+
+    return profiles.map((profile) =>
+      toUserProfileResponseDto(profile, statusByUserId.get(profile.userId)),
+    );
   }
 }

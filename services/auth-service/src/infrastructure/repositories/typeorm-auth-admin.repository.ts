@@ -83,6 +83,27 @@ export class TypeOrmAuthAdminRepository implements AuthAdminRepository {
     return this.toAdminRole(await this.loadRole(roleId));
   }
 
+  async removePermissionFromRole(roleId: string, permissionId: string): Promise<AdminRole> {
+    await this.loadRole(roleId);
+    const permission = await this.permissionRepository.findOne({ where: { id: permissionId } });
+    if (!permission) {
+      throw new NotFoundException({
+        code: 'PERMISSION_NOT_FOUND',
+        message: `Permission ${permissionId} was not found`,
+      });
+    }
+
+    const result = await this.rolePermissionRepository.delete({ permissionId, roleId });
+    if (!result.affected) {
+      throw new NotFoundException({
+        code: 'ROLE_PERMISSION_NOT_FOUND',
+        message: `Permission ${permission.name} is not assigned to role ${roleId}`,
+      });
+    }
+
+    return this.toAdminRole(await this.loadRole(roleId));
+  }
+
   async assignRoleToUser(userId: string, roleId: string): Promise<AdminUser> {
     await Promise.all([this.loadUser(userId), this.loadRole(roleId)]);
     await this.userRoleRepository.upsert({ roleId, userId }, ['userId', 'roleId']);

@@ -60,6 +60,26 @@ export class InMemoryAuthAdminRepository implements AuthAdminRepository {
     return role;
   }
 
+  async removePermissionFromRole(roleId: string, permissionId: string): Promise<AdminRole> {
+    const role = this.requireRole(roleId);
+    const permission = this.permissions.find((item) => item.id === permissionId);
+    if (!permission) {
+      throw new NotFoundException({
+        code: 'PERMISSION_NOT_FOUND',
+        message: `Permission ${permissionId} was not found`,
+      });
+    }
+    const index = role.permissions.indexOf(permission.name);
+    if (index < 0) {
+      throw new NotFoundException({
+        code: 'ROLE_PERMISSION_NOT_FOUND',
+        message: `Permission ${permission.name} is not assigned to role ${roleId}`,
+      });
+    }
+    role.permissions.splice(index, 1);
+    return role;
+  }
+
   async assignRoleToUser(userId: string, roleId: string): Promise<AdminUser> {
     const user = this.requireUser(userId);
     const role = this.requireRole(roleId);

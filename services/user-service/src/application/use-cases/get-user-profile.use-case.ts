@@ -23,6 +23,6 @@ export class GetUserProfileUseCase {
       });
     }
 
-    return toUserProfileResponseDto(profile);
+    return toUserProfileResponseDto(profile, await this.userProfileRepository.getStatus(userId));
   }
 }

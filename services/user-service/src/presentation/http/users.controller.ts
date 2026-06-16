@@ -109,7 +109,7 @@ export class UsersController {
   @ApiOkResponse({ type: UserProfileResponseSchemaDto })
   async updateMe(@Body() body: UpdateCurrentUserProfileDto, @Req() request: AuthenticatedRequest) {
     const { preferredLanguage, ...profileInput } = body;
-    const profile = await this.updateUserProfileUseCase.execute(request.user.id, profileInput);
+    await this.updateUserProfileUseCase.execute(request.user.id, profileInput);
 
     if (preferredLanguage) {
       await this.updateUserPreferencesUseCase.execute(request.user.id, {
@@ -117,7 +117,7 @@ export class UsersController {
       });
     }
 
-    return profile;
+    return this.getUserProfileUseCase.execute(request.user.id);
   }
 
   @Post('me/avatar')
@@ -133,9 +133,11 @@ export class UsersController {
 
     const avatarUrl = await this.azureBlobService.uploadAvatar(file, request.user.id);
 
-    return this.updateUserProfileUseCase.execute(request.user.id, {
+    await this.updateUserProfileUseCase.execute(request.user.id, {
       avatarUrl,
     });
+
+    return this.getUserProfileUseCase.execute(request.user.id);
   }
 
   @Get('me/preferences')

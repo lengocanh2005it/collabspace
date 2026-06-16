@@ -45,6 +45,11 @@ export class AuthAdminController {
     return this.adminUseCase.assignPermission(roleId, body.permissionId);
   }
 
+  @Delete('roles/:roleId/permissions/:permissionId')
+  unassignPermission(@Param('roleId') roleId: string, @Param('permissionId') permissionId: string) {
+    return this.adminUseCase.unassignPermission(roleId, permissionId);
+  }
+
   @Post('users/:userId/roles')
   assignRole(
     @AdminUserId() actorId: string,

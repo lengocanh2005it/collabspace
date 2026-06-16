@@ -7,6 +7,8 @@ export class UserProfileResponseSchemaDto {
   @ApiPropertyOptional({ nullable: true }) displayName: string | null;
   @ApiProperty() fullName: string;
   @ApiProperty({ format: 'uuid' }) id: string;
+  @ApiProperty({ example: 'online', description: 'Presence: online | away | dnd | offline' })
+  status: string;
   @ApiProperty({ format: 'date-time' }) updatedAt: string;
   @ApiProperty({ format: 'uuid' }) userId: string;
   @ApiPropertyOptional({ nullable: true }) username: string | null;

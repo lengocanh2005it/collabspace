@@ -2,6 +2,7 @@ import { BulkGetUserProfilesUseCase } from './bulk-get-user-profiles.use-case';
 import {
   createUserProfileRepositoryMock,
   sampleUserProfile,
+  sampleUserStatus,
 } from './testing/user-profile-repository.mock';
 
 describe('BulkGetUserProfilesUseCase', () => {
@@ -15,9 +16,10 @@ describe('BulkGetUserProfilesUseCase', () => {
 
   it('returns mapped profiles for the requested user ids', async () => {
     jest.spyOn(repository, 'findManyByUserIds').mockResolvedValue([sampleUserProfile]);
+    jest.spyOn(repository, 'getStatusesByUserIds').mockResolvedValue([sampleUserStatus]);
 
     await expect(useCase.execute(['user-1', 'user-2'])).resolves.toEqual([
-      expect.objectContaining({ userId: 'user-1', username: 'jane.doe' }),
+      expect.objectContaining({ userId: 'user-1', username: 'jane.doe', status: 'online' }),
     ]);
   });
 

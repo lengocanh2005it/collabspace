@@ -75,6 +75,7 @@ Auth service:
 - `POST /api/v1/auth/admin/roles`
 - `POST /api/v1/auth/admin/permissions`
 - `POST /api/v1/auth/admin/roles/{roleId}/permissions`
+- `DELETE /api/v1/auth/admin/roles/{roleId}/permissions/{permissionId}`
 - `POST /api/v1/auth/admin/users/{userId}/roles`
 - `GET /api/v1/auth/admin/roles`
 - `GET /api/v1/auth/admin/permissions`
@@ -111,7 +112,7 @@ Routes:
 - `GET /api/v1/users/health`
 - `GET /api/v1/users/health/live`
 - `GET /api/v1/users/health/ready`
-- `GET /api/v1/users/me`
+- `GET /api/v1/users/me` — includes `status` (presence: `online` | `away` | `dnd` | `offline`)
 - `PATCH /api/v1/users/me`
 - `POST /api/v1/users/me/avatar` — multipart field `file`; updates `avatarUrl` via profile use case
 - `POST /api/v1/users/bulk`

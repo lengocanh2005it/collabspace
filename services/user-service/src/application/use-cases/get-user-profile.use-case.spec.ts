@@ -36,6 +36,15 @@ describe('GetUserProfileUseCase', () => {
       userId: 'user-1',
       username: 'jane.doe',
     });
+    jest.spyOn(userProfileRepositoryMock, 'getStatus').mockResolvedValue({
+      clearAt: null,
+      emoji: null,
+      lastSeenAt: new Date('2026-01-02T10:00:00.000Z'),
+      status: 'online',
+      statusText: null,
+      updatedAt: new Date('2026-01-02T10:00:00.000Z'),
+      userId: 'user-1',
+    });
 
     await expect(getUserProfileUseCase.execute('user-1')).resolves.toEqual({
       avatarUrl: 'https://cdn.example.com/avatar-1.png',
@@ -44,6 +53,7 @@ describe('GetUserProfileUseCase', () => {
       displayName: 'Jane',
       fullName: 'Jane Doe',
       id: 'profile-1',
+      status: 'online',
       updatedAt: '2026-01-02T00:00:00.000Z',
       userId: 'user-1',
       username: 'jane.doe',

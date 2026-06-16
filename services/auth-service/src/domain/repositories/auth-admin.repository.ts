@@ -33,6 +33,7 @@ export interface AuthAdminRepository {
   listRoles(): Promise<AdminRole[]>;
   listUsers(): Promise<AdminUser[]>;
   recordLogin(userId: string): Promise<void>;
+  removePermissionFromRole(roleId: string, permissionId: string): Promise<AdminRole>;
   setUserActive(userId: string, isActive: boolean): Promise<AdminUser>;
   updateRole(roleId: string, input: { description?: string; name?: string }): Promise<AdminRole>;
 }

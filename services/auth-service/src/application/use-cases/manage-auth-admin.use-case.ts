@@ -31,6 +31,10 @@ export class ManageAuthAdminUseCase {
     return this.adminRepository.assignPermissionToRole(roleId, permissionId);
   }
 
+  unassignPermission(roleId: string, permissionId: string) {
+    return this.adminRepository.removePermissionFromRole(roleId, permissionId);
+  }
+
   async assignRole(actorId: string, userId: string, roleId: string) {
     const result = await this.adminRepository.assignRoleToUser(userId, roleId);
     await this.refreshTokenRepository.revokeAllForUser(userId, 'admin_role_changed');

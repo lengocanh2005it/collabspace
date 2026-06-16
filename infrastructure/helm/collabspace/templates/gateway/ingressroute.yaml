@@ -110,10 +110,10 @@ spec:
         - name: task-service
           port: 3000
       middlewares:
+        - name: cors-headers
         - name: strip-identity-headers
         - name: forward-auth
         - name: rate-limit
-        - name: cors-headers
     - match: PathPrefix(`/api/v1/notifications`)
       kind: Rule
       services:

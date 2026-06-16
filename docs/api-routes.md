@@ -181,6 +181,7 @@ permission `auth.manage`.
 | auth | POST | `/api/v1/auth/admin/roles` | Create role |
 | auth | POST | `/api/v1/auth/admin/permissions` | Create permission |
 | auth | POST | `/api/v1/auth/admin/roles/{roleId}/permissions` | Assign permission |
+| auth | DELETE | `/api/v1/auth/admin/roles/{roleId}/permissions/{permissionId}` | Remove permission from role |
 | auth | POST | `/api/v1/auth/admin/users/{userId}/roles` | Assign role and revoke sessions |
 | auth | GET | `/api/v1/auth/admin/roles` | List roles |
 | auth | GET | `/api/v1/auth/admin/permissions` | List permissions |
