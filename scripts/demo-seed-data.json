@@ -12,7 +12,7 @@
     "taskCount": 87,
     "commentCount": 13,
     "notificationCount": 32,
-    "note": "Dense demo data for UI — re-seed all services after pull."
+    "note": "Dense demo data for UI — re-seed all services after pull. user_replicas seeded in task + notification Mongo."
   },
   "defaultPassword": "collabspace123",
   "users": [

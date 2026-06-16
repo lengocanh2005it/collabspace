@@ -5,6 +5,7 @@ import {
   avatarUrlFor,
   getDemoWorkspaces,
   loadDemoSeedData,
+  userReplicaDocumentFor,
   userSnapshot,
   type DemoSeedComment,
   type DemoSeedTask,
@@ -71,20 +72,11 @@ async function seedUserReplicas(
   for (const user of users) {
     await collection.updateOne(
       { userId: user.id },
-      {
-        $set: {
-          userId: user.id,
-          email: user.email,
-          username: user.username.toLowerCase(),
-          fullName: user.fullName,
-          displayName: user.fullName,
-          avatarUrl: avatarUrlFor(user),
-          isActive: true,
-        },
-      },
+      { $set: userReplicaDocumentFor(user) },
       { upsert: true },
     );
   }
+  console.log(`Seeded ${users.length} user_replicas (task-service)`);
 }
 
 async function seedTask(

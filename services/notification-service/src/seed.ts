@@ -1,7 +1,11 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import mongoose from "mongoose";
-import { collectDemoNotifications, loadDemoSeedData } from "./load-demo-seed";
+import {
+  collectDemoNotifications,
+  loadDemoSeedData,
+  userReplicaDocumentFor,
+} from "./load-demo-seed";
 
 function loadEnvFile(): void {
   const envPath = join(process.cwd(), ".env");
@@ -64,20 +68,11 @@ async function main(): Promise<void> {
     for (const user of demoData.users) {
       await userReplicas.updateOne(
         { userId: user.id },
-        {
-          $set: {
-            userId: user.id,
-            email: user.email,
-            username: user.username.toLowerCase(),
-            fullName: user.fullName,
-            displayName: user.fullName,
-            avatarUrl: null,
-            isActive: true,
-          },
-        },
+        { $set: userReplicaDocumentFor(user) },
         { upsert: true },
       );
     }
+    console.log(`Seeded ${demoData.users.length} user_replicas (notification-service)`);
 
     for (const sample of collectDemoNotifications(demoData)) {
       await notifications.updateOne(

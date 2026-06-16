@@ -35,6 +35,15 @@ type Loader = {
     displayName: string;
     avatarUrl: string;
   };
+  userReplicaDocumentFor: (user: DemoSeedUser) => {
+    userId: string;
+    email: string;
+    username: string;
+    fullName: string;
+    displayName: string;
+    avatarUrl: string;
+    isActive: boolean;
+  };
 };
 
 const loader = nodeRequire(resolveLoaderPath()) as Loader;
@@ -95,3 +104,4 @@ export const getDemoWorkspaces = loader.getDemoWorkspaces;
 export const collectDemoNotifications = loader.collectDemoNotifications;
 export const avatarUrlFor = loader.avatarUrlFor;
 export const userSnapshot = loader.userSnapshot;
+export const userReplicaDocumentFor = loader.userReplicaDocumentFor;

@@ -1,11 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.loadDemoSeedData = loadDemoSeedData;
-exports.getDemoWorkspaces = getDemoWorkspaces;
-exports.getPrimaryDemoWorkspace = getPrimaryDemoWorkspace;
-exports.collectDemoNotifications = collectDemoNotifications;
-exports.avatarUrlFor = avatarUrlFor;
-exports.userSnapshot = userSnapshot;
+exports.userSnapshot = exports.avatarUrlFor = exports.collectDemoNotifications = exports.getPrimaryDemoWorkspace = exports.getDemoWorkspaces = exports.loadDemoSeedData = void 0;
 const node_fs_1 = require("node:fs");
 const node_path_1 = require("node:path");
 const DEMO_SEED_FILENAME = 'demo-seed-data.json';
@@ -24,6 +19,7 @@ function loadDemoSeedData() {
     }
     throw new Error(`Could not find ${DEMO_SEED_FILENAME}. Run seed scripts from the repository root or a service directory.`);
 }
+exports.loadDemoSeedData = loadDemoSeedData;
 function legacyDemoToWorkspace(demo) {
     return {
         workspaceId: demo.workspaceId,
@@ -52,16 +48,20 @@ function getDemoWorkspaces(data) {
     }
     throw new Error('demo-seed-data.json must define workspaces[] or legacy demo');
 }
+exports.getDemoWorkspaces = getDemoWorkspaces;
 /** Primary MVP workspace (first entry). */
 function getPrimaryDemoWorkspace(data) {
     return getDemoWorkspaces(data)[0];
 }
+exports.getPrimaryDemoWorkspace = getPrimaryDemoWorkspace;
 function collectDemoNotifications(data) {
     return getDemoWorkspaces(data).flatMap((workspace) => workspace.sampleNotifications ?? []);
 }
+exports.collectDemoNotifications = collectDemoNotifications;
 function avatarUrlFor(user) {
     return `https://api.dicebear.com/9.x/initials/svg?seed=${user.avatarSeed}`;
 }
+exports.avatarUrlFor = avatarUrlFor;
 function userSnapshot(user) {
     return {
         userId: user.id,
@@ -71,3 +71,16 @@ function userSnapshot(user) {
         avatarUrl: avatarUrlFor(user),
     };
 }
+function userReplicaDocumentFor(user) {
+    return {
+        userId: user.id,
+        email: user.email,
+        username: user.username.toLowerCase(),
+        fullName: user.fullName,
+        displayName: user.fullName,
+        avatarUrl: avatarUrlFor(user),
+        isActive: true,
+    };
+}
+exports.userSnapshot = userSnapshot;
+exports.userReplicaDocumentFor = userReplicaDocumentFor;

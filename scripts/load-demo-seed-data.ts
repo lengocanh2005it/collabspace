@@ -178,3 +178,16 @@ export function userSnapshot(user: DemoSeedUser) {
     avatarUrl: avatarUrlFor(user),
   };
 }
+
+/** Mongo `user_replicas` document — task-service + notification-service seed the same shape. */
+export function userReplicaDocumentFor(user: DemoSeedUser) {
+  return {
+    userId: user.id,
+    email: user.email,
+    username: user.username.toLowerCase(),
+    fullName: user.fullName,
+    displayName: user.fullName,
+    avatarUrl: avatarUrlFor(user),
+    isActive: true,
+  };
+}

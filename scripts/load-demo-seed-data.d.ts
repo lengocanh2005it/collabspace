@@ -103,3 +103,13 @@ export declare function userSnapshot(user: DemoSeedUser): {
     displayName: string;
     avatarUrl: string;
 };
+/** Mongo `user_replicas` — task-service + notification-service. */
+export declare function userReplicaDocumentFor(user: DemoSeedUser): {
+    userId: string;
+    email: string;
+    username: string;
+    fullName: string;
+    displayName: string;
+    avatarUrl: string;
+    isActive: boolean;
+};

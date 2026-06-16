@@ -26,13 +26,24 @@ function resolveLoaderPath(): string {
 const loader = nodeRequire(resolveLoaderPath()) as {
   loadDemoSeedData: () => { defaultPassword: string; users: DemoSeedUser[] };
   collectDemoNotifications: (data: unknown) => DemoSeedNotification[];
+  userReplicaDocumentFor: (user: DemoSeedUser) => {
+    userId: string;
+    email: string;
+    username: string;
+    fullName: string;
+    displayName: string;
+    avatarUrl: string;
+    isActive: boolean;
+  };
 };
 
 export type DemoSeedUser = {
   id: string;
+  profileId?: string;
   email: string;
   username: string;
   fullName: string;
+  avatarSeed?: string;
 };
 
 export type DemoSeedNotification = {
@@ -48,3 +59,4 @@ export type DemoSeedNotification = {
 
 export const loadDemoSeedData = loader.loadDemoSeedData;
 export const collectDemoNotifications = loader.collectDemoNotifications;
+export const userReplicaDocumentFor = loader.userReplicaDocumentFor;
