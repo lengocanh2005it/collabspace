@@ -31,7 +31,7 @@ describe('InviteMemberUseCase', () => {
     useCase = module.get<InviteMemberUseCase>(InviteMemberUseCase);
   });
 
-  it('should throw ForbiddenException if user is not owner or admin', async () => {
+  it('should throw ForbiddenException if user is not the workspace owner', async () => {
     mockMemberRepo.findByWorkspaceAndUser.mockResolvedValue(
       new WorkspaceMember('m-1', 'ws-1', 'user-1', 'member', new Date()),
     );
@@ -52,7 +52,7 @@ describe('InviteMemberUseCase', () => {
       new Date(),
     );
     mockMemberRepo.findByWorkspaceAndUser.mockResolvedValue(
-      new WorkspaceMember('m-1', 'ws-1', 'user-1', 'admin', new Date()),
+      new WorkspaceMember('m-1', 'ws-1', 'user-1', 'owner', new Date()),
     );
     mockWorkspaceRepo.findById.mockResolvedValue(
       new Workspace('ws-1', 'Test WS', null, 'user-1', new Date(), new Date()),

@@ -27,6 +27,22 @@ export class UserReplicaRepository implements IUserReplicaRepository {
     return this.userReplicaModel.findOne({ userId }).lean().exec();
   }
 
+  async findActiveByEmailAsync(email: string): Promise<UserReplica | null> {
+    const normalized = email.trim();
+    if (!normalized) {
+      return null;
+    }
+
+    const escaped = normalized.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return this.userReplicaModel
+      .findOne({
+        email: { $regex: new RegExp(`^${escaped}$`, "i") },
+        isActive: true,
+      })
+      .lean()
+      .exec();
+  }
+
   async findByUsernameAsync(username: string): Promise<UserReplica | null> {
     return this.userReplicaModel
       .findOne({ username: username.toLowerCase(), isActive: true })

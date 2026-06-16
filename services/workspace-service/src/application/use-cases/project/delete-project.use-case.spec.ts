@@ -27,7 +27,7 @@ describe('DeleteProjectUseCase', () => {
     useCase = module.get<DeleteProjectUseCase>(DeleteProjectUseCase);
   });
 
-  it('should throw ForbiddenException if user is not owner or admin', async () => {
+  it('should throw ForbiddenException if user is not the workspace owner', async () => {
     mockMemberRepo.findByWorkspaceAndUser.mockResolvedValue(
       new WorkspaceMember('m-1', 'ws-1', 'user-1', 'member', new Date()),
     );
@@ -36,7 +36,7 @@ describe('DeleteProjectUseCase', () => {
 
   it('should throw NotFoundException if project does not exist', async () => {
     mockMemberRepo.findByWorkspaceAndUser.mockResolvedValue(
-      new WorkspaceMember('m-1', 'ws-1', 'user-1', 'admin', new Date()),
+      new WorkspaceMember('m-1', 'ws-1', 'user-1', 'owner', new Date()),
     );
     mockProjectRepo.findById.mockResolvedValue(null);
     await expect(useCase.execute('user-1', 'ws-1', 'proj-1')).rejects.toThrow(NotFoundException);

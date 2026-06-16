@@ -8,7 +8,7 @@ export class ForceJoinWorkspaceDto {
   @MaxLength(500)
   reason: string;
 
-  @ApiProperty({ enum: ['admin'], default: 'admin' })
-  @IsIn(['admin'])
-  role = 'admin' as const;
+  @ApiProperty({ enum: ['member'], default: 'member' })
+  @IsIn(['member'])
+  role = 'member' as const;
 }

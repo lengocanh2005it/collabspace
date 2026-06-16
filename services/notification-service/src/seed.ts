@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import mongoose from "mongoose";
-import { loadDemoSeedData } from "./load-demo-seed";
+import { collectDemoNotifications, loadDemoSeedData } from "./load-demo-seed";
 
 function loadEnvFile(): void {
   const envPath = join(process.cwd(), ".env");
@@ -79,7 +79,7 @@ async function main(): Promise<void> {
       );
     }
 
-    for (const sample of demoData.demo.sampleNotifications) {
+    for (const sample of collectDemoNotifications(demoData)) {
       await notifications.updateOne(
         {
           recipientId: sample.recipientId,
@@ -95,7 +95,7 @@ async function main(): Promise<void> {
             message: sample.message,
             targetId: sample.targetId,
             targetType: sample.targetType,
-            status: "UNREAD",
+            status: sample.status ?? "UNREAD",
             metadata: { seeded: true },
             createdAt: now,
             updatedAt: now,
@@ -107,9 +107,10 @@ async function main(): Promise<void> {
 
     console.log("notification-service seed completed");
     console.table(
-      demoData.demo.sampleNotifications.map((notification) => ({
+      collectDemoNotifications(demoData).map((notification) => ({
         recipientId: notification.recipientId,
         type: notification.type,
+        status: notification.status ?? "UNREAD",
         targetId: notification.targetId,
       })),
     );

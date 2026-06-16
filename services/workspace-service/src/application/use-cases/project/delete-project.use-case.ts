@@ -25,7 +25,7 @@ export class DeleteProjectUseCase {
 
   async execute(userId: string, workspaceId: string, projectId: string) {
     const member = await this.memberRepo.findByWorkspaceAndUser(workspaceId, userId);
-    if (!member || (member.role !== 'owner' && member.role !== 'admin')) {
+    if (!member || member.role !== 'owner') {
       throw new ForbiddenException('Only admins or owners can delete projects');
     }
 

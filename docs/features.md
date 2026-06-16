@@ -80,9 +80,9 @@ Tài liệu này là **nguồn chính** mô tả chức năng và mức độ ho
 - Mời thành viên (`POST .../invite`) — transactional outbox + event `workspace_invited`
 - **Liệt kê lời mời đang chờ** — `GET /workspaces/:workspaceId/invitations` (chỉ member workspace)
 - Chấp nhận / từ chối lời mời (`POST /invitations/:id/accept|reject`)
-- **Workspace roles:** `owner`, `manager` (**Planned**), `member` — xem [roles-and-permissions.md](./roles-and-permissions.md)
+- **Workspace roles:** `owner`, `manager`, `member` — contract in `@collabspace/shared`; xem [roles-and-permissions.md](./roles-and-permissions.md)
 - **Remove member / leave** — `DELETE` `/workspaces/:id/members/:userId` (owner remove member/manager; manager remove member; self leave)
-- **Đổi role member ↔ manager** — `PATCH` `/workspaces/:id/members/:userId` (**Planned** — chỉ owner)
+- **Đổi role member ↔ manager** — `PATCH` `/workspaces/:id/members/:userId` (**Planned** Phase 2 — chỉ owner)
 - Idempotency-Key trên tạo workspace và invite
 - **JWT verification** qua auth gRPC (`AuthGuard`); dev fallback `X-User-Id` khi `ALLOW_DEV_IDENTITY_HEADERS=true`
 - **Activity feed** — `GET /api/v1/workspaces/:id/activity` — timeline `workspace_created`, `member_invited`, `member_joined`, `invitation_rejected`, `project_created`, `project_deleted`; `limit`/`offset` pagination; chỉ member được xem

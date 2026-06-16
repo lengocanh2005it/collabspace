@@ -32,8 +32,8 @@ export class InviteMemberUseCase {
 
   async execute(userId: string, workspaceId: string, dto: InviteMemberDto) {
     const member = await this.memberRepo.findByWorkspaceAndUser(workspaceId, userId);
-    if (!member || (member.role !== 'owner' && member.role !== 'admin')) {
-      throw new ForbiddenException('Only admins can invite members');
+    if (!member || member.role !== 'owner') {
+      throw new ForbiddenException('Only the workspace owner can invite members');
     }
 
     const workspace = await this.workspaceRepo.findById(workspaceId);

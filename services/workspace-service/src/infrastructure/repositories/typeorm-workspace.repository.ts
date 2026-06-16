@@ -78,7 +78,7 @@ export class TypeOrmWorkspaceRepository implements IWorkspaceRepository {
     await this.cache.deleteWorkspace(id);
   }
 
-  async adminForceJoin(id: string, userId: string, role: 'admin'): Promise<void> {
+  async adminForceJoin(id: string, userId: string, role: 'member'): Promise<void> {
     const workspace = await this.repo.findOne({ where: { id } });
     if (!workspace) {
       throw new NotFoundException('Workspace not found');

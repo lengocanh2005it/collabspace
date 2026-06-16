@@ -1,11 +1,17 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { DataSource } from 'typeorm';
+import { normalizeWorkspaceRole } from '@collabspace/shared';
+import { DataSource, type Repository } from 'typeorm';
 import { WorkspaceOrmEntity } from './infrastructure/database/entities/workspace.orm-entity';
 import { WorkspaceMemberOrmEntity } from './infrastructure/database/entities/workspace-member.orm-entity';
 import { ProjectOrmEntity } from './infrastructure/database/entities/project.orm-entity';
 import { InvitationOrmEntity } from './infrastructure/database/entities/invitation.orm-entity';
-import { loadDemoSeedData } from './load-demo-seed';
+import {
+  getDemoWorkspaces,
+  loadDemoSeedData,
+  type DemoSeedPendingInvitation,
+  type DemoSeedWorkspace,
+} from './load-demo-seed';
 
 function loadEnvFile(): void {
   const envPath = join(process.cwd(), '.env');
@@ -56,10 +62,131 @@ function toBoolean(value: string | undefined, fallback: boolean): boolean {
   return ['1', 'true', 'yes', 'on'].includes(value.toLowerCase());
 }
 
+async function seedPendingInvitations(
+  workspaceId: string,
+  invitations: DemoSeedPendingInvitation[],
+  invitationRepo: Repository<InvitationOrmEntity>,
+): Promise<void> {
+  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+  for (const invitation of invitations) {
+    let row = await invitationRepo.findOne({ where: { id: invitation.id } });
+
+    if (!row) {
+      row = invitationRepo.create({ id: invitation.id });
+    }
+
+    row.workspace_id = workspaceId;
+    row.inviter_id = invitation.inviterUserId;
+    row.invitee_email = invitation.email.toLowerCase();
+    row.invitee_user_id = null;
+    row.status = 'pending';
+    row.expires_at = expiresAt;
+    await invitationRepo.save(row);
+  }
+}
+
+async function seedWorkspaceBundle(
+  workspaceSeed: DemoSeedWorkspace,
+  workspaceRepo: Repository<WorkspaceOrmEntity>,
+  memberRepo: Repository<WorkspaceMemberOrmEntity>,
+  projectRepo: Repository<ProjectOrmEntity>,
+  invitationRepo: Repository<InvitationOrmEntity>,
+): Promise<{ workspaceId: string; workspaceName: string; projectCount: number; memberCount: number }> {
+  let workspace = await workspaceRepo.findOne({
+    where: { id: workspaceSeed.workspaceId },
+  });
+
+  if (!workspace) {
+    workspace = workspaceRepo.create({
+      id: workspaceSeed.workspaceId,
+      name: workspaceSeed.workspaceName,
+      description: workspaceSeed.workspaceDescription,
+      owner_id: workspaceSeed.ownerUserId,
+    });
+  } else {
+    workspace.name = workspaceSeed.workspaceName;
+    workspace.description = workspaceSeed.workspaceDescription;
+    workspace.owner_id = workspaceSeed.ownerUserId;
+  }
+
+  await workspaceRepo.save(workspace);
+
+  await memberRepo.update(
+    { workspace_id: workspaceSeed.workspaceId, role: 'admin' },
+    { role: 'member' },
+  );
+
+  for (const member of workspaceSeed.members) {
+    const role = normalizeWorkspaceRole(member.role);
+    const existingMember = await memberRepo.findOne({
+      where: {
+        workspace_id: workspaceSeed.workspaceId,
+        user_id: member.userId,
+      },
+    });
+
+    if (existingMember) {
+      existingMember.role = role;
+      await memberRepo.save(existingMember);
+      continue;
+    }
+
+    await memberRepo.save(
+      memberRepo.create({
+        workspace_id: workspaceSeed.workspaceId,
+        user_id: member.userId,
+        role,
+      }),
+    );
+  }
+
+  for (const projectSeed of workspaceSeed.projects) {
+    let project = await projectRepo.findOne({
+      where: { id: projectSeed.projectId },
+    });
+
+    if (!project) {
+      project = projectRepo.create({
+        id: projectSeed.projectId,
+        workspace_id: workspaceSeed.workspaceId,
+        name: projectSeed.projectName,
+        description: projectSeed.projectDescription,
+        created_by: workspaceSeed.ownerUserId,
+        is_deleted: false,
+      });
+    } else {
+      project.name = projectSeed.projectName;
+      project.description = projectSeed.projectDescription;
+      project.workspace_id = workspaceSeed.workspaceId;
+      project.created_by = workspaceSeed.ownerUserId;
+      project.is_deleted = false;
+    }
+
+    await projectRepo.save(project);
+  }
+
+  if (workspaceSeed.pendingInvitations?.length) {
+    await seedPendingInvitations(
+      workspaceSeed.workspaceId,
+      workspaceSeed.pendingInvitations,
+      invitationRepo,
+    );
+  }
+
+  return {
+    workspaceId: workspaceSeed.workspaceId,
+    workspaceName: workspaceSeed.workspaceName,
+    projectCount: workspaceSeed.projects.length,
+    memberCount: workspaceSeed.members.length,
+  };
+}
+
 async function main(): Promise<void> {
   loadEnvFile();
 
-  const { demo } = loadDemoSeedData();
+  const demoData = loadDemoSeedData();
+  const workspaces = getDemoWorkspaces(demoData);
   const dataSource = new DataSource({
     type: 'postgres',
     url: requireDatabaseUrl(),
@@ -75,82 +202,29 @@ async function main(): Promise<void> {
     const workspaceRepo = dataSource.getRepository(WorkspaceOrmEntity);
     const memberRepo = dataSource.getRepository(WorkspaceMemberOrmEntity);
     const projectRepo = dataSource.getRepository(ProjectOrmEntity);
+    const invitationRepo = dataSource.getRepository(InvitationOrmEntity);
 
-    let workspace = await workspaceRepo.findOne({
-      where: { id: demo.workspaceId },
-    });
+    const summary: Array<{
+      workspaceId: string;
+      workspaceName: string;
+      projectCount: number;
+      memberCount: number;
+    }> = [];
 
-    if (!workspace) {
-      workspace = workspaceRepo.create({
-        id: demo.workspaceId,
-        name: demo.workspaceName,
-        description: demo.workspaceDescription,
-        owner_id: demo.ownerUserId,
-      });
-    } else {
-      workspace.name = demo.workspaceName;
-      workspace.description = demo.workspaceDescription;
-      workspace.owner_id = demo.ownerUserId;
-    }
-
-    await workspaceRepo.save(workspace);
-
-    for (const member of demo.members) {
-      const existingMember = await memberRepo.findOne({
-        where: {
-          workspace_id: demo.workspaceId,
-          user_id: member.userId,
-        },
-      });
-
-      if (existingMember) {
-        existingMember.role = member.role;
-        await memberRepo.save(existingMember);
-        continue;
-      }
-
-      await memberRepo.save(
-        memberRepo.create({
-          workspace_id: demo.workspaceId,
-          user_id: member.userId,
-          role: member.role,
-        }),
+    for (const workspaceSeed of workspaces) {
+      summary.push(
+        await seedWorkspaceBundle(
+          workspaceSeed,
+          workspaceRepo,
+          memberRepo,
+          projectRepo,
+          invitationRepo,
+        ),
       );
     }
 
-    let project = await projectRepo.findOne({
-      where: { id: demo.projectId },
-    });
-
-    if (!project) {
-      project = projectRepo.create({
-        id: demo.projectId,
-        workspace_id: demo.workspaceId,
-        name: demo.projectName,
-        description: demo.projectDescription,
-        created_by: demo.ownerUserId,
-        is_deleted: false,
-      });
-    } else {
-      project.name = demo.projectName;
-      project.description = demo.projectDescription;
-      project.workspace_id = demo.workspaceId;
-      project.created_by = demo.ownerUserId;
-      project.is_deleted = false;
-    }
-
-    await projectRepo.save(project);
-
     console.log('workspace-service seed completed');
-    console.table([
-      {
-        workspaceId: demo.workspaceId,
-        workspaceName: demo.workspaceName,
-        projectId: demo.projectId,
-        projectName: demo.projectName,
-        memberCount: demo.members.length,
-      },
-    ]);
+    console.table(summary);
   } finally {
     await dataSource.destroy();
   }

@@ -126,7 +126,7 @@ Sau Phase 5 seed: thêm user có role workspace `manager` trong ít nhất một
 | Phase | Nội dung |
 |-------|----------|
 | **0** | **Docs** — tài liệu này + đồng bộ `features`, `service-contracts`, `api-routes` |
-| 1 | Contract: enum `owner` \| `manager` \| `member`, DTO, task-service hierarchy |
+| 1 | Contract: enum `owner` \| `manager` \| `member`, DTO, task-service hierarchy | **Done** (`@collabspace/shared`) |
 | 2 | workspace-service: promote/demote, invite/remove theo ma trận |
 | 3 | task-service: `meetsWorkspaceRole` owner > manager > member |
 | 4 | Frontend: Make manager / Demote, ẩn action theo actor role |

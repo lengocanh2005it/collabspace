@@ -43,12 +43,8 @@ export class RemoveMemberUseCase {
       return;
     }
 
-    if (actor.role === 'member') {
-      throw new ForbiddenException('Only owners or admins can remove members');
-    }
-
-    if (actor.role === 'admin' && target.role === 'admin') {
-      throw new ForbiddenException('Admins cannot remove another admin');
+    if (actor.role !== 'owner') {
+      throw new ForbiddenException('Only the workspace owner can remove members');
     }
 
     await this.memberRepo.removeByWorkspaceAndUser(workspaceId, targetUserId);

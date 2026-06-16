@@ -27,7 +27,7 @@ export class ManageWorkspacesAdminUseCase {
   async forceJoin(
     actorId: string,
     workspaceId: string,
-    role: 'admin',
+    role: 'member',
     reason: string,
   ): Promise<void> {
     await this.repository.adminForceJoin(workspaceId, actorId, role);

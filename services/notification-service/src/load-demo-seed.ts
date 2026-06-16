@@ -1,6 +1,6 @@
-import { createRequire } from "node:module";
-import { existsSync } from "node:fs";
-import { join } from "node:path";
+import { createRequire } from 'node:module';
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
 
 const nodeRequire = createRequire(__filename);
 
@@ -24,17 +24,18 @@ function resolveLoaderPath(): string {
 }
 
 const loader = nodeRequire(resolveLoaderPath()) as {
-  loadDemoSeedData: () => unknown;
+  loadDemoSeedData: () => { defaultPassword: string; users: DemoSeedUser[] };
+  collectDemoNotifications: (data: unknown) => DemoSeedNotification[];
 };
 
-export type NotificationSeedUser = {
+export type DemoSeedUser = {
   id: string;
   email: string;
   username: string;
   fullName: string;
 };
 
-export type NotificationSeedSample = {
+export type DemoSeedNotification = {
   recipientId: string;
   actorId: string;
   type: string;
@@ -42,9 +43,8 @@ export type NotificationSeedSample = {
   message: string;
   targetId: string;
   targetType: string;
+  status?: "UNREAD" | "READ" | "ARCHIVED";
 };
 
-export const loadDemoSeedData = loader.loadDemoSeedData as () => {
-  users: NotificationSeedUser[];
-  demo: { sampleNotifications: NotificationSeedSample[] };
-};
+export const loadDemoSeedData = loader.loadDemoSeedData;
+export const collectDemoNotifications = loader.collectDemoNotifications;

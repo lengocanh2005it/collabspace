@@ -86,24 +86,6 @@ export function createInMemoryWorkspaceRepositories(): InMemoryWorkspaceReposito
         null
       );
     },
-    async updateRole(workspaceId, userId, role) {
-      const index = members.findIndex(
-        (member) => member.workspaceId === workspaceId && member.userId === userId,
-      );
-      if (index < 0) {
-        throw new NotFoundException('Workspace member not found');
-      }
-      const existing = members[index];
-      const updated = new WorkspaceMember(
-        existing.id,
-        existing.workspaceId,
-        existing.userId,
-        role,
-        existing.joinedAt,
-      );
-      members[index] = updated;
-      return updated;
-    },
     async removeByWorkspaceAndUser(workspaceId, userId) {
       const index = members.findIndex(
         (member) => member.workspaceId === workspaceId && member.userId === userId,

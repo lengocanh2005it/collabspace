@@ -1,4 +1,5 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import type { WorkspaceRole } from '@collabspace/shared';
 import {
   type IWorkspaceRepository,
   WORKSPACE_REPOSITORY,
@@ -12,7 +13,7 @@ export type WorkspaceMembershipResult = {
   workspaceId: string;
   userId: string;
   isMember: boolean;
-  role: string | null;
+  role: WorkspaceRole | null;
 };
 
 @Injectable()

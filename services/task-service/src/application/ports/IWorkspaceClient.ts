@@ -1,14 +1,16 @@
+import type { WorkspaceRole } from "@collabspace/shared";
+
 export const WORKSPACE_CLIENT_TOKEN = Symbol("WORKSPACE_CLIENT");
 
 export type WorkspaceMember = {
-  role: "owner" | "admin" | "member";
+  role: WorkspaceRole;
   userId: string;
 };
 
 /** Single membership fetch result; `null` when workspace does not exist (HTTP 404). */
 export type WorkspaceMembershipSnapshot = {
   isMember: boolean;
-  role: WorkspaceMember["role"] | null;
+  role: WorkspaceRole | null;
 };
 
 export interface IWorkspaceClient {
@@ -25,7 +27,7 @@ export interface IWorkspaceClient {
   checkUserPermissionAsync(
     workspaceId: string,
     userId: string,
-    requiredRole?: "owner" | "admin" | "member",
+    requiredRole?: WorkspaceRole,
   ): Promise<boolean>;
 
   getWorkspaceMemberAsync(workspaceId: string, userId: string): Promise<WorkspaceMember | null>;

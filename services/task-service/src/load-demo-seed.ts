@@ -1,6 +1,6 @@
-import { createRequire } from "node:module";
-import { existsSync } from "node:fs";
-import { join } from "node:path";
+import { createRequire } from 'node:module';
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
 
 const nodeRequire = createRequire(__filename);
 
@@ -23,8 +23,10 @@ function resolveLoaderPath(): string {
   );
 }
 
-const loader = nodeRequire(resolveLoaderPath()) as {
-  loadDemoSeedData: () => unknown;
+type Loader = {
+  loadDemoSeedData: () => { defaultPassword: string; users: DemoSeedUser[] };
+  getDemoWorkspaces: (data: unknown) => DemoSeedWorkspace[];
+  collectDemoNotifications: (data: unknown) => DemoSeedNotification[];
   avatarUrlFor: (user: DemoSeedUser) => string;
   userSnapshot: (user: DemoSeedUser) => {
     userId: string;
@@ -34,6 +36,8 @@ const loader = nodeRequire(resolveLoaderPath()) as {
     avatarUrl: string;
   };
 };
+
+const loader = nodeRequire(resolveLoaderPath()) as Loader;
 
 export type DemoSeedUser = {
   id: string;
@@ -59,21 +63,35 @@ export type DemoSeedTask = {
   createdByUserId: string;
 };
 
-export type TaskSeedDemo = {
-  workspaceId: string;
-  projectId: string;
-  tasks: DemoSeedTask[];
-  sampleComment: {
-    taskId: string;
-    authorUserId: string;
-    content: string;
-    mentionUserIds: string[];
-  };
+export type DemoSeedComment = {
+  taskId: string;
+  authorUserId: string;
+  content: string;
+  mentionUserIds: string[];
 };
 
-export const loadDemoSeedData = loader.loadDemoSeedData as () => {
-  users: DemoSeedUser[];
-  demo: TaskSeedDemo;
+export type DemoSeedWorkspace = {
+  workspaceId: string;
+  projects: Array<{
+    projectId: string;
+    tasks: DemoSeedTask[];
+    sampleComments?: DemoSeedComment[];
+  }>;
 };
+
+export type DemoSeedNotification = {
+  recipientId: string;
+  actorId: string;
+  type: string;
+  title: string;
+  message: string;
+  targetId: string;
+  targetType: string;
+  status?: "UNREAD" | "READ" | "ARCHIVED";
+};
+
+export const loadDemoSeedData = loader.loadDemoSeedData;
+export const getDemoWorkspaces = loader.getDemoWorkspaces;
+export const collectDemoNotifications = loader.collectDemoNotifications;
 export const avatarUrlFor = loader.avatarUrlFor;
 export const userSnapshot = loader.userSnapshot;

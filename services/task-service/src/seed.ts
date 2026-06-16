@@ -3,8 +3,11 @@ import { join } from "node:path";
 import mongoose from "mongoose";
 import {
   avatarUrlFor,
+  collectDemoNotifications,
+  getDemoWorkspaces,
   loadDemoSeedData,
   userSnapshot,
+  type DemoSeedComment,
   type DemoSeedTask,
   type DemoSeedUser,
 } from "./load-demo-seed";
@@ -88,7 +91,8 @@ async function seedUserReplicas(
 async function seedTask(
   taskSeed: DemoSeedTask,
   users: DemoSeedUser[],
-  demo: ReturnType<typeof loadDemoSeedData>["demo"],
+  workspaceId: string,
+  projectId: string,
   taskEvents: mongoose.mongo.Collection,
   tasks: mongoose.mongo.Collection,
 ): Promise<void> {
@@ -102,8 +106,8 @@ async function seedTask(
     title: taskSeed.title,
     description: taskSeed.description,
     status: taskSeed.status,
-    workspaceId: demo.workspaceId,
-    projectId: demo.projectId,
+    workspaceId,
+    projectId,
     priority: taskSeed.priority,
     dueDate: null,
     labels: taskSeed.labels,
@@ -154,8 +158,8 @@ async function seedTask(
         title: taskSeed.title,
         description: taskSeed.description,
         status: taskSeed.status,
-        workspaceId: demo.workspaceId,
-        projectId: demo.projectId,
+        workspaceId,
+        projectId,
         priority: taskSeed.priority,
         dueDate: null,
         labels: taskSeed.labels,
@@ -171,28 +175,28 @@ async function seedTask(
   );
 }
 
-async function seedSampleComment(
-  demo: ReturnType<typeof loadDemoSeedData>["demo"],
+async function seedComment(
+  commentSeed: DemoSeedComment,
   users: DemoSeedUser[],
   comments: mongoose.mongo.Collection,
 ): Promise<void> {
-  const author = findUser(users, demo.sampleComment.authorUserId);
+  const author = findUser(users, commentSeed.authorUserId);
 
   await comments.updateOne(
     {
-      taskId: demo.sampleComment.taskId,
+      taskId: commentSeed.taskId,
       authorId: author.id,
-      content: demo.sampleComment.content,
+      content: commentSeed.content,
     },
     {
       $set: {
-        taskId: demo.sampleComment.taskId,
+        taskId: commentSeed.taskId,
         authorId: author.id,
         authorName: author.fullName,
         authorAvatarUrl: avatarUrlFor(author),
-        content: demo.sampleComment.content,
+        content: commentSeed.content,
         parentId: null,
-        mentions: demo.sampleComment.mentionUserIds,
+        mentions: commentSeed.mentionUserIds,
         isEdited: false,
         deletedAt: null,
         reactionCount: 0,
@@ -297,22 +301,38 @@ async function main(): Promise<void> {
 
     await seedUserReplicas(demoData.users, userReplicas);
 
-    for (const taskSeed of demoData.demo.tasks) {
-      await seedTask(taskSeed, demoData.users, demoData.demo, taskEvents, tasks);
+    const taskSummary: Array<{ taskId: string; title: string; status: string; workspaceId: string }> =
+      [];
+
+    for (const workspace of getDemoWorkspaces(demoData)) {
+      for (const project of workspace.projects) {
+        for (const taskSeed of project.tasks) {
+          await seedTask(
+            taskSeed,
+            demoData.users,
+            workspace.workspaceId,
+            project.projectId,
+            taskEvents,
+            tasks,
+          );
+          taskSummary.push({
+            taskId: taskSeed.id,
+            title: taskSeed.title,
+            status: taskSeed.status,
+            workspaceId: workspace.workspaceId,
+          });
+        }
+
+        for (const commentSeed of project.sampleComments ?? []) {
+          await seedComment(commentSeed, demoData.users, comments);
+        }
+      }
     }
 
-    await seedSampleComment(demoData.demo, demoData.users, comments);
     await backfillTaskActivity(taskEvents, comments, taskActivity);
 
     console.log("task-service seed completed");
-    console.table(
-      demoData.demo.tasks.map((task) => ({
-        taskId: task.id,
-        title: task.title,
-        status: task.status,
-        assigneeUserId: task.assigneeUserId ?? "(none)",
-      })),
-    );
+    console.table(taskSummary);
   } finally {
     await mongoose.disconnect();
   }

@@ -7,5 +7,4 @@ export interface IWorkspaceMemberRepository {
   findByWorkspaceAndUser(workspaceId: string, userId: string): Promise<WorkspaceMember | null>;
   findByWorkspace(workspaceId: string): Promise<WorkspaceMember[]>;
   removeByWorkspaceAndUser(workspaceId: string, userId: string): Promise<void>;
-  updateRole(workspaceId: string, userId: string, role: string): Promise<WorkspaceMember>;
 }
