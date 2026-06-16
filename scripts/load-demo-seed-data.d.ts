@@ -113,3 +113,11 @@ export declare function userReplicaDocumentFor(user: DemoSeedUser): {
     avatarUrl: string;
     isActive: boolean;
 };
+export type SeedWriteTarget = {
+    service: string;
+    database: 'postgres' | 'mongodb';
+    tables: string[];
+    replicas?: string[];
+};
+export declare const SEED_WRITE_TARGETS: SeedWriteTarget[];
+export declare function printSeedWriteTargets(): void;

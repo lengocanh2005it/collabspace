@@ -5,6 +5,7 @@ import {
   collectDemoNotifications,
   loadDemoSeedData,
   userReplicaDocumentFor,
+  type DemoSeedUser,
 } from "./load-demo-seed";
 
 function loadEnvFile(): void {
@@ -48,6 +49,20 @@ function requireMongoUri(): string {
   return mongoUri;
 }
 
+async function seedUserReplicas(
+  users: DemoSeedUser[],
+  collection: mongoose.mongo.Collection,
+): Promise<void> {
+  for (const user of users) {
+    await collection.updateOne(
+      { userId: user.id },
+      { $set: userReplicaDocumentFor(user) },
+      { upsert: true },
+    );
+  }
+  console.log(`Seeded ${users.length} user_replicas (notification-service)`);
+}
+
 async function main(): Promise<void> {
   loadEnvFile();
 
@@ -65,14 +80,7 @@ async function main(): Promise<void> {
     const userReplicas = db.collection("user_replicas");
     const now = new Date("2026-01-15T09:05:00.000Z");
 
-    for (const user of demoData.users) {
-      await userReplicas.updateOne(
-        { userId: user.id },
-        { $set: userReplicaDocumentFor(user) },
-        { upsert: true },
-      );
-    }
-    console.log(`Seeded ${demoData.users.length} user_replicas (notification-service)`);
+    await seedUserReplicas(demoData.users, userReplicas);
 
     for (const sample of collectDemoNotifications(demoData)) {
       await notifications.updateOne(
@@ -100,6 +108,8 @@ async function main(): Promise<void> {
       );
     }
 
+    const notificationCount = collectDemoNotifications(demoData).length;
+    console.log(`Seeded ${notificationCount} notifications (notification-service)`);
     console.log("notification-service seed completed");
     console.table(
       collectDemoNotifications(demoData).map((notification) => ({

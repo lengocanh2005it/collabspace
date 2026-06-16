@@ -326,6 +326,7 @@ async function main(): Promise<void> {
 
     await backfillTaskActivity(taskEvents, comments, taskActivity);
 
+    console.log(`Seeded ${taskSummary.length} tasks + comments (Mongo collabspace_task)`);
     console.log("task-service seed completed");
     console.table(taskSummary);
   } finally {

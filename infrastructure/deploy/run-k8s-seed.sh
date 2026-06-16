@@ -196,7 +196,16 @@ restore_seed_replicas() {
   done
 }
 
-echo "==> k8s seed pipeline (DB only — user_replicas in task + notification Mongo)"
+print_seed_write_targets() {
+  if [[ -f "$APP_DIR/scripts/load-demo-seed-data.js" ]]; then
+    node -e "require(process.argv[1]).printSeedWriteTargets()" "$APP_DIR/scripts/load-demo-seed-data.js"
+    return
+  fi
+  echo "Seed writes: auth/user/workspace (Postgres); task/notification (Mongo + user_replicas)"
+}
+
+echo "==> k8s seed pipeline (each service: own DB + replicas where applicable)"
+print_seed_write_targets
 wait_datastores
 sync_demo_seed_configmap
 scale_seed_writers_to_zero
@@ -213,7 +222,7 @@ fi
 
 echo ""
 echo "All demo seeds completed."
-echo "  Postgres: auth users, user profiles, workspaces/projects/members"
-echo "  Mongo:    task-service user_replicas + tasks; notification-service user_replicas + notifications"
-echo "  RabbitMQ: unchanged by seed — wipe PVC in full-reset; apps declare queues on startup"
+echo "  Postgres: auth users | user profiles | workspaces/projects/members"
+echo "  Mongo replicas: user_replicas in task-service + notification-service (all demo users)"
+echo "  Mongo data: tasks/comments | notifications"
 echo "Demo: ngocanh@collabspace.dev / quangtien@collabspace.dev — password collabspace123"

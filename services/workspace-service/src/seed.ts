@@ -229,6 +229,9 @@ async function main(): Promise<void> {
     }
 
     console.log('workspace-service seed completed');
+    console.log(
+      `Seeded ${summary.length} workspaces (Postgres collabspace_workspace — no cross-service replicas)`,
+    );
     console.table(summary);
   } finally {
     await dataSource.destroy();

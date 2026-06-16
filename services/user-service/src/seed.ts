@@ -143,7 +143,13 @@ async function main(): Promise<void> {
 
   try {
     await seedProfiles(dataSource, demoData.users);
-    // user_replicas in task-service + notification-service are upserted from the same demo-seed-data.json.
+
+    console.log(
+      `Seeded ${demoData.users.length} profiles + preferences + status (Postgres — user source of truth)`,
+    );
+    console.log(
+      'user_replicas → task-service + notification-service Mongo (same demo-seed-data.json)',
+    );
 
     console.log('user-service seed completed');
     console.table(

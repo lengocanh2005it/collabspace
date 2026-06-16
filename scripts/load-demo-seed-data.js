@@ -84,3 +84,40 @@ function userReplicaDocumentFor(user) {
 }
 exports.userSnapshot = userSnapshot;
 exports.userReplicaDocumentFor = userReplicaDocumentFor;
+exports.SEED_WRITE_TARGETS = [
+    {
+        service: 'auth-service',
+        database: 'postgres',
+        tables: ['users', 'roles', 'permissions', 'user_roles', 'role_permissions'],
+    },
+    {
+        service: 'user-service',
+        database: 'postgres',
+        tables: ['profiles', 'user_preferences', 'user_status'],
+    },
+    {
+        service: 'workspace-service',
+        database: 'postgres',
+        tables: ['workspaces', 'workspace_members', 'projects', 'invitations'],
+    },
+    {
+        service: 'task-service',
+        database: 'mongodb',
+        tables: ['tasks', 'task_events', 'task_comments', 'task_activity'],
+        replicas: ['user_replicas'],
+    },
+    {
+        service: 'notification-service',
+        database: 'mongodb',
+        tables: ['notifications'],
+        replicas: ['user_replicas'],
+    },
+];
+function printSeedWriteTargets() {
+    console.log('Seed writes (service DB + replicas):');
+    for (const target of exports.SEED_WRITE_TARGETS) {
+        const replicaSuffix = target.replicas?.length ? `; replicas: ${target.replicas.join(', ')}` : '';
+        console.log(`  ${target.service} [${target.database}]: ${target.tables.join(', ')}${replicaSuffix}`);
+    }
+}
+exports.printSeedWriteTargets = printSeedWriteTargets;

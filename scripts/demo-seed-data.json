@@ -12,7 +12,14 @@
     "taskCount": 87,
     "commentCount": 13,
     "notificationCount": 32,
-    "note": "Dense demo data for UI — re-seed all services after pull. user_replicas seeded in task + notification Mongo."
+    "seedWrites": {
+      "auth-service": "postgres: users, roles, permissions, user_roles, role_permissions",
+      "user-service": "postgres: profiles, user_preferences, user_status (source of truth)",
+      "workspace-service": "postgres: workspaces, workspace_members, projects, invitations",
+      "task-service": "mongodb: tasks, task_events, task_comments, task_activity + user_replicas",
+      "notification-service": "mongodb: notifications + user_replicas"
+    },
+    "note": "Each service seed upserts its own DB tables; task + notification also upsert user_replicas from users[] (no RabbitMQ)."
   },
   "defaultPassword": "collabspace123",
   "users": [

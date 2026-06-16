@@ -6,7 +6,10 @@ ROOT_DIR=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)
 
 echo "Running CollabSpace seed pipeline from $ROOT_DIR"
 echo "Order: auth → user → workspace → task (user_replicas) → notification (user_replicas)"
-echo "Source: scripts/demo-seed-data.json — DB only, no RabbitMQ"
+echo "Source: scripts/demo-seed-data.json — each service writes its DB + replicas (no RabbitMQ)"
+if command -v node >/dev/null 2>&1 && [ -f "$ROOT_DIR/scripts/load-demo-seed-data.js" ]; then
+  node -e "require(process.argv[1]).printSeedWriteTargets()" "$ROOT_DIR/scripts/load-demo-seed-data.js"
+fi
 echo "Dev (ts-node): default. Prod-style (dist/seed): SEED_MODE=prod $0"
 echo ""
 

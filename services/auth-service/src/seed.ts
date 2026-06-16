@@ -346,6 +346,9 @@ async function main(): Promise<void> {
     await seedRolePermissions(dataSource, rolesByName, permissionsByName);
     await seedUsers(dataSource, rolesByName);
 
+    console.log(
+      `Seeded ${demoData.users.length} users + roles/permissions (Postgres collabspace_auth)`,
+    );
     console.log('auth-service seed completed');
     console.table(
       SEED_USERS.map((user) => ({
