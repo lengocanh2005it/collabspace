@@ -53,14 +53,23 @@ export class CreateNotificationHandler
       command.metadata,
     );
 
-    const savedNotificationId = await this.notificationRepository.createAsync(notification);
+    try {
+      const savedNotificationId = await this.notificationRepository.createAsync(notification);
 
-    // New unread notification — bust the cached count
-    await this.countCache.invalidateUnreadCount(command.recipientId);
+      // New unread notification — bust the cached count
+      await this.countCache.invalidateUnreadCount(command.recipientId);
 
-    return {
-      notificationId: savedNotificationId,
-      message: "Notification created successfully",
-    };
+      return {
+        notificationId: savedNotificationId,
+        message: "Notification created successfully",
+      };
+    } catch (error) {
+      // Release the idempotency claim so the next retry can reprocess this event.
+      // Without this, a transient write failure would permanently block the event.
+      if (command.eventId) {
+        await this.processedEventRepository.releaseClaim(command.eventId);
+      }
+      throw error;
+    }
   }
 }

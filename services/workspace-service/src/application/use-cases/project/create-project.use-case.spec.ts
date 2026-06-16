@@ -34,7 +34,16 @@ describe('CreateProjectUseCase', () => {
     );
   });
 
-  it('should create project if user is a member', async () => {
+  it('should throw ForbiddenException if user is a plain member', async () => {
+    mockMemberRepo.findByWorkspaceAndUser.mockResolvedValue(
+      new WorkspaceMember('m-1', 'ws-1', 'user-1', 'member', new Date()),
+    );
+    await expect(useCase.execute('user-1', 'ws-1', { name: 'Proj' })).rejects.toThrow(
+      ForbiddenException,
+    );
+  });
+
+  it.each(['owner', 'manager'] as const)('should create project if user is %s', async (role) => {
     const project = new Project(
       'proj-1',
       'ws-1',
@@ -46,7 +55,7 @@ describe('CreateProjectUseCase', () => {
       new Date(),
     );
     mockMemberRepo.findByWorkspaceAndUser.mockResolvedValue(
-      new WorkspaceMember('m-1', 'ws-1', 'user-1', 'member', new Date()),
+      new WorkspaceMember('m-1', 'ws-1', 'user-1', role, new Date()),
     );
     mockProjectRepo.create.mockResolvedValue(project);
 
