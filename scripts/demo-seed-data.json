@@ -3,8 +3,16 @@
     "roleModel": "Platform: admin | user. Workspace: owner | manager | member. See docs/roles-and-permissions.md.",
     "accountCount": 20,
     "workspaceCount": 4,
-    "platformAdmins": ["tho@collabspace.dev", "trungtin@collabspace.dev"],
-    "defaultPasswordNote": "All accounts use defaultPassword unless changed locally."
+    "platformAdmins": [
+      "tho@collabspace.dev",
+      "trungtin@collabspace.dev"
+    ],
+    "defaultPasswordNote": "All accounts use defaultPassword unless changed locally.",
+    "projectCount": 9,
+    "taskCount": 87,
+    "commentCount": 13,
+    "notificationCount": 32,
+    "note": "Dense demo data for UI — re-seed all services after pull."
   },
   "defaultPassword": "collabspace123",
   "users": [
@@ -14,7 +22,9 @@
       "email": "tho@collabspace.dev",
       "fullName": "Phan Phu Tho",
       "username": "phan.phu.tho",
-      "roleNames": ["admin"],
+      "roleNames": [
+        "admin"
+      ],
       "bio": "Platform admin — infra, CI/CD, gateway. Workspace owner of Infra Ops.",
       "preferredLanguage": "vi",
       "preferredTimezone": "Asia/Saigon",
@@ -26,7 +36,9 @@
       "email": "ngocanh@collabspace.dev",
       "fullName": "Le Ngoc Anh",
       "username": "le.ngoc.anh",
-      "roleNames": ["user"],
+      "roleNames": [
+        "user"
+      ],
       "bio": "User A — workspace owner (CollabSpace Demo). Auth & user APIs.",
       "preferredLanguage": "vi",
       "preferredTimezone": "Asia/Saigon",
@@ -38,7 +50,9 @@
       "email": "quangtien@collabspace.dev",
       "fullName": "Ngo Quang Tien",
       "username": "ngo.quang.tien",
-      "roleNames": ["user"],
+      "roleNames": [
+        "user"
+      ],
       "bio": "User B — member in Demo; owner of Product Lab. Frontend lead.",
       "preferredLanguage": "vi",
       "preferredTimezone": "Asia/Saigon",
@@ -50,7 +64,9 @@
       "email": "trungtin@collabspace.dev",
       "fullName": "Vo Trung Tin",
       "username": "vo.trung.tin",
-      "roleNames": ["admin"],
+      "roleNames": [
+        "admin"
+      ],
       "bio": "Platform admin — tasks, notifications, /admin/* APIs.",
       "preferredLanguage": "vi",
       "preferredTimezone": "Asia/Saigon",
@@ -62,7 +78,9 @@
       "email": "reviewer@collabspace.dev",
       "fullName": "Demo Reviewer",
       "username": "demo.reviewer",
-      "roleNames": ["user"],
+      "roleNames": [
+        "user"
+      ],
       "bio": "Platform user + Demo workspace member (stakeholder read-heavy flows).",
       "preferredLanguage": "en",
       "preferredTimezone": "UTC",
@@ -74,7 +92,9 @@
       "email": "qa.alice@collabspace.dev",
       "fullName": "QA Alice",
       "username": "qa.alice",
-      "roleNames": ["user"],
+      "roleNames": [
+        "user"
+      ],
       "bio": "QA engineer — regression, board moves, notification checks.",
       "preferredLanguage": "en",
       "preferredTimezone": "Asia/Saigon",
@@ -86,7 +106,9 @@
       "email": "dev.bob@collabspace.dev",
       "fullName": "Dev Bob",
       "username": "dev.bob",
-      "roleNames": ["user"],
+      "roleNames": [
+        "user"
+      ],
       "bio": "Backend developer in Product Lab; good for assignee & comment tests.",
       "preferredLanguage": "en",
       "preferredTimezone": "Asia/Saigon",
@@ -98,7 +120,9 @@
       "email": "pm.carol@collabspace.dev",
       "fullName": "PM Carol",
       "username": "pm.carol",
-      "roleNames": ["user"],
+      "roleNames": [
+        "user"
+      ],
       "bio": "Product manager in Demo + Product Lab — triage and unassigned tasks.",
       "preferredLanguage": "en",
       "preferredTimezone": "Asia/Saigon",
@@ -110,7 +134,9 @@
       "email": "designer.dana@collabspace.dev",
       "fullName": "Designer Dana",
       "username": "designer.dana",
-      "roleNames": ["user"],
+      "roleNames": [
+        "user"
+      ],
       "bio": "Design system owner in Product Lab.",
       "preferredLanguage": "en",
       "preferredTimezone": "Europe/London",
@@ -122,7 +148,9 @@
       "email": "solo.owner@collabspace.dev",
       "fullName": "Solo Owner",
       "username": "solo.owner",
-      "roleNames": ["user"],
+      "roleNames": [
+        "user"
+      ],
       "bio": "Single-member workspace — tests owner-only flows in isolation.",
       "preferredLanguage": "en",
       "preferredTimezone": "UTC",
@@ -132,10 +160,12 @@
       "id": "61000000-0000-4000-8000-000000000002",
       "profileId": "71000000-0000-4000-8000-000000000002",
       "email": "viewer.only@collabspace.dev",
-      "fullName": "Viewer Only",
+      "fullName": "New User Nina",
       "username": "viewer.only",
-      "roleNames": ["user"],
-      "bio": "Platform user with no workspace membership — expect 403 on workspace APIs.",
+      "roleNames": [
+        "user"
+      ],
+      "bio": "Platform user — no workspace yet (empty state / onboarding UI).",
       "preferredLanguage": "en",
       "preferredTimezone": "UTC",
       "avatarSeed": "Viewer%20Only"
@@ -146,7 +176,9 @@
       "email": "dev.eve@collabspace.dev",
       "fullName": "Dev Eve",
       "username": "dev.eve",
-      "roleNames": ["user"],
+      "roleNames": [
+        "user"
+      ],
       "bio": "Has account but only a pending workspace invite — tests /invitations/me accept flow.",
       "preferredLanguage": "en",
       "preferredTimezone": "Asia/Saigon",
@@ -158,7 +190,9 @@
       "email": "dev.alex@collabspace.dev",
       "fullName": "Dev Alex",
       "username": "dev.alex",
-      "roleNames": ["user"],
+      "roleNames": [
+        "user"
+      ],
       "bio": "Frontend developer — good for assignee & mention variety.",
       "preferredLanguage": "en",
       "preferredTimezone": "Asia/Saigon",
@@ -170,7 +204,9 @@
       "email": "dev.felix@collabspace.dev",
       "fullName": "Dev Felix",
       "username": "dev.felix",
-      "roleNames": ["user"],
+      "roleNames": [
+        "user"
+      ],
       "bio": "Backend developer — useful for workspace manager/member interactions.",
       "preferredLanguage": "en",
       "preferredTimezone": "UTC",
@@ -182,7 +218,9 @@
       "email": "dev.gina@collabspace.dev",
       "fullName": "Dev Gina",
       "username": "dev.gina",
-      "roleNames": ["user"],
+      "roleNames": [
+        "user"
+      ],
       "bio": "QA-friendly engineer — covers a different persona in the demo.",
       "preferredLanguage": "en",
       "preferredTimezone": "Europe/London",
@@ -194,7 +232,9 @@
       "email": "qa.alvin@collabspace.dev",
       "fullName": "QA Alvin",
       "username": "qa.alvin",
-      "roleNames": ["user"],
+      "roleNames": [
+        "user"
+      ],
       "bio": "QA engineer — board regression and notification checks.",
       "preferredLanguage": "en",
       "preferredTimezone": "Asia/Saigon",
@@ -206,7 +246,9 @@
       "email": "pm.helen@collabspace.dev",
       "fullName": "PM Helen",
       "username": "pm.helen",
-      "roleNames": ["user"],
+      "roleNames": [
+        "user"
+      ],
       "bio": "Product manager — helps with unassigned task triage variety.",
       "preferredLanguage": "en",
       "preferredTimezone": "Asia/Saigon",
@@ -218,7 +260,9 @@
       "email": "designer.ian@collabspace.dev",
       "fullName": "Designer Ian",
       "username": "designer.ian",
-      "roleNames": ["user"],
+      "roleNames": [
+        "user"
+      ],
       "bio": "Designer — covers UI/UX tasks and mention scenarios.",
       "preferredLanguage": "en",
       "preferredTimezone": "Europe/London",
@@ -230,7 +274,9 @@
       "email": "member.khanh@collabspace.dev",
       "fullName": "Member Khanh",
       "username": "member.khanh",
-      "roleNames": ["user"],
+      "roleNames": [
+        "user"
+      ],
       "bio": "Regular member — increases workspace member density for UI.",
       "preferredLanguage": "vi",
       "preferredTimezone": "Asia/Saigon",
@@ -240,10 +286,12 @@
       "id": "12888888-8888-4888-8888-128888888888",
       "profileId": "72888888-8888-4888-8888-128888888888",
       "email": "viewer.maria@collabspace.dev",
-      "fullName": "Viewer Maria",
+      "fullName": "Maria Santos",
       "username": "viewer.maria",
-      "roleNames": ["user"],
-      "bio": "Platform user — member in some workspaces for UI coverage.",
+      "roleNames": [
+        "user"
+      ],
+      "bio": "Platform user — member in Infra Ops for directory/board density.",
       "preferredLanguage": "en",
       "preferredTimezone": "UTC",
       "avatarSeed": "Viewer%20Maria"
@@ -256,17 +304,50 @@
       "workspaceDescription": "Primary MVP workspace — User A owner, mixed task states, pending invite for Eve.",
       "ownerUserId": "22222222-2222-4222-8222-222222222222",
       "members": [
-        { "userId": "22222222-2222-4222-8222-222222222222", "role": "owner" },
-        { "userId": "33333333-3333-4333-8333-333333333333", "role": "member" },
-        { "userId": "55555555-5555-4555-8555-555555555555", "role": "member" },
-        { "userId": "88888888-8888-4888-8888-888888888888", "role": "manager" },
-        { "userId": "66666666-6666-4666-8666-666666666666", "role": "member" },
-        { "userId": "12111111-1111-4111-8111-121111111111", "role": "member" },
-        { "userId": "12222222-2222-4222-8222-122222222222", "role": "member" },
-        { "userId": "12555555-5555-4555-8555-125555555555", "role": "member" },
-        { "userId": "12333333-3333-4333-8333-333333333333", "role": "member" },
-        { "userId": "12444444-4444-4444-8444-124444444444", "role": "member" },
-        { "userId": "12777777-7777-4777-8777-127777777777", "role": "member" }
+        {
+          "userId": "22222222-2222-4222-8222-222222222222",
+          "role": "owner"
+        },
+        {
+          "userId": "33333333-3333-4333-8333-333333333333",
+          "role": "member"
+        },
+        {
+          "userId": "55555555-5555-4555-8555-555555555555",
+          "role": "member"
+        },
+        {
+          "userId": "88888888-8888-4888-8888-888888888888",
+          "role": "manager"
+        },
+        {
+          "userId": "66666666-6666-4666-8666-666666666666",
+          "role": "member"
+        },
+        {
+          "userId": "12111111-1111-4111-8111-121111111111",
+          "role": "member"
+        },
+        {
+          "userId": "12222222-2222-4222-8222-122222222222",
+          "role": "member"
+        },
+        {
+          "userId": "12555555-5555-4555-8555-125555555555",
+          "role": "member"
+        },
+        {
+          "userId": "12333333-3333-4333-8333-333333333333",
+          "role": "member"
+        },
+        {
+          "userId": "12444444-4444-4444-8444-124444444444",
+          "role": "member"
+        },
+        {
+          "userId": "12777777-7777-4777-8777-127777777777",
+          "role": "member"
+        }
       ],
       "pendingInvitations": [
         {
@@ -287,7 +368,10 @@
               "description": "Ensure Traefik forward-auth receives X-User-Id and related headers.",
               "status": "DOING",
               "priority": "HIGH",
-              "labels": ["gateway", "auth"],
+              "labels": [
+                "gateway",
+                "auth"
+              ],
               "assigneeUserId": "33333333-3333-4333-8333-333333333333",
               "createdByUserId": "22222222-2222-4222-8222-222222222222"
             },
@@ -297,7 +381,9 @@
               "description": "Keep docs/api-routes.md aligned with implemented controllers.",
               "status": "TODO",
               "priority": "MEDIUM",
-              "labels": ["docs"],
+              "labels": [
+                "docs"
+              ],
               "assigneeUserId": "12111111-1111-4111-8111-121111111111",
               "createdByUserId": "22222222-2222-4222-8222-222222222222"
             },
@@ -307,9 +393,161 @@
               "description": "Smoke-test task_assigned and comment_mentioned flows.",
               "status": "DONE",
               "priority": "LOW",
-              "labels": ["notifications"],
+              "labels": [
+                "notifications"
+              ],
               "assigneeUserId": "66666666-6666-4666-8666-666666666666",
               "createdByUserId": "22222222-2222-4222-8222-222222222222"
+            },
+            {
+              "id": "cccccccc-0010-42cc-8cc1-cccccccc010",
+              "title": "Polish invitation accept flow",
+              "description": "Demo seed task #10 — fills kanban, dashboard, and directory UI.",
+              "status": "DOING",
+              "priority": "MEDIUM",
+              "labels": [
+                "frontend",
+                "docs"
+              ],
+              "assigneeUserId": "12222222-2222-4222-8222-122222222222",
+              "createdByUserId": "22222222-2222-4222-8222-222222222222"
+            },
+            {
+              "id": "cccccccc-0011-43cc-8cc1-cccccccc011",
+              "title": "Add workspace activity filters",
+              "description": "Demo seed task #11 — fills kanban, dashboard, and directory UI.",
+              "status": "DONE",
+              "priority": "HIGH",
+              "labels": [
+                "backend"
+              ],
+              "assigneeUserId": "12333333-3333-4333-8333-123333333333",
+              "createdByUserId": "88888888-8888-4888-8888-888888888888"
+            },
+            {
+              "id": "cccccccc-0012-44cc-8cc1-cccccccc012",
+              "title": "Fix member count in header",
+              "description": "Demo seed task #12 — fills kanban, dashboard, and directory UI.",
+              "status": "TODO",
+              "priority": "LOW",
+              "labels": [
+                "qa",
+                "infra"
+              ],
+              "assigneeUserId": null,
+              "createdByUserId": "22222222-2222-4222-8222-222222222222"
+            },
+            {
+              "id": "cccccccc-0013-45cc-8cc1-cccccccc013",
+              "title": "E2E test invite duplicate email",
+              "description": "Demo seed task #13 — fills kanban, dashboard, and directory UI.",
+              "status": "DOING",
+              "priority": "MEDIUM",
+              "labels": [
+                "docs"
+              ],
+              "assigneeUserId": "12555555-5555-4555-8555-125555555555",
+              "createdByUserId": "88888888-8888-4888-8888-888888888888"
+            },
+            {
+              "id": "cccccccc-0014-46cc-8cc1-cccccccc014",
+              "title": "Sync OpenAPI response DTOs",
+              "description": "Demo seed task #14 — fills kanban, dashboard, and directory UI.",
+              "status": "DONE",
+              "priority": "HIGH",
+              "labels": [
+                "ux",
+                "api"
+              ],
+              "assigneeUserId": "12666666-6666-4666-8666-126666666666",
+              "createdByUserId": "22222222-2222-4222-8222-222222222222"
+            },
+            {
+              "id": "cccccccc-0015-47cc-8cc1-cccccccc015",
+              "title": "Improve error toast copy",
+              "description": "Demo seed task #15 — fills kanban, dashboard, and directory UI.",
+              "status": "TODO",
+              "priority": "LOW",
+              "labels": [
+                "infra"
+              ],
+              "assigneeUserId": "12777777-7777-4777-8777-127777777777",
+              "createdByUserId": "88888888-8888-4888-8888-888888888888"
+            },
+            {
+              "id": "cccccccc-0016-48cc-8cc1-cccccccc016",
+              "title": "Board drag-and-drop QA",
+              "description": "Demo seed task #16 — fills kanban, dashboard, and directory UI.",
+              "status": "DOING",
+              "priority": "MEDIUM",
+              "labels": [
+                "design",
+                "perf"
+              ],
+              "assigneeUserId": null,
+              "createdByUserId": "22222222-2222-4222-8222-222222222222"
+            },
+            {
+              "id": "cccccccc-0017-49cc-8cc1-cccccccc017",
+              "title": "Mention autocomplete edge cases",
+              "description": "Demo seed task #17 — fills kanban, dashboard, and directory UI.",
+              "status": "DONE",
+              "priority": "HIGH",
+              "labels": [
+                "api"
+              ],
+              "assigneeUserId": "22222222-2222-4222-8222-222222222222",
+              "createdByUserId": "88888888-8888-4888-8888-888888888888"
+            },
+            {
+              "id": "cccccccc-0018-41cc-8cc1-cccccccc018",
+              "title": "Notification poll backoff",
+              "description": "Demo seed task #18 — fills kanban, dashboard, and directory UI.",
+              "status": "TODO",
+              "priority": "LOW",
+              "labels": [
+                "mobile",
+                "backend"
+              ],
+              "assigneeUserId": "33333333-3333-4333-8333-333333333333",
+              "createdByUserId": "22222222-2222-4222-8222-222222222222"
+            },
+            {
+              "id": "cccccccc-0019-42cc-8cc1-cccccccc019",
+              "title": "Profile avatar crop UX",
+              "description": "Demo seed task #19 — fills kanban, dashboard, and directory UI.",
+              "status": "DOING",
+              "priority": "MEDIUM",
+              "labels": [
+                "perf"
+              ],
+              "assigneeUserId": "55555555-5555-4555-8555-555555555555",
+              "createdByUserId": "88888888-8888-4888-8888-888888888888"
+            },
+            {
+              "id": "cccccccc-0020-43cc-8cc1-cccccccc020",
+              "title": "Command palette recent items",
+              "description": "Demo seed task #20 — fills kanban, dashboard, and directory UI.",
+              "status": "DONE",
+              "priority": "HIGH",
+              "labels": [
+                "frontend",
+                "docs"
+              ],
+              "assigneeUserId": null,
+              "createdByUserId": "22222222-2222-4222-8222-222222222222"
+            },
+            {
+              "id": "cccccccc-0021-44cc-8cc1-cccccccc021",
+              "title": "Kanban WIP limit indicator",
+              "description": "Demo seed task #21 — fills kanban, dashboard, and directory UI.",
+              "status": "TODO",
+              "priority": "LOW",
+              "labels": [
+                "backend"
+              ],
+              "assigneeUserId": "77777777-7777-4777-8777-777777777777",
+              "createdByUserId": "88888888-8888-4888-8888-888888888888"
             }
           ],
           "sampleComments": [
@@ -317,12 +555,34 @@
               "taskId": "cccccccc-ccc1-4cc1-8cc1-ccccccccccc1",
               "authorUserId": "22222222-2222-4222-8222-222222222222",
               "content": "Please pick this up @ngo.quang.tien and move it to in progress when you start.",
-              "mentionUserIds": ["33333333-3333-4333-8333-333333333333"]
+              "mentionUserIds": [
+                "33333333-3333-4333-8333-333333333333"
+              ]
             },
             {
               "taskId": "cccccccc-ccc2-4cc2-8cc2-ccccccccccc2",
               "authorUserId": "88888888-8888-4888-8888-888888888888",
               "content": "I'll groom this after the gateway task lands.",
+              "mentionUserIds": []
+            },
+            {
+              "taskId": "cccccccc-ccc1-4cc1-8cc1-ccccccccccc1",
+              "authorUserId": "12111111-1111-4111-8111-121111111111",
+              "content": "Gateway headers look good in staging — @le.ngoc.anh please verify.",
+              "mentionUserIds": [
+                "22222222-2222-4222-8222-222222222222"
+              ]
+            },
+            {
+              "taskId": "cccccccc-ccc2-4cc2-8cc2-ccccccccccc2",
+              "authorUserId": "12777777-7777-4777-8777-127777777777",
+              "content": "Added draft PR link in description.",
+              "mentionUserIds": []
+            },
+            {
+              "taskId": "cccccccc-ccc1-4cc1-8cc1-ccccccccccc1",
+              "authorUserId": "88888888-8888-4888-8888-888888888888",
+              "content": "Kickoff note on MVP Sprint — sync in standup.",
               "mentionUserIds": []
             }
           ]
@@ -338,7 +598,9 @@
               "description": "Full script after each deploy.",
               "status": "TODO",
               "priority": "HIGH",
-              "labels": ["qa"],
+              "labels": [
+                "qa"
+              ],
               "assigneeUserId": "66666666-6666-4666-8666-666666666666",
               "createdByUserId": "88888888-8888-4888-8888-888888888888"
             },
@@ -348,9 +610,326 @@
               "description": "Verify archive tab and mark-read on click.",
               "status": "TODO",
               "priority": "MEDIUM",
-              "labels": ["qa", "notifications"],
+              "labels": [
+                "qa",
+                "notifications"
+              ],
               "assigneeUserId": null,
               "createdByUserId": "66666666-6666-4666-8666-666666666666"
+            },
+            {
+              "id": "cccccccc-0030-44cc-8cc1-cccccccc030",
+              "title": "Notification poll backoff",
+              "description": "Demo seed task #30 — fills kanban, dashboard, and directory UI.",
+              "status": "TODO",
+              "priority": "LOW",
+              "labels": [
+                "frontend",
+                "docs"
+              ],
+              "assigneeUserId": "12555555-5555-4555-8555-125555555555",
+              "createdByUserId": "66666666-6666-4666-8666-666666666666"
+            },
+            {
+              "id": "cccccccc-0031-45cc-8cc1-cccccccc031",
+              "title": "Profile avatar crop UX",
+              "description": "Demo seed task #31 — fills kanban, dashboard, and directory UI.",
+              "status": "DOING",
+              "priority": "MEDIUM",
+              "labels": [
+                "backend"
+              ],
+              "assigneeUserId": "12666666-6666-4666-8666-126666666666",
+              "createdByUserId": "88888888-8888-4888-8888-888888888888"
+            },
+            {
+              "id": "cccccccc-0032-46cc-8cc1-cccccccc032",
+              "title": "Command palette recent items",
+              "description": "Demo seed task #32 — fills kanban, dashboard, and directory UI.",
+              "status": "DONE",
+              "priority": "HIGH",
+              "labels": [
+                "qa",
+                "infra"
+              ],
+              "assigneeUserId": null,
+              "createdByUserId": "66666666-6666-4666-8666-666666666666"
+            },
+            {
+              "id": "cccccccc-0033-47cc-8cc1-cccccccc033",
+              "title": "Kanban WIP limit indicator",
+              "description": "Demo seed task #33 — fills kanban, dashboard, and directory UI.",
+              "status": "TODO",
+              "priority": "LOW",
+              "labels": [
+                "docs"
+              ],
+              "assigneeUserId": "12888888-8888-4888-8888-128888888888",
+              "createdByUserId": "88888888-8888-4888-8888-888888888888"
+            },
+            {
+              "id": "cccccccc-0034-48cc-8cc1-cccccccc034",
+              "title": "Task due date picker",
+              "description": "Demo seed task #34 — fills kanban, dashboard, and directory UI.",
+              "status": "DOING",
+              "priority": "MEDIUM",
+              "labels": [
+                "ux",
+                "api"
+              ],
+              "assigneeUserId": "22222222-2222-4222-8222-222222222222",
+              "createdByUserId": "66666666-6666-4666-8666-666666666666"
+            },
+            {
+              "id": "cccccccc-0035-49cc-8cc1-cccccccc035",
+              "title": "Workspace switcher keyboard nav",
+              "description": "Demo seed task #35 — fills kanban, dashboard, and directory UI.",
+              "status": "DONE",
+              "priority": "HIGH",
+              "labels": [
+                "infra"
+              ],
+              "assigneeUserId": "33333333-3333-4333-8333-333333333333",
+              "createdByUserId": "88888888-8888-4888-8888-888888888888"
+            },
+            {
+              "id": "cccccccc-0036-41cc-8cc1-cccccccc036",
+              "title": "Admin KPI from task totals",
+              "description": "Demo seed task #36 — fills kanban, dashboard, and directory UI.",
+              "status": "TODO",
+              "priority": "LOW",
+              "labels": [
+                "design",
+                "perf"
+              ],
+              "assigneeUserId": null,
+              "createdByUserId": "66666666-6666-4666-8666-666666666666"
+            },
+            {
+              "id": "cccccccc-0037-42cc-8cc1-cccccccc037",
+              "title": "Directory search debounce",
+              "description": "Demo seed task #37 — fills kanban, dashboard, and directory UI.",
+              "status": "DOING",
+              "priority": "MEDIUM",
+              "labels": [
+                "api"
+              ],
+              "assigneeUserId": "66666666-6666-4666-8666-666666666666",
+              "createdByUserId": "88888888-8888-4888-8888-888888888888"
+            }
+          ],
+          "sampleComments": [
+            {
+              "taskId": "cccccccc-ccc4-4cc4-8cc4-ccccccccccc4",
+              "authorUserId": "66666666-6666-4666-8666-666666666666",
+              "content": "Regression pack updated — @qa.alvin please rerun smoke.",
+              "mentionUserIds": [
+                "12444444-4444-4444-8444-124444444444"
+              ]
+            },
+            {
+              "taskId": "cccccccc-ccc4-4cc4-8cc4-ccccccccccc4",
+              "authorUserId": "88888888-8888-4888-8888-888888888888",
+              "content": "Kickoff note on QA Hardening — sync in standup.",
+              "mentionUserIds": []
+            }
+          ]
+        },
+        {
+          "projectId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbb3",
+          "projectName": "Release Train",
+          "projectDescription": "Sprint backlog — dense board for UI demos.",
+          "tasks": [
+            {
+              "id": "cccccccc-0050-46cc-8cc1-cccccccc050",
+              "title": "Polish invitation accept flow",
+              "description": "Demo seed task #50 — fills kanban, dashboard, and directory UI.",
+              "status": "DONE",
+              "priority": "HIGH",
+              "labels": [
+                "frontend",
+                "docs"
+              ],
+              "assigneeUserId": "12888888-8888-4888-8888-128888888888",
+              "createdByUserId": "22222222-2222-4222-8222-222222222222"
+            },
+            {
+              "id": "cccccccc-0051-47cc-8cc1-cccccccc051",
+              "title": "Add workspace activity filters",
+              "description": "Demo seed task #51 — fills kanban, dashboard, and directory UI.",
+              "status": "TODO",
+              "priority": "LOW",
+              "labels": [
+                "backend"
+              ],
+              "assigneeUserId": "22222222-2222-4222-8222-222222222222",
+              "createdByUserId": "33333333-3333-4333-8333-333333333333"
+            },
+            {
+              "id": "cccccccc-0052-48cc-8cc1-cccccccc052",
+              "title": "Fix member count in header",
+              "description": "Demo seed task #52 — fills kanban, dashboard, and directory UI.",
+              "status": "DOING",
+              "priority": "MEDIUM",
+              "labels": [
+                "qa",
+                "infra"
+              ],
+              "assigneeUserId": null,
+              "createdByUserId": "22222222-2222-4222-8222-222222222222"
+            },
+            {
+              "id": "cccccccc-0053-49cc-8cc1-cccccccc053",
+              "title": "E2E test invite duplicate email",
+              "description": "Demo seed task #53 — fills kanban, dashboard, and directory UI.",
+              "status": "DONE",
+              "priority": "HIGH",
+              "labels": [
+                "docs"
+              ],
+              "assigneeUserId": "55555555-5555-4555-8555-555555555555",
+              "createdByUserId": "33333333-3333-4333-8333-333333333333"
+            },
+            {
+              "id": "cccccccc-0054-41cc-8cc1-cccccccc054",
+              "title": "Sync OpenAPI response DTOs",
+              "description": "Demo seed task #54 — fills kanban, dashboard, and directory UI.",
+              "status": "TODO",
+              "priority": "LOW",
+              "labels": [
+                "ux",
+                "api"
+              ],
+              "assigneeUserId": "66666666-6666-4666-8666-666666666666",
+              "createdByUserId": "22222222-2222-4222-8222-222222222222"
+            },
+            {
+              "id": "cccccccc-0055-42cc-8cc1-cccccccc055",
+              "title": "Improve error toast copy",
+              "description": "Demo seed task #55 — fills kanban, dashboard, and directory UI.",
+              "status": "DOING",
+              "priority": "MEDIUM",
+              "labels": [
+                "infra"
+              ],
+              "assigneeUserId": "77777777-7777-4777-8777-777777777777",
+              "createdByUserId": "33333333-3333-4333-8333-333333333333"
+            },
+            {
+              "id": "cccccccc-0056-43cc-8cc1-cccccccc056",
+              "title": "Board drag-and-drop QA",
+              "description": "Demo seed task #56 — fills kanban, dashboard, and directory UI.",
+              "status": "DONE",
+              "priority": "HIGH",
+              "labels": [
+                "design",
+                "perf"
+              ],
+              "assigneeUserId": null,
+              "createdByUserId": "22222222-2222-4222-8222-222222222222"
+            },
+            {
+              "id": "cccccccc-0057-44cc-8cc1-cccccccc057",
+              "title": "Mention autocomplete edge cases",
+              "description": "Demo seed task #57 — fills kanban, dashboard, and directory UI.",
+              "status": "TODO",
+              "priority": "LOW",
+              "labels": [
+                "api"
+              ],
+              "assigneeUserId": "99999999-9999-4999-8999-999999999999",
+              "createdByUserId": "33333333-3333-4333-8333-333333333333"
+            },
+            {
+              "id": "cccccccc-0058-45cc-8cc1-cccccccc058",
+              "title": "Notification poll backoff",
+              "description": "Demo seed task #58 — fills kanban, dashboard, and directory UI.",
+              "status": "DOING",
+              "priority": "MEDIUM",
+              "labels": [
+                "mobile",
+                "backend"
+              ],
+              "assigneeUserId": "11111111-1111-4111-8111-111111111111",
+              "createdByUserId": "22222222-2222-4222-8222-222222222222"
+            },
+            {
+              "id": "cccccccc-0059-46cc-8cc1-cccccccc059",
+              "title": "Profile avatar crop UX",
+              "description": "Demo seed task #59 — fills kanban, dashboard, and directory UI.",
+              "status": "DONE",
+              "priority": "HIGH",
+              "labels": [
+                "perf"
+              ],
+              "assigneeUserId": "44444444-4444-4444-8444-444444444444",
+              "createdByUserId": "33333333-3333-4333-8333-333333333333"
+            },
+            {
+              "id": "cccccccc-0060-47cc-8cc1-cccccccc060",
+              "title": "Command palette recent items",
+              "description": "Demo seed task #60 — fills kanban, dashboard, and directory UI.",
+              "status": "TODO",
+              "priority": "LOW",
+              "labels": [
+                "frontend",
+                "docs"
+              ],
+              "assigneeUserId": null,
+              "createdByUserId": "22222222-2222-4222-8222-222222222222"
+            },
+            {
+              "id": "cccccccc-0061-48cc-8cc1-cccccccc061",
+              "title": "Kanban WIP limit indicator",
+              "description": "Demo seed task #61 — fills kanban, dashboard, and directory UI.",
+              "status": "DOING",
+              "priority": "MEDIUM",
+              "labels": [
+                "backend"
+              ],
+              "assigneeUserId": "12222222-2222-4222-8222-122222222222",
+              "createdByUserId": "33333333-3333-4333-8333-333333333333"
+            },
+            {
+              "id": "cccccccc-0062-49cc-8cc1-cccccccc062",
+              "title": "Task due date picker",
+              "description": "Demo seed task #62 — fills kanban, dashboard, and directory UI.",
+              "status": "DONE",
+              "priority": "HIGH",
+              "labels": [
+                "qa",
+                "infra"
+              ],
+              "assigneeUserId": "12333333-3333-4333-8333-123333333333",
+              "createdByUserId": "22222222-2222-4222-8222-222222222222"
+            },
+            {
+              "id": "cccccccc-0063-41cc-8cc1-cccccccc063",
+              "title": "Workspace switcher keyboard nav",
+              "description": "Demo seed task #63 — fills kanban, dashboard, and directory UI.",
+              "status": "TODO",
+              "priority": "LOW",
+              "labels": [
+                "docs"
+              ],
+              "assigneeUserId": "12444444-4444-4444-8444-124444444444",
+              "createdByUserId": "33333333-3333-4333-8333-333333333333"
+            }
+          ],
+          "sampleComments": [
+            {
+              "taskId": "cccccccc-0050-46cc-8cc1-cccccccc050",
+              "authorUserId": "22222222-2222-4222-8222-222222222222",
+              "content": "Please review @pm.carol — targeting Friday demo.",
+              "mentionUserIds": [
+                "88888888-8888-4888-8888-888888888888"
+              ]
+            },
+            {
+              "taskId": "cccccccc-0050-46cc-8cc1-cccccccc050",
+              "authorUserId": "88888888-8888-4888-8888-888888888888",
+              "content": "Kickoff note on Release Train — sync in standup.",
+              "mentionUserIds": []
             }
           ]
         }
@@ -385,6 +964,146 @@
           "targetId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
           "targetType": "WORKSPACE",
           "status": "UNREAD"
+        },
+        {
+          "recipientId": "22222222-2222-4222-8222-222222222222",
+          "actorId": "22222222-2222-4222-8222-222222222222",
+          "type": "COMMENT_MENTIONED",
+          "title": "You were mentioned",
+          "message": "Mention on Wire auth verify headers for gateway",
+          "targetId": "cccccccc-ccc1-4cc1-8cc1-ccccccccccc1",
+          "targetType": "COMMENT",
+          "status": "READ"
+        },
+        {
+          "recipientId": "22222222-2222-4222-8222-222222222222",
+          "actorId": "33333333-3333-4333-8333-333333333333",
+          "type": "TASK_ASSIGNED",
+          "title": "Task assigned to you",
+          "message": "Update: Document API routes per service",
+          "targetId": "cccccccc-ccc2-4cc2-8cc2-ccccccccccc2",
+          "targetType": "TASK",
+          "status": "UNREAD"
+        },
+        {
+          "recipientId": "22222222-2222-4222-8222-222222222222",
+          "actorId": "55555555-5555-4555-8555-555555555555",
+          "type": "TASK_ASSIGNED",
+          "title": "Task assigned to you",
+          "message": "Update: Validate notification consumers",
+          "targetId": "cccccccc-ccc3-4cc3-8cc3-ccccccccccc3",
+          "targetType": "TASK",
+          "status": "UNREAD"
+        },
+        {
+          "recipientId": "22222222-2222-4222-8222-222222222222",
+          "actorId": "66666666-6666-4666-8666-666666666666",
+          "type": "COMMENT_MENTIONED",
+          "title": "You were mentioned",
+          "message": "Mention on Polish invitation accept flow",
+          "targetId": "cccccccc-0010-42cc-8cc1-cccccccc010",
+          "targetType": "COMMENT",
+          "status": "UNREAD"
+        },
+        {
+          "recipientId": "22222222-2222-4222-8222-222222222222",
+          "actorId": "77777777-7777-4777-8777-777777777777",
+          "type": "TASK_ASSIGNED",
+          "title": "Task assigned to you",
+          "message": "Update: Add workspace activity filters",
+          "targetId": "cccccccc-0011-43cc-8cc1-cccccccc011",
+          "targetType": "TASK",
+          "status": "READ"
+        },
+        {
+          "recipientId": "22222222-2222-4222-8222-222222222222",
+          "actorId": "88888888-8888-4888-8888-888888888888",
+          "type": "TASK_ASSIGNED",
+          "title": "Task assigned to you",
+          "message": "Update: Fix member count in header",
+          "targetId": "cccccccc-0012-44cc-8cc1-cccccccc012",
+          "targetType": "TASK",
+          "status": "ARCHIVED"
+        },
+        {
+          "recipientId": "22222222-2222-4222-8222-222222222222",
+          "actorId": "99999999-9999-4999-8999-999999999999",
+          "type": "COMMENT_MENTIONED",
+          "title": "You were mentioned",
+          "message": "Mention on E2E test invite duplicate email",
+          "targetId": "cccccccc-0013-45cc-8cc1-cccccccc013",
+          "targetType": "COMMENT",
+          "status": "UNREAD"
+        },
+        {
+          "recipientId": "22222222-2222-4222-8222-222222222222",
+          "actorId": "11111111-1111-4111-8111-111111111111",
+          "type": "TASK_ASSIGNED",
+          "title": "Task assigned to you",
+          "message": "Update: Sync OpenAPI response DTOs",
+          "targetId": "cccccccc-0014-46cc-8cc1-cccccccc014",
+          "targetType": "TASK",
+          "status": "UNREAD"
+        },
+        {
+          "recipientId": "22222222-2222-4222-8222-222222222222",
+          "actorId": "44444444-4444-4444-8444-444444444444",
+          "type": "TASK_ASSIGNED",
+          "title": "Task assigned to you",
+          "message": "Update: Improve error toast copy",
+          "targetId": "cccccccc-0015-47cc-8cc1-cccccccc015",
+          "targetType": "TASK",
+          "status": "READ"
+        },
+        {
+          "recipientId": "22222222-2222-4222-8222-222222222222",
+          "actorId": "12111111-1111-4111-8111-121111111111",
+          "type": "COMMENT_MENTIONED",
+          "title": "You were mentioned",
+          "message": "Mention on Board drag-and-drop QA",
+          "targetId": "cccccccc-0016-48cc-8cc1-cccccccc016",
+          "targetType": "COMMENT",
+          "status": "UNREAD"
+        },
+        {
+          "recipientId": "22222222-2222-4222-8222-222222222222",
+          "actorId": "12222222-2222-4222-8222-122222222222",
+          "type": "TASK_ASSIGNED",
+          "title": "Task assigned to you",
+          "message": "Update: Mention autocomplete edge cases",
+          "targetId": "cccccccc-0017-49cc-8cc1-cccccccc017",
+          "targetType": "TASK",
+          "status": "ARCHIVED"
+        },
+        {
+          "recipientId": "22222222-2222-4222-8222-222222222222",
+          "actorId": "12333333-3333-4333-8333-123333333333",
+          "type": "TASK_ASSIGNED",
+          "title": "Task assigned to you",
+          "message": "Update: Notification poll backoff",
+          "targetId": "cccccccc-0018-41cc-8cc1-cccccccc018",
+          "targetType": "TASK",
+          "status": "UNREAD"
+        },
+        {
+          "recipientId": "33333333-3333-4333-8333-333333333333",
+          "actorId": "77777777-7777-4777-8777-777777777777",
+          "type": "TASK_ASSIGNED",
+          "title": "Task assigned to you",
+          "message": "Product Lab: Command palette server search",
+          "targetId": "dddddddd-ddd1-4dd1-8dd1-dddddddddddd1",
+          "targetType": "TASK",
+          "status": "UNREAD"
+        },
+        {
+          "recipientId": "33333333-3333-4333-8333-333333333333",
+          "actorId": "77777777-7777-4777-8777-777777777777",
+          "type": "TASK_ASSIGNED",
+          "title": "Task assigned to you",
+          "message": "Product Lab: Kanban comment count badge",
+          "targetId": "dddddddd-ddd2-4dd2-8dd2-dddddddddddd2",
+          "targetType": "TASK",
+          "status": "READ"
         }
       ]
     },
@@ -394,16 +1113,46 @@
       "workspaceDescription": "Second workspace — Quang Tien owner, cross-team backlog.",
       "ownerUserId": "33333333-3333-4333-8333-333333333333",
       "members": [
-        { "userId": "33333333-3333-4333-8333-333333333333", "role": "owner" },
-        { "userId": "22222222-2222-4222-8222-222222222222", "role": "member" },
-        { "userId": "77777777-7777-4777-8777-777777777777", "role": "member" },
-        { "userId": "88888888-8888-4888-8888-888888888888", "role": "member" },
-        { "userId": "99999999-9999-4999-8999-999999999999", "role": "member" },
-        { "userId": "66666666-6666-4666-8666-666666666666", "role": "manager" },
-        { "userId": "12222222-2222-4222-8222-122222222222", "role": "member" },
-        { "userId": "12666666-6666-4666-8666-126666666666", "role": "member" },
-        { "userId": "12444444-4444-4444-8444-124444444444", "role": "member" },
-        { "userId": "12777777-7777-4777-8777-127777777777", "role": "member" }
+        {
+          "userId": "33333333-3333-4333-8333-333333333333",
+          "role": "owner"
+        },
+        {
+          "userId": "22222222-2222-4222-8222-222222222222",
+          "role": "member"
+        },
+        {
+          "userId": "77777777-7777-4777-8777-777777777777",
+          "role": "member"
+        },
+        {
+          "userId": "88888888-8888-4888-8888-888888888888",
+          "role": "member"
+        },
+        {
+          "userId": "99999999-9999-4999-8999-999999999999",
+          "role": "member"
+        },
+        {
+          "userId": "66666666-6666-4666-8666-666666666666",
+          "role": "manager"
+        },
+        {
+          "userId": "12222222-2222-4222-8222-122222222222",
+          "role": "member"
+        },
+        {
+          "userId": "12666666-6666-4666-8666-126666666666",
+          "role": "member"
+        },
+        {
+          "userId": "12444444-4444-4444-8444-124444444444",
+          "role": "member"
+        },
+        {
+          "userId": "12777777-7777-4777-8777-127777777777",
+          "role": "member"
+        }
       ],
       "projects": [
         {
@@ -417,7 +1166,9 @@
               "description": "Wire taskApi.search in palette.",
               "status": "DONE",
               "priority": "HIGH",
-              "labels": ["frontend"],
+              "labels": [
+                "frontend"
+              ],
               "assigneeUserId": "33333333-3333-4333-8333-333333333333",
               "createdByUserId": "88888888-8888-4888-8888-888888888888"
             },
@@ -427,7 +1178,10 @@
               "description": "Show commentCount on cards.",
               "status": "DOING",
               "priority": "MEDIUM",
-              "labels": ["frontend", "tasks"],
+              "labels": [
+                "frontend",
+                "tasks"
+              ],
               "assigneeUserId": "77777777-7777-4777-8777-777777777777",
               "createdByUserId": "33333333-3333-4333-8333-333333333333"
             },
@@ -437,7 +1191,9 @@
               "description": "Remember last active workspace in local storage.",
               "status": "TODO",
               "priority": "LOW",
-              "labels": ["ux"],
+              "labels": [
+                "ux"
+              ],
               "assigneeUserId": null,
               "createdByUserId": "88888888-8888-4888-8888-888888888888"
             },
@@ -447,9 +1203,136 @@
               "description": "Load more on workspace activity tab.",
               "status": "TODO",
               "priority": "MEDIUM",
-              "labels": ["workspace"],
+              "labels": [
+                "workspace"
+              ],
               "assigneeUserId": "22222222-2222-4222-8222-222222222222",
               "createdByUserId": "33333333-3333-4333-8333-333333333333"
+            },
+            {
+              "id": "dddddddd-0010-42cc-8cc1-dddddddd010",
+              "title": "FE role badge for platform user",
+              "description": "Demo seed task #10 — fills kanban, dashboard, and directory UI.",
+              "status": "DOING",
+              "priority": "MEDIUM",
+              "labels": [
+                "frontend",
+                "docs"
+              ],
+              "assigneeUserId": "12222222-2222-4222-8222-122222222222",
+              "createdByUserId": "33333333-3333-4333-8333-333333333333"
+            },
+            {
+              "id": "dddddddd-0011-43cc-8cc1-dddddddd011",
+              "title": "Dashboard chart from getBoard",
+              "description": "Demo seed task #11 — fills kanban, dashboard, and directory UI.",
+              "status": "DONE",
+              "priority": "HIGH",
+              "labels": [
+                "backend"
+              ],
+              "assigneeUserId": "12333333-3333-4333-8333-123333333333",
+              "createdByUserId": "88888888-8888-4888-8888-888888888888"
+            },
+            {
+              "id": "dddddddd-0012-44cc-8cc1-dddddddd012",
+              "title": "Project card relative dates",
+              "description": "Demo seed task #12 — fills kanban, dashboard, and directory UI.",
+              "status": "TODO",
+              "priority": "LOW",
+              "labels": [
+                "qa",
+                "infra"
+              ],
+              "assigneeUserId": null,
+              "createdByUserId": "33333333-3333-4333-8333-333333333333"
+            },
+            {
+              "id": "dddddddd-0013-45cc-8cc1-dddddddd013",
+              "title": "Task deep link share button",
+              "description": "Demo seed task #13 — fills kanban, dashboard, and directory UI.",
+              "status": "DOING",
+              "priority": "MEDIUM",
+              "labels": [
+                "docs"
+              ],
+              "assigneeUserId": "12555555-5555-4555-8555-125555555555",
+              "createdByUserId": "88888888-8888-4888-8888-888888888888"
+            },
+            {
+              "id": "dddddddd-0014-46cc-8cc1-dddddddd014",
+              "title": "Presence dot on member rows",
+              "description": "Demo seed task #14 — fills kanban, dashboard, and directory UI.",
+              "status": "DONE",
+              "priority": "HIGH",
+              "labels": [
+                "ux",
+                "api"
+              ],
+              "assigneeUserId": "12666666-6666-4666-8666-126666666666",
+              "createdByUserId": "33333333-3333-4333-8333-333333333333"
+            },
+            {
+              "id": "dddddddd-0015-47cc-8cc1-dddddddd015",
+              "title": "Bulk assign from board",
+              "description": "Demo seed task #15 — fills kanban, dashboard, and directory UI.",
+              "status": "TODO",
+              "priority": "LOW",
+              "labels": [
+                "infra"
+              ],
+              "assigneeUserId": "12777777-7777-4777-8777-127777777777",
+              "createdByUserId": "88888888-8888-4888-8888-888888888888"
+            },
+            {
+              "id": "dddddddd-0016-48cc-8cc1-dddddddd016",
+              "title": "Label filter on task list",
+              "description": "Demo seed task #16 — fills kanban, dashboard, and directory UI.",
+              "status": "DOING",
+              "priority": "MEDIUM",
+              "labels": [
+                "design",
+                "perf"
+              ],
+              "assigneeUserId": null,
+              "createdByUserId": "33333333-3333-4333-8333-333333333333"
+            },
+            {
+              "id": "dddddddd-0017-49cc-8cc1-dddddddd017",
+              "title": "Export board to CSV",
+              "description": "Demo seed task #17 — fills kanban, dashboard, and directory UI.",
+              "status": "DONE",
+              "priority": "HIGH",
+              "labels": [
+                "api"
+              ],
+              "assigneeUserId": "22222222-2222-4222-8222-222222222222",
+              "createdByUserId": "88888888-8888-4888-8888-888888888888"
+            },
+            {
+              "id": "dddddddd-0018-41cc-8cc1-dddddddd018",
+              "title": "Workspace logo upload",
+              "description": "Demo seed task #18 — fills kanban, dashboard, and directory UI.",
+              "status": "TODO",
+              "priority": "LOW",
+              "labels": [
+                "mobile",
+                "backend"
+              ],
+              "assigneeUserId": "33333333-3333-4333-8333-333333333333",
+              "createdByUserId": "33333333-3333-4333-8333-333333333333"
+            },
+            {
+              "id": "dddddddd-0019-42cc-8cc1-dddddddd019",
+              "title": "Manager promote confirmation",
+              "description": "Demo seed task #19 — fills kanban, dashboard, and directory UI.",
+              "status": "DOING",
+              "priority": "MEDIUM",
+              "labels": [
+                "perf"
+              ],
+              "assigneeUserId": "55555555-5555-4555-8555-555555555555",
+              "createdByUserId": "88888888-8888-4888-8888-888888888888"
             }
           ],
           "sampleComments": [
@@ -457,7 +1340,17 @@
               "taskId": "dddddddd-ddd2-4dd2-8dd2-dddddddddddd2",
               "authorUserId": "77777777-7777-4777-8777-777777777777",
               "content": "@designer.dana can you confirm icon size on the card?",
-              "mentionUserIds": ["99999999-9999-4999-8999-999999999999"]
+              "mentionUserIds": [
+                "99999999-9999-4999-8999-999999999999"
+              ]
+            },
+            {
+              "taskId": "dddddddd-ddd2-4dd2-8dd2-dddddddddddd2",
+              "authorUserId": "33333333-3333-4333-8333-333333333333",
+              "content": "@dev.bob can you pair on this today?",
+              "mentionUserIds": [
+                "77777777-7777-4777-8777-777777777777"
+              ]
             }
           ]
         },
@@ -472,7 +1365,9 @@
               "description": "Align StatusBadge with workspace roles.",
               "status": "DOING",
               "priority": "MEDIUM",
-              "labels": ["design"],
+              "labels": [
+                "design"
+              ],
               "assigneeUserId": "99999999-9999-4999-8999-999999999999",
               "createdByUserId": "99999999-9999-4999-8999-999999999999"
             },
@@ -482,9 +1377,164 @@
               "description": "Check slate palette on Kanban columns.",
               "status": "TODO",
               "priority": "LOW",
-              "labels": ["design", "a11y"],
+              "labels": [
+                "design",
+                "a11y"
+              ],
               "assigneeUserId": null,
               "createdByUserId": "99999999-9999-4999-8999-999999999999"
+            }
+          ],
+          "sampleComments": [
+            {
+              "taskId": "dddddddd-ddd6-4dd6-8dd6-dddddddddddd6",
+              "authorUserId": "33333333-3333-4333-8333-333333333333",
+              "content": "@dev.bob can you pair on this today?",
+              "mentionUserIds": [
+                "77777777-7777-4777-8777-777777777777"
+              ]
+            }
+          ]
+        },
+        {
+          "projectId": "dddddddd-dddd-4ddd-8ddd-ddddddddddd3",
+          "projectName": "Mobile & Polish",
+          "projectDescription": "Responsive and visual polish.",
+          "tasks": [
+            {
+              "id": "dddddddd-0040-45cc-8cc1-dddddddd040",
+              "title": "FE role badge for platform user",
+              "description": "Demo seed task #40 — fills kanban, dashboard, and directory UI.",
+              "status": "DOING",
+              "priority": "MEDIUM",
+              "labels": [
+                "frontend",
+                "docs"
+              ],
+              "assigneeUserId": null,
+              "createdByUserId": "33333333-3333-4333-8333-333333333333"
+            },
+            {
+              "id": "dddddddd-0041-46cc-8cc1-dddddddd041",
+              "title": "Dashboard chart from getBoard",
+              "description": "Demo seed task #41 — fills kanban, dashboard, and directory UI.",
+              "status": "DONE",
+              "priority": "HIGH",
+              "labels": [
+                "backend"
+              ],
+              "assigneeUserId": "11111111-1111-4111-8111-111111111111",
+              "createdByUserId": "99999999-9999-4999-8999-999999999999"
+            },
+            {
+              "id": "dddddddd-0042-47cc-8cc1-dddddddd042",
+              "title": "Project card relative dates",
+              "description": "Demo seed task #42 — fills kanban, dashboard, and directory UI.",
+              "status": "TODO",
+              "priority": "LOW",
+              "labels": [
+                "qa",
+                "infra"
+              ],
+              "assigneeUserId": "44444444-4444-4444-8444-444444444444",
+              "createdByUserId": "33333333-3333-4333-8333-333333333333"
+            },
+            {
+              "id": "dddddddd-0043-48cc-8cc1-dddddddd043",
+              "title": "Task deep link share button",
+              "description": "Demo seed task #43 — fills kanban, dashboard, and directory UI.",
+              "status": "DOING",
+              "priority": "MEDIUM",
+              "labels": [
+                "docs"
+              ],
+              "assigneeUserId": "12111111-1111-4111-8111-121111111111",
+              "createdByUserId": "99999999-9999-4999-8999-999999999999"
+            },
+            {
+              "id": "dddddddd-0044-49cc-8cc1-dddddddd044",
+              "title": "Presence dot on member rows",
+              "description": "Demo seed task #44 — fills kanban, dashboard, and directory UI.",
+              "status": "DONE",
+              "priority": "HIGH",
+              "labels": [
+                "ux",
+                "api"
+              ],
+              "assigneeUserId": null,
+              "createdByUserId": "33333333-3333-4333-8333-333333333333"
+            },
+            {
+              "id": "dddddddd-0045-41cc-8cc1-dddddddd045",
+              "title": "Bulk assign from board",
+              "description": "Demo seed task #45 — fills kanban, dashboard, and directory UI.",
+              "status": "TODO",
+              "priority": "LOW",
+              "labels": [
+                "infra"
+              ],
+              "assigneeUserId": "12333333-3333-4333-8333-123333333333",
+              "createdByUserId": "99999999-9999-4999-8999-999999999999"
+            },
+            {
+              "id": "dddddddd-0046-42cc-8cc1-dddddddd046",
+              "title": "Label filter on task list",
+              "description": "Demo seed task #46 — fills kanban, dashboard, and directory UI.",
+              "status": "DOING",
+              "priority": "MEDIUM",
+              "labels": [
+                "design",
+                "perf"
+              ],
+              "assigneeUserId": "12444444-4444-4444-8444-124444444444",
+              "createdByUserId": "33333333-3333-4333-8333-333333333333"
+            },
+            {
+              "id": "dddddddd-0047-43cc-8cc1-dddddddd047",
+              "title": "Export board to CSV",
+              "description": "Demo seed task #47 — fills kanban, dashboard, and directory UI.",
+              "status": "DONE",
+              "priority": "HIGH",
+              "labels": [
+                "api"
+              ],
+              "assigneeUserId": "12555555-5555-4555-8555-125555555555",
+              "createdByUserId": "99999999-9999-4999-8999-999999999999"
+            },
+            {
+              "id": "dddddddd-0048-44cc-8cc1-dddddddd048",
+              "title": "Workspace logo upload",
+              "description": "Demo seed task #48 — fills kanban, dashboard, and directory UI.",
+              "status": "TODO",
+              "priority": "LOW",
+              "labels": [
+                "mobile",
+                "backend"
+              ],
+              "assigneeUserId": null,
+              "createdByUserId": "33333333-3333-4333-8333-333333333333"
+            },
+            {
+              "id": "dddddddd-0049-45cc-8cc1-dddddddd049",
+              "title": "Manager promote confirmation",
+              "description": "Demo seed task #49 — fills kanban, dashboard, and directory UI.",
+              "status": "DOING",
+              "priority": "MEDIUM",
+              "labels": [
+                "perf"
+              ],
+              "assigneeUserId": "12777777-7777-4777-8777-127777777777",
+              "createdByUserId": "99999999-9999-4999-8999-999999999999"
+            }
+          ],
+          "sampleComments": [
+            {
+              "taskId": "dddddddd-0041-46cc-8cc1-dddddddd041",
+              "authorUserId": "33333333-3333-4333-8333-333333333333",
+              "content": "@dev.bob can you pair on this today?",
+              "mentionUserIds": [
+                "77777777-7777-4777-8777-777777777777"
+              ]
             }
           ]
         }
@@ -509,6 +1559,86 @@
           "targetId": "dddddddd-ddd2-4dd2-8dd2-dddddddddddd2",
           "targetType": "COMMENT",
           "status": "UNREAD"
+        },
+        {
+          "recipientId": "33333333-3333-4333-8333-333333333333",
+          "actorId": "77777777-7777-4777-8777-777777777777",
+          "type": "TASK_ASSIGNED",
+          "title": "Task assigned to you",
+          "message": "Product Lab: Workspace switcher persistence",
+          "targetId": "dddddddd-ddd3-4dd3-8dd3-dddddddddddd3",
+          "targetType": "TASK",
+          "status": "UNREAD"
+        },
+        {
+          "recipientId": "33333333-3333-4333-8333-333333333333",
+          "actorId": "77777777-7777-4777-8777-777777777777",
+          "type": "TASK_ASSIGNED",
+          "title": "Task assigned to you",
+          "message": "Product Lab: Activity feed pagination",
+          "targetId": "dddddddd-ddd4-4dd4-8dd4-dddddddddddd4",
+          "targetType": "TASK",
+          "status": "READ"
+        },
+        {
+          "recipientId": "33333333-3333-4333-8333-333333333333",
+          "actorId": "77777777-7777-4777-8777-777777777777",
+          "type": "TASK_ASSIGNED",
+          "title": "Task assigned to you",
+          "message": "Product Lab: FE role badge for platform user",
+          "targetId": "dddddddd-0010-42cc-8cc1-dddddddd010",
+          "targetType": "TASK",
+          "status": "UNREAD"
+        },
+        {
+          "recipientId": "33333333-3333-4333-8333-333333333333",
+          "actorId": "77777777-7777-4777-8777-777777777777",
+          "type": "TASK_ASSIGNED",
+          "title": "Task assigned to you",
+          "message": "Product Lab: Dashboard chart from getBoard",
+          "targetId": "dddddddd-0011-43cc-8cc1-dddddddd011",
+          "targetType": "TASK",
+          "status": "READ"
+        },
+        {
+          "recipientId": "33333333-3333-4333-8333-333333333333",
+          "actorId": "77777777-7777-4777-8777-777777777777",
+          "type": "TASK_ASSIGNED",
+          "title": "Task assigned to you",
+          "message": "Product Lab: Project card relative dates",
+          "targetId": "dddddddd-0012-44cc-8cc1-dddddddd012",
+          "targetType": "TASK",
+          "status": "UNREAD"
+        },
+        {
+          "recipientId": "33333333-3333-4333-8333-333333333333",
+          "actorId": "77777777-7777-4777-8777-777777777777",
+          "type": "TASK_ASSIGNED",
+          "title": "Task assigned to you",
+          "message": "Product Lab: Task deep link share button",
+          "targetId": "dddddddd-0013-45cc-8cc1-dddddddd013",
+          "targetType": "TASK",
+          "status": "READ"
+        },
+        {
+          "recipientId": "66666666-6666-4666-8666-666666666666",
+          "actorId": "22222222-2222-4222-8222-222222222222",
+          "type": "WORKSPACE_INVITED",
+          "title": "Workspace update",
+          "message": "New tasks added to CollabSpace Demo",
+          "targetId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+          "targetType": "WORKSPACE",
+          "status": "UNREAD"
+        },
+        {
+          "recipientId": "88888888-8888-4888-8888-888888888888",
+          "actorId": "22222222-2222-4222-8222-222222222222",
+          "type": "WORKSPACE_INVITED",
+          "title": "Workspace update",
+          "message": "New tasks added to CollabSpace Demo",
+          "targetId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+          "targetType": "WORKSPACE",
+          "status": "READ"
         }
       ]
     },
@@ -518,13 +1648,34 @@
       "workspaceDescription": "Platform operations workspace — Tho owner.",
       "ownerUserId": "11111111-1111-4111-8111-111111111111",
       "members": [
-        { "userId": "11111111-1111-4111-8111-111111111111", "role": "owner" },
-        { "userId": "44444444-4444-4444-8444-444444444444", "role": "manager" },
-        { "userId": "22222222-2222-4222-8222-222222222222", "role": "member" },
-        { "userId": "12111111-1111-4111-8111-121111111111", "role": "member" },
-        { "userId": "12888888-8888-4888-8888-128888888888", "role": "member" },
-        { "userId": "12333333-3333-4333-8333-333333333333", "role": "member" },
-        { "userId": "12777777-7777-4777-8777-127777777777", "role": "member" }
+        {
+          "userId": "11111111-1111-4111-8111-111111111111",
+          "role": "owner"
+        },
+        {
+          "userId": "44444444-4444-4444-8444-444444444444",
+          "role": "manager"
+        },
+        {
+          "userId": "22222222-2222-4222-8222-222222222222",
+          "role": "member"
+        },
+        {
+          "userId": "12111111-1111-4111-8111-121111111111",
+          "role": "member"
+        },
+        {
+          "userId": "12888888-8888-4888-8888-128888888888",
+          "role": "member"
+        },
+        {
+          "userId": "12333333-3333-4333-8333-333333333333",
+          "role": "member"
+        },
+        {
+          "userId": "12777777-7777-4777-8777-127777777777",
+          "role": "member"
+        }
       ],
       "projects": [
         {
@@ -538,7 +1689,9 @@
               "description": "Panel per service + gateway.",
               "status": "DOING",
               "priority": "HIGH",
-              "labels": ["observability"],
+              "labels": [
+                "observability"
+              ],
               "assigneeUserId": "11111111-1111-4111-8111-111111111111",
               "createdByUserId": "11111111-1111-4111-8111-111111111111"
             },
@@ -548,7 +1701,9 @@
               "description": "Rotate JWT_SECRET in dev cluster.",
               "status": "TODO",
               "priority": "HIGH",
-              "labels": ["security"],
+              "labels": [
+                "security"
+              ],
               "assigneeUserId": "44444444-4444-4444-8444-444444444444",
               "createdByUserId": "11111111-1111-4111-8111-111111111111"
             },
@@ -558,9 +1713,193 @@
               "description": "Record p95 for login + list workspaces.",
               "status": "DONE",
               "priority": "MEDIUM",
-              "labels": ["perf"],
+              "labels": [
+                "perf"
+              ],
               "assigneeUserId": "12222222-2222-4222-8222-122222222222",
               "createdByUserId": "22222222-2222-4222-8222-222222222222"
+            },
+            {
+              "id": "eeeeeeee-0010-42cc-8cc1-eeeeeeee010",
+              "title": "Helm rollout timeout tuning",
+              "description": "Demo seed task #10 — fills kanban, dashboard, and directory UI.",
+              "status": "DOING",
+              "priority": "MEDIUM",
+              "labels": [
+                "frontend",
+                "docs"
+              ],
+              "assigneeUserId": "12222222-2222-4222-8222-122222222222",
+              "createdByUserId": "11111111-1111-4111-8111-111111111111"
+            },
+            {
+              "id": "eeeeeeee-0011-43cc-8cc1-eeeeeeee011",
+              "title": "Loki retention policy",
+              "description": "Demo seed task #11 — fills kanban, dashboard, and directory UI.",
+              "status": "DONE",
+              "priority": "HIGH",
+              "labels": [
+                "backend"
+              ],
+              "assigneeUserId": "12333333-3333-4333-8333-123333333333",
+              "createdByUserId": "44444444-4444-4444-8444-444444444444"
+            },
+            {
+              "id": "eeeeeeee-0012-44cc-8cc1-eeeeeeee012",
+              "title": "Backup restore drill",
+              "description": "Demo seed task #12 — fills kanban, dashboard, and directory UI.",
+              "status": "TODO",
+              "priority": "LOW",
+              "labels": [
+                "qa",
+                "infra"
+              ],
+              "assigneeUserId": null,
+              "createdByUserId": "11111111-1111-4111-8111-111111111111"
+            },
+            {
+              "id": "eeeeeeee-0013-45cc-8cc1-eeeeeeee013",
+              "title": "Traefik access log sampling",
+              "description": "Demo seed task #13 — fills kanban, dashboard, and directory UI.",
+              "status": "DOING",
+              "priority": "MEDIUM",
+              "labels": [
+                "docs"
+              ],
+              "assigneeUserId": "12555555-5555-4555-8555-125555555555",
+              "createdByUserId": "44444444-4444-4444-8444-444444444444"
+            },
+            {
+              "id": "eeeeeeee-0014-46cc-8cc1-eeeeeeee014",
+              "title": "Mongo index review",
+              "description": "Demo seed task #14 — fills kanban, dashboard, and directory UI.",
+              "status": "DONE",
+              "priority": "HIGH",
+              "labels": [
+                "ux",
+                "api"
+              ],
+              "assigneeUserId": "12666666-6666-4666-8666-126666666666",
+              "createdByUserId": "11111111-1111-4111-8111-111111111111"
+            },
+            {
+              "id": "eeeeeeee-0015-47cc-8cc1-eeeeeeee015",
+              "title": "Redis memory alert",
+              "description": "Demo seed task #15 — fills kanban, dashboard, and directory UI.",
+              "status": "TODO",
+              "priority": "LOW",
+              "labels": [
+                "infra"
+              ],
+              "assigneeUserId": "12777777-7777-4777-8777-127777777777",
+              "createdByUserId": "44444444-4444-4444-8444-444444444444"
+            }
+          ]
+        },
+        {
+          "projectId": "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeee2",
+          "projectName": "CI/CD Pipeline",
+          "projectDescription": "Build, deploy, and smoke automation.",
+          "tasks": [
+            {
+              "id": "eeeeeeee-0030-44cc-8cc1-eeeeeeee030",
+              "title": "Helm rollout timeout tuning",
+              "description": "Demo seed task #30 — fills kanban, dashboard, and directory UI.",
+              "status": "TODO",
+              "priority": "LOW",
+              "labels": [
+                "frontend",
+                "docs"
+              ],
+              "assigneeUserId": "12555555-5555-4555-8555-125555555555",
+              "createdByUserId": "11111111-1111-4111-8111-111111111111"
+            },
+            {
+              "id": "eeeeeeee-0031-45cc-8cc1-eeeeeeee031",
+              "title": "Loki retention policy",
+              "description": "Demo seed task #31 — fills kanban, dashboard, and directory UI.",
+              "status": "DOING",
+              "priority": "MEDIUM",
+              "labels": [
+                "backend"
+              ],
+              "assigneeUserId": "12666666-6666-4666-8666-126666666666",
+              "createdByUserId": "44444444-4444-4444-8444-444444444444"
+            },
+            {
+              "id": "eeeeeeee-0032-46cc-8cc1-eeeeeeee032",
+              "title": "Backup restore drill",
+              "description": "Demo seed task #32 — fills kanban, dashboard, and directory UI.",
+              "status": "DONE",
+              "priority": "HIGH",
+              "labels": [
+                "qa",
+                "infra"
+              ],
+              "assigneeUserId": null,
+              "createdByUserId": "11111111-1111-4111-8111-111111111111"
+            },
+            {
+              "id": "eeeeeeee-0033-47cc-8cc1-eeeeeeee033",
+              "title": "Traefik access log sampling",
+              "description": "Demo seed task #33 — fills kanban, dashboard, and directory UI.",
+              "status": "TODO",
+              "priority": "LOW",
+              "labels": [
+                "docs"
+              ],
+              "assigneeUserId": "12888888-8888-4888-8888-128888888888",
+              "createdByUserId": "44444444-4444-4444-8444-444444444444"
+            },
+            {
+              "id": "eeeeeeee-0034-48cc-8cc1-eeeeeeee034",
+              "title": "Mongo index review",
+              "description": "Demo seed task #34 — fills kanban, dashboard, and directory UI.",
+              "status": "DOING",
+              "priority": "MEDIUM",
+              "labels": [
+                "ux",
+                "api"
+              ],
+              "assigneeUserId": "22222222-2222-4222-8222-222222222222",
+              "createdByUserId": "11111111-1111-4111-8111-111111111111"
+            },
+            {
+              "id": "eeeeeeee-0035-49cc-8cc1-eeeeeeee035",
+              "title": "Redis memory alert",
+              "description": "Demo seed task #35 — fills kanban, dashboard, and directory UI.",
+              "status": "DONE",
+              "priority": "HIGH",
+              "labels": [
+                "infra"
+              ],
+              "assigneeUserId": "33333333-3333-4333-8333-333333333333",
+              "createdByUserId": "44444444-4444-4444-8444-444444444444"
+            },
+            {
+              "id": "eeeeeeee-0036-41cc-8cc1-eeeeeeee036",
+              "title": "CI image scan gate",
+              "description": "Demo seed task #36 — fills kanban, dashboard, and directory UI.",
+              "status": "TODO",
+              "priority": "LOW",
+              "labels": [
+                "design",
+                "perf"
+              ],
+              "assigneeUserId": null,
+              "createdByUserId": "11111111-1111-4111-8111-111111111111"
+            },
+            {
+              "id": "eeeeeeee-0037-42cc-8cc1-eeeeeeee037",
+              "title": "Seed job idempotency test",
+              "description": "Demo seed task #37 — fills kanban, dashboard, and directory UI.",
+              "status": "DOING",
+              "priority": "MEDIUM",
+              "labels": [
+                "api"
+              ],
+              "assigneeUserId": "66666666-6666-4666-8666-666666666666",
+              "createdByUserId": "44444444-4444-4444-8444-444444444444"
             }
           ]
         }
@@ -585,6 +1924,36 @@
           "targetId": "eeeeeeee-eee3-4ee3-8ee3-eeeeeeeeeee3",
           "targetType": "TASK",
           "status": "ARCHIVED"
+        },
+        {
+          "recipientId": "77777777-7777-4777-8777-777777777777",
+          "actorId": "22222222-2222-4222-8222-222222222222",
+          "type": "WORKSPACE_INVITED",
+          "title": "Workspace update",
+          "message": "New tasks added to CollabSpace Demo",
+          "targetId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+          "targetType": "WORKSPACE",
+          "status": "UNREAD"
+        },
+        {
+          "recipientId": "55555555-5555-4555-8555-555555555555",
+          "actorId": "22222222-2222-4222-8222-222222222222",
+          "type": "WORKSPACE_INVITED",
+          "title": "Workspace update",
+          "message": "New tasks added to CollabSpace Demo",
+          "targetId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+          "targetType": "WORKSPACE",
+          "status": "READ"
+        },
+        {
+          "recipientId": "12777777-7777-4777-8777-127777777777",
+          "actorId": "22222222-2222-4222-8222-222222222222",
+          "type": "WORKSPACE_INVITED",
+          "title": "Workspace update",
+          "message": "New tasks added to CollabSpace Demo",
+          "targetId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+          "targetType": "WORKSPACE",
+          "status": "UNREAD"
         }
       ]
     },
@@ -594,7 +1963,10 @@
       "workspaceDescription": "Single-owner workspace for isolated testing.",
       "ownerUserId": "61000000-0000-4000-8000-000000000001",
       "members": [
-        { "userId": "61000000-0000-4000-8000-000000000001", "role": "owner" }
+        {
+          "userId": "61000000-0000-4000-8000-000000000001",
+          "role": "owner"
+        }
       ],
       "projects": [
         {
@@ -608,8 +1980,60 @@
               "description": "Compare with seeded Solo Sandbox.",
               "status": "TODO",
               "priority": "LOW",
-              "labels": ["sandbox"],
+              "labels": [
+                "sandbox"
+              ],
               "assigneeUserId": null,
+              "createdByUserId": "61000000-0000-4000-8000-000000000001"
+            },
+            {
+              "id": "ffffffff-0010-42cc-8cc1-ffffffff010",
+              "title": "Personal backlog item",
+              "description": "Demo seed task #10 — fills kanban, dashboard, and directory UI.",
+              "status": "DOING",
+              "priority": "MEDIUM",
+              "labels": [
+                "frontend",
+                "docs"
+              ],
+              "assigneeUserId": "61000000-0000-4000-8000-000000000001",
+              "createdByUserId": "61000000-0000-4000-8000-000000000001"
+            },
+            {
+              "id": "ffffffff-0011-43cc-8cc1-ffffffff011",
+              "title": "Try labels",
+              "description": "Demo seed task #11 — fills kanban, dashboard, and directory UI.",
+              "status": "DONE",
+              "priority": "HIGH",
+              "labels": [
+                "backend"
+              ],
+              "assigneeUserId": "61000000-0000-4000-8000-000000000001",
+              "createdByUserId": "61000000-0000-4000-8000-000000000001"
+            },
+            {
+              "id": "ffffffff-0012-44cc-8cc1-ffffffff012",
+              "title": "Check notifications",
+              "description": "Demo seed task #12 — fills kanban, dashboard, and directory UI.",
+              "status": "TODO",
+              "priority": "LOW",
+              "labels": [
+                "qa",
+                "infra"
+              ],
+              "assigneeUserId": null,
+              "createdByUserId": "61000000-0000-4000-8000-000000000001"
+            },
+            {
+              "id": "ffffffff-0013-45cc-8cc1-ffffffff013",
+              "title": "Sandbox task",
+              "description": "Demo seed task #13 — fills kanban, dashboard, and directory UI.",
+              "status": "DOING",
+              "priority": "MEDIUM",
+              "labels": [
+                "docs"
+              ],
+              "assigneeUserId": "61000000-0000-4000-8000-000000000001",
               "createdByUserId": "61000000-0000-4000-8000-000000000001"
             }
           ]

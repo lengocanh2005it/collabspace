@@ -156,7 +156,7 @@ After `./scripts/seed.sh`, **20 accounts** (password `collabspace123` for all) a
 | `pm.carol@collabspace.dev` | user | Demo **manager**; Product Lab member | Triage + promote/demote UI |
 | `designer.dana@collabspace.dev` | user | Product Lab member | Design-system tasks |
 | `solo.owner@collabspace.dev` | user | Solo Sandbox **owner** | Single-user workspace |
-| `viewer.only@collabspace.dev` | user | *(none)* | Expect 403 on workspace APIs |
+| `viewer.only@collabspace.dev` | user | *(none)* | Empty state — new user, no workspace |
 | `dev.eve@collabspace.dev` | user | Demo **pending invite** | `/invitations/me` accept flow |
 | `dev.alex@collabspace.dev` | user | Demo member; Infra Ops member | More member density for UI |
 | `dev.felix@collabspace.dev` | user | Demo member; Product Lab member | More member density for UI |
@@ -168,7 +168,7 @@ After `./scripts/seed.sh`, **20 accounts** (password `collabspace123` for all) a
 | `viewer.maria@collabspace.dev` | user | Infra Ops member | User with workspace browsing |
 
 **Workspaces:** CollabSpace Demo · Product Lab · Infra Ops · Solo Sandbox  
-**Data:** 6 projects · 15 tasks · 4 comments · 8 notifications · 1 pending invitation
+**Data:** 9 projects · **87 tasks** · 13 comments · **32 notifications** · 1 pending invitation (see `_meta` in [`demo-seed-data.json`](scripts/demo-seed-data.json))
 
 **Roles:** Platform `admin` | `user` (auth) — tách khỏi workspace `owner` | `manager` | `member`. Chi tiết: [docs/roles-and-permissions.md](docs/roles-and-permissions.md).
 

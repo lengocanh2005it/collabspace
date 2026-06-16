@@ -289,7 +289,7 @@ Nguồn: [`scripts/demo-seed-data.json`](../scripts/demo-seed-data.json)
 | `qa.alice@collabspace.dev` | **user** | Product Lab (**manager**) | Manager permissions |
 | `dev.bob@collabspace.dev` | **user** | Demo (member) | Member flow |
 | `dev.eve@collabspace.dev` | **user** | *(pending invite)* | Accept invitation |
-| `viewer.only@collabspace.dev` | **user** | *(không có workspace)* | Empty state / 403 workspace APIs |
+| `viewer.only@collabspace.dev` | **user** | *(không có workspace)* | Empty state — user mới, chưa join workspace |
 | `reviewer@collabspace.dev` | **user** | Demo (member) | Stakeholder đọc trong workspace |
 | `solo.owner@collabspace.dev` | **user** | Solo Sandbox (**owner**) | Workspace một người |
 

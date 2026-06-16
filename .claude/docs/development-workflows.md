@@ -276,9 +276,9 @@ What gets seeded:
 
 - **auth-service** — roles, permissions, **20** verified demo users
 - **user-service** — profiles, preferences, status; optional RabbitMQ replica sync
-- **workspace-service** — **4 workspaces**, **6 projects**, members (owner/manager/member mix), **1 pending invitation**
-- **task-service** — user replicas, **15 tasks** + event store, **4 comments**
-- **notification-service** — **8** sample notifications (UNREAD / READ / ARCHIVED)
+- **workspace-service** — **4 workspaces**, **9 projects**, members (owner/manager/member mix), **1 pending invitation**
+- **task-service** — user replicas, **87 tasks** + event store, **13 comments**
+- **notification-service** — **32** sample notifications (UNREAD / READ / ARCHIVED)
 
 Demo accounts after seed:
 
