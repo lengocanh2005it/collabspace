@@ -8,6 +8,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/lib/k8s-job-wait.sh"
 
 export KUBECONFIG="${KUBECONFIG:-/etc/rancher/k3s/k3s.yaml}"
+APP_DIR="${APP_DIR:-/opt/collabspace}"
 APP_NS="${APP_NS:-collabspace}"
 PHASE0_ENV="${PHASE0_ENV:-/opt/collabspace/infrastructure/deploy/phase0.env}"
 VALUES_PROD="${VALUES_PROD:-/opt/collabspace/infrastructure/helm/collabspace/values-prod.yaml}"
@@ -38,6 +39,19 @@ fi
 IMAGE_TAG="${IMAGE_TAG:-latest}"
 
 SEED_CMD="node dist/seed/seed.js"
+USE_HOST_SEED_DATA=false
+
+sync_demo_seed_configmap() {
+  local seed_file="$APP_DIR/scripts/demo-seed-data.json"
+  if [[ ! -f "$seed_file" ]]; then
+    return 0
+  fi
+  kubectl create configmap demo-seed-data \
+    --from-file=demo-seed-data.json="$seed_file" \
+    -n "$APP_NS" --dry-run=client -o yaml | kubectl apply -f -
+  USE_HOST_SEED_DATA=true
+  echo "==> demo-seed-data ConfigMap synced from ${seed_file} (overrides image seed JSON)"
+}
 
 wait_datastores() {
   echo "==> Waiting for datastores..."
@@ -72,6 +86,24 @@ apply_seed_job() {
   local cmd="${SEED_CMD}"
   local job_name="seed-${deployment}-$(date +%s)"
   local pull_secret_block=""
+  local seed_env_block=""
+  local seed_mount_block=""
+  local seed_volumes_block=""
+
+  if [[ "$USE_HOST_SEED_DATA" == "true" ]]; then
+    seed_env_block="          env:
+            - name: DEMO_SEED_DATA_PATH
+              value: /seed/demo-seed-data.json"
+    seed_mount_block="          volumeMounts:
+            - name: demo-seed-data
+              mountPath: /seed/demo-seed-data.json
+              subPath: demo-seed-data.json
+              readOnly: true"
+    seed_volumes_block="      volumes:
+        - name: demo-seed-data
+          configMap:
+            name: demo-seed-data"
+  fi
 
   if kubectl get secret ghcr-credentials -n "$APP_NS" >/dev/null 2>&1; then
     pull_secret_block="      imagePullSecrets:
@@ -101,11 +133,14 @@ ${pull_secret_block}
           image: ${image}
           imagePullPolicy: Always
           command: ["/bin/sh", "-c", "${cmd}"]
+${seed_env_block}
           envFrom:
             - configMapRef:
                 name: ${deployment}-config
             - secretRef:
                 name: ${deployment}-secrets
+${seed_mount_block}
+${seed_volumes_block}
 EOF
 
   if ! wait_k8s_job "$APP_NS" "$job_name" 300 5; then
@@ -135,6 +170,7 @@ restore_seed_replicas() {
 }
 
 wait_datastores
+sync_demo_seed_configmap
 scale_seed_writers_to_zero
 
 for svc in auth-service user-service workspace-service task-service notification-service; do
