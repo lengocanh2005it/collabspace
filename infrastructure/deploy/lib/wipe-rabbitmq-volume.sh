@@ -29,6 +29,16 @@ wipe_rabbitmq_volume() {
   fi
 
   kubectl scale "statefulset/${sts}" -n "$ns" --replicas=1
-  kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=rabbitmq -n "$ns" --timeout=300s
+
+  local waited=0
+  while [[ "$waited" -lt 120 ]]; do
+    if kubectl get "pod/${sts}-0" -n "$ns" >/dev/null 2>&1; then
+      break
+    fi
+    sleep 2
+    waited=$((waited + 2))
+  done
+
+  kubectl wait --for=condition=ready "pod/${sts}-0" -n "$ns" --timeout=300s
   k8s_job_log "OK  RabbitMQ running with empty volume (vhost collabspace from Helm)"
 }

@@ -197,11 +197,16 @@ restore_seed_replicas() {
 }
 
 print_seed_write_targets() {
-  if [[ -f "$APP_DIR/scripts/load-demo-seed-data.js" ]]; then
+  if command -v node >/dev/null 2>&1 && [[ -f "$APP_DIR/scripts/load-demo-seed-data.js" ]]; then
     node -e "require(process.argv[1]).printSeedWriteTargets()" "$APP_DIR/scripts/load-demo-seed-data.js"
     return
   fi
-  echo "Seed writes: auth/user/workspace (Postgres); task/notification (Mongo + user_replicas)"
+  echo "Seed writes (service DB + replicas):"
+  echo "  auth-service [postgres]: users, roles, permissions, user_roles, role_permissions"
+  echo "  user-service [postgres]: profiles, user_preferences, user_status"
+  echo "  workspace-service [postgres]: workspaces, workspace_members, projects, invitations"
+  echo "  task-service [mongodb]: tasks, task_events, task_comments, task_activity; replicas: user_replicas"
+  echo "  notification-service [mongodb]: notifications; replicas: user_replicas"
 }
 
 echo "==> k8s seed pipeline (each service: own DB + replicas where applicable)"
