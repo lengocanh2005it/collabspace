@@ -20,8 +20,8 @@ export class UpdateWorkspaceUseCase {
 
   async execute(userId: string, workspaceId: string, dto: UpdateWorkspaceDto) {
     const member = await this.memberRepo.findByWorkspaceAndUser(workspaceId, userId);
-    if (!member || member.role !== 'owner') {
-      throw new ForbiddenException('Only admins or owners can update the workspace');
+    if (member?.role !== 'owner') {
+      throw new ForbiddenException('Only the workspace owner can update the workspace');
     }
 
     const workspace = await this.workspaceRepo.findById(workspaceId);
