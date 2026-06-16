@@ -3,8 +3,10 @@ import { ConfigService } from "@nestjs/config";
 import {
   buildOutboundServiceAuthHeaders,
   isOutboundServiceAuthConfigured,
+  parseWorkspaceRole,
   SERVICE_IDS,
   SERVICE_SCOPES,
+  type WorkspaceRole,
 } from "@collabspace/shared";
 import { outboundRequestIdHeaders } from "../../common/http/request-id.context";
 import type {
@@ -56,7 +58,7 @@ export class WorkspaceHttpClient implements IWorkspaceClient {
 
     const snapshot = {
       isMember: membership.isMember,
-      role: membership.role as WorkspaceMember["role"] | null,
+      role: parseWorkspaceRole(membership.role),
     };
     await this.membershipCache.write(workspaceId, userId, snapshot);
     return snapshot;
@@ -70,7 +72,7 @@ export class WorkspaceHttpClient implements IWorkspaceClient {
   async checkUserPermissionAsync(
     workspaceId: string,
     userId: string,
-    requiredRole: "owner" | "admin" | "member" = "member",
+    requiredRole: WorkspaceRole = "member",
   ): Promise<boolean> {
     const membership = await this.getMembershipAsync(workspaceId, userId);
 

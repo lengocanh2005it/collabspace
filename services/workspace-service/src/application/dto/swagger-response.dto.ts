@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { WORKSPACE_ROLES } from '@collabspace/shared';
 
 export class WorkspaceResponseSchemaDto {
   @ApiProperty({ format: 'uuid' }) id: string;
@@ -13,7 +14,7 @@ export class WorkspaceMemberResponseSchemaDto {
   @ApiProperty({ format: 'uuid' }) id: string;
   @ApiProperty({ format: 'uuid' }) workspaceId: string;
   @ApiProperty({ format: 'uuid' }) userId: string;
-  @ApiProperty({ enum: ['owner', 'admin', 'member'] }) role: string;
+  @ApiProperty({ enum: WORKSPACE_ROLES }) role: string;
   @ApiProperty({ format: 'date-time' }) joinedAt: Date;
 }
 

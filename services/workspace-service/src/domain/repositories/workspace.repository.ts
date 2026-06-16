@@ -5,7 +5,7 @@ export const WORKSPACE_REPOSITORY = Symbol('WORKSPACE_REPOSITORY');
 export interface IWorkspaceRepository {
   deleteByOwner(id: string, actorId: string): Promise<void>;
   adminForceDelete(id: string, actorId: string): Promise<void>;
-  adminForceJoin(id: string, userId: string, role: 'admin'): Promise<void>;
+  adminForceJoin(id: string, userId: string, role: 'member'): Promise<void>;
   adminListAll(): Promise<Array<Workspace & { memberCount: number }>>;
   findById(id: string): Promise<Workspace | null>;
   findByMember(userId: string): Promise<Workspace[]>;

@@ -142,22 +142,30 @@ docker-compose -f docker-compose.yml -f docker-compose.db.yml -f docker-compose.
 
 ### Seeded Development Accounts
 
-After `./scripts/seed.sh`, **12 accounts** (password `collabspace123` for all) and **4 workspaces** are available. Source of truth: [`scripts/demo-seed-data.json`](scripts/demo-seed-data.json).
+After `./scripts/seed.sh`, **20 accounts** (password `collabspace123` for all) and **4 workspaces** are available. Source of truth: [`scripts/demo-seed-data.json`](scripts/demo-seed-data.json).
 
 | Email | Platform role | Workspace memberships | Use for |
 |-------|---------------|----------------------|---------|
 | `tho@collabspace.dev` | admin | Infra Ops **owner** | Platform admin + ops workspace |
-| `trungtin@collabspace.dev` | admin | Infra Ops member | `/admin/*` UI, broadcast |
-| `ngocanh@collabspace.dev` | member | Demo **owner**, Product Lab + Infra Ops member | **User A** MVP flow |
-| `quangtien@collabspace.dev` | member | Demo + Product Lab **owner** | **User B**, second workspace owner |
+| `trungtin@collabspace.dev` | admin | Infra Ops **manager** | `/admin/*` UI, manager hierarchy testing |
+| `ngocanh@collabspace.dev` | member | Demo **owner**; Product Lab member; Infra Ops member | **User A** MVP flow |
+| `quangtien@collabspace.dev` | member | Demo member; Product Lab **owner** | **User B**, second workspace owner |
 | `reviewer@collabspace.dev` | viewer | Demo member | Read-only platform + browse workspace |
-| `qa.alice@collabspace.dev` | member | Demo member | QA / board regression |
-| `dev.bob@collabspace.dev` | member | Product Lab member | Assignee + mentions |
-| `pm.carol@collabspace.dev` | member | Demo + Product Lab member | Unassigned tasks, triage |
+| `qa.alice@collabspace.dev` | member | Demo member; Product Lab **manager** | QA / board regression + manager flows |
+| `dev.bob@collabspace.dev` | member | Product Lab member | Assignee + mentions variety |
+| `pm.carol@collabspace.dev` | member | Demo **manager**; Product Lab member | Triage + promote/demote UI |
 | `designer.dana@collabspace.dev` | member | Product Lab member | Design-system tasks |
 | `solo.owner@collabspace.dev` | member | Solo Sandbox **owner** | Single-user workspace |
 | `viewer.only@collabspace.dev` | viewer | *(none)* | Expect 403 on workspace APIs |
-| `dev.eve@collabspace.dev` | member | *(pending invite)* | `/invitations/me` accept flow |
+| `dev.eve@collabspace.dev` | member | Demo **pending invite** | `/invitations/me` accept flow |
+| `dev.alex@collabspace.dev` | member | Demo member; Infra Ops member | More member density for UI |
+| `dev.felix@collabspace.dev` | member | Demo member; Product Lab member | More member density for UI |
+| `dev.gina@collabspace.dev` | member | Infra Ops member | More member density for UI |
+| `qa.alvin@collabspace.dev` | member | Demo member; Product Lab member | More member density for UI |
+| `pm.helen@collabspace.dev` | member | Demo member | More member density for UI |
+| `designer.ian@collabspace.dev` | member | Product Lab member | More member density for UI |
+| `member.khanh@collabspace.dev` | member | Product Lab member; Infra Ops member | More member density for UI |
+| `viewer.maria@collabspace.dev` | viewer | Infra Ops member | Viewer persona + workspace browsing |
 
 **Workspaces:** CollabSpace Demo · Product Lab · Infra Ops · Solo Sandbox  
 **Data:** 6 projects · 15 tasks · 4 comments · 8 notifications · 1 pending invitation

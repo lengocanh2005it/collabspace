@@ -74,4 +74,9 @@ export class UserReplicaLookupService {
 
     return result;
   }
+
+  async findActiveUserIdByEmailAsync(email: string): Promise<string | null> {
+    const replica = await this.userReplicaRepo.findActiveByEmailAsync(email);
+    return replica?.userId ?? null;
+  }
 }

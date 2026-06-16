@@ -274,9 +274,9 @@ All services compile seed to **`dist/seed/seed.js`**; images copy `scripts/load-
 
 What gets seeded:
 
-- **auth-service** — roles, permissions, **12** verified demo users
+- **auth-service** — roles, permissions, **20** verified demo users
 - **user-service** — profiles, preferences, status; optional RabbitMQ replica sync
-- **workspace-service** — **4 workspaces**, **6 projects**, members, **1 pending invitation**
+- **workspace-service** — **4 workspaces**, **6 projects**, members (owner/manager/member mix), **1 pending invitation**
 - **task-service** — user replicas, **15 tasks** + event store, **4 comments**
 - **notification-service** — **8** sample notifications (UNREAD / READ / ARCHIVED)
 
@@ -287,8 +287,23 @@ Demo accounts after seed:
 - `quangtien@collabspace.dev` / `collabspace123` (User B — workspace member)
 - `trungtin@collabspace.dev` / `collabspace123` (platform admin)
 - `reviewer@collabspace.dev` / `collabspace123` (platform viewer + workspace member)
+- `qa.alice@collabspace.dev` / `collabspace123` (workspace member)
+- `dev.bob@collabspace.dev` / `collabspace123` (workspace member)
+- `pm.carol@collabspace.dev` / `collabspace123` (workspace manager)
+- `designer.dana@collabspace.dev` / `collabspace123` (workspace member)
+- `solo.owner@collabspace.dev` / `collabspace123` (Solo workspace owner)
+- `viewer.only@collabspace.dev` / `collabspace123` (platform viewer — no workspace)
+- `dev.eve@collabspace.dev` / `collabspace123` (workspace invitation pending)
+- `dev.alex@collabspace.dev` / `collabspace123` (workspace member)
+- `dev.felix@collabspace.dev` / `collabspace123` (workspace member)
+- `dev.gina@collabspace.dev` / `collabspace123` (workspace member)
+- `qa.alvin@collabspace.dev` / `collabspace123` (workspace member)
+- `pm.helen@collabspace.dev` / `collabspace123` (workspace member)
+- `designer.ian@collabspace.dev` / `collabspace123` (workspace member)
+- `member.khanh@collabspace.dev` / `collabspace123` (workspace member)
+- `viewer.maria@collabspace.dev` / `collabspace123` (platform viewer — member in some workspaces)
 
-Trạng thái workspace role trong seed hiện tại: **owner/member** (Phase 0–5). Vai trò **manager** là **Planned** cho Phase 5+ seed tiếp theo.
+Trạng thái workspace role trong seed hiện tại: **owner/manager/member** (Phase 5).
 
 Run migrations before seeding. Requires Postgres (auth, user, workspace) and MongoDB (task, notification).
 

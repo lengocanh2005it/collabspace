@@ -16,7 +16,7 @@ export type DemoSeedUser = {
 
 export type DemoSeedWorkspaceMember = {
   userId: string;
-  role: 'owner' | 'member';
+  role: 'owner' | 'manager' | 'member';
 };
 
 export type DemoSeedTask = {

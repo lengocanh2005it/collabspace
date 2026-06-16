@@ -43,17 +43,25 @@ export class RemoveMemberUseCase {
       return;
     }
 
-    if (actor.role === 'member') {
-      throw new ForbiddenException('Only owners or admins can remove members');
+    if (actor.role === 'owner') {
+      await this.memberRepo.removeByWorkspaceAndUser(workspaceId, targetUserId);
+      await this.recordRemoval(workspaceId, actorId, targetUserId, target.role, false);
+      await this.workspaceCache.deleteWorkspaceList(targetUserId);
+      return;
     }
 
-    if (actor.role === 'admin' && target.role === 'admin') {
-      throw new ForbiddenException('Admins cannot remove another admin');
+    if (actor.role === 'manager') {
+      if (target.role !== 'member') {
+        throw new ForbiddenException('Workspace managers can remove only members');
+      }
+
+      await this.memberRepo.removeByWorkspaceAndUser(workspaceId, targetUserId);
+      await this.recordRemoval(workspaceId, actorId, targetUserId, target.role, false);
+      await this.workspaceCache.deleteWorkspaceList(targetUserId);
+      return;
     }
 
-    await this.memberRepo.removeByWorkspaceAndUser(workspaceId, targetUserId);
-    await this.recordRemoval(workspaceId, actorId, targetUserId, target.role, false);
-    await this.workspaceCache.deleteWorkspaceList(targetUserId);
+    throw new ForbiddenException('Only the workspace owner or manager can remove members');
   }
 
   private async recordRemoval(

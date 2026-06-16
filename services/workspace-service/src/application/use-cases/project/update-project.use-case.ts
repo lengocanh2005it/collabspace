@@ -20,8 +20,8 @@ export class UpdateProjectUseCase {
 
   async execute(userId: string, workspaceId: string, projectId: string, dto: UpdateProjectDto) {
     const member = await this.memberRepo.findByWorkspaceAndUser(workspaceId, userId);
-    if (!member || (member.role !== 'owner' && member.role !== 'admin')) {
-      throw new ForbiddenException('Only admins or owners can update projects');
+    if (!member || (member.role !== 'owner' && member.role !== 'manager')) {
+      throw new ForbiddenException('Only workspace owner or manager can update projects');
     }
 
     const project = await this.projectRepo.findById(projectId, workspaceId);

@@ -42,18 +42,33 @@ describe('CheckWorkspaceMembershipUseCase', () => {
     });
   });
 
-  it('should return membership role when user is a member', async () => {
+  it('should return membership role when user is a manager', async () => {
     mockWorkspaceRepo.findById.mockResolvedValue(
       new Workspace('ws-1', 'Test', null, 'user-1', new Date(), new Date()),
     );
     mockMemberRepo.findByWorkspaceAndUser.mockResolvedValue(
-      new WorkspaceMember('m-1', 'ws-1', 'user-1', 'admin', new Date()),
+      new WorkspaceMember('m-1', 'ws-1', 'user-1', 'manager', new Date()),
     );
     await expect(useCase.execute('ws-1', 'user-1')).resolves.toEqual({
       workspaceId: 'ws-1',
       userId: 'user-1',
       isMember: true,
-      role: 'admin',
+      role: 'manager',
+    });
+  });
+
+  it('should return membership role when user is a member', async () => {
+    mockWorkspaceRepo.findById.mockResolvedValue(
+      new Workspace('ws-1', 'Test', null, 'user-1', new Date(), new Date()),
+    );
+    mockMemberRepo.findByWorkspaceAndUser.mockResolvedValue(
+      new WorkspaceMember('m-1', 'ws-1', 'user-1', 'member', new Date()),
+    );
+    await expect(useCase.execute('ws-1', 'user-1')).resolves.toEqual({
+      workspaceId: 'ws-1',
+      userId: 'user-1',
+      isMember: true,
+      role: 'member',
     });
   });
 });

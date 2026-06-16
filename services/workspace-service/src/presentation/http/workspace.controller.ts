@@ -31,18 +31,18 @@ import type { Response } from 'express';
 import { UserId } from './decorators/user-id.decorator';
 import { CreateWorkspaceDto } from '../../application/dto/create-workspace.dto';
 import { UpdateWorkspaceDto } from '../../application/dto/update-workspace.dto';
-import { UpdateMemberRoleDto } from '../../application/dto/update-member-role.dto';
 import { CreateWorkspaceUseCase } from '../../application/use-cases/workspace/create-workspace.use-case';
 import { GetWorkspaceUseCase } from '../../application/use-cases/workspace/get-workspace.use-case';
 import { ListWorkspacesUseCase } from '../../application/use-cases/workspace/list-workspaces.use-case';
 import { UpdateWorkspaceUseCase } from '../../application/use-cases/workspace/update-workspace.use-case';
 import { DeleteWorkspaceUseCase } from '../../application/use-cases/workspace/delete-workspace.use-case';
 import { ListMembersUseCase } from '../../application/use-cases/workspace/list-members.use-case';
-import { UpdateMemberRoleUseCase } from '../../application/use-cases/workspace/update-member-role.use-case';
 import { RemoveMemberUseCase } from '../../application/use-cases/workspace/remove-member.use-case';
+import { UpdateMemberRoleUseCase } from '../../application/use-cases/workspace/update-member-role.use-case';
 import { GetWorkspaceActivityUseCase } from '../../application/use-cases/workspace/get-workspace-activity.use-case';
 import { IdempotencyService } from '../../infrastructure/idempotency/idempotency.service';
 import { AuthGuard } from './guards/auth.guard';
+import { UpdateMemberRoleDto } from '../../application/dto/update-member-role.dto';
 
 @ApiTags('workspaces')
 @ApiBearerAuth()
@@ -56,8 +56,8 @@ export class WorkspaceController {
     private readonly updateWorkspaceUseCase: UpdateWorkspaceUseCase,
     private readonly deleteWorkspaceUseCase: DeleteWorkspaceUseCase,
     private readonly listMembersUseCase: ListMembersUseCase,
-    private readonly updateMemberRoleUseCase: UpdateMemberRoleUseCase,
     private readonly removeMemberUseCase: RemoveMemberUseCase,
+    private readonly updateMemberRoleUseCase: UpdateMemberRoleUseCase,
     private readonly getWorkspaceActivityUseCase: GetWorkspaceActivityUseCase,
     private readonly idempotencyService: IdempotencyService,
   ) {}
@@ -149,20 +149,6 @@ export class WorkspaceController {
     return this.listMembersUseCase.execute(userId, workspaceId);
   }
 
-  @Patch(':id/members/:userId')
-  @ApiOperation({ summary: 'Update workspace member role (owner/admin)' })
-  @ApiParam({ name: 'id', format: 'uuid' })
-  @ApiParam({ name: 'userId', format: 'uuid' })
-  @ApiOkResponse({ type: WorkspaceMemberResponseSchemaDto })
-  async updateMemberRole(
-    @UserId() actorId: string,
-    @Param('id', ParseUUIDPipe) workspaceId: string,
-    @Param('userId', ParseUUIDPipe) targetUserId: string,
-    @Body() dto: UpdateMemberRoleDto,
-  ) {
-    return this.updateMemberRoleUseCase.execute(actorId, workspaceId, targetUserId, dto);
-  }
-
   @Delete(':id/members/:userId')
   @HttpCode(204)
   @ApiOperation({ summary: 'Remove workspace member or leave workspace' })
@@ -174,6 +160,19 @@ export class WorkspaceController {
     @Param('userId', ParseUUIDPipe) targetUserId: string,
   ): Promise<void> {
     await this.removeMemberUseCase.execute(actorId, workspaceId, targetUserId);
+  }
+
+  @Patch(':id/members/:userId')
+  @ApiOperation({ summary: 'Promote/demote a workspace member role' })
+  @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiParam({ name: 'userId', format: 'uuid' })
+  async updateMemberRole(
+    @UserId() actorId: string,
+    @Param('id', ParseUUIDPipe) workspaceId: string,
+    @Param('userId', ParseUUIDPipe) targetUserId: string,
+    @Body() dto: UpdateMemberRoleDto,
+  ): Promise<void> {
+    await this.updateMemberRoleUseCase.execute(actorId, workspaceId, targetUserId, dto);
   }
 
   @Get(':id/activity')

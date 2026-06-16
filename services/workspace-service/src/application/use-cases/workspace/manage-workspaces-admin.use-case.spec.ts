@@ -16,8 +16,8 @@ describe('ManageWorkspacesAdminUseCase', () => {
     expect(repository.adminForceDelete).toHaveBeenCalledWith('workspace-1', 'admin-1');
   });
 
-  it('force joins with the existing workspace admin role', async () => {
-    await useCase.forceJoin('admin-1', 'workspace-1', 'admin', 'Investigating abuse');
-    expect(repository.adminForceJoin).toHaveBeenCalledWith('workspace-1', 'admin-1', 'admin');
+  it('force joins with the member workspace role', async () => {
+    await useCase.forceJoin('admin-1', 'workspace-1', 'member', 'Investigating abuse');
+    expect(repository.adminForceJoin).toHaveBeenCalledWith('workspace-1', 'admin-1', 'member');
   });
 });

@@ -1,44 +1,120 @@
-import { ForbiddenException } from '@nestjs/common';
+import { Test, type TestingModule } from '@nestjs/testing';
+import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { UpdateMemberRoleUseCase } from './update-member-role.use-case';
+import { WORKSPACE_MEMBER_REPOSITORY } from '../../../domain/repositories/workspace-member.repository';
+import { WORKSPACE_ACTIVITY_REPOSITORY } from '../../../domain/repositories/workspace-activity.repository';
 import { WorkspaceMember } from '../../../domain/entities/workspace-member.entity';
-import { WorkspaceCacheService } from '../../../infrastructure/cache/workspace-cache.service';
+import type { UpdateMemberRoleDto } from '../../dto/update-member-role.dto';
 
 describe('UpdateMemberRoleUseCase', () => {
-  const memberRepo = {
+  let useCase: UpdateMemberRoleUseCase;
+
+  const mockMemberRepo = {
     findByWorkspaceAndUser: jest.fn(),
-    updateRole: jest.fn(),
+    updateRoleByWorkspaceAndUser: jest.fn(),
   };
-  const activityRepo = { record: jest.fn().mockResolvedValue(undefined) };
-  const workspaceCache = { deleteWorkspaceList: jest.fn().mockResolvedValue(undefined) };
-  const useCase = new UpdateMemberRoleUseCase(
-    memberRepo as never,
-    activityRepo as never,
-    workspaceCache as unknown as WorkspaceCacheService,
-  );
 
-  beforeEach(() => jest.clearAllMocks());
+  const mockActivityRepo = {
+    record: jest.fn().mockResolvedValue(undefined),
+  };
 
-  it('allows owner to promote a member to admin', async () => {
-    memberRepo.findByWorkspaceAndUser
-      .mockResolvedValueOnce(new WorkspaceMember('m-1', 'ws-1', 'owner-1', 'owner', new Date()))
-      .mockResolvedValueOnce(new WorkspaceMember('m-2', 'ws-1', 'user-2', 'member', new Date()));
-    memberRepo.updateRole.mockResolvedValue(
-      new WorkspaceMember('m-2', 'ws-1', 'user-2', 'admin', new Date()),
-    );
+  const dto = { role: 'manager' } satisfies UpdateMemberRoleDto;
 
-    await expect(
-      useCase.execute('owner-1', 'ws-1', 'user-2', { role: 'admin' }),
-    ).resolves.toMatchObject({ role: 'admin' });
-    expect(memberRepo.updateRole).toHaveBeenCalledWith('ws-1', 'user-2', 'admin');
+  beforeEach(async () => {
+    mockMemberRepo.findByWorkspaceAndUser.mockReset();
+    mockMemberRepo.updateRoleByWorkspaceAndUser.mockReset();
+    mockActivityRepo.record.mockReset();
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        UpdateMemberRoleUseCase,
+        { provide: WORKSPACE_MEMBER_REPOSITORY, useValue: mockMemberRepo },
+        { provide: WORKSPACE_ACTIVITY_REPOSITORY, useValue: mockActivityRepo },
+      ],
+    }).compile();
+    useCase = module.get(UpdateMemberRoleUseCase);
   });
 
-  it('blocks admin from promoting a member to admin', async () => {
-    memberRepo.findByWorkspaceAndUser
-      .mockResolvedValueOnce(new WorkspaceMember('m-1', 'ws-1', 'admin-1', 'admin', new Date()))
-      .mockResolvedValueOnce(new WorkspaceMember('m-2', 'ws-1', 'user-2', 'member', new Date()));
+  it('throws ForbiddenException when actor is not owner', async () => {
+    mockMemberRepo.findByWorkspaceAndUser.mockImplementation(async (_wsId, userId) => {
+      if (userId === 'user-actor') {
+        return new WorkspaceMember('m-actor', 'ws-1', 'user-actor', 'member', new Date());
+      }
 
-    await expect(useCase.execute('admin-1', 'ws-1', 'user-2', { role: 'admin' })).rejects.toThrow(
+      return new WorkspaceMember('m-target', 'ws-1', 'user-target', 'member', new Date());
+    });
+
+    await expect(useCase.execute('user-actor', 'ws-1', 'user-target', dto)).rejects.toThrow(
       ForbiddenException,
+    );
+  });
+
+  it('throws NotFoundException when target member does not exist', async () => {
+    mockMemberRepo.findByWorkspaceAndUser.mockImplementation(async (_wsId, userId) => {
+      if (userId === 'user-actor') {
+        return new WorkspaceMember('m-actor', 'ws-1', 'user-actor', 'owner', new Date());
+      }
+
+      return null;
+    });
+
+    await expect(useCase.execute('user-actor', 'ws-1', 'user-target', dto)).rejects.toThrow(
+      NotFoundException,
+    );
+  });
+
+  it('blocks changing workspace owner role', async () => {
+    mockMemberRepo.findByWorkspaceAndUser.mockImplementation(async (_wsId, userId) => {
+      if (userId === 'user-actor') {
+        return new WorkspaceMember('m-actor', 'ws-1', 'user-actor', 'owner', new Date());
+      }
+
+      return new WorkspaceMember('m-target', 'ws-1', 'user-target', 'owner', new Date());
+    });
+
+    await expect(useCase.execute('user-actor', 'ws-1', 'user-target', dto)).rejects.toThrow(
+      ForbiddenException,
+    );
+  });
+
+  it('is idempotent when target role equals requested role', async () => {
+    mockMemberRepo.findByWorkspaceAndUser.mockImplementation(async (_wsId, userId) => {
+      if (userId === 'user-actor') {
+        return new WorkspaceMember('m-actor', 'ws-1', 'user-actor', 'owner', new Date());
+      }
+
+      return new WorkspaceMember('m-target', 'ws-1', 'user-target', 'manager', new Date());
+    });
+
+    await useCase.execute('user-actor', 'ws-1', 'user-target', {
+      role: 'manager',
+    } as UpdateMemberRoleDto);
+
+    expect(mockMemberRepo.updateRoleByWorkspaceAndUser).not.toHaveBeenCalled();
+    expect(mockActivityRepo.record).not.toHaveBeenCalled();
+  });
+
+  it('updates role and records workspace activity', async () => {
+    mockMemberRepo.findByWorkspaceAndUser.mockImplementation(async (_wsId, userId) => {
+      if (userId === 'user-actor') {
+        return new WorkspaceMember('m-actor', 'ws-1', 'user-actor', 'owner', new Date());
+      }
+
+      return new WorkspaceMember('m-target', 'ws-1', 'user-target', 'member', new Date());
+    });
+
+    await useCase.execute('user-actor', 'ws-1', 'user-target', dto);
+
+    expect(mockMemberRepo.updateRoleByWorkspaceAndUser).toHaveBeenCalledWith(
+      'ws-1',
+      'user-target',
+      'manager',
+    );
+    expect(mockActivityRepo.record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        workspaceId: 'ws-1',
+        actorId: 'user-actor',
+        type: 'member_role_changed',
+      }),
     );
   });
 });

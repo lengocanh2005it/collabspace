@@ -1,4 +1,4 @@
-// src/presentation/dtos/workspace.response.ts
+import type { WorkspaceRole } from "@collabspace/shared";
 import { Expose } from "class-transformer";
 
 export class WorkspaceMemberDto {
@@ -12,7 +12,7 @@ export class WorkspaceMemberDto {
   email!: string;
 
   @Expose()
-  role!: "owner" | "admin" | "member";
+  role!: WorkspaceRole;
 
   @Expose()
   avatarUrl?: string;

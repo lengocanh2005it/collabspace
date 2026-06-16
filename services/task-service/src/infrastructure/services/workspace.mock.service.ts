@@ -1,5 +1,6 @@
 // src/infrastructure/services/workspace.mock.service.ts
 import { Injectable } from "@nestjs/common";
+import type { WorkspaceRole } from "@collabspace/shared";
 import type {
   IWorkspaceClient,
   WorkspaceMembershipSnapshot,
@@ -20,7 +21,7 @@ export interface WorkspaceMember {
   userId: string;
   name: string;
   email: string;
-  role: "owner" | "admin" | "member";
+  role: WorkspaceRole;
   avatarUrl?: string;
   joinedAt: Date;
 }
@@ -55,7 +56,7 @@ export class WorkspaceMockService implements IWorkspaceClient {
           userId: "user-002",
           name: "Alice Johnson",
           email: "alice@collabspace.dev",
-          role: "admin",
+          role: "member",
           avatarUrl: "https://api.example.com/avatars/user-002.jpg",
           joinedAt: new Date("2024-01-15"),
         },
@@ -233,13 +234,13 @@ export class WorkspaceMockService implements IWorkspaceClient {
    * Check if user has permission in workspace
    * @param workspaceId Workspace ID
    * @param userId User ID
-   * @param requiredRole Minimum required role ('owner', 'admin', or 'member')
+   * @param requiredRole Minimum required workspace role
    * @returns True if user has required permission
    */
   async checkUserPermissionAsync(
     workspaceId: string,
     userId: string,
-    requiredRole: "owner" | "admin" | "member" = "member",
+    requiredRole: WorkspaceRole = "member",
   ): Promise<boolean> {
     // If workspace is not in mock data, auto-register and grant access.
     // This allows real workspace IDs from workspace-service to pass through.

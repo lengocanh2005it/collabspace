@@ -23,22 +23,101 @@ function resolveLoaderPath(): string {
   );
 }
 
-const loader = nodeRequire(resolveLoaderPath()) as {
-  loadDemoSeedData: () => unknown;
+type Loader = {
+  loadDemoSeedData: () => {
+    defaultPassword: string;
+    users: DemoSeedUser[];
+    workspaces?: unknown[];
+    demo?: unknown;
+  };
+  getDemoWorkspaces: (data: unknown) => DemoSeedWorkspace[];
+  getPrimaryDemoWorkspace: (data: unknown) => DemoSeedWorkspace;
+  collectDemoNotifications: (data: unknown) => DemoSeedNotification[];
+  avatarUrlFor: (user: DemoSeedUser) => string;
+  userSnapshot: (user: DemoSeedUser) => {
+    userId: string;
+    email: string;
+    fullName: string;
+    displayName: string;
+    avatarUrl: string;
+  };
 };
 
-export type WorkspaceSeedDemo = {
+const loader = nodeRequire(resolveLoaderPath()) as Loader;
+
+export type DemoSeedUser = {
+  id: string;
+  profileId: string;
+  email: string;
+  fullName: string;
+  username: string;
+  roleNames: string[];
+  bio: string;
+  preferredLanguage: string;
+  preferredTimezone: string;
+  avatarSeed: string;
+};
+
+export type DemoSeedWorkspaceMember = {
+  userId: string;
+  role: 'owner' | 'manager' | 'member';
+};
+
+export type DemoSeedPendingInvitation = {
+  id: string;
+  email: string;
+  inviterUserId: string;
+};
+
+export type DemoSeedWorkspace = {
   workspaceId: string;
   workspaceName: string;
   workspaceDescription: string;
   ownerUserId: string;
-  members: Array<{ userId: string; role: string }>;
-  projectId: string;
-  projectName: string;
-  projectDescription: string;
+  members: DemoSeedWorkspaceMember[];
+  projects: Array<{
+    projectId: string;
+    projectName: string;
+    projectDescription: string;
+    tasks: unknown[];
+    sampleComments?: unknown[];
+  }>;
+  pendingInvitations?: DemoSeedPendingInvitation[];
+  sampleNotifications?: unknown[];
 };
 
-export const loadDemoSeedData = loader.loadDemoSeedData as () => {
-  demo: WorkspaceSeedDemo;
-  users: Array<{ id: string }>;
+export type DemoSeedTask = {
+  id: string;
+  title: string;
+  description: string;
+  status: 'TODO' | 'DOING' | 'DONE';
+  priority: 'LOW' | 'MEDIUM' | 'HIGH';
+  labels: string[];
+  assigneeUserId: string | null;
+  createdByUserId: string;
 };
+
+export type DemoSeedComment = {
+  taskId: string;
+  authorUserId: string;
+  content: string;
+  mentionUserIds: string[];
+};
+
+export type DemoSeedNotification = {
+  recipientId: string;
+  actorId: string;
+  type: string;
+  title: string;
+  message: string;
+  targetId: string;
+  targetType: string;
+  status?: 'UNREAD' | 'READ' | 'ARCHIVED';
+};
+
+export const loadDemoSeedData = loader.loadDemoSeedData;
+export const getDemoWorkspaces = loader.getDemoWorkspaces;
+export const getPrimaryDemoWorkspace = loader.getPrimaryDemoWorkspace;
+export const collectDemoNotifications = loader.collectDemoNotifications;
+export const avatarUrlFor = loader.avatarUrlFor;
+export const userSnapshot = loader.userSnapshot;

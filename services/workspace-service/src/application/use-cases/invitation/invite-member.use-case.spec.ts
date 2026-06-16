@@ -31,13 +31,44 @@ describe('InviteMemberUseCase', () => {
     useCase = module.get<InviteMemberUseCase>(InviteMemberUseCase);
   });
 
-  it('should throw ForbiddenException if user is not owner or admin', async () => {
+  it('should throw ForbiddenException if user is not the workspace owner/manager', async () => {
     mockMemberRepo.findByWorkspaceAndUser.mockResolvedValue(
       new WorkspaceMember('m-1', 'ws-1', 'user-1', 'member', new Date()),
     );
     await expect(useCase.execute('user-1', 'ws-1', { email: 'test@example.com' })).rejects.toThrow(
       ForbiddenException,
     );
+  });
+
+  it('allows workspace manager to create invitation', async () => {
+    const invitation = new Invitation(
+      'inv-1',
+      'ws-1',
+      'user-1',
+      'test@example.com',
+      null,
+      'pending',
+      new Date(),
+      new Date(),
+    );
+
+    mockMemberRepo.findByWorkspaceAndUser.mockResolvedValue(
+      new WorkspaceMember('m-1', 'ws-1', 'user-1', 'manager', new Date()),
+    );
+    mockWorkspaceRepo.findById.mockResolvedValue(
+      new Workspace('ws-1', 'Test WS', null, 'user-1', new Date(), new Date()),
+    );
+    mockInvitationRepo.createAndPublishInvited.mockResolvedValue(invitation);
+
+    const result = await useCase.execute('user-1', 'ws-1', { email: 'test@example.com' });
+
+    expect(result).toBe(invitation);
+    expect(mockInvitationRepo.createAndPublishInvited).toHaveBeenCalledWith({
+      workspaceId: 'ws-1',
+      inviterId: 'user-1',
+      inviteeEmail: 'test@example.com',
+      workspaceName: 'Test WS',
+    });
   });
 
   it('should create invitation via repository if allowed', async () => {
@@ -52,7 +83,7 @@ describe('InviteMemberUseCase', () => {
       new Date(),
     );
     mockMemberRepo.findByWorkspaceAndUser.mockResolvedValue(
-      new WorkspaceMember('m-1', 'ws-1', 'user-1', 'admin', new Date()),
+      new WorkspaceMember('m-1', 'ws-1', 'user-1', 'owner', new Date()),
     );
     mockWorkspaceRepo.findById.mockResolvedValue(
       new Workspace('ws-1', 'Test WS', null, 'user-1', new Date(), new Date()),

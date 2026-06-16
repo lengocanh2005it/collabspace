@@ -88,13 +88,14 @@ const SEED_PERMISSIONS: SeedPermission[] = [
 
 const SEED_ROLES: SeedRole[] = [
   {
-    description: 'Platform administrator with full system access',
+    description: 'Platform administrator — full system access via /admin/* routes',
     id: '82000000-0000-4000-8000-000000000001',
     name: 'admin',
     permissionNames: SEED_PERMISSIONS.map((permission) => permission.name),
   },
   {
-    description: 'Standard collaborator using workspaces and tasks',
+    description:
+      'Standard platform collaborator (end-user APIs; workspace owner/member is separate)',
     id: '82000000-0000-4000-8000-000000000002',
     name: 'member',
     permissionNames: [
