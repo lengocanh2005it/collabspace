@@ -12,11 +12,14 @@ import {
 
 const BOARD_STATUSES = ["TODO", "DOING", "DONE"] as const;
 
+import { TaskCommentCountService } from "../services/task-comment-count.service";
+
 @QueryHandler(GetTaskBoardQuery)
 export class GetTaskBoardHandler implements IQueryHandler<GetTaskBoardQuery> {
   constructor(
     @Inject(ITaskRepositoryToken)
     private readonly taskRepository: ITaskRepository,
+    private readonly taskCommentCountService: TaskCommentCountService,
   ) {}
 
   async execute(query: GetTaskBoardQuery): Promise<GetTaskBoardResponse> {
@@ -25,11 +28,12 @@ export class GetTaskBoardHandler implements IQueryHandler<GetTaskBoardQuery> {
       limit: TASK_BOARD_DEFAULT_LIMIT,
     });
 
+    const mapped = tasks.map((task) => TaskMapper.toResponse(task));
+    const withCounts = await this.taskCommentCountService.attachCommentCounts(mapped);
+
     const columns: TaskBoardColumn[] = BOARD_STATUSES.map((status) => ({
       status,
-      tasks: tasks
-        .filter((task) => task.getStatus().getValue() === status)
-        .map((task) => TaskMapper.toResponse(task)),
+      tasks: withCounts.filter((task) => task.status === status),
     }));
 
     const total = columns.reduce((sum, column) => sum + column.tasks.length, 0);

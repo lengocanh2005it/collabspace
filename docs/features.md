@@ -81,6 +81,7 @@ Tài liệu này là **nguồn chính** mô tả chức năng và mức độ ho
 - **Liệt kê lời mời đang chờ** — `GET /workspaces/:workspaceId/invitations` (chỉ member workspace)
 - Chấp nhận / từ chối lời mời (`POST /invitations/:id/accept|reject`)
 - Role membership: `owner`, `admin`, `member`
+- **Đổi role / remove member** — `PATCH` / `DELETE` `/workspaces/:id/members/:userId` (owner/admin rules; owner không bị remove)
 - Idempotency-Key trên tạo workspace và invite
 - **JWT verification** qua auth gRPC (`AuthGuard`); dev fallback `X-User-Id` khi `ALLOW_DEV_IDENTITY_HEADERS=true`
 - **Activity feed** — `GET /api/v1/workspaces/:id/activity` — timeline `workspace_created`, `member_invited`, `member_joined`, `invitation_rejected`, `project_created`, `project_deleted`; `limit`/`offset` pagination; chỉ member được xem

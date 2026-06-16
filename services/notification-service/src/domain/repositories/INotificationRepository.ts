@@ -31,7 +31,7 @@ export interface INotificationRepository {
    */
   findByRecipientIdAsync(
     recipientId: string,
-    options?: { skip?: number; limit?: number },
+    options?: { skip?: number; limit?: number; status?: "active" | "archived" },
   ): Promise<Notification[]>;
 
   /**
@@ -51,7 +51,7 @@ export interface INotificationRepository {
   /**
    * Đếm tổng số notification của một user
    */
-  countByRecipientIdAsync(recipientId: string): Promise<number>;
+  countByRecipientIdAsync(recipientId: string, status?: "active" | "archived"): Promise<number>;
 
   /**
    * Cập nhật notification

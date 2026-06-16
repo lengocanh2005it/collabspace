@@ -65,9 +65,16 @@ export class NotificationRepository implements INotificationRepository {
    */
   async findByRecipientIdAsync(
     recipientId: string,
-    options?: { skip?: number; limit?: number },
+    options?: { skip?: number; limit?: number; status?: "active" | "archived" },
   ): Promise<NotificationEntity[]> {
-    let query = this.notificationModel.find({ recipientId }).sort({ createdAt: -1 });
+    const filter: Record<string, unknown> = { recipientId };
+    if (options?.status === "archived") {
+      filter.status = NotificationStatus.ARCHIVED;
+    } else if (options?.status === "active" || !options?.status) {
+      filter.status = { $ne: NotificationStatus.ARCHIVED };
+    }
+
+    let query = this.notificationModel.find(filter).sort({ createdAt: -1 });
 
     if (options?.skip) {
       query = query.skip(options.skip);
@@ -107,8 +114,17 @@ export class NotificationRepository implements INotificationRepository {
     });
   }
 
-  async countByRecipientIdAsync(recipientId: string): Promise<number> {
-    return this.notificationModel.countDocuments({ recipientId });
+  async countByRecipientIdAsync(
+    recipientId: string,
+    status: "active" | "archived" = "active",
+  ): Promise<number> {
+    const filter: Record<string, unknown> = { recipientId };
+    if (status === "archived") {
+      filter.status = NotificationStatus.ARCHIVED;
+    } else {
+      filter.status = { $ne: NotificationStatus.ARCHIVED };
+    }
+    return this.notificationModel.countDocuments(filter);
   }
 
   /**

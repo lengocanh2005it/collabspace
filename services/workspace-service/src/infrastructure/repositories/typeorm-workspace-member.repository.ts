@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import type { Repository } from 'typeorm';
 import { WorkspaceMember } from '../../domain/entities/workspace-member.entity';
@@ -25,6 +25,29 @@ export class TypeOrmWorkspaceMemberRepository implements IWorkspaceMemberReposit
   async findByWorkspace(workspaceId: string): Promise<WorkspaceMember[]> {
     const orms = await this.repo.find({ where: { workspace_id: workspaceId } });
     return orms.map((o) => this.toDomain(o));
+  }
+
+  async updateRole(workspaceId: string, userId: string, role: string): Promise<WorkspaceMember> {
+    const orm = await this.repo.findOne({
+      where: { workspace_id: workspaceId, user_id: userId },
+    });
+    if (!orm) {
+      throw new NotFoundException('Workspace member not found');
+    }
+    orm.role = role;
+    const saved = await this.repo.save(orm);
+    return this.toDomain(saved);
+  }
+
+  async removeByWorkspaceAndUser(workspaceId: string, userId: string): Promise<void> {
+    const result = await this.repo.delete({ workspace_id: workspaceId, user_id: userId });
+    if (!result.affected) {
+      throw new NotFoundException('Workspace member not found');
+    }
+  }
+
+  async countByWorkspaceAndRole(workspaceId: string, role: string): Promise<number> {
+    return this.repo.count({ where: { workspace_id: workspaceId, role } });
   }
 
   private toDomain(orm: WorkspaceMemberOrmEntity): WorkspaceMember {

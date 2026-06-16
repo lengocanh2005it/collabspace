@@ -117,6 +117,7 @@ export class TaskMapper {
       })(),
 
       attachments: domainTask.getAttachments(),
+      commentCount: 0,
       createdAt: domainTask.getCreatedAt(),
       updatedAt: domainTask.getUpdatedAt(),
     };

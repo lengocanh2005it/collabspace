@@ -8,6 +8,7 @@ import {
   ParseUUIDPipe,
   Headers,
   Res,
+  Req,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -24,6 +25,7 @@ import {
   RejectInvitationResponseSchemaDto,
 } from '../../application/dto/swagger-response.dto';
 import type { Response } from 'express';
+import type { Request } from 'express';
 import { UserId } from './decorators/user-id.decorator';
 import { InviteMemberDto } from '../../application/dto/invite-member.dto';
 import { InviteMemberUseCase } from '../../application/use-cases/invitation/invite-member.use-case';
@@ -32,6 +34,7 @@ import { RejectInvitationUseCase } from '../../application/use-cases/invitation/
 import { IdempotencyService } from '../../infrastructure/idempotency/idempotency.service';
 import { AuthGuard } from './guards/auth.guard';
 import { ListInvitationsUseCase } from '../../application/use-cases/invitation/list-invitations.use-case';
+import { ListMyInvitationsUseCase } from '../../application/use-cases/invitation/list-my-invitations.use-case';
 
 @ApiTags('invitations')
 @ApiBearerAuth()
@@ -44,7 +47,15 @@ export class InvitationController {
     private readonly rejectInvitationUseCase: RejectInvitationUseCase,
     private readonly idempotencyService: IdempotencyService,
     private readonly listInvitationsUseCase: ListInvitationsUseCase,
+    private readonly listMyInvitationsUseCase: ListMyInvitationsUseCase,
   ) {}
+
+  @Get('invitations/me')
+  @ApiOperation({ summary: 'List pending workspace invitations for the current user' })
+  @ApiOkResponse({ type: InvitationResponseSchemaDto, isArray: true })
+  async listMyInvitations(@UserId() userId: string, @Req() request: Request) {
+    return this.listMyInvitationsUseCase.execute(userId, request.header('authorization'));
+  }
 
   @Get('workspaces/:workspaceId/invitations')
   @ApiOperation({ summary: 'List pending invitations for a workspace (members only)' })
@@ -107,8 +118,13 @@ export class InvitationController {
   async acceptInvitation(
     @UserId() userId: string,
     @Param('id', ParseUUIDPipe) invitationId: string,
+    @Req() request: Request,
   ) {
-    return this.acceptInvitationUseCase.execute(userId, invitationId);
+    return this.acceptInvitationUseCase.execute(
+      userId,
+      invitationId,
+      request.header('authorization'),
+    );
   }
 
   @Post('invitations/:id/reject')
@@ -118,7 +134,12 @@ export class InvitationController {
   async rejectInvitation(
     @UserId() userId: string,
     @Param('id', ParseUUIDPipe) invitationId: string,
+    @Req() request: Request,
   ) {
-    return this.rejectInvitationUseCase.execute(userId, invitationId);
+    return this.rejectInvitationUseCase.execute(
+      userId,
+      invitationId,
+      request.header('authorization'),
+    );
   }
 }

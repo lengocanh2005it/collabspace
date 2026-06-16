@@ -2,6 +2,8 @@ export type WorkspaceActivityType =
   | 'workspace_created'
   | 'member_invited'
   | 'member_joined'
+  | 'member_role_changed'
+  | 'member_removed'
   | 'invitation_rejected'
   | 'project_created'
   | 'project_updated'

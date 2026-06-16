@@ -15,11 +15,14 @@ export interface GetTasksResult {
   limit: number;
 }
 
+import { TaskCommentCountService } from "../services/task-comment-count.service";
+
 @QueryHandler(GetTasksQuery)
 export class GetTasksHandler implements IQueryHandler<GetTasksQuery> {
   constructor(
     @Inject(ITaskRepositoryToken)
     private readonly taskRepository: ITaskRepository,
+    private readonly taskCommentCountService: TaskCommentCountService,
   ) {}
 
   async execute(query: GetTasksQuery): Promise<GetTasksResult> {
@@ -28,6 +31,7 @@ export class GetTasksHandler implements IQueryHandler<GetTasksQuery> {
       assigneeId: query.assigneeId,
       priority: query.priority?.toUpperCase(),
       projectId: query.projectId,
+      search: query.search,
     });
     const skip = query.skip ?? 0;
     const limit = clampTaskListLimit(query.limit);
@@ -40,8 +44,11 @@ export class GetTasksHandler implements IQueryHandler<GetTasksQuery> {
       this.taskRepository.countByWorkspaceIdAsync(query.workspaceId, filter),
     ]);
 
+    const mappedTasks = tasks.map((task) => TaskMapper.toResponse(task));
+    const tasksWithCounts = await this.taskCommentCountService.attachCommentCounts(mappedTasks);
+
     return {
-      tasks: tasks.map((task) => TaskMapper.toResponse(task)),
+      tasks: tasksWithCounts,
       total,
       skip,
       limit,

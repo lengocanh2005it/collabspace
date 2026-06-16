@@ -27,6 +27,7 @@ import { CommandBus, QueryBus } from "@nestjs/cqrs";
 
 import { GetNotificationsQuery } from "../../application/usecases/get-notifications/get-notifications.query";
 import { MarkNotificationReadCommand } from "../../application/usecases/mark-notification-read/mark-notification-read.command";
+import { MarkNotificationArchiveCommand } from "../../application/usecases/mark-notification-archive/mark-notification-archive.command";
 import { MarkAllNotificationsReadCommand } from "../../application/usecases/mark-all-notifications-read/mark-all-notifications-read.command";
 
 import { NotificationHealthService } from "../../health/notification-health.service";
@@ -86,15 +87,25 @@ export class NotificationsController {
   @ApiOperation({ summary: "List notifications for current user" })
   @ApiQuery({ name: "skip", required: false, type: Number, example: 0 })
   @ApiQuery({ name: "limit", required: false, type: Number, example: 20 })
+  @ApiQuery({
+    name: "status",
+    required: false,
+    enum: ["active", "archived"],
+    description: "Filter by archive state (default: active)",
+  })
   @ApiOkResponse({ type: GetNotificationsResponseSchemaDto })
   async listNotifications(
     @Req() req: AuthenticatedRequest,
     @Query("skip") skip?: string,
     @Query("limit") limit?: string,
+    @Query("status") status?: string,
   ) {
     const parsedSkip = Math.max(0, parseInt(skip ?? "0", 10) || 0);
     const parsedLimit = Math.min(100, Math.max(1, parseInt(limit ?? "20", 10) || 20));
-    return this.queryBus.execute(new GetNotificationsQuery(req.user.id, parsedSkip, parsedLimit));
+    const parsedStatus = status === "archived" ? "archived" : "active";
+    return this.queryBus.execute(
+      new GetNotificationsQuery(req.user.id, parsedSkip, parsedLimit, parsedStatus),
+    );
   }
 
   @Patch("read-all")
@@ -105,6 +116,19 @@ export class NotificationsController {
   @ApiOkResponse({ type: MarkAllNotificationsReadResponseSchemaDto })
   async markAllAsRead(@Req() req: AuthenticatedRequest) {
     return this.commandBus.execute(new MarkAllNotificationsReadCommand(req.user.id));
+  }
+
+  @Patch(":id/archive")
+  @HttpCode(200)
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: "Archive one notification" })
+  @ApiParam({ name: "id", description: "Notification id" })
+  @ApiOkResponse({ type: MessageResponseSchemaDto })
+  async archive(@Param("id") notificationId: string, @Req() req: AuthenticatedRequest) {
+    await this.commandBus.execute(new MarkNotificationArchiveCommand(notificationId, req.user.id));
+
+    return { message: "Notification archived" };
   }
 
   @Patch(":id/read")

@@ -192,6 +192,7 @@ export class TaskController {
   @ApiQuery({ name: "assigneeId", required: false })
   @ApiQuery({ name: "priority", required: false })
   @ApiQuery({ name: "projectId", required: false })
+  @ApiQuery({ name: "q", required: false, description: "Search task title/description" })
   @ApiQuery({ name: "skip", required: false, type: Number })
   @ApiQuery({ name: "limit", required: false, type: Number })
   async getTasks(
@@ -201,6 +202,7 @@ export class TaskController {
     @Query("status") status?: string,
     @Query("assigneeId") assigneeId?: string,
     @Query("priority") priority?: string,
+    @Query("q") search?: string,
     @Query("skip") skip?: string,
     @Query("limit") limit?: string,
   ): Promise<ApiResponse<GetTasksResponse>> {
@@ -216,6 +218,7 @@ export class TaskController {
       priority,
       parsedSkip,
       parsedLimit,
+      search?.trim() || undefined,
     );
     const requestId = getHeaderValue(req.headers, "x-request-id");
     const result = await this.queryBus.execute<GetTasksQuery, GetTasksResult>(query);

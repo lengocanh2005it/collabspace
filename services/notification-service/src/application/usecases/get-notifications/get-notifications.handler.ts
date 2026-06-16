@@ -61,8 +61,9 @@ export class GetNotificationsHandler
       this.notificationRepository.findByRecipientIdAsync(query.recipientId, {
         skip: query.skip,
         limit: query.limit,
+        status: query.status,
       }),
-      this.notificationRepository.countByRecipientIdAsync(query.recipientId),
+      this.notificationRepository.countByRecipientIdAsync(query.recipientId, query.status),
       this.resolveUnreadCount(query.recipientId),
     ]);
 

@@ -33,6 +33,21 @@ export class TypeOrmInvitationRepository implements IInvitationRepository {
     return orms.map((orm) => this.toDomain(orm));
   }
 
+  async findPendingForInvitee(email: string, userId: string): Promise<Invitation[]> {
+    const normalizedEmail = email.trim().toLowerCase();
+    const orms = await this.repo
+      .createQueryBuilder('invitation')
+      .where('invitation.status = :status', { status: 'pending' })
+      .andWhere(
+        '(LOWER(invitation.invitee_email) = :email OR invitation.invitee_user_id = :userId)',
+        { email: normalizedEmail, userId },
+      )
+      .orderBy('invitation.created_at', 'DESC')
+      .getMany();
+
+    return orms.map((orm) => this.toDomain(orm));
+  }
+
   async createAndPublishInvited(data: {
     workspaceId: string;
     inviterId: string;

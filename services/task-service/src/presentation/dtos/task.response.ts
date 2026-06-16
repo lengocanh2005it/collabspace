@@ -21,6 +21,7 @@ export interface TaskResponseData {
   createdBy: TaskUserResponse;
   assignedTo: TaskUserResponse | null;
   attachments: string[];
+  commentCount?: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -39,6 +40,7 @@ export class TaskResponse implements TaskResponseData {
   public readonly createdBy: TaskUserResponse;
   public readonly assignedTo: TaskUserResponse | null;
   public readonly attachments: string[];
+  public readonly commentCount: number;
   public readonly createdAt: Date;
   public readonly updatedAt: Date;
 
@@ -56,6 +58,7 @@ export class TaskResponse implements TaskResponseData {
     this.createdBy = data.createdBy;
     this.assignedTo = data.assignedTo;
     this.attachments = data.attachments;
+    this.commentCount = data.commentCount ?? 0;
     this.createdAt = data.createdAt;
     this.updatedAt = data.updatedAt;
   }

@@ -119,9 +119,9 @@ Route protected yêu cầu `Authorization: Bearer …` (auth gRPC). Dev-only `X-
 | Vùng | Ví dụ |
 |------|-------|
 | Workspace | `POST /`, `GET /`, `GET /{id}`, `PATCH /{id}` |
-| Thành viên | `GET /{id}/members` |
+| Thành viên | `GET /{id}/members`, `PATCH /{id}/members/{userId}`, `DELETE /{id}/members/{userId}` |
 | Activity | `GET /{id}/activity` — timeline workspace (`limit`, `offset`) |
-| Lời mời | `GET /{id}/invitations`, `POST /{id}/invite`, `POST /invitations/{id}/accept`, `POST /invitations/{id}/reject` |
+| Lời mời | `GET /{id}/invitations`, `GET /invitations/me`, `POST /{id}/invite`, `POST /invitations/{id}/accept`, `POST /invitations/{id}/reject` |
 | Project | `POST /{workspaceId}/projects`, `GET /{workspaceId}/projects`, `PATCH /projects/{id}`, `DELETE /projects/{id}` |
 | Health | `GET /health/live`, `GET /health/ready` |
 
@@ -137,7 +137,7 @@ Route protected yêu cầu `Authorization: Bearer …` (auth gRPC). Dev-only `X-
 |--------|------|-------|
 | GET | `/health/live`, `/health/ready` | Health |
 | POST | `/` | Tạo task (hỗ trợ `Idempotency-Key`) |
-| GET | `/` | List task (`workspaceId`, `status`, `assigneeId`, `priority`, `projectId`) |
+| GET | `/` | List task (`workspaceId`, `status`, `assigneeId`, `priority`, `projectId`, `q`, `skip`, `limit`) |
 | GET | `/board` | Kanban board theo status |
 | GET | `/{id}` | Chi tiết task |
 | GET | `/{id}/activity` | Timeline activity (`limit`, `offset`) |
@@ -163,8 +163,9 @@ Route protected yêu cầu `Authorization: Bearer …` (auth gRPC). Dev-only `X-
 | Method | Path | Mô tả |
 |--------|------|-------|
 | GET | `/health/live`, `/health/ready` | Health |
-| GET | `/` | List notification (`skip`, `limit`) |
+| GET | `/` | List notification (`skip`, `limit`, `status=active\|archived`) |
 | PATCH | `/{id}/read` | Đánh dấu một notification đã đọc |
+| PATCH | `/{id}/archive` | Lưu trữ notification |
 | PATCH | `/read-all` | Đánh dấu tất cả đã đọc cho user hiện tại |
 
 **Event consume:** `workspace_invited`, `workspace_deleted`, `task_assigned`, `comment_created`, `comment_mentioned`, `user_registered`, `user_profile_updated`.

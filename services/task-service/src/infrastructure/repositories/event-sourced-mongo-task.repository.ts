@@ -108,6 +108,11 @@ export class EventSourcedMongoTaskRepository implements ITaskRepository {
     if (filter?.projectId) {
       mongoFilter.projectId = filter.projectId;
     }
+    if (filter?.search) {
+      const escaped = filter.search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const pattern = new RegExp(escaped, "i");
+      mongoFilter.$or = [{ title: pattern }, { description: pattern }];
+    }
 
     return mongoFilter;
   }

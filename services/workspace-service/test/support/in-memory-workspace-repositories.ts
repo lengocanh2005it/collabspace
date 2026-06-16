@@ -86,6 +86,37 @@ export function createInMemoryWorkspaceRepositories(): InMemoryWorkspaceReposito
         null
       );
     },
+    async updateRole(workspaceId, userId, role) {
+      const index = members.findIndex(
+        (member) => member.workspaceId === workspaceId && member.userId === userId,
+      );
+      if (index < 0) {
+        throw new NotFoundException('Workspace member not found');
+      }
+      const existing = members[index];
+      const updated = new WorkspaceMember(
+        existing.id,
+        existing.workspaceId,
+        existing.userId,
+        role,
+        existing.joinedAt,
+      );
+      members[index] = updated;
+      return updated;
+    },
+    async removeByWorkspaceAndUser(workspaceId, userId) {
+      const index = members.findIndex(
+        (member) => member.workspaceId === workspaceId && member.userId === userId,
+      );
+      if (index < 0) {
+        throw new NotFoundException('Workspace member not found');
+      }
+      members.splice(index, 1);
+    },
+    async countByWorkspaceAndRole(workspaceId, role) {
+      return members.filter((member) => member.workspaceId === workspaceId && member.role === role)
+        .length;
+    },
   };
 
   const invitationRepo: IInvitationRepository = {
@@ -146,6 +177,15 @@ export function createInMemoryWorkspaceRepositories(): InMemoryWorkspaceReposito
     async findPendingByWorkspace(workspaceId) {
       return invitations.filter(
         (invitation) => invitation.workspaceId === workspaceId && invitation.status === 'pending',
+      );
+    },
+    async findPendingForInvitee(email, userId) {
+      const normalizedEmail = email.trim().toLowerCase();
+      return invitations.filter(
+        (invitation) =>
+          invitation.status === 'pending' &&
+          (invitation.inviteeEmail.trim().toLowerCase() === normalizedEmail ||
+            invitation.inviteeUserId === userId),
       );
     },
     async updateStatus(id, status, userId) {

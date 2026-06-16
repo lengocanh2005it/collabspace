@@ -191,6 +191,25 @@ export class CommentRepository implements ICommentRepository {
     });
   }
 
+  async countByTaskIdsAsync(taskIds: string[]): Promise<Map<string, number>> {
+    if (taskIds.length === 0) {
+      return new Map();
+    }
+
+    const rows = await this.commentModel.aggregate<{ _id: string; count: number }>([
+      {
+        $match: {
+          taskId: { $in: taskIds },
+          parentId: null,
+          deletedAt: null,
+        },
+      },
+      { $group: { _id: "$taskId", count: { $sum: 1 } } },
+    ]);
+
+    return new Map(rows.map((row) => [row._id, row.count]));
+  }
+
   /**
    * Đếm reply của parent comment
    */

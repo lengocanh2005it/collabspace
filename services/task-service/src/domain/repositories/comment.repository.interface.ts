@@ -82,6 +82,8 @@ export interface ICommentRepository {
    */
   countByTaskIdAsync(taskId: string): Promise<number>;
 
+  countByTaskIdsAsync(taskIds: string[]): Promise<Map<string, number>>;
+
   /**
    * Đếm số reply của một parent comment
    * @param parentId Parent comment ID

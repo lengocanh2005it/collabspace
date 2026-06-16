@@ -16,6 +16,8 @@ import { ListWorkspacesUseCase } from './application/use-cases/workspace/list-wo
 import { UpdateWorkspaceUseCase } from './application/use-cases/workspace/update-workspace.use-case';
 import { DeleteWorkspaceUseCase } from './application/use-cases/workspace/delete-workspace.use-case';
 import { ListMembersUseCase } from './application/use-cases/workspace/list-members.use-case';
+import { UpdateMemberRoleUseCase } from './application/use-cases/workspace/update-member-role.use-case';
+import { RemoveMemberUseCase } from './application/use-cases/workspace/remove-member.use-case';
 import { CreateProjectUseCase } from './application/use-cases/project/create-project.use-case';
 import { GetProjectUseCase } from './application/use-cases/project/get-project.use-case';
 import { ListProjectsUseCase } from './application/use-cases/project/list-projects.use-case';
@@ -42,6 +44,7 @@ import { PROJECT_REPOSITORY } from './domain/repositories/project.repository';
 import { INVITATION_REPOSITORY } from './domain/repositories/invitation.repository';
 import { WORKSPACE_ACTIVITY_REPOSITORY } from './domain/repositories/workspace-activity.repository';
 import { ListInvitationsUseCase } from './application/use-cases/invitation/list-invitations.use-case';
+import { ListMyInvitationsUseCase } from './application/use-cases/invitation/list-my-invitations.use-case';
 import { WorkspaceAdminController } from './presentation/http/workspace-admin.controller';
 import { ManageWorkspacesAdminUseCase } from './application/use-cases/workspace/manage-workspaces-admin.use-case';
 import { platformAdminAuthProviders } from './presentation/http/platform-admin-auth.providers';
@@ -72,6 +75,8 @@ import { platformAdminAuthProviders } from './presentation/http/platform-admin-a
     UpdateWorkspaceUseCase,
     DeleteWorkspaceUseCase,
     ListMembersUseCase,
+    UpdateMemberRoleUseCase,
+    RemoveMemberUseCase,
     CheckWorkspaceMembershipUseCase,
     GetWorkspaceActivityUseCase,
     ManageWorkspacesAdminUseCase,
@@ -108,6 +113,7 @@ import { platformAdminAuthProviders } from './presentation/http/platform-admin-a
     IdempotencyService,
     AuthGuard,
     ListInvitationsUseCase,
+    ListMyInvitationsUseCase,
   ],
 })
 export class AppModule {}

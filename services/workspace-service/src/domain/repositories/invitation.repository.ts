@@ -11,6 +11,7 @@ export interface IInvitationRepository {
     inviteeEmail: string;
     workspaceName?: string;
   }): Promise<Invitation>;
+  findPendingForInvitee(email: string, userId: string): Promise<Invitation[]>;
   acceptAndJoinWorkspace(
     invitationId: string,
     userId: string,

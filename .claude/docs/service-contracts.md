@@ -565,9 +565,12 @@ Minimum HTTP routes to close MVP:
 - `PATCH /workspaces/{id}`
 - `POST /workspaces/{id}/invite`
 - `GET /workspaces/{id}/invitations` — pending invitations; caller must be workspace member
+- `GET /invitations/me` — pending invitations for current user (match invitee email)
 - `POST /invitations/{invitationId}/accept`
 - `POST /invitations/{invitationId}/reject`
 - `GET /workspaces/{id}/members`
+- `PATCH /workspaces/{id}/members/{userId}` — body `{ role: "admin" | "member" }`; owner may set admin/member; admin may demote members only; owner role immutable
+- `DELETE /workspaces/{id}/members/{userId}` — remove member or leave workspace; owner cannot be removed
 
 Minimum domain concepts:
 
@@ -599,8 +602,8 @@ Base prefix: `/api/v1/tasks` (NestJS global prefix `api`; controller `v1/tasks`)
 Key routes (implemented):
 
 - `POST /api/v1/tasks` — create (`Idempotency-Key` optional)
-- `GET /api/v1/tasks` — list (`workspaceId`, `status`, `assigneeId`, `priority`, `projectId`)
-- `GET /api/v1/tasks/board` — Kanban columns `TODO` / `DOING` / `DONE`
+- `GET /api/v1/tasks` — list (`workspaceId`, `status`, `assigneeId`, `priority`, `projectId`, `q`, `skip`, `limit`); response includes `commentCount`
+- `GET /api/v1/tasks/board` — Kanban columns; tasks include `commentCount`
 - `GET /api/v1/tasks/{id}` — detail
 - `GET /api/v1/tasks/{id}/activity` — timeline from `task_events` + comments (`limit`, `offset`)
 - `PATCH /api/v1/tasks/{id}/details` — title, description, priority, dueDate, labels
@@ -623,8 +626,9 @@ Rules:
 
 Minimum HTTP routes:
 
-- `GET /notifications`
+- `GET /notifications?status=active|archived`
 - `PATCH /notifications/{id}/read`
+- `PATCH /notifications/{id}/archive`
 - optional `PATCH /notifications/read-all`
 
 Minimum notification fields:

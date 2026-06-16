@@ -8,5 +8,6 @@ export class GetTasksQuery {
     public readonly priority?: string,
     public readonly skip?: number,
     public readonly limit?: number,
+    public readonly search?: string,
   ) {}
 }

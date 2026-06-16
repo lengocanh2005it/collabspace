@@ -41,6 +41,7 @@ import {
 } from "./application/services/user-replica-lookup.service";
 import { WorkspaceMockService } from "./infrastructure/services/workspace.mock.service";
 import { WorkspaceMembershipCacheService } from "./infrastructure/cache/workspace-membership-cache.service";
+import { TaskCommentCountService } from "./application/services/task-comment-count.service";
 import { TaskCommentNotificationPublisher } from "./application/services/task-comment-notification.publisher";
 import { WorkspaceDeletionService } from "./application/services/workspace-deletion.service";
 import { TaskOutboxService } from "./infrastructure/outbox/task-outbox.service";
@@ -155,6 +156,7 @@ const Handlers = [
     TaskOutboxService,
     TaskOutboxProcessor,
     TaskCommentNotificationPublisher,
+    TaskCommentCountService,
     WorkspaceDeletionService,
     IdempotencyService,
     AuthGuard,

@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { join } from 'node:path';
 import { AUTH_GRPC_CLIENT, AuthGrpcService } from './auth-grpc.service';
+import { AuthHttpClient } from './auth-http.client';
 
 const protoDir = join(process.cwd(), 'proto');
 
@@ -27,7 +28,7 @@ const protoDir = join(process.cwd(), 'proto');
       },
     ]),
   ],
-  providers: [AuthGrpcService],
-  exports: [AuthGrpcService],
+  providers: [AuthGrpcService, AuthHttpClient],
+  exports: [AuthGrpcService, AuthHttpClient],
 })
 export class AuthModule {}

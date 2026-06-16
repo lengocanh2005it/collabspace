@@ -3,6 +3,7 @@ export type TaskListFilter = {
   assigneeId?: string;
   priority?: string;
   projectId?: string;
+  search?: string;
 };
 
 export type TaskListOptions = {
@@ -19,6 +20,7 @@ export function buildTaskListFilter(input: {
   assigneeId?: string;
   priority?: string;
   projectId?: string;
+  search?: string;
 }): TaskListFilter | undefined {
   const filter: TaskListFilter = {};
 
@@ -33,6 +35,9 @@ export function buildTaskListFilter(input: {
   }
   if (input.projectId) {
     filter.projectId = input.projectId;
+  }
+  if (input.search?.trim()) {
+    filter.search = input.search.trim();
   }
 
   return Object.keys(filter).length > 0 ? filter : undefined;
