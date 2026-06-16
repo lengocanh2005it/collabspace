@@ -1,15 +1,11 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { randomUUID } from 'node:crypto';
 import { join } from 'node:path';
-import * as amqp from 'amqplib';
 import { DataSource } from 'typeorm';
 import { UserProfileOrmEntity } from './infrastructure/database/entities/user-profile.orm-entity';
 import { UserPreferencesOrmEntity } from './infrastructure/database/entities/user-preferences.orm-entity';
 import { UserStatusOrmEntity } from './infrastructure/database/entities/user-status.orm-entity';
 import { avatarUrlFor, loadDemoSeedData, type DemoSeedUser } from './load-demo-seed';
-
-const USER_REGISTERED_EVENT = 'user_registered';
-const USER_PROFILE_UPDATED_EVENT = 'user_profile_updated';
 
 function loadEnvFile(): void {
   const envPath = join(process.cwd(), '.env');
@@ -58,69 +54,6 @@ function toBoolean(value: string | undefined, fallback: boolean): boolean {
   }
 
   return ['1', 'true', 'yes', 'on'].includes(value.toLowerCase());
-}
-
-async function publishUserReplicaEvents(users: DemoSeedUser[]): Promise<void> {
-  if (!toBoolean(process.env.RABBITMQ_ENABLED, false)) {
-    console.log('RABBITMQ_ENABLED is false — skipping user replica event broadcast.');
-    return;
-  }
-
-  const rabbitUrl = process.env.RABBITMQ_URL;
-
-  if (!rabbitUrl) {
-    console.warn('RABBITMQ_URL is missing — skipping user replica event broadcast.');
-    return;
-  }
-
-  const connection = await amqp.connect(rabbitUrl);
-  const channel = await connection.createChannel();
-
-  try {
-    for (const queue of ['task-service', 'notification-service']) {
-      await channel.assertQueue(queue, { durable: true });
-    }
-
-    for (const user of users) {
-      const payload = {
-        userId: user.id,
-        fullName: user.fullName,
-        email: user.email,
-        username: user.username,
-        displayName: user.fullName,
-        avatarUrl: avatarUrlFor(user),
-        isActive: true,
-      };
-
-      const message = {
-        pattern: USER_REGISTERED_EVENT,
-        data: payload,
-      };
-
-      const body = Buffer.from(JSON.stringify(message));
-
-      for (const queue of ['task-service', 'notification-service']) {
-        channel.sendToQueue(queue, body, { persistent: true });
-      }
-
-      const profileUpdated = {
-        pattern: USER_PROFILE_UPDATED_EVENT,
-        data: payload,
-      };
-      const profileBody = Buffer.from(JSON.stringify(profileUpdated));
-
-      for (const queue of ['task-service', 'notification-service']) {
-        channel.sendToQueue(queue, profileBody, { persistent: true });
-      }
-    }
-
-    console.log(
-      `Published ${users.length} user_registered/user_profile_updated events to task-service and notification-service queues.`,
-    );
-  } finally {
-    await channel.close();
-    await connection.close();
-  }
 }
 
 async function seedProfiles(dataSource: DataSource, users: DemoSeedUser[]): Promise<void> {
@@ -210,14 +143,6 @@ async function main(): Promise<void> {
 
   try {
     await seedProfiles(dataSource, demoData.users);
-    try {
-      await publishUserReplicaEvents(demoData.users);
-    } catch (error) {
-      console.warn(
-        'RabbitMQ broadcast failed (task-service seed still upserts replicas directly):',
-        error instanceof Error ? error.message : error,
-      );
-    }
 
     console.log('user-service seed completed');
     console.table(

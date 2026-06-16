@@ -92,8 +92,14 @@ apply_seed_job() {
   local seed_mount_block=""
   local seed_volumes_block=""
 
+  seed_env_block="          env:
+            - name: RABBITMQ_ENABLED
+              value: \"false\""
+
   if [[ "$USE_HOST_SEED_DATA" == "true" ]]; then
     seed_env_block="          env:
+            - name: RABBITMQ_ENABLED
+              value: \"false\"
             - name: DEMO_SEED_DATA_PATH
               value: /seed/demo-seed-data.json"
     seed_mount_block="          volumeMounts:
@@ -178,13 +184,6 @@ scale_seed_writers_to_zero
 
 for svc in auth-service user-service workspace-service task-service notification-service; do
   apply_seed_job "$svc"
-done
-
-# user-service seed declares task/notification queues without DLX; app pods expect collabspace_dlx.
-echo "==> Removing seed-declared consumer queues (apps recreate with DLX on startup)..."
-for q in task-service notification-service; do
-  kubectl exec -n "$APP_NS" rabbitmq-0 -- \
-    rabbitmqctl delete_queue "$q" -p collabspace 2>/dev/null || true
 done
 
 if [[ "${SKIP_RESTORE_REPLICAS:-false}" != "true" ]]; then
