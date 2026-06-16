@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Phase 4 — Entrypoint deploy từ GitHub Actions (SSH trên Droplet).
+# CI: build image + Helm rollout only. Migrations/seed: manual on Droplet (run-k8s-migrations.sh, run-k8s-seed.sh, run-k8s-full-reset.sh).
 #
 # Env bắt buộc: IMAGE_TAG (commit SHA hoặc tag image vừa build)
 # Env tùy chọn: GHCR_OWNER, GHCR_USERNAME, GHCR_TOKEN (pull image private)
