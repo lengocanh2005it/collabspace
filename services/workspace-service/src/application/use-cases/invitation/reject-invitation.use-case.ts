@@ -11,6 +11,7 @@ import { InvitationInvalidStateError } from '../../../domain/exceptions/invitati
 
 import { AuthHttpClient } from '../../../integrations/auth/auth-http.client';
 import { assertInvitationRecipient } from './invitation-recipient.util';
+import { assertCollaborationUserForInvitation } from './invitation-platform-admin.util';
 
 @Injectable()
 export class RejectInvitationUseCase {
@@ -26,8 +27,9 @@ export class RejectInvitationUseCase {
     const invitation = await this.invitationRepo.findById(invitationId);
     if (!invitation) throw new NotFoundException('Invitation not found');
 
-    const email = await this.authHttpClient.getCurrentUserEmail(authorizationHeader);
-    assertInvitationRecipient(invitation, userId, email);
+    const account = await this.authHttpClient.getCurrentUserAccount(authorizationHeader);
+    assertCollaborationUserForInvitation(account.roles, account.permissions);
+    assertInvitationRecipient(invitation, userId, account.email);
 
     try {
       invitation.assertCanReject();

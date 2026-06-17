@@ -159,6 +159,8 @@ Hệ thống có **5 role** (không tính permission chi tiết bên dưới):
 | Tạo / sửa / xóa **project** | ✅ | ✅ | ❌ |
 | Mời thành viên (email invite) | ✅ | ✅ | ❌ |
 | Tạo / sửa / assign / comment **task** | ✅ | ✅ | ✅ |
+| Xóa **task** (của người khác) | ✅ | ✅ | ❌ |
+| Xóa **task** (do mình tạo) | ✅ | ✅ | ✅ |
 | Sửa tên / mô tả workspace | ✅ | ❌ | ❌ |
 | Xóa workspace | ✅ | ❌ | ❌ |
 | Promote `member` → `manager` | ✅ | ❌ | ❌ |

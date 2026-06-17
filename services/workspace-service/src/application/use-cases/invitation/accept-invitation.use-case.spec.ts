@@ -1,3 +1,4 @@
+import { BadRequestException } from '@nestjs/common';
 import { Test, type TestingModule } from '@nestjs/testing';
 import { AcceptInvitationUseCase } from './accept-invitation.use-case';
 import { INVITATION_REPOSITORY } from '../../../domain/repositories/invitation.repository';
@@ -14,7 +15,12 @@ describe('AcceptInvitationUseCase', () => {
   };
   const mockActivityRepo = { record: jest.fn().mockResolvedValue(undefined) };
   const mockAuthHttpClient = {
-    getCurrentUserEmail: jest.fn().mockResolvedValue('invitee@example.com'),
+    getCurrentUserAccount: jest.fn().mockResolvedValue({
+      userId: 'user-2',
+      email: 'invitee@example.com',
+      roles: ['user'],
+      permissions: [],
+    }),
   };
 
   beforeEach(async () => {
@@ -49,5 +55,29 @@ describe('AcceptInvitationUseCase', () => {
     const result = await useCase.execute('user-2', 'inv-1');
     expect(mockInvitationRepo.acceptAndJoinWorkspace).toHaveBeenCalledWith('inv-1', 'user-2');
     expect(result).toBe(expected);
+  });
+
+  it('rejects platform admin accounts', async () => {
+    mockInvitationRepo.findById.mockResolvedValue(
+      new Invitation(
+        'inv-1',
+        'ws-1',
+        'u-1',
+        'admin@collabspace.dev',
+        'admin-1',
+        'pending',
+        new Date(),
+        new Date(Date.now() + 86_400_000),
+      ),
+    );
+    mockAuthHttpClient.getCurrentUserAccount.mockResolvedValue({
+      userId: 'admin-1',
+      email: 'admin@collabspace.dev',
+      roles: ['admin'],
+      permissions: [],
+    });
+
+    await expect(useCase.execute('admin-1', 'inv-1')).rejects.toThrow(BadRequestException);
+    expect(mockInvitationRepo.acceptAndJoinWorkspace).not.toHaveBeenCalled();
   });
 });

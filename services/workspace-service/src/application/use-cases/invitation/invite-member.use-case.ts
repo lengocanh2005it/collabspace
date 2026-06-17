@@ -17,13 +17,10 @@ import {
   WORKSPACE_ACTIVITY_REPOSITORY,
 } from '../../../domain/repositories/workspace-activity.repository';
 import { AuthHttpClient } from '../../../integrations/auth/auth-http.client';
+import { isPlatformAdminAccount } from './invitation-platform-admin.util';
 
 function normalizeInviteEmail(email: string): string {
   return email.trim().toLowerCase();
-}
-
-function isPlatformAdminAccount(roles: string[], permissions: string[]): boolean {
-  return roles.includes('admin') || permissions.includes('auth.manage');
 }
 
 @Injectable()

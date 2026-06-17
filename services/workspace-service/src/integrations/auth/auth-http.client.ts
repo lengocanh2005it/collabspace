@@ -4,6 +4,9 @@ import { buildOutboundServiceAuthHeaders, SERVICE_IDS } from '@collabspace/share
 
 type AuthMeResponse = {
   email?: string;
+  userId?: string;
+  roles?: string[];
+  permissions?: string[];
 };
 
 export type AuthAccountLookup = {
@@ -73,7 +76,7 @@ export class AuthHttpClient {
     }
   }
 
-  async getCurrentUserEmail(authorizationHeader?: string): Promise<string> {
+  async getCurrentUserAccount(authorizationHeader?: string): Promise<AuthAccountLookup> {
     if (!authorizationHeader?.trim()) {
       throw new UnauthorizedException('Authorization header is required');
     }
@@ -88,18 +91,29 @@ export class AuthHttpClient {
       });
 
       if (!response.ok) {
-        throw new UnauthorizedException('Unable to resolve current user email');
+        throw new UnauthorizedException('Unable to resolve current user account');
       }
 
       const body = (await response.json()) as AuthMeResponse;
       const email = body.email?.trim().toLowerCase();
-      if (!email) {
-        throw new UnauthorizedException('Current user email is unavailable');
+      const userId = body.userId?.trim();
+      if (!email || !userId) {
+        throw new UnauthorizedException('Current user account is unavailable');
       }
 
-      return email;
+      return {
+        userId,
+        email,
+        roles: body.roles ?? [],
+        permissions: body.permissions ?? [],
+      };
     } finally {
       clearTimeout(timeout);
     }
+  }
+
+  async getCurrentUserEmail(authorizationHeader?: string): Promise<string> {
+    const account = await this.getCurrentUserAccount(authorizationHeader);
+    return account.email;
   }
 }

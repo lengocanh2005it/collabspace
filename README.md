@@ -4,7 +4,7 @@
 
 **Product features & status:** [docs/features.md](docs/features.md) · **MVP demo scope:** [docs/mvp-demo-scope.md](docs/mvp-demo-scope.md) · **API routes:** [docs/api-routes.md](docs/api-routes.md) · **URLs (API/Swagger/Grafana):** [docs/service-urls.md](docs/service-urls.md) · **App backlog:** [docs/team/application-backlog.md](docs/team/application-backlog.md) · **Infra backlog:** [docs/team/phan-phu-tho-infrastructure-backlog.md](docs/team/phan-phu-tho-infrastructure-backlog.md)
 
-**MVP backend (2026-06):** Luồng demo 7 bước **Done** (API + `scripts/demo-e2e`). **OpenAPI 5/5 Done** (Swagger + response schemas, public qua Traefik). Còn lại chủ yếu: frontend, e2e per service, CI smoke, workspace activity feed.
+**MVP backend (2026-06):** Luồng demo 7 bước **Done** (API + `scripts/demo-e2e`). **OpenAPI 5/5 Done** (Swagger + response schemas, public qua Traefik). **Frontend:** repo riêng `collabspace-fe` — MVP UI **Done**; còn polish + tests. **Backend gaps:** e2e per service, CI smoke, contract tests.
 
 ## Architecture
 
