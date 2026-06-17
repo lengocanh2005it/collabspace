@@ -17,6 +17,7 @@ import {
   ParseFilePipe,
   MaxFileSizeValidator,
   BadRequestException,
+  UnauthorizedException,
 } from "@nestjs/common";
 import {
   ApiBearerAuth,
@@ -408,7 +409,14 @@ export class TaskController {
     @Req() req: AppRequest,
   ): Promise<ApiResponse<MessageBody>> {
     const requestId = getHeaderValue(req.headers, "x-request-id");
-    await this.commandBus.execute(new DeleteTaskCommand(taskId));
+    const actorId = req.user?.id;
+    if (!actorId) {
+      throw new UnauthorizedException({
+        code: "TOKEN_MISSING",
+        message: "Authenticated user is required",
+      });
+    }
+    await this.commandBus.execute(new DeleteTaskCommand(taskId, actorId));
 
     return ok({ message: "Xóa công việc thành công" }, requestId);
   }

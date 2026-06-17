@@ -1,4 +1,7 @@
 // src/application/commands/delete-task.command.ts
 export class DeleteTaskCommand {
-  constructor(public readonly taskId: string) {}
+  constructor(
+    public readonly taskId: string,
+    public readonly actorId: string,
+  ) {}
 }

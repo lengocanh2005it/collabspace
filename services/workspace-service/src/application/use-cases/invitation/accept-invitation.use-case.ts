@@ -9,6 +9,7 @@ import {
 } from '../../../domain/repositories/workspace-activity.repository';
 import { AuthHttpClient } from '../../../integrations/auth/auth-http.client';
 import { assertInvitationRecipient } from './invitation-recipient.util';
+import { assertCollaborationUserForInvitation } from './invitation-platform-admin.util';
 
 @Injectable()
 export class AcceptInvitationUseCase {
@@ -26,8 +27,9 @@ export class AcceptInvitationUseCase {
       throw new NotFoundException('Invitation not found');
     }
 
-    const email = await this.authHttpClient.getCurrentUserEmail(authorizationHeader);
-    assertInvitationRecipient(invitation, userId, email);
+    const account = await this.authHttpClient.getCurrentUserAccount(authorizationHeader);
+    assertCollaborationUserForInvitation(account.roles, account.permissions);
+    assertInvitationRecipient(invitation, userId, account.email);
 
     const result = await this.invitationRepo.acceptAndJoinWorkspace(invitationId, userId);
 

@@ -15,7 +15,12 @@ describe('RejectInvitationUseCase', () => {
   };
   const mockActivityRepo = { record: jest.fn().mockResolvedValue(undefined) };
   const mockAuthHttpClient = {
-    getCurrentUserEmail: jest.fn().mockResolvedValue('a@b.com'),
+    getCurrentUserAccount: jest.fn().mockResolvedValue({
+      userId: 'user-2',
+      email: 'a@b.com',
+      roles: ['user'],
+      permissions: [],
+    }),
   };
 
   beforeEach(async () => {
