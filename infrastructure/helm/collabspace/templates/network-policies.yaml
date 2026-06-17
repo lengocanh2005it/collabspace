@@ -82,6 +82,14 @@ spec:
       ports:
         - port: 50051
           protocol: TCP
+    # workspace-service calls GET /api/v1/auth/me (forward user JWT) for invitations/me + accept/reject
+    - from:
+        - podSelector:
+            matchLabels:
+              app: workspace-service
+      ports:
+        - port: 3000
+          protocol: TCP
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy

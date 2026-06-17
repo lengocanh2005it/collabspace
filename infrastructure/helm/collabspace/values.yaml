@@ -515,6 +515,8 @@ apps:
         cpu: 300m
     extraEnv:
       AUTH_SERVICE_GRPC_URL: auth-service:50051
+      AUTH_SERVICE_URL: http://auth-service:3000
+      AUTH_SERVICE_TIMEOUT_MS: "3000"
       WORKSPACE_OUTBOX_ENABLED: "true"
       DATABASE_SYNCHRONIZE: "false"
       WORKSPACE_OUTBOX_POLL_INTERVAL_MS: "2000"
