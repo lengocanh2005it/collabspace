@@ -153,7 +153,7 @@ Dùng bảng này khi seed Vault KV (`secret/collabspace/staging`, …).
 
 | Service | Secret (đưa vào SM) | Config (Helm ConfigMap / values) |
 |---------|---------------------|----------------------------------|
-| **auth-service** | `JWT_SECRET`, `POSTGRES_PASSWORD`, `REDIS_PASSWORD`, `RABBITMQ_PASSWORD`, `BREVO_API_KEY`, `METRICS_AUTH_TOKEN` | `PORT`, `GRPC_*`, `BREVO_SENDER_*`, `RABBITMQ_QUEUE`, OTP TTL, outbox tuning, `TRACING_*` |
+| **auth-service** | `JWT_SECRET`, `POSTGRES_PASSWORD`, `REDIS_PASSWORD`, `RABBITMQ_PASSWORD`, `BREVO_API_KEY`, `METRICS_AUTH_TOKEN`, `SERVICE_JWT_SECRET` (inbound S2S verify từ workspace-service) | `PORT`, `GRPC_*`, `BREVO_SENDER_*`, `RABBITMQ_QUEUE`, OTP TTL, outbox tuning, `TRACING_*` |
 | **user-service** | `POSTGRES_PASSWORD`, `RABBITMQ_PASSWORD`, `SERVICE_JWT_SECRET`, `METRICS_AUTH_TOKEN`, `AZURE_STORAGE_CONNECTION_STRING` (avatar upload; optional local) | `AUTH_SERVICE_GRPC_URL`, `GRPC_URL`, `DATABASE_SCHEMA` |
 | **workspace-service** | `POSTGRES_PASSWORD`, `RABBITMQ_PASSWORD`, `SERVICE_JWT_SECRET`, `METRICS_AUTH_TOKEN` | `PORT=8080`, `AUTH_SERVICE_GRPC_URL`, `ALLOW_DEV_IDENTITY_HEADERS=false` |
 | **task-service** | `MONGO_URI` (hoặc password riêng + template URI), `RABBITMQ_PASSWORD`, `SERVICE_JWT_SECRET`, `AZURE_STORAGE_CONNECTION_STRING`, `METRICS_AUTH_TOKEN` | `WORKSPACE_SERVICE_URL`, `USER_SERVICE_URL`, `AZURE_STORAGE_CONTAINER_NAME`, `AZURE_STORAGE_MAX_FILE_SIZE`, outbox, `ALLOW_DEV_IDENTITY_HEADERS=false` |
