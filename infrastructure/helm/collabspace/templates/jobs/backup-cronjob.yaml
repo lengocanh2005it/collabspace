@@ -1,0 +1,59 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: backup-postgres
+  namespace: {{ .Release.Namespace }}
+spec:
+  schedule: "0 2 * * *" # Daily at 2 AM
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: postgres-backup
+            image: postgres:15-alpine
+            command:
+            - /bin/sh
+            - -c
+            - |
+              echo "Starting Postgres backup..."
+              PGPASSWORD=$POSTGRES_PASSWORD pg_dump -h collabspace-postgresql -U postgres -d collabspace > /tmp/backup.sql
+              echo "Backup complete. (In a real setup, this would upload to S3)"
+            env:
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: auth-service-secrets
+                  key: postgresPassword
+          restartPolicy: OnFailure
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: backup-mongo
+  namespace: {{ .Release.Namespace }}
+spec:
+  schedule: "30 2 * * *" # Daily at 2:30 AM
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: mongo-backup
+            image: mongo:6-jammy
+            command:
+            - /bin/sh
+            - -c
+            - |
+              echo "Starting Mongo backup..."
+              mongodump --uri="mongodb://root:${MONGO_PASSWORD}@collabspace-mongodb:27017/admin" --archive=/tmp/mongo-backup.gz --gzip
+              echo "Backup complete. (In a real setup, this would upload to S3)"
+            env:
+            - name: MONGO_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: task-service-secrets
+                  key: mongoPassword
+          restartPolicy: OnFailure
