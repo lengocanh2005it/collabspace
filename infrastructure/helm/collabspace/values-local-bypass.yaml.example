@@ -1,0 +1,18 @@
+# values-local-bypass.yaml.example
+# -------------------------------------------------------------------------
+# Paved Road: Opt-Out for Local Developers
+# -------------------------------------------------------------------------
+# By default, this Helm chart enforces production-grade Vault and ESO.
+# If your local machine cannot run Vault, or you want to bypass ESO locally,
+# copy this file to values-local-bypass.yaml and use it during installation:
+#
+# cp values-local-bypass.yaml.example values-local-bypass.yaml
+# helm upgrade --install collabspace ./infrastructure/helm/collabspace -f values-local-bypass.yaml
+#
+# IMPORTANT: This completely disables External Secrets Operator and falls back
+# to raw Kubernetes Secrets (stringData). Do NOT use this in staging/production.
+
+global:
+  environment: "local"
+  externalSecrets:
+    enabled: false

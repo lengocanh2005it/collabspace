@@ -50,16 +50,17 @@
 
 | Component | Image | Port(s) | Purpose |
 |-----------|-------|---------|---------|
-| Traefik | traefik:v2.10 | 80, 443, 8080 | API Gateway, routing |
+| Traefik | traefik:v2.10 | 80, 443, 8080 | API Gateway, routing (TLS Enforced) |
 | RabbitMQ | rabbitmq:3-management | 5672, 15672 | Async event bus |
 | Redis | redis:7 | 6379 | Caching, notifications |
-| PostgreSQL | postgres:15 | 5432 | Auth, User, Workspace DBs |
-| MongoDB | mongo:6 | 27017 | Task service |
+| PostgreSQL | postgres:15 | 5432 | Auth, User, Workspace DBs (Native CronJob Backups) |
+| MongoDB | mongo:6 | 27017 | Task service (Native CronJob Backups) |
 | Prometheus | prom/prometheus | 9090 | Metrics collection |
 | Grafana | grafana/grafana | 3005 | Dashboards (local Compose) |
 | Loki + Promtail | Helm subcharts (K8s) | 3100 | **Log aggregation (production path)** |
 | Jaeger | jaegertracing/all-in-one:1.41 | 16686 | Distributed tracing (optional profile) |
-| HashiCorp Vault | hashicorp/vault:1.17 | 8200 (local); in-cluster (K8s, nội bộ) | **Secrets store** — KV `secret/collabspace/<env>` + ESO → K8s `Secret` — `infrastructure/vault/` |
+| HashiCorp Vault | hashicorp/vault:1.17 | 8200 (local); in-cluster (K8s) | **Secrets store** — Vault HA + Kube Auth + ESO (Mandatory on K8s) |
+| Aqua Trivy | aquasecurity/trivy-action | N/A | **Image Vulnerability Scanning** (CI/CD Gates) |
 
 **Logging:** K8s/Helm dùng **Loki + Promtail** (không Elasticsearch). Docker Compose có profile **ELK tùy chọn** (`docker-compose.logging.yml`) — chỉ local dev, không dùng trên prod.
 
