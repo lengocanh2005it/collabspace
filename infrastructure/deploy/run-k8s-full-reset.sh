@@ -3,7 +3,7 @@
 #   stop apps → wipe DB + Redis + RabbitMQ PVC → bootstrap PG → migrate → seed (DB only) → restore apps
 #
 # Seed does not use RabbitMQ (user_replicas written directly in task/notification Mongo).
-# RabbitMQ reset = delete PVC + restart StatefulSet; queues created when apps start.
+# RabbitMQ reset = delete PVC + restart StatefulSet; reconcile bindings after apps restore.
 #
 # Usage (on Droplet):
 #   export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
@@ -130,8 +130,17 @@ if ! APP_DIR="$APP_DIR" APP_NS="$APP_NS" IMAGE_TAG="$IMAGE_TAG" VALUES_PROD="$VA
   exit 1
 fi
 
-k8s_job_log "Step 5/5: restore app deployments (apps declare RabbitMQ queues on startup)"
+k8s_job_log "Step 5/6: restore app deployments"
 restore_replicas
+
+k8s_job_log "Step 6/6: reconcile RabbitMQ exchange bindings (workspace/user integration events)"
+if kubectl get pod -n "$APP_NS" rabbitmq-0 >/dev/null 2>&1; then
+  kubectl wait --for=condition=Ready pod/rabbitmq-0 -n "$APP_NS" --timeout=180s
+  APP_NS="$APP_NS" bash "$SCRIPT_DIR/reconcile-rabbitmq-queues.sh"
+  restore_replicas
+else
+  k8s_job_log "WARN: rabbitmq-0 not found — skip reconcile (run reconcile-rabbitmq-queues.sh after RabbitMQ is up)"
+fi
 
 k8s_job_log "Waiting for core pods..."
 sleep 20

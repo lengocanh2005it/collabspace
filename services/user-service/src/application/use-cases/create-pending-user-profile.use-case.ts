@@ -27,7 +27,7 @@ export class CreatePendingUserProfileUseCase {
       await this.rabbitMqEvents.publishUserRegistered({
         userId: profile.userId,
         fullName: profile.fullName,
-        email: `${profile.userId}@users.collabspace.local`,
+        email: input.email?.trim().toLowerCase() || `${profile.userId}@users.collabspace.local`,
         username: profile.username,
         occurredAt: new Date().toISOString(),
       });

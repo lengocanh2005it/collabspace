@@ -421,6 +421,7 @@ describe('AuthController (e2e)', () => {
 
     expect(response.body.verificationRequired).toBe(true);
     expect(userProfileClientMock.createPendingProfile).toHaveBeenCalledWith({
+      email: 'member@example.com',
       fullName: 'Member Example',
       userId: 'user-123',
     });

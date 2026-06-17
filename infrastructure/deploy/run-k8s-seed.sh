@@ -204,7 +204,7 @@ print_seed_write_targets() {
   echo "Seed writes (service DB + replicas):"
   echo "  auth-service [postgres]: users, roles, permissions, user_roles, role_permissions"
   echo "  user-service [postgres]: profiles, user_preferences, user_status"
-  echo "  workspace-service [postgres]: workspaces, workspace_members, projects, invitations"
+  echo "  workspace-service [postgres]: workspaces, workspace_members, projects, invitations, workspace_activities"
   echo "  task-service [mongodb]: tasks, task_events, task_comments, task_activity; replicas: user_replicas"
   echo "  notification-service [mongodb]: notifications; replicas: user_replicas"
 }

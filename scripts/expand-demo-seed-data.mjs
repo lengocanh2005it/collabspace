@@ -34,11 +34,20 @@ const statuses = ['TODO', 'DOING', 'DONE'];
 const priorities = ['LOW', 'MEDIUM', 'HIGH'];
 const labelPool = ['frontend', 'backend', 'qa', 'docs', 'ux', 'infra', 'design', 'api', 'mobile', 'perf'];
 
+function makeTaskId(prefixBase, n) {
+  const head = prefixBase.replace(/-/g, '').slice(0, 8).padEnd(8, 'c');
+  const seq4 = String(n).padStart(4, '0');
+  const third = `4${((n % 9) + 1).toString(16)}cc`;
+  const fourth = '8cc1';
+  const tail = `${head}0${String(n).padStart(3, '0')}`;
+  return `${head}-${seq4}-${third}-${fourth}-${tail}`;
+}
+
 function makeTasks(prefixBase, start, count, titles, creators, assignees) {
   const tasks = [];
   for (let i = 0; i < count; i++) {
     const n = start + i;
-    const id = `${prefixBase}-${String(n).padStart(4, '0')}-4${(n % 9) + 1}cc-8cc1-${prefixBase.replace(/-/g, '').slice(0, 12)}${String(n).padStart(3, '0')}`;
+    const id = makeTaskId(prefixBase, n);
     tasks.push({
       id,
       title: titles[i % titles.length] + (count > titles.length ? ` (${i + 1})` : ''),

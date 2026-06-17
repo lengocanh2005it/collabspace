@@ -6,6 +6,7 @@ import { GetUserProfileUseCase } from '../../application/use-cases/get-user-prof
 import { BulkGetUserProfilesUseCase } from '../../application/use-cases/bulk-get-user-profiles.use-case';
 
 type CreatePendingProfileRequest = {
+  email?: string;
   fullName: string;
   userId: string;
 };

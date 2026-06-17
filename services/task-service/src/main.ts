@@ -7,7 +7,7 @@ import { Logger, ValidationPipe } from "@nestjs/common";
 import { AppModule } from "./app.module";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import { type MicroserviceOptions, Transport } from "@nestjs/microservices";
-import { buildConsumerQueueOptions } from "@collabspace/shared";
+import { buildConsumerQueueOptions, deserializeCollabspaceRmqMessage } from "@collabspace/shared";
 import { ConfigurationService } from "./configuration/configuration.service";
 import { MetricsService } from "./metrics/metrics.service";
 import { registerRequestIdMiddleware } from "./common/http/register-request-id.middleware";
@@ -41,6 +41,13 @@ async function bootstrap() {
         }),
         noAck: rmqConfig.noAck,
         prefetchCount: rmqConfig.prefetchCount,
+        deserializer: {
+          deserialize: (value, options) =>
+            deserializeCollabspaceRmqMessage(
+              value,
+              typeof options?.routingKey === "string" ? options.routingKey : null,
+            ),
+        },
       },
     });
     // Bắt đầu lắng nghe các event từ RabbitMQ

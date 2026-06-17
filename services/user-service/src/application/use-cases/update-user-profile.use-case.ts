@@ -30,7 +30,6 @@ export class UpdateUserProfileUseCase {
         displayName: updatedProfile.displayName,
         avatarUrl: updatedProfile.avatarUrl,
         username: updatedProfile.username,
-        email: `${updatedProfile.userId}@users.collabspace.local`,
         isActive: updatedProfile.deletedAt === null,
         occurredAt: new Date().toISOString(),
       });

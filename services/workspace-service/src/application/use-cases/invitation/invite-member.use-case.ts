@@ -91,6 +91,7 @@ export class InviteMemberUseCase {
       workspaceId,
       inviterId: userId,
       inviteeEmail,
+      inviteeUserId: account?.userId ?? null,
       workspaceName: workspace?.name,
     });
 

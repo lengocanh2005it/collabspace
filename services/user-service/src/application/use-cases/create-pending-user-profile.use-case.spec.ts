@@ -43,6 +43,24 @@ describe('CreatePendingUserProfileUseCase', () => {
     );
   });
 
+  it('publishes registration email when provided', async () => {
+    jest.spyOn(repository, 'upsertPending').mockResolvedValue(sampleUserProfile);
+    rabbitMqEventsMock.publishUserRegistered.mockResolvedValue(undefined);
+
+    await useCase.execute({
+      fullName: 'Jane Doe',
+      userId: 'user-1',
+      email: 'jane@collabspace.dev',
+    });
+
+    expect(rabbitMqEventsMock.publishUserRegistered).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: 'user-1',
+        email: 'jane@collabspace.dev',
+      }),
+    );
+  });
+
   it('returns profile when event publish fails', async () => {
     jest.spyOn(repository, 'upsertPending').mockResolvedValue(sampleUserProfile);
     rabbitMqEventsMock.publishUserRegistered.mockRejectedValue(new Error('broker down'));

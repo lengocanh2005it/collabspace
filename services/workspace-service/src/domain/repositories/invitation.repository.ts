@@ -10,6 +10,7 @@ export interface IInvitationRepository {
     workspaceId: string;
     inviterId: string;
     inviteeEmail: string;
+    inviteeUserId?: string | null;
     workspaceName?: string;
   }): Promise<Invitation>;
   findPendingForInvitee(email: string, userId: string): Promise<Invitation[]>;

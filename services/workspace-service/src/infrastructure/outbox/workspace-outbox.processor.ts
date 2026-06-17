@@ -6,7 +6,7 @@ import {
   type OnModuleInit,
 } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
-import { runOutboxPollCycle } from '@collabspace/shared';
+import { buildRmqNestEnvelope, runOutboxPollCycle } from '@collabspace/shared';
 import type * as amqp from 'amqplib';
 import { DataSource } from 'typeorm';
 import {
@@ -128,7 +128,7 @@ export class WorkspaceOutboxProcessor implements OnModuleInit, OnModuleDestroy {
     const published = this.rabbitChannel.publish(
       'collabspace_exchange',
       routingKey,
-      Buffer.from(JSON.stringify(payload)),
+      buildRmqNestEnvelope(routingKey, payload),
     );
     if (!published) throw new Error('RabbitMQ publish buffer full');
   }

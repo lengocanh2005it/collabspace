@@ -214,7 +214,7 @@ export const SEED_WRITE_TARGETS: SeedWriteTarget[] = [
   {
     service: 'workspace-service',
     database: 'postgres',
-    tables: ['workspaces', 'workspace_members', 'projects', 'invitations'],
+    tables: ['workspaces', 'workspace_members', 'projects', 'invitations', 'workspace_activities'],
   },
   {
     service: 'task-service',

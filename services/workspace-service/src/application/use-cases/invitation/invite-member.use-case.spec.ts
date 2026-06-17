@@ -78,6 +78,44 @@ describe('InviteMemberUseCase', () => {
       workspaceId: 'ws-1',
       inviterId: 'user-1',
       inviteeEmail: 'test@example.com',
+      inviteeUserId: null,
+      workspaceName: 'Test WS',
+    });
+  });
+
+  it('includes invitee user id when auth account exists', async () => {
+    const invitation = new Invitation(
+      'inv-1',
+      'ws-1',
+      'user-1',
+      'newuser@example.com',
+      'user-99',
+      'pending',
+      new Date(),
+      new Date(),
+    );
+
+    mockMemberRepo.findByWorkspaceAndUser
+      .mockResolvedValueOnce(new WorkspaceMember('m-1', 'ws-1', 'user-1', 'owner', new Date()))
+      .mockResolvedValueOnce(null);
+    mockWorkspaceRepo.findById.mockResolvedValue(
+      new Workspace('ws-1', 'Test WS', null, 'user-1', new Date(), new Date()),
+    );
+    mockAuthHttpClient.lookupAccountByEmail.mockResolvedValue({
+      userId: 'user-99',
+      email: 'newuser@example.com',
+      roles: ['user'],
+      permissions: [],
+    });
+    mockInvitationRepo.createAndPublishInvited.mockResolvedValue(invitation);
+
+    await useCase.execute('user-1', 'ws-1', { email: 'newuser@example.com' });
+
+    expect(mockInvitationRepo.createAndPublishInvited).toHaveBeenCalledWith({
+      workspaceId: 'ws-1',
+      inviterId: 'user-1',
+      inviteeEmail: 'newuser@example.com',
+      inviteeUserId: 'user-99',
       workspaceName: 'Test WS',
     });
   });

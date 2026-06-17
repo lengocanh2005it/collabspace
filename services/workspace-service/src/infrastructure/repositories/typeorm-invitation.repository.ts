@@ -68,6 +68,7 @@ export class TypeOrmInvitationRepository implements IInvitationRepository {
     workspaceId: string;
     inviterId: string;
     inviteeEmail: string;
+    inviteeUserId?: string | null;
     workspaceName?: string;
   }): Promise<Invitation> {
     return this.dataSource.transaction(async (manager) => {
@@ -75,10 +76,12 @@ export class TypeOrmInvitationRepository implements IInvitationRepository {
         workspace_id: data.workspaceId,
         inviter_id: data.inviterId,
         invitee_email: data.inviteeEmail,
+        invitee_user_id: data.inviteeUserId?.trim() || null,
         expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       });
       const saved = await manager.save(orm);
 
+      const recipientId = data.inviteeUserId?.trim();
       await this.workspaceOutboxService.enqueueWorkspaceInvited(
         {
           eventId: randomUUID(),
@@ -88,6 +91,7 @@ export class TypeOrmInvitationRepository implements IInvitationRepository {
           workspaceName: data.workspaceName,
           invitedById: saved.inviter_id,
           inviteEmail: saved.invitee_email,
+          ...(recipientId ? { recipientId } : {}),
         },
         manager,
       );

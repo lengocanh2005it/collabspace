@@ -74,6 +74,7 @@ describe('RegisterUseCase', () => {
     expect(result.verificationRequired).toBe(true);
     expect(result.email).toBe('new@collabspace.dev');
     expect(userProfileClientMock.createPendingProfile).toHaveBeenCalledWith({
+      email: 'new@collabspace.dev',
       fullName: 'New User',
       userId: result.userId,
     });

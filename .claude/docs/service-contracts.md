@@ -398,6 +398,13 @@ Implementation in `@collabspace/shared` (`packages/shared/src/auth/`):
 
 ## Event Contracts
 
+### RabbitMQ wire format
+
+- **Routing keys** (topic exchange `collabspace_exchange`): snake_case — `workspace_invited`, `workspace_deleted`, `task_assigned`, `comment_created`, `comment_mentioned`, `user_registered`, `user_profile_updated`. Do **not** use dotted keys such as `workspace.invited`.
+- **Outbox DB event types** (`workspace-service`): `workspace.workspace_invited`, `workspace.workspace_deleted` — mapped to routing keys above before publish.
+- **Message body**: NestJS emit envelope `{ "pattern": "<routing_key>", "data": { ...payload }, "id": "uuid" }`. `workspace-service` outbox publishes this shape; consumers also accept legacy raw JSON (routing key = pattern) during rollout.
+- **Bindings**: `infrastructure/deploy/reconcile-rabbitmq-queues.sh` (also end of `run-k8s-full-reset.sh`) binds `collabspace_exchange` → `notification-service` / `task-service` queues. `task-service` / `user-service` may also `emit` directly to consumer queues without exchange.
+
 ### User directory replicas (`user_registered`, `user_profile_updated`)
 
 Producer: `user-service` (broadcast to `task-service` and `notification-service` queues).

@@ -6,10 +6,13 @@ import { WorkspaceOrmEntity } from './infrastructure/database/entities/workspace
 import { WorkspaceMemberOrmEntity } from './infrastructure/database/entities/workspace-member.orm-entity';
 import { ProjectOrmEntity } from './infrastructure/database/entities/project.orm-entity';
 import { InvitationOrmEntity } from './infrastructure/database/entities/invitation.orm-entity';
+import { WorkspaceActivityOrmEntity } from './infrastructure/database/entities/workspace-activity.orm-entity';
+import type { WorkspaceActivityType } from './domain/entities/workspace-activity.entity';
 import {
   getDemoWorkspaces,
   loadDemoSeedData,
   type DemoSeedPendingInvitation,
+  type DemoSeedUser,
   type DemoSeedWorkspace,
 } from './load-demo-seed';
 
@@ -62,6 +65,138 @@ function toBoolean(value: string | undefined, fallback: boolean): boolean {
   return ['1', 'true', 'yes', 'on'].includes(value.toLowerCase());
 }
 
+function findUser(users: DemoSeedUser[], userId: string): DemoSeedUser | undefined {
+  return users.find((user) => user.id === userId);
+}
+
+function actorNameFor(users: DemoSeedUser[], userId: string | null | undefined): string | null {
+  if (!userId) {
+    return null;
+  }
+
+  return findUser(users, userId)?.fullName ?? null;
+}
+
+type ActivitySeedRow = {
+  workspaceId: string;
+  actorId: string | null;
+  actorName: string | null;
+  type: WorkspaceActivityType;
+  summary: string;
+  meta: Record<string, unknown>;
+  occurredAt: Date;
+};
+
+function buildWorkspaceActivityRows(
+  workspaceSeed: DemoSeedWorkspace,
+  users: DemoSeedUser[],
+): ActivitySeedRow[] {
+  const rows: ActivitySeedRow[] = [];
+  const baseTime = new Date('2026-01-10T08:00:00.000Z');
+  let step = 0;
+
+  const nextOccurredAt = (): Date => {
+    const occurredAt = new Date(baseTime);
+    occurredAt.setHours(occurredAt.getHours() + step);
+    step += 1;
+    return occurredAt;
+  };
+
+  const ownerName = actorNameFor(users, workspaceSeed.ownerUserId);
+
+  rows.push({
+    workspaceId: workspaceSeed.workspaceId,
+    actorId: workspaceSeed.ownerUserId,
+    actorName: ownerName,
+    type: 'workspace_created',
+    summary: `Workspace "${workspaceSeed.workspaceName}" was created`,
+    meta: { workspaceName: workspaceSeed.workspaceName },
+    occurredAt: nextOccurredAt(),
+  });
+
+  for (const project of workspaceSeed.projects) {
+    rows.push({
+      workspaceId: workspaceSeed.workspaceId,
+      actorId: workspaceSeed.ownerUserId,
+      actorName: ownerName,
+      type: 'project_created',
+      summary: `Project "${project.projectName}" was created`,
+      meta: { projectId: project.projectId, projectName: project.projectName },
+      occurredAt: nextOccurredAt(),
+    });
+  }
+
+  for (const member of workspaceSeed.members) {
+    if (member.userId === workspaceSeed.ownerUserId) {
+      continue;
+    }
+
+    rows.push({
+      workspaceId: workspaceSeed.workspaceId,
+      actorId: member.userId,
+      actorName: actorNameFor(users, member.userId),
+      type: 'member_joined',
+      summary: 'A new member joined the workspace',
+      meta: { userId: member.userId, role: member.role },
+      occurredAt: nextOccurredAt(),
+    });
+
+    if (member.role === 'manager') {
+      rows.push({
+        workspaceId: workspaceSeed.workspaceId,
+        actorId: workspaceSeed.ownerUserId,
+        actorName: ownerName,
+        type: 'member_role_changed',
+        summary: 'Member role changed to manager',
+        meta: { targetUserId: member.userId, role: 'manager' },
+        occurredAt: nextOccurredAt(),
+      });
+    }
+  }
+
+  for (const invitation of workspaceSeed.pendingInvitations ?? []) {
+    rows.push({
+      workspaceId: workspaceSeed.workspaceId,
+      actorId: invitation.inviterUserId,
+      actorName: actorNameFor(users, invitation.inviterUserId),
+      type: 'member_invited',
+      summary: `${invitation.email.toLowerCase()} was invited to the workspace`,
+      meta: { inviteeEmail: invitation.email.toLowerCase(), invitationId: invitation.id },
+      occurredAt: nextOccurredAt(),
+    });
+  }
+
+  return rows;
+}
+
+async function seedWorkspaceActivities(
+  workspaceSeed: DemoSeedWorkspace,
+  users: DemoSeedUser[],
+  activityRepo: Repository<WorkspaceActivityOrmEntity>,
+): Promise<number> {
+  await activityRepo.delete({ workspace_id: workspaceSeed.workspaceId });
+
+  const rows = buildWorkspaceActivityRows(workspaceSeed, users);
+  if (rows.length === 0) {
+    return 0;
+  }
+
+  for (const row of rows) {
+    const entity = activityRepo.create({
+      workspace_id: row.workspaceId,
+      actor_id: row.actorId,
+      actor_name: row.actorName,
+      type: row.type,
+      summary: row.summary,
+      meta: row.meta,
+    });
+    entity.occurred_at = row.occurredAt;
+    await activityRepo.save(entity);
+  }
+
+  return rows.length;
+}
+
 async function seedPendingInvitations(
   workspaceId: string,
   invitations: DemoSeedPendingInvitation[],
@@ -92,11 +227,14 @@ async function seedWorkspaceBundle(
   memberRepo: Repository<WorkspaceMemberOrmEntity>,
   projectRepo: Repository<ProjectOrmEntity>,
   invitationRepo: Repository<InvitationOrmEntity>,
+  activityRepo: Repository<WorkspaceActivityOrmEntity>,
+  users: DemoSeedUser[],
 ): Promise<{
   workspaceId: string;
   workspaceName: string;
   projectCount: number;
   memberCount: number;
+  activityCount: number;
 }> {
   let workspace = await workspaceRepo.findOne({
     where: { id: workspaceSeed.workspaceId },
@@ -179,11 +317,14 @@ async function seedWorkspaceBundle(
     );
   }
 
+  const activityCount = await seedWorkspaceActivities(workspaceSeed, users, activityRepo);
+
   return {
     workspaceId: workspaceSeed.workspaceId,
     workspaceName: workspaceSeed.workspaceName,
     projectCount: workspaceSeed.projects.length,
     memberCount: workspaceSeed.members.length,
+    activityCount,
   };
 }
 
@@ -196,7 +337,13 @@ async function main(): Promise<void> {
     type: 'postgres',
     url: requireDatabaseUrl(),
     schema: process.env.DATABASE_SCHEMA || 'public',
-    entities: [WorkspaceOrmEntity, WorkspaceMemberOrmEntity, ProjectOrmEntity, InvitationOrmEntity],
+    entities: [
+      WorkspaceOrmEntity,
+      WorkspaceMemberOrmEntity,
+      ProjectOrmEntity,
+      InvitationOrmEntity,
+      WorkspaceActivityOrmEntity,
+    ],
     synchronize: toBoolean(process.env.DATABASE_SYNCHRONIZE, false),
     logging: toBoolean(process.env.DATABASE_LOGGING, false),
   });
@@ -208,12 +355,14 @@ async function main(): Promise<void> {
     const memberRepo = dataSource.getRepository(WorkspaceMemberOrmEntity);
     const projectRepo = dataSource.getRepository(ProjectOrmEntity);
     const invitationRepo = dataSource.getRepository(InvitationOrmEntity);
+    const activityRepo = dataSource.getRepository(WorkspaceActivityOrmEntity);
 
     const summary: Array<{
       workspaceId: string;
       workspaceName: string;
       projectCount: number;
       memberCount: number;
+      activityCount: number;
     }> = [];
 
     for (const workspaceSeed of workspaces) {
@@ -224,13 +373,17 @@ async function main(): Promise<void> {
           memberRepo,
           projectRepo,
           invitationRepo,
+          activityRepo,
+          demoData.users,
         ),
       );
     }
 
+    const totalActivities = summary.reduce((sum, row) => sum + row.activityCount, 0);
+
     console.log('workspace-service seed completed');
     console.log(
-      `Seeded ${summary.length} workspaces (Postgres collabspace_workspace — no cross-service replicas)`,
+      `Seeded ${summary.length} workspaces + ${totalActivities} activity rows (Postgres collabspace_workspace)`,
     );
     console.table(summary);
   } finally {

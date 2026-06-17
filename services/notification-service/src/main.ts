@@ -2,7 +2,7 @@ import { NestFactory } from "@nestjs/core";
 import { assertRequiredInProduction } from "@collabspace/shared";
 import { AppModule } from "./app.module";
 import { type MicroserviceOptions, Transport } from "@nestjs/microservices";
-import { buildConsumerQueueOptions } from "@collabspace/shared";
+import { buildConsumerQueueOptions, deserializeCollabspaceRmqMessage } from "@collabspace/shared";
 import { ConfigurationService } from "./configuration/configuration.service";
 import { ValidationPipe } from "@nestjs/common";
 import compression from "compression";
@@ -33,6 +33,13 @@ async function bootstrap() {
         }),
         noAck: rmqConfig.noAck,
         prefetchCount: rmqConfig.prefetchCount,
+        deserializer: {
+          deserialize: (value, options) =>
+            deserializeCollabspaceRmqMessage(
+              value,
+              typeof options?.routingKey === "string" ? options.routingKey : null,
+            ),
+        },
       },
     });
     await app.startAllMicroservices();

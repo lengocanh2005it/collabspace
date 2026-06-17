@@ -19,6 +19,7 @@ import { TimeoutError, firstValueFrom, type Observable, timeout } from 'rxjs';
 export const USER_PROFILES_GRPC_CLIENT = 'USER_PROFILES_GRPC_CLIENT';
 
 type CreatePendingProfileRequest = {
+  email?: string;
   fullName: string;
   userId: string;
 };

@@ -407,7 +407,7 @@
               "createdByUserId": "22222222-2222-4222-8222-222222222222"
             },
             {
-              "id": "cccccccc-0010-42cc-8cc1-cccccccc010",
+              "id": "cccccccc-0010-42cc-8cc1-cccccccc0010",
               "title": "Polish invitation accept flow",
               "description": "Demo seed task #10 — fills kanban, dashboard, and directory UI.",
               "status": "DOING",
@@ -420,7 +420,7 @@
               "createdByUserId": "22222222-2222-4222-8222-222222222222"
             },
             {
-              "id": "cccccccc-0011-43cc-8cc1-cccccccc011",
+              "id": "cccccccc-0011-43cc-8cc1-cccccccc0011",
               "title": "Add workspace activity filters",
               "description": "Demo seed task #11 — fills kanban, dashboard, and directory UI.",
               "status": "DONE",
@@ -432,7 +432,7 @@
               "createdByUserId": "88888888-8888-4888-8888-888888888888"
             },
             {
-              "id": "cccccccc-0012-44cc-8cc1-cccccccc012",
+              "id": "cccccccc-0012-44cc-8cc1-cccccccc0012",
               "title": "Fix member count in header",
               "description": "Demo seed task #12 — fills kanban, dashboard, and directory UI.",
               "status": "TODO",
@@ -445,7 +445,7 @@
               "createdByUserId": "22222222-2222-4222-8222-222222222222"
             },
             {
-              "id": "cccccccc-0013-45cc-8cc1-cccccccc013",
+              "id": "cccccccc-0013-45cc-8cc1-cccccccc0013",
               "title": "E2E test invite duplicate email",
               "description": "Demo seed task #13 — fills kanban, dashboard, and directory UI.",
               "status": "DOING",
@@ -457,7 +457,7 @@
               "createdByUserId": "88888888-8888-4888-8888-888888888888"
             },
             {
-              "id": "cccccccc-0014-46cc-8cc1-cccccccc014",
+              "id": "cccccccc-0014-46cc-8cc1-cccccccc0014",
               "title": "Sync OpenAPI response DTOs",
               "description": "Demo seed task #14 — fills kanban, dashboard, and directory UI.",
               "status": "DONE",
@@ -470,7 +470,7 @@
               "createdByUserId": "22222222-2222-4222-8222-222222222222"
             },
             {
-              "id": "cccccccc-0015-47cc-8cc1-cccccccc015",
+              "id": "cccccccc-0015-47cc-8cc1-cccccccc0015",
               "title": "Improve error toast copy",
               "description": "Demo seed task #15 — fills kanban, dashboard, and directory UI.",
               "status": "TODO",
@@ -482,7 +482,7 @@
               "createdByUserId": "88888888-8888-4888-8888-888888888888"
             },
             {
-              "id": "cccccccc-0016-48cc-8cc1-cccccccc016",
+              "id": "cccccccc-0016-48cc-8cc1-cccccccc0016",
               "title": "Board drag-and-drop QA",
               "description": "Demo seed task #16 — fills kanban, dashboard, and directory UI.",
               "status": "DOING",
@@ -495,7 +495,7 @@
               "createdByUserId": "22222222-2222-4222-8222-222222222222"
             },
             {
-              "id": "cccccccc-0017-49cc-8cc1-cccccccc017",
+              "id": "cccccccc-0017-49cc-8cc1-cccccccc0017",
               "title": "Mention autocomplete edge cases",
               "description": "Demo seed task #17 — fills kanban, dashboard, and directory UI.",
               "status": "DONE",
@@ -507,7 +507,7 @@
               "createdByUserId": "88888888-8888-4888-8888-888888888888"
             },
             {
-              "id": "cccccccc-0018-41cc-8cc1-cccccccc018",
+              "id": "cccccccc-0018-41cc-8cc1-cccccccc0018",
               "title": "Notification poll backoff",
               "description": "Demo seed task #18 — fills kanban, dashboard, and directory UI.",
               "status": "TODO",
@@ -520,7 +520,7 @@
               "createdByUserId": "22222222-2222-4222-8222-222222222222"
             },
             {
-              "id": "cccccccc-0019-42cc-8cc1-cccccccc019",
+              "id": "cccccccc-0019-42cc-8cc1-cccccccc0019",
               "title": "Profile avatar crop UX",
               "description": "Demo seed task #19 — fills kanban, dashboard, and directory UI.",
               "status": "DOING",
@@ -532,7 +532,7 @@
               "createdByUserId": "88888888-8888-4888-8888-888888888888"
             },
             {
-              "id": "cccccccc-0020-43cc-8cc1-cccccccc020",
+              "id": "cccccccc-0020-43cc-8cc1-cccccccc0020",
               "title": "Command palette recent items",
               "description": "Demo seed task #20 — fills kanban, dashboard, and directory UI.",
               "status": "DONE",
@@ -545,7 +545,7 @@
               "createdByUserId": "22222222-2222-4222-8222-222222222222"
             },
             {
-              "id": "cccccccc-0021-44cc-8cc1-cccccccc021",
+              "id": "cccccccc-0021-44cc-8cc1-cccccccc0021",
               "title": "Kanban WIP limit indicator",
               "description": "Demo seed task #21 — fills kanban, dashboard, and directory UI.",
               "status": "TODO",
@@ -625,7 +625,7 @@
               "createdByUserId": "66666666-6666-4666-8666-666666666666"
             },
             {
-              "id": "cccccccc-0030-44cc-8cc1-cccccccc030",
+              "id": "cccccccc-0030-44cc-8cc1-cccccccc0030",
               "title": "Notification poll backoff",
               "description": "Demo seed task #30 — fills kanban, dashboard, and directory UI.",
               "status": "TODO",
@@ -638,7 +638,7 @@
               "createdByUserId": "66666666-6666-4666-8666-666666666666"
             },
             {
-              "id": "cccccccc-0031-45cc-8cc1-cccccccc031",
+              "id": "cccccccc-0031-45cc-8cc1-cccccccc0031",
               "title": "Profile avatar crop UX",
               "description": "Demo seed task #31 — fills kanban, dashboard, and directory UI.",
               "status": "DOING",
@@ -650,7 +650,7 @@
               "createdByUserId": "88888888-8888-4888-8888-888888888888"
             },
             {
-              "id": "cccccccc-0032-46cc-8cc1-cccccccc032",
+              "id": "cccccccc-0032-46cc-8cc1-cccccccc0032",
               "title": "Command palette recent items",
               "description": "Demo seed task #32 — fills kanban, dashboard, and directory UI.",
               "status": "DONE",
@@ -663,7 +663,7 @@
               "createdByUserId": "66666666-6666-4666-8666-666666666666"
             },
             {
-              "id": "cccccccc-0033-47cc-8cc1-cccccccc033",
+              "id": "cccccccc-0033-47cc-8cc1-cccccccc0033",
               "title": "Kanban WIP limit indicator",
               "description": "Demo seed task #33 — fills kanban, dashboard, and directory UI.",
               "status": "TODO",
@@ -675,7 +675,7 @@
               "createdByUserId": "88888888-8888-4888-8888-888888888888"
             },
             {
-              "id": "cccccccc-0034-48cc-8cc1-cccccccc034",
+              "id": "cccccccc-0034-48cc-8cc1-cccccccc0034",
               "title": "Task due date picker",
               "description": "Demo seed task #34 — fills kanban, dashboard, and directory UI.",
               "status": "DOING",
@@ -688,7 +688,7 @@
               "createdByUserId": "66666666-6666-4666-8666-666666666666"
             },
             {
-              "id": "cccccccc-0035-49cc-8cc1-cccccccc035",
+              "id": "cccccccc-0035-49cc-8cc1-cccccccc0035",
               "title": "Workspace switcher keyboard nav",
               "description": "Demo seed task #35 — fills kanban, dashboard, and directory UI.",
               "status": "DONE",
@@ -700,7 +700,7 @@
               "createdByUserId": "88888888-8888-4888-8888-888888888888"
             },
             {
-              "id": "cccccccc-0036-41cc-8cc1-cccccccc036",
+              "id": "cccccccc-0036-41cc-8cc1-cccccccc0036",
               "title": "Admin KPI from task totals",
               "description": "Demo seed task #36 — fills kanban, dashboard, and directory UI.",
               "status": "TODO",
@@ -713,7 +713,7 @@
               "createdByUserId": "66666666-6666-4666-8666-666666666666"
             },
             {
-              "id": "cccccccc-0037-42cc-8cc1-cccccccc037",
+              "id": "cccccccc-0037-42cc-8cc1-cccccccc0037",
               "title": "Directory search debounce",
               "description": "Demo seed task #37 — fills kanban, dashboard, and directory UI.",
               "status": "DOING",
@@ -748,7 +748,7 @@
           "projectDescription": "Sprint backlog — dense board for UI demos.",
           "tasks": [
             {
-              "id": "cccccccc-0050-46cc-8cc1-cccccccc050",
+              "id": "cccccccc-0050-46cc-8cc1-cccccccc0050",
               "title": "Polish invitation accept flow",
               "description": "Demo seed task #50 — fills kanban, dashboard, and directory UI.",
               "status": "DONE",
@@ -761,7 +761,7 @@
               "createdByUserId": "22222222-2222-4222-8222-222222222222"
             },
             {
-              "id": "cccccccc-0051-47cc-8cc1-cccccccc051",
+              "id": "cccccccc-0051-47cc-8cc1-cccccccc0051",
               "title": "Add workspace activity filters",
               "description": "Demo seed task #51 — fills kanban, dashboard, and directory UI.",
               "status": "TODO",
@@ -773,7 +773,7 @@
               "createdByUserId": "33333333-3333-4333-8333-333333333333"
             },
             {
-              "id": "cccccccc-0052-48cc-8cc1-cccccccc052",
+              "id": "cccccccc-0052-48cc-8cc1-cccccccc0052",
               "title": "Fix member count in header",
               "description": "Demo seed task #52 — fills kanban, dashboard, and directory UI.",
               "status": "DOING",
@@ -786,7 +786,7 @@
               "createdByUserId": "22222222-2222-4222-8222-222222222222"
             },
             {
-              "id": "cccccccc-0053-49cc-8cc1-cccccccc053",
+              "id": "cccccccc-0053-49cc-8cc1-cccccccc0053",
               "title": "E2E test invite duplicate email",
               "description": "Demo seed task #53 — fills kanban, dashboard, and directory UI.",
               "status": "DONE",
@@ -798,7 +798,7 @@
               "createdByUserId": "33333333-3333-4333-8333-333333333333"
             },
             {
-              "id": "cccccccc-0054-41cc-8cc1-cccccccc054",
+              "id": "cccccccc-0054-41cc-8cc1-cccccccc0054",
               "title": "Sync OpenAPI response DTOs",
               "description": "Demo seed task #54 — fills kanban, dashboard, and directory UI.",
               "status": "TODO",
@@ -811,7 +811,7 @@
               "createdByUserId": "22222222-2222-4222-8222-222222222222"
             },
             {
-              "id": "cccccccc-0055-42cc-8cc1-cccccccc055",
+              "id": "cccccccc-0055-42cc-8cc1-cccccccc0055",
               "title": "Improve error toast copy",
               "description": "Demo seed task #55 — fills kanban, dashboard, and directory UI.",
               "status": "DOING",
@@ -823,7 +823,7 @@
               "createdByUserId": "33333333-3333-4333-8333-333333333333"
             },
             {
-              "id": "cccccccc-0056-43cc-8cc1-cccccccc056",
+              "id": "cccccccc-0056-43cc-8cc1-cccccccc0056",
               "title": "Board drag-and-drop QA",
               "description": "Demo seed task #56 — fills kanban, dashboard, and directory UI.",
               "status": "DONE",
@@ -836,7 +836,7 @@
               "createdByUserId": "22222222-2222-4222-8222-222222222222"
             },
             {
-              "id": "cccccccc-0057-44cc-8cc1-cccccccc057",
+              "id": "cccccccc-0057-44cc-8cc1-cccccccc0057",
               "title": "Mention autocomplete edge cases",
               "description": "Demo seed task #57 — fills kanban, dashboard, and directory UI.",
               "status": "TODO",
@@ -848,7 +848,7 @@
               "createdByUserId": "33333333-3333-4333-8333-333333333333"
             },
             {
-              "id": "cccccccc-0058-45cc-8cc1-cccccccc058",
+              "id": "cccccccc-0058-45cc-8cc1-cccccccc0058",
               "title": "Notification poll backoff",
               "description": "Demo seed task #58 — fills kanban, dashboard, and directory UI.",
               "status": "DOING",
@@ -861,7 +861,7 @@
               "createdByUserId": "22222222-2222-4222-8222-222222222222"
             },
             {
-              "id": "cccccccc-0059-46cc-8cc1-cccccccc059",
+              "id": "cccccccc-0059-46cc-8cc1-cccccccc0059",
               "title": "Profile avatar crop UX",
               "description": "Demo seed task #59 — fills kanban, dashboard, and directory UI.",
               "status": "DONE",
@@ -873,7 +873,7 @@
               "createdByUserId": "33333333-3333-4333-8333-333333333333"
             },
             {
-              "id": "cccccccc-0060-47cc-8cc1-cccccccc060",
+              "id": "cccccccc-0060-47cc-8cc1-cccccccc0060",
               "title": "Command palette recent items",
               "description": "Demo seed task #60 — fills kanban, dashboard, and directory UI.",
               "status": "TODO",
@@ -886,7 +886,7 @@
               "createdByUserId": "22222222-2222-4222-8222-222222222222"
             },
             {
-              "id": "cccccccc-0061-48cc-8cc1-cccccccc061",
+              "id": "cccccccc-0061-48cc-8cc1-cccccccc0061",
               "title": "Kanban WIP limit indicator",
               "description": "Demo seed task #61 — fills kanban, dashboard, and directory UI.",
               "status": "DOING",
@@ -898,7 +898,7 @@
               "createdByUserId": "33333333-3333-4333-8333-333333333333"
             },
             {
-              "id": "cccccccc-0062-49cc-8cc1-cccccccc062",
+              "id": "cccccccc-0062-49cc-8cc1-cccccccc0062",
               "title": "Task due date picker",
               "description": "Demo seed task #62 — fills kanban, dashboard, and directory UI.",
               "status": "DONE",
@@ -911,7 +911,7 @@
               "createdByUserId": "22222222-2222-4222-8222-222222222222"
             },
             {
-              "id": "cccccccc-0063-41cc-8cc1-cccccccc063",
+              "id": "cccccccc-0063-41cc-8cc1-cccccccc0063",
               "title": "Workspace switcher keyboard nav",
               "description": "Demo seed task #63 — fills kanban, dashboard, and directory UI.",
               "status": "TODO",
@@ -925,7 +925,7 @@
           ],
           "sampleComments": [
             {
-              "taskId": "cccccccc-0050-46cc-8cc1-cccccccc050",
+              "taskId": "cccccccc-0050-46cc-8cc1-cccccccc0050",
               "authorUserId": "22222222-2222-4222-8222-222222222222",
               "content": "Please review @pm.carol — targeting Friday demo.",
               "mentionUserIds": [
@@ -933,7 +933,7 @@
               ]
             },
             {
-              "taskId": "cccccccc-0050-46cc-8cc1-cccccccc050",
+              "taskId": "cccccccc-0050-46cc-8cc1-cccccccc0050",
               "authorUserId": "88888888-8888-4888-8888-888888888888",
               "content": "Kickoff note on Release Train — sync in standup.",
               "mentionUserIds": []
@@ -1018,7 +1018,7 @@
           "type": "TASK_ASSIGNED",
           "title": "Task assigned to you",
           "message": "Update: Add workspace activity filters",
-          "targetId": "cccccccc-0011-43cc-8cc1-cccccccc011",
+          "targetId": "cccccccc-0011-43cc-8cc1-cccccccc0011",
           "targetType": "TASK",
           "status": "READ"
         },
@@ -1028,7 +1028,7 @@
           "type": "TASK_ASSIGNED",
           "title": "Task assigned to you",
           "message": "Update: Fix member count in header",
-          "targetId": "cccccccc-0012-44cc-8cc1-cccccccc012",
+          "targetId": "cccccccc-0012-44cc-8cc1-cccccccc0012",
           "targetType": "TASK",
           "status": "ARCHIVED"
         },
@@ -1048,7 +1048,7 @@
           "type": "TASK_ASSIGNED",
           "title": "Task assigned to you",
           "message": "Update: Sync OpenAPI response DTOs",
-          "targetId": "cccccccc-0014-46cc-8cc1-cccccccc014",
+          "targetId": "cccccccc-0014-46cc-8cc1-cccccccc0014",
           "targetType": "TASK",
           "status": "UNREAD"
         },
@@ -1058,7 +1058,7 @@
           "type": "TASK_ASSIGNED",
           "title": "Task assigned to you",
           "message": "Update: Improve error toast copy",
-          "targetId": "cccccccc-0015-47cc-8cc1-cccccccc015",
+          "targetId": "cccccccc-0015-47cc-8cc1-cccccccc0015",
           "targetType": "TASK",
           "status": "READ"
         },
@@ -1078,7 +1078,7 @@
           "type": "TASK_ASSIGNED",
           "title": "Task assigned to you",
           "message": "Update: Mention autocomplete edge cases",
-          "targetId": "cccccccc-0017-49cc-8cc1-cccccccc017",
+          "targetId": "cccccccc-0017-49cc-8cc1-cccccccc0017",
           "targetType": "TASK",
           "status": "ARCHIVED"
         },
@@ -1088,7 +1088,7 @@
           "type": "TASK_ASSIGNED",
           "title": "Task assigned to you",
           "message": "Update: Notification poll backoff",
-          "targetId": "cccccccc-0018-41cc-8cc1-cccccccc018",
+          "targetId": "cccccccc-0018-41cc-8cc1-cccccccc0018",
           "targetType": "TASK",
           "status": "UNREAD"
         },
@@ -1098,7 +1098,7 @@
           "type": "TASK_ASSIGNED",
           "title": "Task assigned to you",
           "message": "Product Lab: Command palette server search",
-          "targetId": "dddddddd-ddd1-4dd1-8dd1-dddddddddddd1",
+          "targetId": "dddddddd-ddd1-4dd1-8dd1-ddddddddddd1",
           "targetType": "TASK",
           "status": "UNREAD"
         },
@@ -1108,7 +1108,7 @@
           "type": "TASK_ASSIGNED",
           "title": "Task assigned to you",
           "message": "Product Lab: Kanban comment count badge",
-          "targetId": "dddddddd-ddd2-4dd2-8dd2-dddddddddddd2",
+          "targetId": "dddddddd-ddd2-4dd2-8dd2-ddddddddddd2",
           "targetType": "TASK",
           "status": "READ"
         }
@@ -1168,7 +1168,7 @@
           "projectDescription": "Upcoming product slices.",
           "tasks": [
             {
-              "id": "dddddddd-ddd1-4dd1-8dd1-dddddddddddd1",
+              "id": "dddddddd-ddd1-4dd1-8dd1-ddddddddddd1",
               "title": "Command palette server search",
               "description": "Wire taskApi.search in palette.",
               "status": "DONE",
@@ -1180,7 +1180,7 @@
               "createdByUserId": "88888888-8888-4888-8888-888888888888"
             },
             {
-              "id": "dddddddd-ddd2-4dd2-8dd2-dddddddddddd2",
+              "id": "dddddddd-ddd2-4dd2-8dd2-ddddddddddd2",
               "title": "Kanban comment count badge",
               "description": "Show commentCount on cards.",
               "status": "DOING",
@@ -1193,7 +1193,7 @@
               "createdByUserId": "33333333-3333-4333-8333-333333333333"
             },
             {
-              "id": "dddddddd-ddd3-4dd3-8dd3-dddddddddddd3",
+              "id": "dddddddd-ddd3-4dd3-8dd3-ddddddddddd3",
               "title": "Workspace switcher persistence",
               "description": "Remember last active workspace in local storage.",
               "status": "TODO",
@@ -1205,7 +1205,7 @@
               "createdByUserId": "88888888-8888-4888-8888-888888888888"
             },
             {
-              "id": "dddddddd-ddd4-4dd4-8dd4-dddddddddddd4",
+              "id": "dddddddd-ddd4-4dd4-8dd4-ddddddddddd4",
               "title": "Activity feed pagination",
               "description": "Load more on workspace activity tab.",
               "status": "TODO",
@@ -1217,7 +1217,7 @@
               "createdByUserId": "33333333-3333-4333-8333-333333333333"
             },
             {
-              "id": "dddddddd-0010-42cc-8cc1-dddddddd010",
+              "id": "dddddddd-0010-42cc-8cc1-dddddddd0010",
               "title": "FE role badge for platform user",
               "description": "Demo seed task #10 — fills kanban, dashboard, and directory UI.",
               "status": "DOING",
@@ -1230,7 +1230,7 @@
               "createdByUserId": "33333333-3333-4333-8333-333333333333"
             },
             {
-              "id": "dddddddd-0011-43cc-8cc1-dddddddd011",
+              "id": "dddddddd-0011-43cc-8cc1-dddddddd0011",
               "title": "Dashboard chart from getBoard",
               "description": "Demo seed task #11 — fills kanban, dashboard, and directory UI.",
               "status": "DONE",
@@ -1242,7 +1242,7 @@
               "createdByUserId": "88888888-8888-4888-8888-888888888888"
             },
             {
-              "id": "dddddddd-0012-44cc-8cc1-dddddddd012",
+              "id": "dddddddd-0012-44cc-8cc1-dddddddd0012",
               "title": "Project card relative dates",
               "description": "Demo seed task #12 — fills kanban, dashboard, and directory UI.",
               "status": "TODO",
@@ -1255,7 +1255,7 @@
               "createdByUserId": "33333333-3333-4333-8333-333333333333"
             },
             {
-              "id": "dddddddd-0013-45cc-8cc1-dddddddd013",
+              "id": "dddddddd-0013-45cc-8cc1-dddddddd0013",
               "title": "Task deep link share button",
               "description": "Demo seed task #13 — fills kanban, dashboard, and directory UI.",
               "status": "DOING",
@@ -1267,7 +1267,7 @@
               "createdByUserId": "88888888-8888-4888-8888-888888888888"
             },
             {
-              "id": "dddddddd-0014-46cc-8cc1-dddddddd014",
+              "id": "dddddddd-0014-46cc-8cc1-dddddddd0014",
               "title": "Presence dot on member rows",
               "description": "Demo seed task #14 — fills kanban, dashboard, and directory UI.",
               "status": "DONE",
@@ -1280,7 +1280,7 @@
               "createdByUserId": "33333333-3333-4333-8333-333333333333"
             },
             {
-              "id": "dddddddd-0015-47cc-8cc1-dddddddd015",
+              "id": "dddddddd-0015-47cc-8cc1-dddddddd0015",
               "title": "Bulk assign from board",
               "description": "Demo seed task #15 — fills kanban, dashboard, and directory UI.",
               "status": "TODO",
@@ -1292,7 +1292,7 @@
               "createdByUserId": "88888888-8888-4888-8888-888888888888"
             },
             {
-              "id": "dddddddd-0016-48cc-8cc1-dddddddd016",
+              "id": "dddddddd-0016-48cc-8cc1-dddddddd0016",
               "title": "Label filter on task list",
               "description": "Demo seed task #16 — fills kanban, dashboard, and directory UI.",
               "status": "DOING",
@@ -1305,7 +1305,7 @@
               "createdByUserId": "33333333-3333-4333-8333-333333333333"
             },
             {
-              "id": "dddddddd-0017-49cc-8cc1-dddddddd017",
+              "id": "dddddddd-0017-49cc-8cc1-dddddddd0017",
               "title": "Export board to CSV",
               "description": "Demo seed task #17 — fills kanban, dashboard, and directory UI.",
               "status": "DONE",
@@ -1317,7 +1317,7 @@
               "createdByUserId": "88888888-8888-4888-8888-888888888888"
             },
             {
-              "id": "dddddddd-0018-41cc-8cc1-dddddddd018",
+              "id": "dddddddd-0018-41cc-8cc1-dddddddd0018",
               "title": "Workspace logo upload",
               "description": "Demo seed task #18 — fills kanban, dashboard, and directory UI.",
               "status": "TODO",
@@ -1330,7 +1330,7 @@
               "createdByUserId": "33333333-3333-4333-8333-333333333333"
             },
             {
-              "id": "dddddddd-0019-42cc-8cc1-dddddddd019",
+              "id": "dddddddd-0019-42cc-8cc1-dddddddd0019",
               "title": "Manager promote confirmation",
               "description": "Demo seed task #19 — fills kanban, dashboard, and directory UI.",
               "status": "DOING",
@@ -1344,7 +1344,7 @@
           ],
           "sampleComments": [
             {
-              "taskId": "dddddddd-ddd2-4dd2-8dd2-dddddddddddd2",
+              "taskId": "dddddddd-ddd2-4dd2-8dd2-ddddddddddd2",
               "authorUserId": "77777777-7777-4777-8777-777777777777",
               "content": "@designer.dana can you confirm icon size on the card?",
               "mentionUserIds": [
@@ -1352,7 +1352,7 @@
               ]
             },
             {
-              "taskId": "dddddddd-ddd2-4dd2-8dd2-dddddddddddd2",
+              "taskId": "dddddddd-ddd2-4dd2-8dd2-ddddddddddd2",
               "authorUserId": "33333333-3333-4333-8333-333333333333",
               "content": "@dev.bob can you pair on this today?",
               "mentionUserIds": [
@@ -1367,7 +1367,7 @@
           "projectDescription": "Shared UI tokens and components.",
           "tasks": [
             {
-              "id": "dddddddd-ddd5-4dd5-8dd5-dddddddddddd5",
+              "id": "dddddddd-ddd5-4dd5-8dd5-ddddddddddd5",
               "title": "Role badge colors for owner vs member",
               "description": "Align StatusBadge with workspace roles.",
               "status": "DOING",
@@ -1379,7 +1379,7 @@
               "createdByUserId": "99999999-9999-4999-8999-999999999999"
             },
             {
-              "id": "dddddddd-ddd6-4dd6-8dd6-dddddddddddd6",
+              "id": "dddddddd-ddd6-4dd6-8dd6-ddddddddddd6",
               "title": "Dark mode contrast audit",
               "description": "Check slate palette on Kanban columns.",
               "status": "TODO",
@@ -1394,7 +1394,7 @@
           ],
           "sampleComments": [
             {
-              "taskId": "dddddddd-ddd6-4dd6-8dd6-dddddddddddd6",
+              "taskId": "dddddddd-ddd6-4dd6-8dd6-ddddddddddd6",
               "authorUserId": "33333333-3333-4333-8333-333333333333",
               "content": "@dev.bob can you pair on this today?",
               "mentionUserIds": [
@@ -1409,7 +1409,7 @@
           "projectDescription": "Responsive and visual polish.",
           "tasks": [
             {
-              "id": "dddddddd-0040-45cc-8cc1-dddddddd040",
+              "id": "dddddddd-0040-45cc-8cc1-dddddddd0040",
               "title": "FE role badge for platform user",
               "description": "Demo seed task #40 — fills kanban, dashboard, and directory UI.",
               "status": "DOING",
@@ -1422,7 +1422,7 @@
               "createdByUserId": "33333333-3333-4333-8333-333333333333"
             },
             {
-              "id": "dddddddd-0041-46cc-8cc1-dddddddd041",
+              "id": "dddddddd-0041-46cc-8cc1-dddddddd0041",
               "title": "Dashboard chart from getBoard",
               "description": "Demo seed task #41 — fills kanban, dashboard, and directory UI.",
               "status": "DONE",
@@ -1434,7 +1434,7 @@
               "createdByUserId": "99999999-9999-4999-8999-999999999999"
             },
             {
-              "id": "dddddddd-0042-47cc-8cc1-dddddddd042",
+              "id": "dddddddd-0042-47cc-8cc1-dddddddd0042",
               "title": "Project card relative dates",
               "description": "Demo seed task #42 — fills kanban, dashboard, and directory UI.",
               "status": "TODO",
@@ -1447,7 +1447,7 @@
               "createdByUserId": "33333333-3333-4333-8333-333333333333"
             },
             {
-              "id": "dddddddd-0043-48cc-8cc1-dddddddd043",
+              "id": "dddddddd-0043-48cc-8cc1-dddddddd0043",
               "title": "Task deep link share button",
               "description": "Demo seed task #43 — fills kanban, dashboard, and directory UI.",
               "status": "DOING",
@@ -1459,7 +1459,7 @@
               "createdByUserId": "99999999-9999-4999-8999-999999999999"
             },
             {
-              "id": "dddddddd-0044-49cc-8cc1-dddddddd044",
+              "id": "dddddddd-0044-49cc-8cc1-dddddddd0044",
               "title": "Presence dot on member rows",
               "description": "Demo seed task #44 — fills kanban, dashboard, and directory UI.",
               "status": "DONE",
@@ -1472,7 +1472,7 @@
               "createdByUserId": "33333333-3333-4333-8333-333333333333"
             },
             {
-              "id": "dddddddd-0045-41cc-8cc1-dddddddd045",
+              "id": "dddddddd-0045-41cc-8cc1-dddddddd0045",
               "title": "Bulk assign from board",
               "description": "Demo seed task #45 — fills kanban, dashboard, and directory UI.",
               "status": "TODO",
@@ -1484,7 +1484,7 @@
               "createdByUserId": "99999999-9999-4999-8999-999999999999"
             },
             {
-              "id": "dddddddd-0046-42cc-8cc1-dddddddd046",
+              "id": "dddddddd-0046-42cc-8cc1-dddddddd0046",
               "title": "Label filter on task list",
               "description": "Demo seed task #46 — fills kanban, dashboard, and directory UI.",
               "status": "DOING",
@@ -1497,7 +1497,7 @@
               "createdByUserId": "33333333-3333-4333-8333-333333333333"
             },
             {
-              "id": "dddddddd-0047-43cc-8cc1-dddddddd047",
+              "id": "dddddddd-0047-43cc-8cc1-dddddddd0047",
               "title": "Export board to CSV",
               "description": "Demo seed task #47 — fills kanban, dashboard, and directory UI.",
               "status": "DONE",
@@ -1509,7 +1509,7 @@
               "createdByUserId": "99999999-9999-4999-8999-999999999999"
             },
             {
-              "id": "dddddddd-0048-44cc-8cc1-dddddddd048",
+              "id": "dddddddd-0048-44cc-8cc1-dddddddd0048",
               "title": "Workspace logo upload",
               "description": "Demo seed task #48 — fills kanban, dashboard, and directory UI.",
               "status": "TODO",
@@ -1522,7 +1522,7 @@
               "createdByUserId": "33333333-3333-4333-8333-333333333333"
             },
             {
-              "id": "dddddddd-0049-45cc-8cc1-dddddddd049",
+              "id": "dddddddd-0049-45cc-8cc1-dddddddd0049",
               "title": "Manager promote confirmation",
               "description": "Demo seed task #49 — fills kanban, dashboard, and directory UI.",
               "status": "DOING",
@@ -1536,7 +1536,7 @@
           ],
           "sampleComments": [
             {
-              "taskId": "dddddddd-0041-46cc-8cc1-dddddddd041",
+              "taskId": "dddddddd-0041-46cc-8cc1-dddddddd0041",
               "authorUserId": "33333333-3333-4333-8333-333333333333",
               "content": "@dev.bob can you pair on this today?",
               "mentionUserIds": [
@@ -1553,7 +1553,7 @@
           "type": "TASK_ASSIGNED",
           "title": "Task assigned to you",
           "message": "Ngo Quang Tien assigned you: Kanban comment count badge",
-          "targetId": "dddddddd-ddd2-4dd2-8dd2-dddddddddddd2",
+          "targetId": "dddddddd-ddd2-4dd2-8dd2-ddddddddddd2",
           "targetType": "TASK",
           "status": "UNREAD"
         },
@@ -1573,7 +1573,7 @@
           "type": "TASK_ASSIGNED",
           "title": "Task assigned to you",
           "message": "Product Lab: Workspace switcher persistence",
-          "targetId": "dddddddd-ddd3-4dd3-8dd3-dddddddddddd3",
+          "targetId": "dddddddd-ddd3-4dd3-8dd3-ddddddddddd3",
           "targetType": "TASK",
           "status": "UNREAD"
         },
@@ -1583,7 +1583,7 @@
           "type": "TASK_ASSIGNED",
           "title": "Task assigned to you",
           "message": "Product Lab: Activity feed pagination",
-          "targetId": "dddddddd-ddd4-4dd4-8dd4-dddddddddddd4",
+          "targetId": "dddddddd-ddd4-4dd4-8dd4-ddddddddddd4",
           "targetType": "TASK",
           "status": "READ"
         },
@@ -1593,7 +1593,7 @@
           "type": "TASK_ASSIGNED",
           "title": "Task assigned to you",
           "message": "Product Lab: FE role badge for platform user",
-          "targetId": "dddddddd-0010-42cc-8cc1-dddddddd010",
+          "targetId": "dddddddd-0010-42cc-8cc1-dddddddd0010",
           "targetType": "TASK",
           "status": "UNREAD"
         },
@@ -1603,7 +1603,7 @@
           "type": "TASK_ASSIGNED",
           "title": "Task assigned to you",
           "message": "Product Lab: Dashboard chart from getBoard",
-          "targetId": "dddddddd-0011-43cc-8cc1-dddddddd011",
+          "targetId": "dddddddd-0011-43cc-8cc1-dddddddd0011",
           "targetType": "TASK",
           "status": "READ"
         },
@@ -1613,7 +1613,7 @@
           "type": "TASK_ASSIGNED",
           "title": "Task assigned to you",
           "message": "Product Lab: Project card relative dates",
-          "targetId": "dddddddd-0012-44cc-8cc1-dddddddd012",
+          "targetId": "dddddddd-0012-44cc-8cc1-dddddddd0012",
           "targetType": "TASK",
           "status": "UNREAD"
         },
@@ -1623,7 +1623,7 @@
           "type": "TASK_ASSIGNED",
           "title": "Task assigned to you",
           "message": "Product Lab: Task deep link share button",
-          "targetId": "dddddddd-0013-45cc-8cc1-dddddddd013",
+          "targetId": "dddddddd-0013-45cc-8cc1-dddddddd0013",
           "targetType": "TASK",
           "status": "READ"
         },
@@ -1727,7 +1727,7 @@
               "createdByUserId": "22222222-2222-4222-8222-222222222222"
             },
             {
-              "id": "eeeeeeee-0010-42cc-8cc1-eeeeeeee010",
+              "id": "eeeeeeee-0010-42cc-8cc1-eeeeeeee0010",
               "title": "Helm rollout timeout tuning",
               "description": "Demo seed task #10 — fills kanban, dashboard, and directory UI.",
               "status": "DOING",
@@ -1740,7 +1740,7 @@
               "createdByUserId": "11111111-1111-4111-8111-111111111111"
             },
             {
-              "id": "eeeeeeee-0011-43cc-8cc1-eeeeeeee011",
+              "id": "eeeeeeee-0011-43cc-8cc1-eeeeeeee0011",
               "title": "Loki retention policy",
               "description": "Demo seed task #11 — fills kanban, dashboard, and directory UI.",
               "status": "DONE",
@@ -1752,7 +1752,7 @@
               "createdByUserId": "44444444-4444-4444-8444-444444444444"
             },
             {
-              "id": "eeeeeeee-0012-44cc-8cc1-eeeeeeee012",
+              "id": "eeeeeeee-0012-44cc-8cc1-eeeeeeee0012",
               "title": "Backup restore drill",
               "description": "Demo seed task #12 — fills kanban, dashboard, and directory UI.",
               "status": "TODO",
@@ -1765,7 +1765,7 @@
               "createdByUserId": "11111111-1111-4111-8111-111111111111"
             },
             {
-              "id": "eeeeeeee-0013-45cc-8cc1-eeeeeeee013",
+              "id": "eeeeeeee-0013-45cc-8cc1-eeeeeeee0013",
               "title": "Traefik access log sampling",
               "description": "Demo seed task #13 — fills kanban, dashboard, and directory UI.",
               "status": "DOING",
@@ -1777,7 +1777,7 @@
               "createdByUserId": "44444444-4444-4444-8444-444444444444"
             },
             {
-              "id": "eeeeeeee-0014-46cc-8cc1-eeeeeeee014",
+              "id": "eeeeeeee-0014-46cc-8cc1-eeeeeeee0014",
               "title": "Mongo index review",
               "description": "Demo seed task #14 — fills kanban, dashboard, and directory UI.",
               "status": "DONE",
@@ -1790,7 +1790,7 @@
               "createdByUserId": "11111111-1111-4111-8111-111111111111"
             },
             {
-              "id": "eeeeeeee-0015-47cc-8cc1-eeeeeeee015",
+              "id": "eeeeeeee-0015-47cc-8cc1-eeeeeeee0015",
               "title": "Redis memory alert",
               "description": "Demo seed task #15 — fills kanban, dashboard, and directory UI.",
               "status": "TODO",
@@ -1809,7 +1809,7 @@
           "projectDescription": "Build, deploy, and smoke automation.",
           "tasks": [
             {
-              "id": "eeeeeeee-0030-44cc-8cc1-eeeeeeee030",
+              "id": "eeeeeeee-0030-44cc-8cc1-eeeeeeee0030",
               "title": "Helm rollout timeout tuning",
               "description": "Demo seed task #30 — fills kanban, dashboard, and directory UI.",
               "status": "TODO",
@@ -1822,7 +1822,7 @@
               "createdByUserId": "11111111-1111-4111-8111-111111111111"
             },
             {
-              "id": "eeeeeeee-0031-45cc-8cc1-eeeeeeee031",
+              "id": "eeeeeeee-0031-45cc-8cc1-eeeeeeee0031",
               "title": "Loki retention policy",
               "description": "Demo seed task #31 — fills kanban, dashboard, and directory UI.",
               "status": "DOING",
@@ -1834,7 +1834,7 @@
               "createdByUserId": "44444444-4444-4444-8444-444444444444"
             },
             {
-              "id": "eeeeeeee-0032-46cc-8cc1-eeeeeeee032",
+              "id": "eeeeeeee-0032-46cc-8cc1-eeeeeeee0032",
               "title": "Backup restore drill",
               "description": "Demo seed task #32 — fills kanban, dashboard, and directory UI.",
               "status": "DONE",
@@ -1847,7 +1847,7 @@
               "createdByUserId": "11111111-1111-4111-8111-111111111111"
             },
             {
-              "id": "eeeeeeee-0033-47cc-8cc1-eeeeeeee033",
+              "id": "eeeeeeee-0033-47cc-8cc1-eeeeeeee0033",
               "title": "Traefik access log sampling",
               "description": "Demo seed task #33 — fills kanban, dashboard, and directory UI.",
               "status": "TODO",
@@ -1859,7 +1859,7 @@
               "createdByUserId": "44444444-4444-4444-8444-444444444444"
             },
             {
-              "id": "eeeeeeee-0034-48cc-8cc1-eeeeeeee034",
+              "id": "eeeeeeee-0034-48cc-8cc1-eeeeeeee0034",
               "title": "Mongo index review",
               "description": "Demo seed task #34 — fills kanban, dashboard, and directory UI.",
               "status": "DOING",
@@ -1872,7 +1872,7 @@
               "createdByUserId": "11111111-1111-4111-8111-111111111111"
             },
             {
-              "id": "eeeeeeee-0035-49cc-8cc1-eeeeeeee035",
+              "id": "eeeeeeee-0035-49cc-8cc1-eeeeeeee0035",
               "title": "Redis memory alert",
               "description": "Demo seed task #35 — fills kanban, dashboard, and directory UI.",
               "status": "DONE",
@@ -1884,7 +1884,7 @@
               "createdByUserId": "44444444-4444-4444-8444-444444444444"
             },
             {
-              "id": "eeeeeeee-0036-41cc-8cc1-eeeeeeee036",
+              "id": "eeeeeeee-0036-41cc-8cc1-eeeeeeee0036",
               "title": "CI image scan gate",
               "description": "Demo seed task #36 — fills kanban, dashboard, and directory UI.",
               "status": "TODO",
@@ -1897,7 +1897,7 @@
               "createdByUserId": "11111111-1111-4111-8111-111111111111"
             },
             {
-              "id": "eeeeeeee-0037-42cc-8cc1-eeeeeeee037",
+              "id": "eeeeeeee-0037-42cc-8cc1-eeeeeeee0037",
               "title": "Seed job idempotency test",
               "description": "Demo seed task #37 — fills kanban, dashboard, and directory UI.",
               "status": "DOING",
@@ -1982,7 +1982,7 @@
           "projectDescription": "Scratch tasks.",
           "tasks": [
             {
-              "id": "ffffffff-fff1-4ff1-8ff1-ffffffffff1",
+              "id": "ffffffff-fff1-4ff1-8ff1-0ffffffffff1",
               "title": "Try create workspace flow from scratch",
               "description": "Compare with seeded Solo Sandbox.",
               "status": "TODO",
@@ -1994,7 +1994,7 @@
               "createdByUserId": "61000000-0000-4000-8000-000000000001"
             },
             {
-              "id": "ffffffff-0010-42cc-8cc1-ffffffff010",
+              "id": "ffffffff-0010-42cc-8cc1-ffffffff0010",
               "title": "Personal backlog item",
               "description": "Demo seed task #10 — fills kanban, dashboard, and directory UI.",
               "status": "DOING",
@@ -2007,7 +2007,7 @@
               "createdByUserId": "61000000-0000-4000-8000-000000000001"
             },
             {
-              "id": "ffffffff-0011-43cc-8cc1-ffffffff011",
+              "id": "ffffffff-0011-43cc-8cc1-ffffffff0011",
               "title": "Try labels",
               "description": "Demo seed task #11 — fills kanban, dashboard, and directory UI.",
               "status": "DONE",
@@ -2019,7 +2019,7 @@
               "createdByUserId": "61000000-0000-4000-8000-000000000001"
             },
             {
-              "id": "ffffffff-0012-44cc-8cc1-ffffffff012",
+              "id": "ffffffff-0012-44cc-8cc1-ffffffff0012",
               "title": "Check notifications",
               "description": "Demo seed task #12 — fills kanban, dashboard, and directory UI.",
               "status": "TODO",
@@ -2032,7 +2032,7 @@
               "createdByUserId": "61000000-0000-4000-8000-000000000001"
             },
             {
-              "id": "ffffffff-0013-45cc-8cc1-ffffffff013",
+              "id": "ffffffff-0013-45cc-8cc1-ffffffff0013",
               "title": "Sandbox task",
               "description": "Demo seed task #13 — fills kanban, dashboard, and directory UI.",
               "status": "DOING",

@@ -26,6 +26,7 @@ export class RegisterUseCase {
 
     try {
       await this.userProfileClient.createPendingProfile({
+        email: input.email,
         fullName: input.fullName,
         userId: user.userId,
       });

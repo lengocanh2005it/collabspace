@@ -5,6 +5,7 @@ import type { UserStatus } from '../entities/user-status.entity';
 export const USER_PROFILE_REPOSITORY = Symbol('USER_PROFILE_REPOSITORY');
 
 export type CreatePendingUserProfileInput = {
+  email?: string;
   fullName: string;
   userId: string;
 };

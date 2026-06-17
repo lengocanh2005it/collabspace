@@ -285,6 +285,7 @@ describe('Auth use cases (integration)', () => {
       verificationRequired: true,
     });
     expect(userProfileClientMock.createPendingProfile).toHaveBeenCalledWith({
+      email: 'new@collabspace.dev',
       fullName: 'New User',
       userId: 'user-3',
     });

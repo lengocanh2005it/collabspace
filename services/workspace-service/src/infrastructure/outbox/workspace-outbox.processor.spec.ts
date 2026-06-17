@@ -63,8 +63,13 @@ describe('WorkspaceOutboxProcessor', () => {
     expect(rabbitChannelMock.publish).toHaveBeenCalledWith(
       'collabspace_exchange',
       WORKSPACE_INVITED_EVENT,
-      Buffer.from(JSON.stringify(payload)),
+      expect.any(Buffer),
     );
+    const invitedBuffer = (rabbitChannelMock.publish as jest.Mock).mock.calls[0][2] as Buffer;
+    expect(JSON.parse(invitedBuffer.toString())).toMatchObject({
+      pattern: WORKSPACE_INVITED_EVENT,
+      data: payload,
+    });
     expect(workspaceOutboxServiceMock.markProcessed).toHaveBeenCalledWith('outbox-1');
   });
 
@@ -90,8 +95,13 @@ describe('WorkspaceOutboxProcessor', () => {
     expect(rabbitChannelMock.publish).toHaveBeenCalledWith(
       'collabspace_exchange',
       WORKSPACE_DELETED_EVENT,
-      Buffer.from(JSON.stringify(payload)),
+      expect.any(Buffer),
     );
+    const deletedBuffer = (rabbitChannelMock.publish as jest.Mock).mock.calls[0][2] as Buffer;
+    expect(JSON.parse(deletedBuffer.toString())).toMatchObject({
+      pattern: WORKSPACE_DELETED_EVENT,
+      data: payload,
+    });
     expect(workspaceOutboxServiceMock.markProcessed).toHaveBeenCalledWith('outbox-2');
   });
 

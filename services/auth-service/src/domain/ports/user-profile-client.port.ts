@@ -7,6 +7,7 @@ export type UserProfileSnapshot = {
 };
 
 export type CreatePendingProfileInput = {
+  email?: string;
   fullName: string;
   userId: string;
 };

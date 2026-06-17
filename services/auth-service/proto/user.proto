@@ -11,6 +11,7 @@ service UserProfilesService {
 message CreatePendingProfileRequest {
   string user_id = 1;
   string full_name = 2;
+  string email = 3;
 }
 
 message CreatePendingProfileResponse {
