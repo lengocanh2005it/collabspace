@@ -23,6 +23,19 @@ describe('rmq-nest-envelope', () => {
     });
   });
 
+  it('deserializes pre-parsed Nest envelope objects', () => {
+    const envelope = {
+      pattern: 'workspace_invited',
+      data: { workspaceId: 'ws-1' },
+      id: 'x',
+    };
+
+    expect(deserializeCollabspaceRmqMessage(envelope)).toEqual({
+      pattern: 'workspace_invited',
+      data: { workspaceId: 'ws-1' },
+    });
+  });
+
   it('falls back to routing key for legacy raw exchange payloads', () => {
     const body = JSON.stringify({ workspaceId: 'ws-1', inviteEmail: 'a@b.com' });
 

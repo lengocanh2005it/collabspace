@@ -26,16 +26,25 @@ export function buildRmqNestEnvelope(
  * Legacy messages use the AMQP routing key as the event pattern.
  */
 export function deserializeCollabspaceRmqMessage(
-  value: string | Buffer,
+  value: string | Buffer | Record<string, unknown>,
   routingKey?: string | null,
 ): RmqInboundRequest {
-  const raw = typeof value === 'string' ? value : value.toString();
   let parsed: unknown;
 
-  try {
-    parsed = JSON.parse(raw) as unknown;
-  } catch {
-    return { pattern: routingKey ?? null, data: raw };
+  if (
+    value !== null &&
+    typeof value === 'object' &&
+    !Buffer.isBuffer(value) &&
+    !Array.isArray(value)
+  ) {
+    parsed = value;
+  } else {
+    const raw = typeof value === 'string' ? value : value.toString();
+    try {
+      parsed = JSON.parse(raw) as unknown;
+    } catch {
+      return { pattern: routingKey ?? null, data: raw };
+    }
   }
 
   if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
