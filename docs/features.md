@@ -203,7 +203,8 @@ Hướng dẫn chạy demo: [mvp-demo-scope.md](./mvp-demo-scope.md#demo-story).
 - Time tracking, automation rules
 - Dashboard / báo cáo nâng cao
 - Audit log chi tiết cho compliance
-- Frontend client (repo hiện tập trung backend + infra)
+
+**Frontend:** SPA riêng tại repo **`collabspace-fe`** (Vite + React). MVP demo 7 bước **Done** trên UI (2026-06-17). Polish + engineering debt: `collabspace-fe/docs/fe-be-alignment.md`, `collabspace-fe/docs/fe-backlog.md`.
 
 ---
 
@@ -248,4 +249,5 @@ Hướng dẫn chạy demo: [mvp-demo-scope.md](./mvp-demo-scope.md#demo-story).
 | [infrastructure/vault/README.md](../infrastructure/vault/README.md) | HashiCorp Vault — KV paths, local dev, ESO on K8s |
 | [backup-policy.md](./backup-policy.md) | Backup RPO/RTO, restore drill |
 | [team/phan-phu-tho-infrastructure-backlog.md](./team/phan-phu-tho-infrastructure-backlog.md) | Infra/DevOps (Phan Phú Thọ) |
-| [team/application-backlog.md](./team/application-backlog.md) | Logic app, test, E2E, activity feed (Anh, Tiến, Tín) |
+| [team/application-backlog.md](./team/application-backlog.md) | Logic app, test, E2E (Anh, Tiến, Tín) |
+| **Frontend** repo `collabspace-fe` (sibling) | SPA — `docs/features.md`, `docs/fe-be-alignment.md` trong repo FE |

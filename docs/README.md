@@ -9,6 +9,7 @@ Chỉ mục tài liệu dự án (tiếng Việt có dấu). Tài liệu kỹ th
 | [features.md](./features.md) | Tính năng và trạng thái implement (nguồn chính) |
 | [roles-and-permissions.md](./roles-and-permissions.md) | **Platform vs workspace roles** — admin, owner, manager, member |
 | [mvp-demo-scope.md](./mvp-demo-scope.md) | Phạm vi demo MVP và tiêu chí chấp nhận |
+| **Frontend** (`collabspace-fe`) | SPA React — trạng thái UI: `collabspace-fe/docs/features.md`, gap: `collabspace-fe/docs/fe-be-alignment.md` |
 
 ## Kiến trúc & hợp đồng
 

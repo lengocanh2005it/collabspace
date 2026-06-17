@@ -137,14 +137,16 @@ Fan-out: `BroadcastJobService` (persisted jobs, batch 100, recipient dedupe, `Id
 
 ---
 
-## Đồng bộ Admin UI (chờ team frontend)
+## Đồng bộ Admin UI (`collabspace-fe`)
 
 | # | Việc | Trạng thái |
 |---|------|------------|
-| 1 | UI gửi danh sách endpoint / OpenAPI client | [ ] |
-| 2 | Đối chiếu path `/admin/*` với bảng trên | [ ] |
-| 3 | Dùng `GET /users/admin/all` (aggregate backend) | [x] backend ready |
-| 4 | Error codes: `403` + `PLATFORM_ADMIN_REQUIRED`, `DIRECTORY_QUERY_REQUIRED`, validation | [x] backend ready |
+| 1 | UI gọi đúng endpoint / typed `adminApi` | [x] |
+| 2 | Đối chiếu path `/admin/*` với bảng contract | [x] |
+| 3 | Dùng `GET /users/admin/all` (aggregate backend) | [x] |
+| 4 | Error codes: `403` + `PLATFORM_ADMIN_REQUIRED`, `DIRECTORY_QUERY_REQUIRED`, validation | [x] |
+| 5 | 4 tab: Roles, Users, Workspaces, Broadcast + ban/unban | [x] |
+| 6 | Polish còn lại (overview KPI, owner name, `force-join` UI) | [ ] — xem `collabspace-fe/docs/fe-backlog.md` § C |
 
 **OpenAPI tags:** `auth-admin`, `users-admin`, `workspaces-admin`, `notifications-admin` — `/swagger` từng service.
 
@@ -155,7 +157,7 @@ Fan-out: `BroadcastJobService` (persisted jobs, batch 100, recipient dedupe, `Id
 | Hạng mục | Lý do |
 |----------|--------|
 | `admin-service` / BFF | Guard + route per service đủ MVP |
-| Admin UI repo | Team riêng |
+| Admin UI repo | Team riêng — **`collabspace-fe`** MVP Done; polish trong `fe-backlog.md` |
 | `phone` column | Chưa có schema |
 | Audit log DB | MVP: structured log only |
 | Hard delete | GDPR soft delete + anonymize |

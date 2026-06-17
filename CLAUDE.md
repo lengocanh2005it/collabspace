@@ -61,7 +61,7 @@ Subagents: `.claude/agents/` (`nest-reviewer`, `mvp-implementer`, `contract-guar
   - workspace: host `3002` -> container `8080`
   - task: host `3003` -> container `3000`
   - notification: host `3004` -> container `3000`
-- **MVP backend APIs** are largely complete per `docs/features.md`; remaining product gaps: workspace-level activity feed, per-service e2e tests, frontend UI. **OpenAPI 5/5** Done (Swagger UI + response schemas, gateway `/swagger/<service>`). **Demo E2E script:** `scripts/demo-e2e.sh` / `.ps1`. **Infra prod gaps:** `docs/team/phan-phu-tho-infrastructure-backlog.md`.
+- **MVP backend APIs** are largely complete per `docs/features.md`; remaining product gaps: per-service e2e tests, FE polish/tests in **`collabspace-fe`**. **OpenAPI 5/5** Done (Swagger UI + response schemas, gateway `/swagger/<service>`). **Demo E2E script:** `scripts/demo-e2e.sh` / `.ps1`. **Infra prod gaps:** `docs/team/phan-phu-tho-infrastructure-backlog.md`.
 - **pnpm workspace** at repo root (`package.json`, `pnpm-workspace.yaml`) — `pnpm run build|test|lint` from root, or per `services/*`.
 - **Lint & format:** Biome at root (`pnpm run format`, `pnpm run lint`); per-service `lint` = ESLint type-checked only. See `docs/tooling/biome-migration.md`.
 - Use `pnpm`, not npm, for the NestJS services unless a service-specific file proves otherwise.

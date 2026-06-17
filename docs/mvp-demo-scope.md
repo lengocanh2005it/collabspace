@@ -36,13 +36,14 @@ Các API cốt lõi cho demo (theo [features.md](./features.md)):
 
 Checklist chi tiết theo service: [mvp-roadmap.md — Demo Acceptance Checklist](../.claude/docs/mvp-roadmap.md#demo-acceptance-checklist).
 
-## Xác minh demo — chưa đóng hết
+## Xác minh demo — trạng thái client
 
-API đã có; còn thiếu **chứng minh tự động** và client:
+API backend **Done**; chứng minh tự động và client:
 
 - [x] Script demo E2E 7 bước (`scripts/demo-e2e.sh` + `scripts/demo-e2e.ps1`)
 - [x] Smoke qua Traefik gateway (`BASE_URL=http://localhost/api/v1` mặc định)
-- [ ] Frontend / UI client trong repo
+- [x] **Frontend SPA** — repo riêng [`collabspace-fe`](https://github.com/lengocanh2005it/collabspace-fe): luồng MVP 7 bước **Done** trên UI (2026-06-17). Còn polish hiển thị + technical debt (tests, lazy routes, ErrorBoundary) — xem `collabspace-fe/docs/fe-be-alignment.md`.
+- [ ] FE automated E2E (Playwright) trong `collabspace-fe`
 - [x] Gắn `demo-e2e` vào CI smoke sau deploy production (`run-demo-e2e-prod.sh` sau `helm-deploy-ci.sh`)
 
 ## Ngoài phạm vi

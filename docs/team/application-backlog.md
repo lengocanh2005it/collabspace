@@ -19,8 +19,8 @@ Tài liệu này liệt kê **việc còn lại về logic code / API / test / d
 | **Demo E2E script** | ✅ `scripts/demo-e2e.sh` + `scripts/demo-e2e.ps1` — 7 bước qua Traefik |
 | **Activity feed task** | ✅ `GET /api/v1/tasks/:id/activity` (`get-task-activity.handler.ts`) |
 | **OpenAPI 5/5** | ✅ Swagger UI 5 service + response schemas; public gateway `/swagger/<service>` — [service-urls.md](../service-urls.md) |
-| **Không có `TODO`/`FIXME`** trong `services/**` | Gap chủ yếu: contract test tự động, frontend UI |
-| **Thiếu lớn nhất (app)** | Contract test; frontend MVP UI |
+| **Không có `TODO`/`FIXME`** trong `services/**` | Gap chủ yếu: contract test tự động, FE polish & tests |
+| **Thiếu lớn nhất (app)** | Contract test; FE automated E2E; UI polish (repo `collabspace-fe`) |
 | **Rủi ro cấu hình** | Đã harden: prod yêu cầu `BREVO_API_KEY`, `SERVICE_JWT_SECRET`, `DATABASE_URL`, Azure Blob; `WORKSPACE_CLIENT_MODE=http` bắt buộc trên task prod |
 
 ### Phân công (theo [README.md](../../README.md#team))
