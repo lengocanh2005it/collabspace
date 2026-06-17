@@ -1,0 +1,44 @@
+# values-staging.yaml.example
+# This file demonstrates how to configure the CollabSpace Helm chart for a staging/production
+# environment using the External Secrets Operator (ESO) and Vault.
+#
+# DO NOT copy this file over your local dev `values.yaml` unless you have installed
+# ESO and Vault on your local Kubernetes cluster.
+#
+# Usage:
+# helm install collabspace ./infrastructure/helm/collabspace -f ./infrastructure/helm/collabspace/values-staging.yaml.example
+
+global:
+  environment: "staging"
+  logLevel: "info"
+  
+  # When externalSecrets.enabled is true, the Helm chart will NOT create standard
+  # Kubernetes Secrets containing raw stringData. Instead, it assumes that the 
+  # External Secrets Operator will dynamically inject secrets from Vault.
+  # 
+  # See: infrastructure/vault/k8s/external-secrets.yaml
+  externalSecrets:
+    enabled: true
+    storeName: "vault-backend"
+
+# Optional overrides for staging
+workspaceService:
+  replicaCount: 2
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+userService:
+  replicaCount: 2
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+authService:
+  replicaCount: 2
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
