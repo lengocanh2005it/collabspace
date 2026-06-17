@@ -12,7 +12,7 @@ global:
   # When true, Helm does not render {app}-secrets — use External Secrets Operator + Vault
   # (infrastructure/vault/k8s/). Pods still mount secrets via secretRef in deployment.yaml.
   externalSecrets:
-    enabled: false
+    enabled: true
     vaultKvPath: collabspace/dev
   secrets:
     jwtSecret: change-me-in-production
@@ -219,7 +219,7 @@ gateway:
   # Public host/IP for Grafana root_url (override in values-prod via PROD_DOMAIN).
   publicHost: ""
   tls:
-    enabled: false          # set true in values-prod when domain + cert are ready
+    enabled: true          # Forced true per DevSecOps strict policy
     certResolver: letsencrypt
     sans: []                # e.g. ["www.ngocanh2005it.site"]
   grafana:
