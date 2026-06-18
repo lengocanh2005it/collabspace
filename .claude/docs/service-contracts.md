@@ -640,6 +640,7 @@ Rules:
 Minimum HTTP routes:
 
 - `GET /notifications?status=active|archived`
+- `GET /notifications/stream`
 - `PATCH /notifications/{id}/read`
 - `PATCH /notifications/{id}/archive`
 - optional `PATCH /notifications/read-all`
@@ -659,6 +660,6 @@ Minimum notification fields:
 
 Rules:
 
-- MVP does not require WebSocket.
+- Realtime notification delivery may use SSE on `GET /notifications/stream`; list/read/archive HTTP endpoints remain the source of truth.
 - Notification API should filter by current authenticated user.
 - Event consumer must be idempotent.

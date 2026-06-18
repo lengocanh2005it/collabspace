@@ -148,13 +148,15 @@ Tài liệu này là **nguồn chính** mô tả chức năng và mức độ ho
 - Dedupe theo `eventId` (at-least-once safe)
 - **JWT verification** qua auth gRPC (`AuthGuard`); dev fallback `X-User-Id` khi `ALLOW_DEV_IDENTITY_HEADERS=true`
 - `GET /notifications` — danh sách notification của user (JWT qua `AuthGuard`)
+- `GET /notifications/stream` — SSE invalidation stream cho badge/list realtime
 - `PATCH /notifications/:id/read` — đánh dấu đã đọc
 - `PATCH /notifications/read-all` — đánh dấu tất cả đã đọc
 - Health live/ready
 
-**Out of scope (MVP)**
+**Realtime delivery**
 
-- WebSocket / push realtime — client polling `GET /notifications`
+- SSE stream cho notification badge/list
+- `GET /notifications` vẫn là source of truth; client reconcile lại sau event stream
 
 ---
 

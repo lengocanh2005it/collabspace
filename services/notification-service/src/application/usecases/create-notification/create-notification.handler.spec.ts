@@ -4,10 +4,15 @@ import type { INotificationRepository } from "../../../domain/repositories/INoti
 import type { IProcessedEventRepository } from "../../../domain/repositories/IProcessedEventRepository";
 import { NotificationType } from "../../../domain/value-objects/NotificationType";
 import type { NotificationCountCacheService } from "../../../infrastructure/cache/notification-count-cache.service";
+import type { NotificationRealtimeService } from "../../services/notification-realtime.service";
 
 const noopCountCache = {
   invalidateUnreadCount: jest.fn().mockResolvedValue(undefined),
 } as unknown as NotificationCountCacheService;
+
+const noopRealtime = {
+  emitNotificationCreated: jest.fn().mockResolvedValue(undefined),
+} as unknown as NotificationRealtimeService;
 
 describe("CreateNotificationHandler", () => {
   let handler: CreateNotificationHandler;
@@ -15,6 +20,7 @@ describe("CreateNotificationHandler", () => {
   let mockProcessedEventRepository: jest.Mocked<IProcessedEventRepository>;
 
   beforeEach(() => {
+    jest.clearAllMocks();
     mockRepository = {
       createAsync: jest.fn(),
       createBroadcastAsync: jest.fn(),
@@ -33,6 +39,7 @@ describe("CreateNotificationHandler", () => {
       mockRepository,
       mockProcessedEventRepository,
       noopCountCache,
+      noopRealtime,
     );
   });
 
@@ -54,6 +61,10 @@ describe("CreateNotificationHandler", () => {
 
     expect(result.notificationId).toBe("new-notif-id");
     expect(mockRepository.createAsync).toHaveBeenCalledTimes(1);
+    expect(noopRealtime.emitNotificationCreated).toHaveBeenCalledWith(
+      "recipient-123",
+      "new-notif-id",
+    );
     const savedNotification = mockRepository.createAsync.mock.calls[0][0];
     expect(savedNotification.getRecipientId()).toBe("recipient-123");
     expect(savedNotification.getTitle()).toBe("New Task");

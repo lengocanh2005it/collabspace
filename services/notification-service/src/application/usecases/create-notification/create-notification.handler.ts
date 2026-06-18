@@ -12,6 +12,7 @@ import {
   PROCESSED_EVENT_REPOSITORY_TOKEN,
 } from "../../../domain/repositories/IProcessedEventRepository";
 import { NotificationCountCacheService } from "../../../infrastructure/cache/notification-count-cache.service";
+import { NotificationRealtimeService } from "../../services/notification-realtime.service";
 
 export interface CreateNotificationResponse {
   notificationId: string;
@@ -28,6 +29,7 @@ export class CreateNotificationHandler
     @Inject(PROCESSED_EVENT_REPOSITORY_TOKEN)
     private readonly processedEventRepository: IProcessedEventRepository,
     private readonly countCache: NotificationCountCacheService,
+    private readonly notificationRealtime: NotificationRealtimeService,
   ) {}
 
   async execute(command: CreateNotificationCommand): Promise<CreateNotificationResponse> {
@@ -58,6 +60,10 @@ export class CreateNotificationHandler
 
       // New unread notification — bust the cached count
       await this.countCache.invalidateUnreadCount(command.recipientId);
+      await this.notificationRealtime.emitNotificationCreated(
+        command.recipientId,
+        savedNotificationId,
+      );
 
       return {
         notificationId: savedNotificationId,
