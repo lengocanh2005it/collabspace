@@ -5,6 +5,7 @@ import { MongooseModule } from "@nestjs/mongoose";
 import { ConfigModule, ConfigService } from "@nestjs/config";
 
 import { TaskController } from "./presentation/controllers/task.controller";
+import { TaskAdminController } from "./presentation/controllers/task-admin.controller";
 import { HealthController } from "./presentation/controllers/health.controller";
 import { TaskCommentController } from "./presentation/controllers/task-comment.controller";
 import { TaskHealthService } from "./health/task-health.service";
@@ -29,6 +30,7 @@ import { DeleteCommentHandler } from "./application/usecases/comments/delete/del
 import { SyncUserReplicaHandler } from "./application/usecases/sync-user-replica.handler";
 import { CreateUserReplicaHandler } from "./application/usecases/create-user-replica.handler";
 import { GetTaskActivityHandler } from "./application/usecases/get-task-activity.handler";
+import { CountTasksByWorkspaceAdminUseCase } from "./application/usecases/count-tasks-by-workspace-admin.use-case";
 
 // Services
 import { AzureBlobService } from "./infrastructure/services/azure-blob.service";
@@ -84,6 +86,7 @@ import { RabbitMqModule } from "./infrastructure/messaging/rabbitmq/rabbitmq.mod
 import { ConfigurationModule } from "./configuration/configuration.module";
 import { MetricsModule } from "./metrics/metrics.module";
 import { AuthModule } from "./integrations/auth/auth.module";
+import { platformAdminAuthProviders } from "./integrations/auth/platform-admin-auth.providers";
 import { RedisModule } from "./infrastructure/cache/redis.module";
 
 const Handlers = [
@@ -104,6 +107,7 @@ const Handlers = [
   SyncUserReplicaHandler,
   CreateUserReplicaHandler,
   GetTaskActivityHandler,
+  CountTasksByWorkspaceAdminUseCase,
 ];
 
 @Module({
@@ -140,6 +144,7 @@ const Handlers = [
   controllers: [
     HealthController,
     TaskController,
+    TaskAdminController,
     TaskCommentController,
     UserEventController,
     WorkspaceEventController,
@@ -161,6 +166,7 @@ const Handlers = [
     IdempotencyService,
     AuthGuard,
     WorkspaceValidationGuard,
+    ...platformAdminAuthProviders,
     {
       provide: WORKSPACE_CLIENT_TOKEN,
       useFactory: (
