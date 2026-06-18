@@ -51,6 +51,8 @@ ENV NODE_PATH=/app/node_modules:/app/services/${SERVICE_NAME}/node_modules
 WORKDIR /app
 RUN apk add --no-cache wget \
     && apk upgrade --no-cache \
+    && rm -rf /usr/local/lib/node_modules/npm \
+    && rm -f /usr/local/bin/npm /usr/local/bin/npx \
     && addgroup -S appgroup \
     && adduser -S appuser -G appgroup
 # pnpm workspace: hoisted store at root + service-level symlinks.
