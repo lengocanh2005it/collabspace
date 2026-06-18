@@ -17,6 +17,16 @@ export class WorkspaceAdminController {
     return this.useCase.list();
   }
 
+  @Get('membership-counts')
+  @ApiOperation({
+    summary: 'Count workspaces per user (member or owner)',
+    description:
+      'Returns a map of userId → distinct workspace membership count from workspace_members.',
+  })
+  membershipCounts() {
+    return this.useCase.membershipCountsByUser();
+  }
+
   @Delete(':id')
   @HttpCode(204)
   @ApiOperation({ summary: 'Force-delete a workspace' })

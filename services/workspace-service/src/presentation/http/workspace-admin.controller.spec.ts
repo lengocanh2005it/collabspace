@@ -10,6 +10,7 @@ describe('WorkspaceAdminController (http)', () => {
     forceDelete: jest.fn(),
     forceJoin: jest.fn(),
     list: jest.fn(),
+    membershipCountsByUser: jest.fn(),
   };
   const identityResolver = {
     resolve: jest.fn(),
@@ -62,6 +63,21 @@ describe('WorkspaceAdminController (http)', () => {
       .set('Authorization', 'Bearer admin')
       .expect(200)
       .expect([{ id: 'workspace-1', memberCount: 2, name: 'Demo' }]);
+  });
+
+  it('returns workspace membership counts for platform admins', async () => {
+    identityResolver.resolve.mockResolvedValue({
+      role: 'admin',
+      roles: ['admin'],
+      userId: 'admin-1',
+    });
+    useCase.membershipCountsByUser.mockResolvedValue({ 'user-1': 2 });
+
+    await request(app.getHttpServer())
+      .get('/api/v1/workspaces/admin/membership-counts')
+      .set('Authorization', 'Bearer admin')
+      .expect(200)
+      .expect({ 'user-1': 2 });
   });
 
   afterAll(async () => {

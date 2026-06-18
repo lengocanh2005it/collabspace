@@ -3,6 +3,10 @@ import {
   type IWorkspaceRepository,
   WORKSPACE_REPOSITORY,
 } from '../../../domain/repositories/workspace.repository';
+import {
+  type IWorkspaceMemberRepository,
+  WORKSPACE_MEMBER_REPOSITORY,
+} from '../../../domain/repositories/workspace-member.repository';
 
 @Injectable()
 export class ManageWorkspacesAdminUseCase {
@@ -11,10 +15,16 @@ export class ManageWorkspacesAdminUseCase {
   constructor(
     @Inject(WORKSPACE_REPOSITORY)
     private readonly repository: IWorkspaceRepository,
+    @Inject(WORKSPACE_MEMBER_REPOSITORY)
+    private readonly memberRepository: IWorkspaceMemberRepository,
   ) {}
 
   list() {
     return this.repository.adminListAll();
+  }
+
+  membershipCountsByUser() {
+    return this.memberRepository.countMembershipsByUser();
   }
 
   async forceDelete(actorId: string, workspaceId: string): Promise<void> {

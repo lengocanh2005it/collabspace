@@ -1,4 +1,5 @@
 import type { IWorkspaceRepository } from '../../../domain/repositories/workspace.repository';
+import type { IWorkspaceMemberRepository } from '../../../domain/repositories/workspace-member.repository';
 import { ManageWorkspacesAdminUseCase } from './manage-workspaces-admin.use-case';
 
 describe('ManageWorkspacesAdminUseCase', () => {
@@ -7,7 +8,10 @@ describe('ManageWorkspacesAdminUseCase', () => {
     adminForceJoin: jest.fn(),
     adminListAll: jest.fn(),
   } as unknown as jest.Mocked<IWorkspaceRepository>;
-  const useCase = new ManageWorkspacesAdminUseCase(repository);
+  const memberRepository = {
+    countMembershipsByUser: jest.fn(),
+  } as unknown as jest.Mocked<IWorkspaceMemberRepository>;
+  const useCase = new ManageWorkspacesAdminUseCase(repository, memberRepository);
 
   beforeEach(() => jest.clearAllMocks());
 
@@ -19,5 +23,14 @@ describe('ManageWorkspacesAdminUseCase', () => {
   it('force joins with the member workspace role', async () => {
     await useCase.forceJoin('admin-1', 'workspace-1', 'member', 'Investigating abuse');
     expect(repository.adminForceJoin).toHaveBeenCalledWith('workspace-1', 'admin-1', 'member');
+  });
+
+  it('returns membership counts grouped by user id', async () => {
+    memberRepository.countMembershipsByUser.mockResolvedValue({ 'user-1': 2, 'user-2': 1 });
+
+    await expect(useCase.membershipCountsByUser()).resolves.toEqual({
+      'user-1': 2,
+      'user-2': 1,
+    });
   });
 });

@@ -51,6 +51,17 @@ export class TypeOrmWorkspaceMemberRepository implements IWorkspaceMemberReposit
     return this.repo.count({ where: { workspace_id: workspaceId, role } });
   }
 
+  async countMembershipsByUser(): Promise<Record<string, number>> {
+    const rows = await this.repo
+      .createQueryBuilder('member')
+      .select('member.user_id', 'userId')
+      .addSelect('COUNT(DISTINCT member.workspace_id)', 'count')
+      .groupBy('member.user_id')
+      .getRawMany<{ userId: string; count: string }>();
+
+    return Object.fromEntries(rows.map((row) => [row.userId, Number(row.count)]));
+  }
+
   private toDomain(orm: WorkspaceMemberOrmEntity): WorkspaceMember {
     return new WorkspaceMember(
       orm.id,
