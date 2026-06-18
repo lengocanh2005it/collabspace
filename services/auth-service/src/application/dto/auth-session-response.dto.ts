@@ -13,6 +13,9 @@ export class AuthSessionResponseDto {
   @ApiProperty({ example: 'refresh-token-uuid' })
   refreshToken: string;
 
+  @ApiPropertyOptional({ format: 'uuid' })
+  familyId?: string;
+
   @ApiPropertyOptional({ example: 'user' })
   role?: string;
 

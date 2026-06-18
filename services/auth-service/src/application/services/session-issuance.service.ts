@@ -32,6 +32,7 @@ export class SessionIssuanceService {
       email: user.email,
       expiresIn: this.jwtTokenService.getJwtExpiry(),
       refreshToken: refreshTokenPayload.refreshToken,
+      familyId: refreshTokenPayload.familyId,
       role: user.role,
       roles: user.roles,
       userId: user.userId,

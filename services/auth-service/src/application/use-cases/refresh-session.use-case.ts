@@ -35,6 +35,7 @@ export class RefreshSessionUseCase {
       email: user.email,
       expiresIn: this.jwtTokenService.getJwtExpiry(),
       refreshToken: refreshTokenPayload.refreshToken,
+      familyId: refreshTokenPayload.familyId,
       role: user.role,
       roles: user.roles,
       userId: refreshTokenPayload.userId,
