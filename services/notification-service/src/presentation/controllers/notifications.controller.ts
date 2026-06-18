@@ -35,6 +35,7 @@ import { assertMetricsAccess } from "../../metrics/metrics-access";
 import { MetricsService } from "../../metrics/metrics.service";
 import { AuthGuard } from "../guards/auth.guard";
 import type { AuthenticatedRequest } from "../http/authenticated-request";
+import { NotificationRealtimeService } from "../../application/services/notification-realtime.service";
 
 @ApiTags("notifications")
 @Controller("notifications")
@@ -44,6 +45,7 @@ export class NotificationsController {
     private readonly commandBus: CommandBus,
     private readonly notificationHealthService: NotificationHealthService,
     private readonly metricsService: MetricsService,
+    private readonly notificationRealtime: NotificationRealtimeService,
   ) {}
 
   @Get("health")
@@ -106,6 +108,46 @@ export class NotificationsController {
     return this.queryBus.execute(
       new GetNotificationsQuery(req.user.id, parsedSkip, parsedLimit, parsedStatus),
     );
+  }
+
+  @Get("stream")
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: "Stream realtime notification invalidation events for current user" })
+  streamNotifications(@Req() req: AuthenticatedRequest, @Res() response: Response): void {
+    response.setHeader("Content-Type", "text/event-stream");
+    response.setHeader("Cache-Control", "no-cache, no-transform");
+    response.setHeader("Connection", "keep-alive");
+    response.setHeader("X-Accel-Buffering", "no");
+    response.flushHeaders();
+
+    const cleanup = this.notificationRealtime.addConnection(req.user.id, {
+      close: () => {
+        if (!response.writableEnded) {
+          response.end();
+        }
+      },
+      sendEvent: (event, payload) => {
+        if (response.writableEnded) return;
+        response.write(`event: ${event}\n`);
+        response.write(`data: ${JSON.stringify(payload)}\n\n`);
+      },
+    });
+
+    const keepalive = setInterval(() => {
+      response.write(": keepalive\n\n");
+    }, 25_000);
+    keepalive.unref();
+
+    const teardown = () => {
+      clearInterval(keepalive);
+      cleanup();
+    };
+
+    req.on("close", teardown);
+    req.on("aborted", teardown);
+    response.on("close", teardown);
+    response.on("finish", teardown);
   }
 
   @Patch("read-all")

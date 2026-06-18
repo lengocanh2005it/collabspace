@@ -113,6 +113,19 @@ http:
     # ============================================================
     # Notification Service — prefix: /api/v1/notifications
     # ============================================================
+    notification-stream-router:
+      rule: "Path(`/api/v1/notifications/stream`)"
+      service: notification-service
+      priority: 110
+      entryPoints:
+        - web
+      middlewares:
+        - cors-headers
+        - strip-identity-headers
+        - forward-auth
+        - rate-limit
+        - security-headers
+
     notification-router:
       rule: "PathPrefix(`/api/v1/notifications`)"
       service: notification-service

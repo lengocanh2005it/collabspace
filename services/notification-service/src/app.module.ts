@@ -55,6 +55,7 @@ import {
   UserReplicaLookupService,
 } from "./application/services/user-replica-lookup.service";
 import { BroadcastJobService } from "./application/services/broadcast-job.service";
+import { NotificationRealtimeService } from "./application/services/notification-realtime.service";
 import { NotificationAdminController } from "./presentation/controllers/notification-admin.controller";
 import { platformAdminAuthProviders } from "./integrations/auth/platform-admin-auth.providers";
 
@@ -103,6 +104,7 @@ const Handlers = [
     ...Handlers,
     NotificationHealthService,
     NotificationCountCacheService,
+    NotificationRealtimeService,
     AuthGuard,
     UserProfileHttpClient,
     UserReplicaLookupService,
