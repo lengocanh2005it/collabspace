@@ -2,11 +2,15 @@ import { Test } from "@nestjs/testing";
 import request from "supertest";
 import { PLATFORM_IDENTITY_RESOLVER, PlatformAdminGuard } from "@collabspace/nest-auth";
 import { CountTasksByWorkspaceAdminUseCase } from "../../application/usecases/count-tasks-by-workspace-admin.use-case";
+import { GetPlatformTaskStatsAdminUseCase } from "../../application/usecases/get-platform-task-stats-admin.use-case";
 import { TaskAdminController } from "./task-admin.controller";
 
 describe("TaskAdminController (http)", () => {
   let app: Awaited<ReturnType<typeof createApp>>["app"];
-  const useCase = {
+  const workspaceCountsUseCase = {
+    execute: jest.fn(),
+  };
+  const platformStatsUseCase = {
     execute: jest.fn(),
   };
   const identityResolver = {
@@ -18,7 +22,8 @@ describe("TaskAdminController (http)", () => {
       controllers: [TaskAdminController],
       providers: [
         PlatformAdminGuard,
-        { provide: CountTasksByWorkspaceAdminUseCase, useValue: useCase },
+        { provide: CountTasksByWorkspaceAdminUseCase, useValue: workspaceCountsUseCase },
+        { provide: GetPlatformTaskStatsAdminUseCase, useValue: platformStatsUseCase },
         { provide: PLATFORM_IDENTITY_RESOLVER, useValue: identityResolver },
       ],
     }).compile();
@@ -53,13 +58,31 @@ describe("TaskAdminController (http)", () => {
       roles: ["admin"],
       userId: "admin-1",
     });
-    useCase.execute.mockResolvedValue({ "workspace-1": 5, "workspace-2": 0 });
+    workspaceCountsUseCase.execute.mockResolvedValue({ "workspace-1": 5, "workspace-2": 0 });
 
     await request(app.getHttpServer())
       .get("/api/v1/tasks/admin/workspace-counts")
       .set("Authorization", "Bearer admin")
       .expect(200)
       .expect({ "workspace-1": 5, "workspace-2": 0 });
+  });
+
+  it("returns platform task stats for platform admins", async () => {
+    identityResolver.resolve.mockResolvedValue({
+      role: "admin",
+      roles: ["admin"],
+      userId: "admin-1",
+    });
+    platformStatsUseCase.execute.mockResolvedValue({
+      total: 12,
+      byStatus: { TODO: 5, DOING: 4, DONE: 3 },
+    });
+
+    await request(app.getHttpServer())
+      .get("/api/v1/tasks/admin/platform-stats")
+      .set("Authorization", "Bearer admin")
+      .expect(200)
+      .expect({ total: 12, byStatus: { TODO: 5, DOING: 4, DONE: 3 } });
   });
 
   afterAll(async () => {

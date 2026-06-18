@@ -31,6 +31,7 @@ import { SyncUserReplicaHandler } from "./application/usecases/sync-user-replica
 import { CreateUserReplicaHandler } from "./application/usecases/create-user-replica.handler";
 import { GetTaskActivityHandler } from "./application/usecases/get-task-activity.handler";
 import { CountTasksByWorkspaceAdminUseCase } from "./application/usecases/count-tasks-by-workspace-admin.use-case";
+import { GetPlatformTaskStatsAdminUseCase } from "./application/usecases/get-platform-task-stats-admin.use-case";
 
 // Services
 import { AzureBlobService } from "./infrastructure/services/azure-blob.service";
@@ -108,6 +109,7 @@ const Handlers = [
   CreateUserReplicaHandler,
   GetTaskActivityHandler,
   CountTasksByWorkspaceAdminUseCase,
+  GetPlatformTaskStatsAdminUseCase,
 ];
 
 @Module({

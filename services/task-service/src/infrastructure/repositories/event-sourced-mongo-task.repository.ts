@@ -103,6 +103,19 @@ export class EventSourcedMongoTaskRepository implements ITaskRepository {
     );
   }
 
+  async countByStatusGrouped(): Promise<Record<string, number>> {
+    const rows = await this.taskModel
+      .aggregate<{ _id: string; count: number }>([
+        { $group: { _id: "$status", count: { $sum: 1 } } },
+      ])
+      .exec();
+    return Object.fromEntries(
+      rows
+        .filter((row) => typeof row._id === "string" && row._id.length > 0)
+        .map((row) => [row._id, row.count]),
+    );
+  }
+
   private buildWorkspaceFilter(
     workspaceId: string,
     filter?: TaskListFilter,
