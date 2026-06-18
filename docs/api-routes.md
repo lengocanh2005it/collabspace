@@ -119,7 +119,7 @@ Route protected yêu cầu `Authorization: Bearer …` (auth gRPC). Dev-only `X-
 | Vùng | Ví dụ |
 |------|-------|
 | Workspace | `POST /`, `GET /`, `GET /{id}`, `PATCH /{id}` |
-| Thành viên | `GET /{id}/members`, `PATCH /{id}/members/{userId}` (**Planned** — owner đổi `manager`/`member`), `DELETE /{id}/members/{userId}` |
+| Thành viên | `GET /{id}/members`, `PATCH /{id}/members/{userId}` (owner đổi `manager`/`member`), `DELETE /{id}/members/{userId}` |
 | Activity | `GET /{id}/activity` — timeline workspace (`limit`, `offset`) |
 | Lời mời | `GET /{id}/invitations`, `GET /invitations/me`, `POST /{id}/invite`, `POST /invitations/{id}/accept`, `POST /invitations/{id}/reject` |
 | Project | `POST /{workspaceId}/projects`, `GET /{workspaceId}/projects`, `PATCH /projects/{id}`, `DELETE /projects/{id}` |

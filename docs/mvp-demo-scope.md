@@ -42,7 +42,7 @@ API backend **Done**; chứng minh tự động và client:
 
 - [x] Script demo E2E 7 bước (`scripts/demo-e2e.sh` + `scripts/demo-e2e.ps1`)
 - [x] Smoke qua Traefik gateway (`BASE_URL=http://localhost/api/v1` mặc định)
-- [x] **Frontend SPA** — repo riêng [`collabspace-fe`](https://github.com/lengocanh2005it/collabspace-fe): luồng MVP 7 bước **Done** trên UI (2026-06-17). Còn polish hiển thị + technical debt (tests, lazy routes, ErrorBoundary) — xem `collabspace-fe/docs/fe-be-alignment.md`.
+- [x] **Frontend SPA** — repo riêng [`collabspace-fe`](https://github.com/lengocanh2005it/collabspace-fe): luồng MVP 7 bước **Done** trên UI (2026-06-17). Còn polish: friendly errors (C8), technical debt (tests, lazy routes, ErrorBoundary) — xem `collabspace-fe/docs/fe-be-alignment.md`.
 - [ ] FE automated E2E (Playwright) trong `collabspace-fe`
 - [x] Gắn `demo-e2e` vào CI smoke sau deploy production (`run-demo-e2e-prod.sh` sau `helm-deploy-ci.sh`)
 
