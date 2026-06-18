@@ -50,6 +50,7 @@ ENV NODE_ENV=production
 ENV NODE_PATH=/app/node_modules:/app/services/${SERVICE_NAME}/node_modules
 WORKDIR /app
 RUN apk add --no-cache wget \
+    && apk upgrade --no-cache \
     && addgroup -S appgroup \
     && adduser -S appuser -G appgroup
 # pnpm workspace: hoisted store at root + service-level symlinks.
