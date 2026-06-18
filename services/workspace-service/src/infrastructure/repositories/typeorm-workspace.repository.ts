@@ -31,19 +31,25 @@ export class TypeOrmWorkspaceRepository implements IWorkspaceRepository {
     return result;
   }
 
-  async adminListAll(): Promise<Array<Workspace & { memberCount: number }>> {
+  async adminListAll(): Promise<Array<Workspace & { memberCount: number; projectCount: number }>> {
     const rows = await this.repo
       .createQueryBuilder('workspace')
       .loadRelationCountAndMap('workspace.memberCount', 'workspace.members')
+      .loadRelationCountAndMap('workspace.projectCount', 'workspace.projects', 'project', (qb) =>
+        qb.andWhere('project.is_deleted = :deleted', { deleted: false }),
+      )
       .orderBy('workspace.created_at', 'DESC')
       .getMany();
-    return rows.map((row) =>
-      Object.assign(this.toDomain(row), {
-        memberCount: Number(
-          (row as WorkspaceOrmEntity & { memberCount?: number }).memberCount ?? 0,
-        ),
-      }),
-    );
+    return rows.map((row) => {
+      const enriched = row as WorkspaceOrmEntity & {
+        memberCount?: number;
+        projectCount?: number;
+      };
+      return Object.assign(this.toDomain(row), {
+        memberCount: Number(enriched.memberCount ?? 0),
+        projectCount: Number(enriched.projectCount ?? 0),
+      });
+    });
   }
 
   async deleteByOwner(id: string, actorId: string): Promise<void> {

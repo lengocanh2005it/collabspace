@@ -18,6 +18,8 @@ export interface ITaskRepository {
     options?: TaskListOptions,
   ): Promise<Task[]>;
   countByWorkspaceIdAsync(workspaceId: string, filter?: TaskListFilter): Promise<number>;
+  countByWorkspaceGrouped(): Promise<Record<string, number>>;
+  countByStatusGrouped(): Promise<Record<string, number>>;
   deleteAsync(id: TaskId): Promise<void>;
   addAttachmentAsync(taskId: TaskId, fileUrl: string): Promise<void>;
   removeAttachmentAsync(taskId: TaskId, fileUrl: string): Promise<void>;
