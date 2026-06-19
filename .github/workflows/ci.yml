@@ -121,10 +121,10 @@ jobs:
           pnpm --filter @collabspace/nest-auth build
 
       - name: Format check (${{ matrix.service }})
-        run: biome format "services/${{ matrix.service }}"
+        run: pnpm exec biome format "services/${{ matrix.service }}"
 
       - name: Biome check (${{ matrix.service }})
-        run: biome check --assist-enabled=false --error-on-warnings "services/${{ matrix.service }}"
+        run: pnpm exec biome check --assist-enabled=false --error-on-warnings "services/${{ matrix.service }}"
 
       - name: ESLint (${{ matrix.service }})
         run: pnpm --filter ${{ matrix.service }} run lint
