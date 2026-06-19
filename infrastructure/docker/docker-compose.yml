@@ -5,6 +5,7 @@ services:
     restart: unless-stopped
     env_file:
       - ../rabbitmq/.env
+      - ../rabbitmq/.env.vault
     ports:
       - "5672:5672"
       - "15672:15672"
@@ -32,6 +33,7 @@ services:
     mem_limit: 1g
     env_file:
       - ../../services/auth-service/.env
+      - ../../services/auth-service/.env.vault
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -58,6 +60,7 @@ services:
     mem_limit: 1g
     env_file:
       - ../../services/user-service/.env
+      - ../../services/user-service/.env.vault
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -88,6 +91,7 @@ services:
     mem_limit: 1g
     env_file:
       - ../../services/workspace-service/.env
+      - ../../services/workspace-service/.env.vault
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -116,6 +120,7 @@ services:
     mem_limit: 1g
     env_file:
       - ../../services/task-service/.env
+      - ../../services/task-service/.env.vault
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -146,6 +151,7 @@ services:
       - PORT=3000
     env_file:
       - ../../services/notification-service/.env
+      - ../../services/notification-service/.env.vault
     depends_on:
       rabbitmq:
         condition: service_healthy

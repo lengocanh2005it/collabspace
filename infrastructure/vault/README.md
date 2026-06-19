@@ -69,13 +69,21 @@ chmod +x infrastructure/vault/scripts/*.sh
 
 Override defaults via `infrastructure/vault/.env` (copy from `.env.example`).
 
-### 3. Sync into service `.env` (optional)
+### 3. Sync Vault → `.env.vault` (secrets) — **không** ghi vào `.env`
 
 ```powershell
-.\infrastructure\vault\scripts\sync-env-from-vault.ps1
+.\infrastructure\vault\scripts\strip-vault-secrets-from-env.ps1   # .env: secret fields empty
+.\infrastructure\vault\scripts\sync-env-from-vault.ps1            # .env.vault: secrets from Vault
 ```
 
-Creates `.env` from `.env.example` if missing, then updates secret fields only.
+Hoặc một lệnh (seed từ `phase0.env` + strip + sync):
+
+```powershell
+.\infrastructure\vault\scripts\reset-local-env-from-vault.ps1
+```
+
+- `services/*/.env` — **chỉ config** (Kafka, outbox, ports…); field Vault-managed **để trống** hoặc `VAULT_SYNC` trong URL.
+- `services/*/.env.vault` — gitignored; Docker Compose load sau `.env`.
 
 ### 4. Start the stack as usual
 
