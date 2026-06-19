@@ -25,7 +25,7 @@ set -a
 source "$ENV_FILE"
 set +a
 
-required=(JWT_SECRET SERVICE_JWT_SECRET POSTGRES_PASSWORD MONGO_PASSWORD REDIS_PASSWORD RABBITMQ_PASSWORD RABBITMQ_USERNAME METRICS_AUTH_TOKEN AZURE_STORAGE_CONNECTION_STRING DO_SPACES_KEY DO_SPACES_SECRET)
+required=(JWT_SECRET SERVICE_JWT_SECRET POSTGRES_PASSWORD MONGO_PASSWORD REDIS_PASSWORD RABBITMQ_PASSWORD RABBITMQ_USERNAME METRICS_AUTH_TOKEN AZURE_STORAGE_CONNECTION_STRING DO_SPACES_KEY DO_SPACES_SECRET BREVO_API_KEY)
 for key in "${required[@]}"; do
   if [[ -z "${!key:-}" ]]; then
     echo "Missing $key in $ENV_FILE"
@@ -33,10 +33,31 @@ for key in "${required[@]}"; do
   fi
 done
 
-BREVO_API_KEY="${BREVO_API_KEY:-}"
+SLACK_ALERT_WEBHOOK_URL="${SLACK_ALERT_WEBHOOK_URL:-}"
 
 root_token="$(jq -r '.root_token' "$INIT_FILE")"
 azure_b64="$(printf '%s' "$AZURE_STORAGE_CONNECTION_STRING" | base64 -w 0 2>/dev/null || printf '%s' "$AZURE_STORAGE_CONNECTION_STRING" | base64 | tr -d '\n')"
+
+# Giữ giá trị Vault hiện có khi phase0.env để trống (tránh seed làm mất secret đã cấu hình).
+preserve_vault_field() {
+  local field="$1"
+  local env_val="$2"
+  if [[ -n "$env_val" ]]; then
+    printf '%s' "$env_val"
+    return
+  fi
+  kubectl exec -n "$VAULT_NS" "$VAULT_POD" -- env \
+    VAULT_ADDR=http://127.0.0.1:8200 \
+    VAULT_TOKEN="$root_token" \
+    sh -ec "vault kv get -field=${field} secret/${KV_PATH} 2>/dev/null || true"
+}
+
+if [[ -z "$SLACK_ALERT_WEBHOOK_URL" ]]; then
+  SLACK_ALERT_WEBHOOK_URL="$(preserve_vault_field slack_alert_webhook_url "")"
+  if [[ -n "$SLACK_ALERT_WEBHOOK_URL" ]]; then
+    echo "Note: SLACK_ALERT_WEBHOOK_URL empty in $ENV_FILE — keeping existing Vault value"
+  fi
+fi
 
 echo "Seeding Vault KV secret/$KV_PATH via kubectl exec..."
 kubectl exec -n "$VAULT_NS" "$VAULT_POD" -- env \

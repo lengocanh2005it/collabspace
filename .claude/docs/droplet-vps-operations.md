@@ -53,6 +53,8 @@ GitHub secrets: `DROPLET_HOST`, `DROPLET_USER`, `DROPLET_SSH_KEY`, `GHCR_USERNAM
 
 **Alertmanager → Slack:** `SLACK_ALERT_WEBHOOK_URL` trong `phase0.env` → Vault `slack_alert_webhook_url` → ESO `alertmanager-slack-secret`. Bật `observability.alertmanager.slack.enabled: true` trong `values-prod.yaml`. One-shot: `SLACK_ALERT_WEBHOOK_URL=... bash infrastructure/deploy/wire-alertmanager-slack-droplet.sh` (trên Droplet).
 
+**Vault seed:** `phase0.env` phải có `BREVO_API_KEY` (auth-service crash nếu thiếu). `seed-vault-k3s-from-phase0.sh` fail sớm nếu thiếu; `SLACK_ALERT_WEBHOOK_URL` trống thì giữ giá trị Vault cũ.
+
 ## Dev local ≠ image production (nguyên nhân hay gặp)
 
 | Triệu chứng | Nguyên nhân thường gặp |
