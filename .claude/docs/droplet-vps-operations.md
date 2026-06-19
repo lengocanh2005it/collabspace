@@ -51,6 +51,8 @@ Actions → Build Images And Deploy → Run workflow
 
 GitHub secrets: `DROPLET_HOST`, `DROPLET_USER`, `DROPLET_SSH_KEY`, `GHCR_USERNAME`, `GHCR_TOKEN`.
 
+**Alertmanager → Slack:** `SLACK_ALERT_WEBHOOK_URL` trong `phase0.env` → Vault `slack_alert_webhook_url` → ESO `alertmanager-slack-secret`. Bật `observability.alertmanager.slack.enabled: true` trong `values-prod.yaml`. One-shot: `SLACK_ALERT_WEBHOOK_URL=... bash infrastructure/deploy/wire-alertmanager-slack-droplet.sh` (trên Droplet).
+
 ## Dev local ≠ image production (nguyên nhân hay gặp)
 
 | Triệu chứng | Nguyên nhân thường gặp |

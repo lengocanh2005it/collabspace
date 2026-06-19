@@ -160,6 +160,12 @@ observability:
     storageSize: 3Gi
   exporters:
     enabled: true
+  alertmanager:
+    slack:
+      enabled: true
+      channel: "#nouveau-canal"
+      # Prod: webhook inject qua Vault → ESO alertmanager-slack-secret (phase0.env SLACK_ALERT_WEBHOOK_URL)
+      webhookUrl: ""
 
 backup:
   enabled: true

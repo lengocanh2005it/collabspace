@@ -55,6 +55,7 @@ kubectl exec -n "$VAULT_NS" "$VAULT_POD" -- env \
   BREVO_API_KEY="$BREVO_API_KEY" \
   DO_SPACES_KEY="$DO_SPACES_KEY" \
   DO_SPACES_SECRET="$DO_SPACES_SECRET" \
+  SLACK_ALERT_WEBHOOK_URL="${SLACK_ALERT_WEBHOOK_URL:-}" \
   sh -ec '
     AZURE_STORAGE_CONNECTION_STRING="$(printf "%s" "$AZURE_B64" | base64 -d)"
     vault kv put "secret/${KV_PATH}" \
@@ -70,7 +71,8 @@ kubectl exec -n "$VAULT_NS" "$VAULT_POD" -- env \
       azure_storage_connection_string="${AZURE_STORAGE_CONNECTION_STRING}" \
       brevo_api_key="${BREVO_API_KEY}" \
       do_spaces_key="${DO_SPACES_KEY}" \
-      do_spaces_secret="${DO_SPACES_SECRET}"
+      do_spaces_secret="${DO_SPACES_SECRET}" \
+      slack_alert_webhook_url="${SLACK_ALERT_WEBHOOK_URL}"
   '
 
 echo "Done. Verify:"

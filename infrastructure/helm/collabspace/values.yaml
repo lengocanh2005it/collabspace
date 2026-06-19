@@ -260,6 +260,10 @@ observability:
       enabled: true
   alertmanager:
     enabled: true
+    slack:
+      enabled: false
+      channel: "#alerts-production"
+      webhookUrl: ""
   grafana:
     enabled: true
   loki:

@@ -135,10 +135,22 @@ kubectl create secret generic vault-eso-token \
 echo "==> Applying ClusterSecretStore + ExternalSecrets (prod)..."
 kubectl apply -f "$APP_DIR/infrastructure/vault/k8s/cluster-secret-store.yaml"
 kubectl apply -f "$APP_DIR/infrastructure/vault/k8s/external-secrets.prod.yaml"
+for extra in \
+  "$APP_DIR/infrastructure/vault/k8s/external-secret-backup.yaml" \
+  "$APP_DIR/infrastructure/vault/k8s/external-secret-alertmanager.yaml"; do
+  if [[ -f "$extra" ]]; then
+    kubectl apply -f "$extra"
+  fi
+done
 
 echo "==> Waiting for ExternalSecrets to sync..."
 for es in auth-service user-service workspace-service task-service notification-service; do
   kubectl wait --for=condition=Ready "externalsecret/${es}-secrets" -n "$APP_NS" --timeout=180s
+done
+for es in backup-spaces-secret alertmanager-slack-secret; do
+  if kubectl get externalsecret "$es" -n "$APP_NS" >/dev/null 2>&1; then
+    kubectl wait --for=condition=Ready "externalsecret/${es}" -n "$APP_NS" --timeout=180s || true
+  fi
 done
 
 echo ""

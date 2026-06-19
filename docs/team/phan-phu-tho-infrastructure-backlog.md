@@ -1,7 +1,7 @@
 # Backlog hạ tầng — Phan Phú Thọ (Infrastructure Engineer)
 
-> **Status: ~95% Complete — 1 mục ops còn lại**
-> Droplet prod, per-service CI/CD, Vault+ESO, TLS, backup DO Spaces (Postgres+Mongo CronJob, test upload OK), demo-e2e smoke, Trivy, secret-scan CI đã xong. **Còn lại:** Alertmanager → Slack webhook thật + test fire alert (#15).
+> **Status: ~100% Complete — infra backlog P1 đóng**
+> Droplet prod, per-service CI/CD, Vault+ESO, TLS, backup DO Spaces, demo-e2e smoke, Trivy, secret-scan, **Alertmanager → Slack** (#15) đã xong.
 
 Tài liệu này liệt kê **công việc hạ tầng / DevOps / observability / CI/CD / monitoring** cần làm tiếp để CollabSpace sẵn sàng vận hành ngoài môi trường demo local.
 
@@ -17,7 +17,7 @@ Tài liệu này liệt kê **công việc hạ tầng / DevOps / observability 
 | Docker Compose + **pnpm workspace** + CI `ci.yml` (per-service path-filter) | Staging cluster riêng (chỉ prod Droplet) |
 | **CD** `docker-deploy.yml` — build/deploy selective per service, tag `{service}-{sha7}` | Capacity baseline doc (`docs/`) |
 | **Demo E2E** + `run-demo-e2e-prod.sh` sau deploy `main` | App log `requestId` inject đầy đủ (app team) |
-| Vault + ESO + `backup-spaces-secret` (`DO_SPACES_*` trong KV) | Alertmanager receiver thật (Helm = `null`) |
+| Vault + ESO + `backup-spaces-secret` + `alertmanager-slack-secret` | |
 | Helm prod Droplet `167.172.77.110` + TLS `collabspace.ngocanh2005it.site` | Restore/chaos drill log thật trên staging (script có; Docker offline 2026-06-10) |
 | Prometheus/Grafana/Loki + Jaeger manifest + k6 + Trivy | |
 | **Backup K8s:** CronJob `backup-postgres` + `backup-mongo` → DO Spaces `collabspace-bucket` | Mongo backup job chưa test thủ công trên prod (Postgres ✅) |
@@ -49,7 +49,7 @@ P0  Lộ trình k3s Phase 0–2           →  Droplet + k3s + Vault + ESO (xem 
 P0  HashiCorp Vault + .env chuẩn hóa →  scaffold có; operationalize HA + ESO trên cluster
 P0  Secrets + môi trường staging     →  deploy an toàn, không lộ credential
 P1  CI/CD per-service (path-filter)     →  ✅ `.github/path-filters.yml` + matrix CI/CD
-P1  Monitoring stack trên K8s           →  Prometheus/Grafana/Loki ✅; alert routing ⚠️
+P1  Monitoring stack trên K8s           →  Prometheus/Grafana/Loki ✅; Alertmanager → Slack ✅
 P1  MVP smoke trong CI                  →  ✅ `run-demo-e2e-prod.sh` sau deploy `main`
 P2  Smoke / readiness sau deploy        →  verify-readiness ✅; demo-e2e ✅
 P2  Backup tự động + restore drill      →  CronJob DO Spaces ✅; restore script ✅; drill log partial
@@ -276,8 +276,8 @@ Dùng bảng này khi seed Vault KV (`secret/collabspace/staging`, …).
 
 ### 9. Alert routing & on-call
 
-- [~] Cấu hình Alertmanager — Helm receiver `null`; mẫu Slack trong `infrastructure/monitoring/alertmanager.yml` (chưa webhook thật)
-- [ ] Test alert fire → on-call nhận notification (Slack/email)
+- [x] Cấu hình Alertmanager — Slack Incoming Webhook qua Vault → ESO `alertmanager-slack-secret` (`SLACK_ALERT_WEBHOOK_URL` trong `phase0.env`)
+- [x] Test alert fire → `#nouveau-canal` (2026-06-19)
 - [x] Runbook alert + `SecretRotation.md`: [runbooks/README.md](../runbooks/README.md)
 
 ### 10. SLO / dashboard vận hành (infra-owned)
@@ -456,7 +456,7 @@ Infra **hỗ trợ** bằng: Compose profile Traefik, seed trong job, `demo-e2e`
 | 12b | CI smoke: `run-demo-e2e-prod.sh` sau deploy | P1 | ✅ (tích hợp trong `docker-deploy.yml`) |
 | 13 | CD staging + post-deploy verify-readiness | P1 | ✅ (`helm-deploy-ci.sh` + verify step) |
 | 14 | Prometheus/Grafana/Loki trên K8s | P1 | ✅ (full stack trong Helm) |
-| 15 | Alertmanager receiver (Slack/email) test thật | P1 | **⬜ CÒN LẠI** |
+| 15 | Alertmanager receiver (Slack/email) test thật | P1 | ✅ — Vault `slack_alert_webhook_url` → `#nouveau-canal`; test alert 2026-06-19 |
 | 16 | NetworkPolicy + internal route verify | P2 | ✅ (`templates/network-policies.yaml`) |
 | 17 | TLS ingress (Traefik ACME / Let's Encrypt) | P2 | ✅ (`gateway.tls` + `certResolver: letsencrypt` trong Helm) |
 | 18 | Backup cron K8s + DO Spaces | P2 | ✅ — Postgres test upload OK; Mongo CronJob deployed, chưa test job |
@@ -481,4 +481,4 @@ Infra **hỗ trợ** bằng: Compose profile Traefik, seed trong job, `demo-e2e`
 
 ---
 
-*Cập nhật: 2026-06-19 — sync snapshot, per-service CI/CD, DO Spaces backup (Vault `DO_SPACES_*`, bucket/endpoint trong Helm), #12a Done, #15 Alertmanager còn lại.*
+*Cập nhật: 2026-06-19 — #15 Alertmanager Slack Done; infra backlog P1 đóng.*
