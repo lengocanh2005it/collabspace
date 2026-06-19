@@ -146,7 +146,7 @@ Fan-out: `BroadcastJobService` (persisted jobs, batch 100, recipient dedupe, `Id
 | 3 | Dùng `GET /users/admin/all` (aggregate backend) | [x] |
 | 4 | Error codes: `403` + `PLATFORM_ADMIN_REQUIRED`, `DIRECTORY_QUERY_REQUIRED`, validation | [x] |
 | 5 | 4 tab: Roles, Users, Workspaces, Broadcast + ban/unban | [x] |
-| 6 | Polish còn lại (overview KPI, owner name, `force-join` UI) | [ ] — xem `collabspace-fe/docs/fe-backlog.md` § C |
+| 6 | Polish còn lại (overview KPI, owner name, `force-join` UI) | [ ] — repo `collabspace-fe` (`fe-backlog.md` § C) |
 
 **OpenAPI tags:** `auth-admin`, `users-admin`, `workspaces-admin`, `notifications-admin` — `/swagger` từng service.
 
@@ -177,4 +177,4 @@ Fan-out: `BroadcastJobService` (persisted jobs, batch 100, recipient dedupe, `Id
 
 ---
 
-*Cập nhật: 2026-06-13 — hoàn tất backlog backend admin: `@collabspace/nest-auth`, tests, USER-T1 directory guard.*
+*Cập nhật: 2026-06-19 — rà soát: backend admin Done; UI polish vẫn mở trên `collabspace-fe`.*

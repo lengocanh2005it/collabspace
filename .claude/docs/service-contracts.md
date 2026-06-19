@@ -578,7 +578,7 @@ Minimum HTTP routes to close MVP:
 - `POST /invitations/{invitationId}/accept`
 - `POST /invitations/{invitationId}/reject`
 - `GET /workspaces/{id}/members`
-- `PATCH /workspaces/{id}/members/{userId}` — body `{ role: "manager" | "member" }`; **only owner**; target cannot be `owner` (**Planned**)
+- `PATCH /workspaces/{id}/members/{userId}` — body `{ role: "manager" | "member" }`; **only owner**; target cannot be `owner` (**Done**)
 - `DELETE /workspaces/{id}/members/{userId}` — remove member/manager or leave; owner cannot be removed
 
 Minimum domain concepts:

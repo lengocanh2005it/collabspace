@@ -24,7 +24,7 @@ Hướng dẫn cho AI agents khi debug/deploy **production k3s trên DigitalOcea
 2. Build **cả 5** images (`infrastructure/docker/Dockerfile.service`) → cùng tag GHCR = commit SHA
 3. SSH Droplet step 1 → `git-sync-private-repo.sh`
 4. SSH Droplet step 2 → `helm-deploy-ci.sh` → `helm-rollout.sh` (một `IMAGE_TAG` cho cả 5 app; **không** migrate/seed)
-5. (Tùy chọn) `workflow_dispatch` + `run_e2e=true` → `run-demo-e2e-prod.sh`
+5. Sau Helm deploy → `run-demo-e2e-prod.sh` (mặc định; `workflow_dispatch` có thể skip với `run_e2e=false`)
 
 Helm-only push (chỉ chart/infra, không có `IMAGE_TAG` từ CI) → giữ tag image trong `values-prod.yaml` trên Droplet; mỗi push `main` vẫn build cả 5 image cùng commit SHA.
 
