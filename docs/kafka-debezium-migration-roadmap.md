@@ -308,10 +308,11 @@ Cập nhật connector config sau khi migration:
 
 ### DoD
 
-- [ ] Migration `aggregate_type` + `aggregate_id` đã chạy trên dev
-- [ ] Invite workspace → 1 message Kafka, payload khớp JSON trong outbox
-- [ ] Notification vẫn nhận qua RMQ
-- [ ] Không duplicate side-effect nguy hiểm (consumer Kafka chưa bật)
+- [x] Migration `aggregate_type` + `aggregate_id` — `1718000000004-AddWorkspaceOutboxAggregateFields.ts`
+- [x] Debezium connector `collabspace-workspace-outbox` + `scripts/register-workspace-outbox-connector.ps1`
+- [x] Insert outbox → message Kafka (`scripts/kafka-phase1-smoke.ps1`)
+- [ ] Invite workspace qua API → Kafka (manual / demo-e2e)
+- [x] `WorkspaceOutboxProcessor` + RMQ **không tắt**
 
 ### Rollback
 
@@ -749,4 +750,5 @@ KAFKA_DUAL_CONSUME=true                  # Phase 2–4 dual-run
 |------|----------|
 | 2026-06-19 | Khởi tạo lộ trình Phase 0 → 7 |
 | 2026-06-19 | Phase 0: `docker-compose.kafka.yml`, `infrastructure/kafka/README.md`, smoke scripts |
+| 2026-06-19 | Phase 1: wal_level logical, outbox aggregate columns, Debezium workspace connector |
 | 2026-06-19 | Bổ sung: migration schema outbox (`aggregate_type`/`aggregate_id`) vào Phase 1 DoD; pattern TypeORM `queryRunner` cho user-service (Phase 4); prerequisite Mongo driver + RS cho Phase 5M; chuẩn hoá topic naming convention (section 12); làm rõ auth-service không bị ảnh hưởng Phase 6 |

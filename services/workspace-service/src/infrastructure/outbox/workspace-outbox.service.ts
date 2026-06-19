@@ -5,6 +5,7 @@ import { randomUUID } from 'node:crypto';
 import type { DataSource, EntityManager } from 'typeorm';
 import { getWorkspaceOutboxConfig } from './workspace-outbox.config';
 import {
+  WORKSPACE_OUTBOX_AGGREGATE_TYPE,
   WORKSPACE_OUTBOX_EVENT_WORKSPACE_DELETED,
   WORKSPACE_OUTBOX_EVENT_WORKSPACE_INVITED,
   WorkspaceOutboxEventEntity,
@@ -237,9 +238,12 @@ export class WorkspaceOutboxService {
     payload: Record<string, unknown>,
     manager?: EntityManager,
   ): Promise<void> {
+    const aggregateId = this.resolveWorkspaceAggregateId(payload);
     const repository = this.getRepository(manager);
     await repository.save(
       repository.create({
+        aggregateId,
+        aggregateType: WORKSPACE_OUTBOX_AGGREGATE_TYPE,
         attemptCount: 0,
         availableAt: new Date(),
         claimedAt: null,
@@ -251,6 +255,15 @@ export class WorkspaceOutboxService {
         processedAt: null,
       }),
     );
+  }
+
+  private resolveWorkspaceAggregateId(payload: Record<string, unknown>): string {
+    const workspaceId = payload.workspaceId;
+    if (typeof workspaceId === 'string' && workspaceId.length > 0) {
+      return workspaceId;
+    }
+
+    throw new Error('Workspace outbox payload must include workspaceId');
   }
 
   private getRetryAvailableAt(attemptCount: number): Date {
