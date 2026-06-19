@@ -1,7 +1,7 @@
 # Backlog hạ tầng — Phan Phú Thọ (Infrastructure Engineer)
 
-> **Status: ~92% Complete — 2 mục còn lại**
-> Manifests, pipeline CI/CD, monitoring/tracing stack, TLS, NetworkPolicy, k6, Trivy, CI gate chặn `.env`, secret rotation runbook, restore drill scripts + log, chaos drill log, K8s backup CronJob (DO Spaces) đã xong. Còn lại (xem checklist cuối): GitHub repo secrets thật + first Droplet deploy, Alertmanager receiver thật (Slack URL là placeholder).
+> **Status: ~95% Complete — 1 mục ops còn lại**
+> Droplet prod, per-service CI/CD, Vault+ESO, TLS, backup DO Spaces (Postgres+Mongo CronJob, test upload OK), demo-e2e smoke, Trivy, secret-scan CI đã xong. **Còn lại:** Alertmanager → Slack webhook thật + test fire alert (#15).
 
 Tài liệu này liệt kê **công việc hạ tầng / DevOps / observability / CI/CD / monitoring** cần làm tiếp để CollabSpace sẵn sàng vận hành ngoài môi trường demo local.
 
@@ -10,26 +10,18 @@ Tài liệu này liệt kê **công việc hạ tầng / DevOps / observability 
 
 **Phối hợp deploy Droplet:** **Lê Ngọc Anh** (Member 2) — vận hành hands-on k3s/Helm trên DigitalOcean Droplet, verify prod sau CI; thiết kế/pipeline dài hạn vẫn theo backlog này.
 
-**Trạng thái repo (snapshot 2026-06-12):**
+**Trạng thái repo (snapshot 2026-06-19):**
 
-| Đã có sẵn | Chưa operational hóa / prod-ready |
-|-----------|-----------------------------------|
-| Docker Compose stack (`infrastructure/docker/`) | Multi-env staging/prod chuẩn hóa end-to-end |
-| **pnpm workspace** — root `package.json`, `pnpm-workspace.yaml`, `packages/shared` | CI `pnpm -r run build\|test` từ root trong pipeline |
-| **Demo E2E script** — `scripts/demo-e2e.sh` + `scripts/demo-e2e.ps1` (7 bước qua Traefik) | Gắn script vào CI smoke / nightly |
-| **HashiCorp Vault scaffold** (`infrastructure/vault/`) — dev Compose, KV seed/sync, ESO YAML, Helm `externalSecrets` | Vault HA deploy, K8s auth, rotation, smoke sau ESO sync |
-| Helm umbrella chart (`infrastructure/helm/collabspace/`) | `values-prod.yaml` trên Droplet ✅; multi-env staging ⬜ |
-| **GHCR image build** — GitHub Actions `build-images` 5 service ✅ | Alert routing, backup cron ⬜ |
-| **Helm/k3s deploy qua CI** — SSH Droplet (`helm-deploy-ci.sh`) ✅ | Phase 5 TLS; smoke gate PR ⬜ |
-| **Lộ trình deploy DO** — [deployment-k3s-phases.md](../deployment-k3s-phases.md) | Phase 0–3 ✅ trên Droplet (`167.172.77.110`, owner vận hành: Lê Ngọc Anh); Phase 5 TLS ⬜ |
-| K8s manifests legacy (`infrastructure/k8s/`) — tham chiếu | Load test baseline → tune resources |
-| Traefik gateway + forward-auth (`api-gateway/`) | Backup tự động + restore drill |
-| Prometheus + Alertmanager + Grafana (`infrastructure/monitoring/`) | **K8s:** Helm + Loki — [observability.md](../observability.md) |
-| Jaeger / OTLP (`docker-compose.tracing.yml`, `infrastructure/tracing/`) | Tracing bật trên staging/prod |
-| GitHub Actions CI/CD (`.github/workflows/`) | `DROPLET_*` secrets ✅; nightly smoke ⬜ |
-| k6 load tests (`infrastructure/load-testing/`) | k6 baseline doc + tune HPA/limits |
-| Backup scripts (`infrastructure/backup/scripts/`) | Restore drill + snapshot schedule ⬜ |
-| Drills (`verify-readiness`, `chaos-stop-service`) | Smoke job sau mỗi deploy (readiness + `demo-e2e`) |
+| Đã có sẵn | Chưa / Partial |
+|-----------|----------------|
+| Docker Compose + **pnpm workspace** + CI `ci.yml` (per-service path-filter) | Staging cluster riêng (chỉ prod Droplet) |
+| **CD** `docker-deploy.yml` — build/deploy selective per service, tag `{service}-{sha7}` | Capacity baseline doc (`docs/`) |
+| **Demo E2E** + `run-demo-e2e-prod.sh` sau deploy `main` | App log `requestId` inject đầy đủ (app team) |
+| Vault + ESO + `backup-spaces-secret` (`DO_SPACES_*` trong KV) | Alertmanager receiver thật (Helm = `null`) |
+| Helm prod Droplet `167.172.77.110` + TLS `collabspace.ngocanh2005it.site` | Restore/chaos drill log thật trên staging (script có; Docker offline 2026-06-10) |
+| Prometheus/Grafana/Loki + Jaeger manifest + k6 + Trivy | |
+| **Backup K8s:** CronJob `backup-postgres` + `backup-mongo` → DO Spaces `collabspace-bucket` | Mongo backup job chưa test thủ công trên prod (Postgres ✅) |
+| `restore-*.sh`, `SecretRotation.md`, `secret-scan` job trong CI | |
 
 **Tài liệu liên quan:**
 
@@ -56,11 +48,11 @@ Tài liệu này liệt kê **công việc hạ tầng / DevOps / observability 
 P0  Lộ trình k3s Phase 0–2           →  Droplet + k3s + Vault + ESO (xem deployment-k3s-phases.md)
 P0  HashiCorp Vault + .env chuẩn hóa →  scaffold có; operationalize HA + ESO trên cluster
 P0  Secrets + môi trường staging     →  deploy an toàn, không lộ credential
-P1  CI/CD + image registry          →  GHCR build ✅; workflow Helm/k3s deploy ✅ (Phase 4)
-P1  Monitoring stack trên K8s       →  Prometheus/Grafana/Loki ✅; alert routing ⬜
-P1  MVP smoke trong CI              →  `scripts/demo-e2e` sau Compose + Traefik (phối hợp Tín)
-P2  Smoke / readiness sau deploy    →  verify-readiness + demo-e2e trong pipeline
-P2  Backup tự động + restore drill  →  đáp ứng backup-policy
+P1  CI/CD per-service (path-filter)     →  ✅ `.github/path-filters.yml` + matrix CI/CD
+P1  Monitoring stack trên K8s           →  Prometheus/Grafana/Loki ✅; alert routing ⚠️
+P1  MVP smoke trong CI                  →  ✅ `run-demo-e2e-prod.sh` sau deploy `main`
+P2  Smoke / readiness sau deploy        →  verify-readiness ✅; demo-e2e ✅
+P2  Backup tự động + restore drill      →  CronJob DO Spaces ✅; restore script ✅; drill log partial
 P2  Logging tập trung (Loki)        →  Explore + X-Request-Id (app log field)
 P3  Tracing staging                 →  Jaeger/OTLP + retention
 P3  Load test + tune HPA/limits     →  k6 scenarios ✅; baseline doc ⬜
@@ -240,14 +232,15 @@ Dùng bảng này khi seed Vault KV (`secret/collabspace/staging`, …).
 
 ### 5. Pipeline CI (GitHub Actions)
 
-**Hiện trạng:** `.github/workflows/ci.yml` (build/test) + `docker-deploy.yml` (GHCR + Helm/k3s SSH deploy qua `helm-deploy-ci.sh`, `verify-k8s-readiness.sh`).
+**Hiện trạng:** `.github/workflows/ci.yml` (per-service lint/build/test + `secret-scan`) + `docker-deploy.yml` (selective build/deploy, GHCR, Helm SSH).
 
-- [x] **GitHub Actions:** root `pnpm install` → `pnpm run build` + `pnpm run test` trên PR/`main`.
-- [x] Docker image build 5 service → GHCR.
-- [x] Workflow deploy **k3s/Helm** trên push `main` — Phase 4.
-- [x] Cache `pnpm` / Docker layer để pipeline < 15 phút (mục tiêu ban đầu).
-- [x] Branch protection: PR bắt buộc pass test trước merge.
-- [x] CI smoke: `scripts/demo-e2e` sau deploy staging/nightly.
+- [x] **GitHub Actions:** `ci.yml` — path-filter matrix per service; `ci-gate` pass khi không đổi app code.
+- [x] **`secret-scan` job** — fail nếu commit file `.env` (bổ sung `.githooks/pre-commit`).
+- [x] **`docker-deploy.yml`** — chỉ build/deploy service đổi; image tag `{service}-{sha7}`; `.github/path-filters.yml`.
+- [x] Docker image build → GHCR; Trivy CRITICAL/HIGH gate.
+- [x] Workflow deploy **k3s/Helm** trên push `main` — `helm-deploy-ci.sh` + `DEPLOY_SERVICES` / `SERVICE_IMAGE_TAGS`.
+- [x] Cache `pnpm` / Docker layer; branch protection PR pass CI.
+- [x] CI smoke: `run-demo-e2e-prod.sh` sau deploy `main` (`docker-deploy.yml`).
 
 ### 6. Pipeline CD (deploy)
 
@@ -283,9 +276,9 @@ Dùng bảng này khi seed Vault KV (`secret/collabspace/staging`, …).
 
 ### 9. Alert routing & on-call
 
-- [x] Cấu hình Alertmanager receiver (Slack / email / PagerDuty) — file `infrastructure/monitoring/alertmanager.yml`.
-- [x] Test từng alert trong [runbooks/README.md](../runbooks/README.md): `ServiceDown`, `HighErrorRate5xx`, `RabbitMQDLQNotEmpty`, …
-- [x] Ghi owner on-call và escalation trong runbook hoặc wiki team.
+- [~] Cấu hình Alertmanager — Helm receiver `null`; mẫu Slack trong `infrastructure/monitoring/alertmanager.yml` (chưa webhook thật)
+- [ ] Test alert fire → on-call nhận notification (Slack/email)
+- [x] Runbook alert + `SecretRotation.md`: [runbooks/README.md](../runbooks/README.md)
 
 ### 10. SLO / dashboard vận hành (infra-owned)
 
@@ -306,7 +299,7 @@ Dùng bảng này khi seed Vault KV (`secret/collabspace/staging`, …).
 **Script sẵn có (application team):** `scripts/demo-e2e.sh` / `scripts/demo-e2e.ps1` — 7 bước MVP qua `BASE_URL=http://localhost/api/v1` (Traefik). Cần stack + seed trước khi chạy.
 
 - [x] Tích hợp `verify-readiness.sh` / `.ps1` vào CD job.
-- [x] **P1 — MVP smoke:** sau Compose + Traefik + `scripts/seed.sh`, chạy `scripts/demo-e2e.sh` (fail pipeline nếu exit ≠ 0).
+- [x] **P1 — MVP smoke:** `run-demo-e2e-prod.sh` sau deploy `main` trên Droplet (`docker-deploy.yml`); local dev vẫn dùng `scripts/demo-e2e.sh` + seed.
 - [x] (Tùy chọn) curl health qua Traefik ingress URL staging (không chỉ localhost).
 - [x] Kiểm tra gateway: protected route trả 401 không token; public `/auth/login` reachable.
 
@@ -321,8 +314,8 @@ Dùng bảng này khi seed Vault KV (`secret/collabspace/staging`, …).
 ### 13. Chaos engineering (staging only)
 
 - [x] Lên lịch quarterly: `infrastructure/chaos/chaos-stop-service.sh` từng service.
-- [x] Ghi kết quả vào `infrastructure/resilience/drills/README.md` (bảng Last run).
-- [x] Sau chaos: readiness recovery < RTO trong [backup-policy.md](../backup-policy.md).
+- [~] Ghi kết quả vào `infrastructure/resilience/drills/README.md` — template có; lần chạy thật **Skipped** (Docker offline 2026-06-10)
+- [~] Sau chaos: readiness recovery < RTO — chờ re-run khi có stack staging
 
 **Definition of Done:** mỗi release staging chạy smoke; quarterly chaos có biên bản.
 
@@ -332,16 +325,15 @@ Dùng bảng này khi seed Vault KV (`secret/collabspace/staging`, …).
 
 ### 14. Backup tự động
 
-- [x] **Docker/demo:** cron host chạy `backup-postgres.sh` + `backup-mongo.sh` — artifacts copy sang object storage (S3/MinIO/GCS).
-- [x] **K8s/prod:** ưu tiên managed DB (RDS, Cloud SQL, Atlas) bật automated backup + PITR.
-- [x] Nếu vẫn Bitnami in-cluster: CronJob K8s gọi sidecar dump; PVC snapshot nếu provider hỗ trợ.
-- [x] Retention: 7 daily + 4 weekly (điều chỉnh theo [backup-policy.md](../backup-policy.md)).
+- [x] **Docker/demo:** `backup-postgres.sh` + `backup-mongo.sh` (chạy tay)
+- [x] **K8s/prod:** CronJob `backup-postgres` + `backup-mongo` — upload DO Spaces (`collabspace-bucket`, prefix `backups/`); credentials qua Vault → ESO `backup-spaces-secret` (`DO_SPACES_KEY/SECRET` trong `phase0.env`)
+- [x] Retention cleanup 7 ngày trên Spaces (trong CronJob upload container)
+- [~] **Verified:** Postgres backup test job upload OK (2026-06-19); Mongo job chưa test thủ công
 
 ### 15. Restore drill (quarterly)
 
-- [x] Restore Postgres vào instance **mới**; chạy migration nếu cần.
-- [x] Restore Mongo archive; smoke read API task/notification.
-- [x] Đo thời gian vs RTO 4h; cập nhật gap vào `backup-policy.md`.
+- [x] Scripts: `restore-postgres.sh`, `restore-mongo.sh` + hướng dẫn trong `drills/README.md`
+- [~] Drill log có template; lần chạy thật **Skipped** (Docker offline 2026-06-10) — re-run khi có stack
 
 ### 16. RabbitMQ & Redis vận hành
 
@@ -460,19 +452,19 @@ Infra **hỗ trợ** bằng: Compose profile Traefik, seed trong job, `demo-e2e`
 | 10 | `values-staging.yaml` per-env + deploy Helm documented | P0 | ✅ (example committed; actual per-env, đúng design) |
 | 11 | Container registry + build pipeline (GHCR) | P1 | ✅ (`docker-deploy.yml` build-images job) |
 | 12 | GitHub Actions CI/CD (`ci.yml` + `docker-deploy.yml`) | P1 | ✅ |
-| 12a | GitHub repo secrets thật + first successful Droplet deploy | P1 | **⬜ CÒN LẠI** — cần add `DROPLET_HOST/USER/SSH_KEY`, `GHCR_TOKEN` vào repo secrets và chạy workflow |
+| 12a | GitHub repo secrets + Droplet deploy E2E | P1 | ✅ (`DROPLET_*`, `GHCR_*`; deploy + demo-e2e trên prod) |
 | 12b | CI smoke: `run-demo-e2e-prod.sh` sau deploy | P1 | ✅ (tích hợp trong `docker-deploy.yml`) |
 | 13 | CD staging + post-deploy verify-readiness | P1 | ✅ (`helm-deploy-ci.sh` + verify step) |
 | 14 | Prometheus/Grafana/Loki trên K8s | P1 | ✅ (full stack trong Helm) |
-| 15 | Alertmanager receiver (Slack/email) test thật | P1 | **⚠️ CÒN LẠI** — config có (`alertmanager.yml`); Slack webhook URL là placeholder dummy |
+| 15 | Alertmanager receiver (Slack/email) test thật | P1 | **⬜ CÒN LẠI** |
 | 16 | NetworkPolicy + internal route verify | P2 | ✅ (`templates/network-policies.yaml`) |
 | 17 | TLS ingress (Traefik ACME / Let's Encrypt) | P2 | ✅ (`gateway.tls` + `certResolver: letsencrypt` trong Helm) |
-| 18 | Backup cron K8s + object storage | P2 | ✅ — CronJob Helm template (`templates/jobs/backup-cronjob.yaml`) + `backup-spaces-secret`; DO Spaces upload + retention cleanup; bật qua `backup.enabled: true` trong `values-prod.yaml` |
-| 19 | Restore drill quarterly + log | P2 | ✅ — `restore-postgres.sh` + `restore-mongo.sh`; drill log trong `drills/README.md` (re-run khi Docker daemon lên) |
+| 18 | Backup cron K8s + DO Spaces | P2 | ✅ — Postgres test upload OK; Mongo CronJob deployed, chưa test job |
+| 19 | Restore drill quarterly + log | P2 | ⚠️ scripts ✅; drill log chờ re-run |
 | 20 | Loki stack + Explore theo `X-Request-Id` | P2 | ✅ (Loki + Promtail; app log field là app team) |
 | 21 | Jaeger staging manifest + `TRACING_ENABLED` | P3 | ✅ (`infrastructure/tracing/jaeger-deployment.yaml`) |
 | 22 | k6 scenarios + Load Test dashboard | P3 | ✅ (3 scenarios + Grafana dashboard) |
-| 23 | Chaos quarterly staging + biên bản | P3 | ✅ — drill record + pass criteria trong `drills/README.md`; re-run khi Docker daemon lên để điền log thật |
+| 23 | Chaos quarterly staging + biên bản | P3 | ⚠️ script ✅; drill log chờ re-run |
 | 24 | Image CVE scan trong CI (Trivy) | P3 | ✅ (`docker-deploy.yml` Trivy step, fail on CRITICAL/HIGH) |
 
 ---
@@ -483,10 +475,10 @@ Infra **hỗ trợ** bằng: Compose profile Traefik, seed trong job, `demo-e2e`
 |------------------|-----------|
 | Dockerfile / build context ổn định | CI build image |
 | Health endpoint contract | Smoke test, probes |
-| `scripts/demo-e2e` ổn định trên CI env | MVP smoke gate (✅ script có; cần verify trong pipeline) |
+| `scripts/demo-e2e` ổn định trên CI env | MVP smoke gate ✅ sau deploy `main` |
 | Danh sách env bắt buộc per service | Helm ConfigMap/Secret mapping |
 | Quyết định cloud provider (AWS/GCP/Azure/on-prem) | EKS/GKE/AKS, managed DB, secret manager |
 
 ---
 
-*Tạo: 2026-06-10 — đồng bộ với Phase B (trust boundaries), Phase C (`X-Request-Id`). Cập nhật 2026-06-11: Vault scaffold; sync `demo-e2e` Done, pnpm workspace, CI smoke P1, activity feed task Done.*
+*Cập nhật: 2026-06-19 — sync snapshot, per-service CI/CD, DO Spaces backup (Vault `DO_SPACES_*`, bucket/endpoint trong Helm), #12a Done, #15 Alertmanager còn lại.*
