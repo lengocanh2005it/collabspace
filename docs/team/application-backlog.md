@@ -1,14 +1,10 @@
 # Backlog ứng dụng — Lê Ngọc Anh, Ngô Quang Tiến, Võ Trung Tín
 
-> **Võ Trung Tín update (2026-06-14):** task board and mark-all-read unit
-> specs, task/notification E2E specs, user/mention listener specs, Kafka dead
-> code removal, unused Azure config cleanup, Nest logger migration, and
-> attachment storage documentation are complete. Workspace activity was
-> already implemented at `GET /api/v1/workspaces/:id/activity`. The Admin
-> Platform backlog is also implemented. CI demo smoke remains an
-> infrastructure-owned deployment workflow item.
+> **Rà soát 2026-06-19:** đồng bộ checkbox với code/CI. MVP backend + E2E per service
+> **Done**; gap thực tế: contract test, FE Playwright E2E, backup offsite/restore drill,
+> Alertmanager receiver thật. **CI `demo-e2e`:** gate tự động sau mỗi deploy `main` (2026-06-19).
 
-Tài liệu này liệt kê **việc còn lại về logic code / API / test / demo** (cập nhật 2026-06-13).  
+Tài liệu này liệt kê **việc còn lại về logic code / API / test / demo** (cập nhật 2026-06-19).  
 **Nguồn chính trạng thái tính năng:** [features.md](../features.md). **Infra/DevOps:** [phan-phu-tho-infrastructure-backlog.md](./phan-phu-tho-infrastructure-backlog.md) (Phan Phú Thọ). **Admin Platform API (owner Võ Trung Tín, deadline sáng CN 14/06/2026):** [admin-backlog.md](./admin-backlog.md).
 
 ## Tóm tắt rà soát
@@ -19,8 +15,10 @@ Tài liệu này liệt kê **việc còn lại về logic code / API / test / d
 | **Demo E2E script** | ✅ `scripts/demo-e2e.sh` + `scripts/demo-e2e.ps1` — 7 bước qua Traefik |
 | **Activity feed task** | ✅ `GET /api/v1/tasks/:id/activity` (`get-task-activity.handler.ts`) |
 | **OpenAPI 5/5** | ✅ Swagger UI 5 service + response schemas; public gateway `/swagger/<service>` — [service-urls.md](../service-urls.md) |
+| **E2E per service** | ✅ 5/5 service có `test/*.e2e-spec.ts` (workspace thêm `workspace-flow.e2e-spec.ts`) |
 | **Không có `TODO`/`FIXME`** trong `services/**` | Gap chủ yếu: contract test tự động, FE polish & tests |
-| **Thiếu lớn nhất (app)** | Contract test; FE automated E2E; UI polish (repo `collabspace-fe`) |
+| **Thiếu lớn nhất (app)** | Contract test; FE automated E2E (Playwright); UI polish (`collabspace-fe`) |
+| **CI smoke `demo-e2e`** | ✅ Tự động sau deploy `main`; `workflow_dispatch` mặc định bật (`run_e2e`, opt-out `false`) |
 | **Rủi ro cấu hình** | Đã harden: prod yêu cầu `BREVO_API_KEY`, `SERVICE_JWT_SECRET`, `DATABASE_URL`, Azure Blob; `WORKSPACE_CLIENT_MODE=http` bắt buộc trên task prod |
 
 ### Phân công (theo [README.md](../../README.md#team))
@@ -37,7 +35,7 @@ Tài liệu này liệt kê **việc còn lại về logic code / API / test / d
 ## Ưu tiên chung (cả team)
 
 ```text
-P0  Gắn demo-e2e vào CI smoke              →  ✅ workflow docker-deploy.yml
+P0  Gắn demo-e2e vào CI smoke              →  ✅ `docker-deploy.yml` (push main + dispatch default on)
 P1  E2E per service (workspace/task/notif) →  workspace e2e invitation flow ✅; task/notif có spec
 P1  Workspace activity feed                →  ✅ `GET /api/v1/workspaces/:id/activity`
 P1  OpenAPI 5/5 + response schemas          →  ✅ Done (`/swagger`, gateway expose)
@@ -53,9 +51,9 @@ P2  Tech debt (Kafka dead code, console.log, mock paths) →  theo service
 | 2 | Chạy qua **Traefik** (`http://localhost/api/v1/...`) | ✅ | Võ Trung Tín |
 | 3 | Tích hợp seed (`scripts/seed.sh`, `demo-seed-data.json`) | ✅ | Võ Trung Tín |
 | 4 | Exit code ≠ 0 nếu bước fail; in `X-Request-Id` khi debug | ✅ | Võ Trung Tín |
-| 5 | Gắn script vào **CI smoke** | [ ] | Phan Phú Thọ |
+| 5 | Gắn script vào **CI smoke** | ✅ | Phan Phú Thọ |
 
-**Definition of Done (còn lại):** CI chạy `demo-e2e` trên Docker Compose + Traefik profile mỗi PR/nightly.
+**Definition of Done:** ✅ Mỗi push `main` chạy `run-demo-e2e-prod.sh` sau Helm deploy; manual dispatch có thể skip (`run_e2e=false`).
 
 ### Service JWT — S2S HTTP (slice nhỏ, cross-team)
 
@@ -93,9 +91,9 @@ Contract: [service-contracts.md § Service JWT](../../.claude/docs/service-contr
 
 ### Việc còn lại — Droplet (shared với infra backlog Phú Thọ)
 
-- [x] Gắn `scripts/demo-e2e` vào CI smoke sau deploy (`run-demo-e2e-prod.sh`)
-- [ ] Backup/snapshot Droplet + restore drill — [backup-policy.md](../backup-policy.md)
-- [ ] Alertmanager routing (Slack/email)
+- [x] Gắn `scripts/demo-e2e` vào CI smoke — `run-demo-e2e-prod.sh` sau Helm deploy; tự động trên push `main`
+- [~] Backup/snapshot Droplet + restore drill — CronJob Helm dump `/tmp` (chưa offsite S3); chưa có `restore-*.sh` / drill log — [backup-policy.md](../backup-policy.md)
+- [~] Alertmanager routing (Slack/email) — Alertmanager deploy trên K8s; Helm receiver `null` (chưa webhook Slack/email thật)
 
 Chi tiết infra: [phan-phu-tho-infrastructure-backlog.md](./phan-phu-tho-infrastructure-backlog.md).
 
@@ -171,7 +169,7 @@ Chi tiết infra: [phan-phu-tho-infrastructure-backlog.md](./phan-phu-tho-infras
 
 #### P2 — API ngoài MVP (tùy product)
 
-- [ ] Remove member / đổi role member qua HTTP (chưa có — không block demo)
+- [x] **Remove member / leave / đổi role** — `DELETE` + `PATCH` `/workspaces/:id/members/:userId` (`workspace.controller.ts`); spec `remove-member.use-case.spec.ts` — xem [features.md](../features.md) §3
 
 **DoD giai đoạn Tiến:** ✅ workspace e2e green (invitation flow); guard + outbox có test; task-service không dùng workspace mock trên production (`WORKSPACE_CLIENT_MODE=http` guard + spec).
 
@@ -241,8 +239,8 @@ Chi tiết infra: [phan-phu-tho-infrastructure-backlog.md](./phan-phu-tho-infras
 | auth-service | Done | — (repository specs + use-case integration + Swagger + e2e flow ✅) | Anh |
 | user-service | Done | — (12/12 use-case specs + internal/auth-events tests ✅) | Anh |
 | workspace-service | Done | — (e2e invitation flow, guard + outbox specs, invitations Swagger ✅) | Tiến |
-| task-service | Done | Board test, e2e, prod guards (workspace http ✅, blob, SERVICE_JWT) | Tín (+ Tiến integration) |
-| notification-service | Done | mark-all test, e2e, Kafka cleanup | Tín |
+| task-service | Done | — (board/e2e/prod guards ✅) | Tín (+ Tiến integration) |
+| notification-service | Done | — (mark-all test, e2e, Kafka cleanup ✅) | Tín |
 
 ---
 
@@ -251,7 +249,7 @@ Chi tiết infra: [phan-phu-tho-infrastructure-backlog.md](./phan-phu-tho-infras
 | Hạng mục | Ghi chú | Gợi ý owner |
 |----------|---------|-------------|
 | **Contract test tự động** | Pact hoặc schema test event JSON; hiện chỉ doc + `@collabspace/shared` | Cả team |
-| **CI smoke `demo-e2e`** | ✅ Gate trên `main` deploy (`docker-deploy.yml`) | Phú Thọ + Tín |
+| **CI smoke `demo-e2e`** | ✅ Gate sau deploy (`docker-deploy.yml`; opt-out `run_e2e=false` khi dispatch tay) | Phú Thọ + Tín |
 | Structured logging + `requestId` trong log line | Phase C middleware có; chưa inject mọi log line; gRPC chưa propagate | Tín + Anh |
 | OpenAPI 5/5 services | ✅ UI + response schemas; prod URLs: [service-urls.md](../service-urls.md) | — |
 | Chuẩn hóa API prefix | task/notification: `api` + `v1/...` controller vs `api/v1` global ở auth/user/workspace | Cả team (breaking nếu đổi) |
@@ -268,7 +266,7 @@ Chi tiết infra: [phan-phu-tho-infrastructure-backlog.md](./phan-phu-tho-infras
 | 1 | `scripts/demo-e2e` sh + ps1 | Tín | P0 ✅ |
 | 2 | E2E qua Traefik | Tín | P0 ✅ |
 | 3 | Activity feed `GET .../tasks/:id/activity` | Tín | P1 ✅ |
-| 3b | Workspace activity `GET .../workspaces/:id/activity` | Tín | P1 |
+| 3b | Workspace activity `GET .../workspaces/:id/activity` | Tín | P1 ✅ |
 | 4 | User use-case tests (batch 1: create/update/bulk) | Anh | P1 ✅ |
 | 5 | User use-case tests (batch 2: preferences/status) | Anh | P1 ✅ |
 | 6 | auth user repository + use-case integration specs | Anh | P1 ✅ |
@@ -280,7 +278,7 @@ Chi tiết infra: [phan-phu-tho-infrastructure-backlog.md](./phan-phu-tho-infras
 | 12 | notification e2e spec | Tín | P1 ✅ |
 | 13 | Remove kafka-node dead code | Tín | P2 ✅ |
 | 14 | notification Swagger + response schemas | Tín | P2 ✅ |
-| 15 | Gắn `demo-e2e` CI smoke | Phú Thọ | P0 |
+| 15 | Gắn `demo-e2e` CI smoke (tự động sau deploy) | Phú Thọ | P0 ✅ |
 | 16 | auth/user/task OpenAPI response schemas (`@ApiOkResponse`) | Anh + Tín | P2 ✅ |
 
 ---
@@ -298,4 +296,4 @@ Chi tiết infra: [phan-phu-tho-infrastructure-backlog.md](./phan-phu-tho-infras
 
 ---
 
-*Cập nhật: 2026-06-15 — đóng backlog Ngô Quang Tiến: workspace e2e invitation flow, auth guard spec, outbox processor spec, invitations Swagger, WORKSPACE_CLIENT_MODE prod guard + test.*
+*Cập nhật: 2026-06-19 — P0 CI demo-e2e gate tự động (`docker-deploy.yml`); remove/change role Done.*

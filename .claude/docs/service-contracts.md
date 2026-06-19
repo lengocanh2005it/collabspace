@@ -578,7 +578,7 @@ Minimum HTTP routes to close MVP:
 - `POST /invitations/{invitationId}/accept`
 - `POST /invitations/{invitationId}/reject`
 - `GET /workspaces/{id}/members`
-- `PATCH /workspaces/{id}/members/{userId}` — body `{ role: "manager" | "member" }`; **only owner**; target cannot be `owner` (**Planned**)
+- `PATCH /workspaces/{id}/members/{userId}` — body `{ role: "manager" | "member" }`; **only owner**; target cannot be `owner` (**Done**)
 - `DELETE /workspaces/{id}/members/{userId}` — remove member/manager or leave; owner cannot be removed
 
 Minimum domain concepts:
@@ -640,6 +640,7 @@ Rules:
 Minimum HTTP routes:
 
 - `GET /notifications?status=active|archived`
+- `GET /notifications/stream`
 - `PATCH /notifications/{id}/read`
 - `PATCH /notifications/{id}/archive`
 - optional `PATCH /notifications/read-all`
@@ -659,6 +660,6 @@ Minimum notification fields:
 
 Rules:
 
-- MVP does not require WebSocket.
+- Realtime notification delivery may use SSE on `GET /notifications/stream`; list/read/archive HTTP endpoints remain the source of truth.
 - Notification API should filter by current authenticated user.
 - Event consumer must be idempotent.

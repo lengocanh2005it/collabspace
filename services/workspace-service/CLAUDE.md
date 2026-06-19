@@ -69,8 +69,8 @@ Deep docs: `@../../.claude/docs/service-architecture.md` (workspace section), `@
 
 Membership `workspace_members.role`: **`owner` > `manager` > `member`**. Không dùng workspace `admin` (nhầm platform admin).
 
-- **owner** — tạo workspace; sửa/xóa workspace; promote/demote manager (**planned**); remove manager/member
-- **manager** — invite; sửa/xóa project; remove member (**planned**)
+- **owner** — tạo workspace; sửa/xóa workspace; promote/demote manager (**Done**); remove manager/member
+- **manager** — invite; sửa/xóa project; remove member (**Done**)
 - **member** — dùng task/project/comment trong workspace
 
 Platform `admin` (`auth-service`) là lớp khác — xem `docs/roles-and-permissions.md`.
