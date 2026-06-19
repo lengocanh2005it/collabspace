@@ -4,7 +4,7 @@ CollabSpace NestJS services read secrets from **environment variables**. Vault i
 
 | Environment | Integration |
 |-------------|-------------|
-| **Local Docker** | Vault dev container (`docker-compose.vault.yml`) + `sync-env-from-vault` → `services/*/.env` |
+| **Local Docker** | **Khuyến nghị:** Vault dev (`docker-compose.vault.yml`) + `seed-dev-secrets` + `sync-env-from-vault` → `services/*/.env`. Hoặc điền tay dev credentials khớp `vault/.env.example`. |
 | **Single Droplet** | Persistent single-node Vault container + `sync-env-from-vault` → `services/*/.env` |
 | **Kubernetes** | Vault + [External Secrets Operator](https://external-secrets.io/) → `Secret` → `envFrom` (Helm) |
 
