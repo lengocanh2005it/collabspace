@@ -1,59 +1,233 @@
+{{- if .Values.backup.enabled }}
+{{- $pgHost   := include "collabspace.postgresql.host" . }}
+{{- $pgPass   := include "collabspace.postgresPassword" . }}
+{{- $mongoHost := include "collabspace.mongodb.host" . }}
+{{- $mongoUser := include "collabspace.mongoUsername" . }}
+{{- $mongoPass := include "collabspace.mongoPassword" . }}
+{{- $endpoint  := .Values.backup.doSpaces.endpoint }}
+{{- $bucket    := .Values.backup.doSpaces.bucket }}
+{{- $region    := .Values.backup.doSpaces.region }}
+{{- $prefix    := .Values.backup.doSpaces.prefix | default "backups" }}
+{{- $retention := .Values.backup.retention.days | default 7 }}
+---
+# ─── PostgreSQL backup ───────────────────────────────────────────────────────
 apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: backup-postgres
   namespace: {{ .Release.Namespace }}
+  labels:
+    app: backup-postgres
+    app.kubernetes.io/component: backup
+    app.kubernetes.io/part-of: collabspace
 spec:
-  schedule: "0 2 * * *" # Daily at 2 AM
+  schedule: {{ .Values.backup.postgres.schedule | quote }}
   concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
   jobTemplate:
     spec:
+      backoffLimit: 2
       template:
         spec:
-          containers:
-          - name: postgres-backup
-            image: postgres:15-alpine
-            command:
-            - /bin/sh
-            - -c
-            - |
-              echo "Starting Postgres backup..."
-              PGPASSWORD=$POSTGRES_PASSWORD pg_dump -h collabspace-postgresql -U postgres -d collabspace > /tmp/backup.sql
-              echo "Backup complete. (In a real setup, this would upload to S3)"
-            env:
-            - name: POSTGRES_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: auth-service-secrets
-                  key: postgresPassword
           restartPolicy: OnFailure
+          volumes:
+            - name: backup-data
+              emptyDir: {}
+          initContainers:
+            - name: pg-dump
+              image: postgres:17-alpine
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -eu
+                  STAMP=$(date -u +%Y%m%dT%H%M%SZ)
+                  echo "==> pg_dump @ ${STAMP}"
+                  for DB in collabspace_auth collabspace_user collabspace_workspace; do
+                    echo "    dumping ${DB}"
+                    PGPASSWORD="${POSTGRES_PASSWORD}" pg_dump \
+                      -h "${POSTGRES_HOST}" -U postgres -d "${DB}" \
+                      --no-owner --no-acl \
+                      | gzip > "/backup/${DB}.sql.gz"
+                  done
+                  echo "${STAMP}" > /backup/.stamp
+                  echo "==> dump complete"
+              env:
+                - name: POSTGRES_HOST
+                  value: {{ $pgHost | quote }}
+                - name: POSTGRES_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: backup-spaces-secret
+                      key: postgresPassword
+              volumeMounts:
+                - name: backup-data
+                  mountPath: /backup
+          containers:
+            - name: upload
+              image: amazon/aws-cli:2.15.30
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -eu
+                  STAMP=$(cat /backup/.stamp)
+                  DATE_PREFIX="${STAMP:0:8}"   # YYYYMMDD
+                  DEST="s3://{{ $bucket }}/{{ $prefix }}/postgres/${DATE_PREFIX}/${STAMP}"
+
+                  echo "==> uploading to ${DEST}"
+                  for f in /backup/*.sql.gz; do
+                    aws --endpoint-url "${SPACES_ENDPOINT}" \
+                        s3 cp "${f}" "${DEST}/$(basename ${f})"
+                  done
+                  echo "==> upload complete"
+
+                  # Retention cleanup — remove objects older than {{ $retention }} days
+                  CUTOFF=$(date -u -d "{{ $retention }} days ago" +%Y-%m-%dT%H:%M:%SZ 2>/dev/null \
+                           || date -u -v-{{ $retention }}d +%Y-%m-%dT%H:%M:%SZ)
+                  echo "==> cleaning up objects before ${CUTOFF}"
+                  aws --endpoint-url "${SPACES_ENDPOINT}" \
+                      s3api list-objects-v2 \
+                      --bucket "{{ $bucket }}" \
+                      --prefix "{{ $prefix }}/postgres/" \
+                      --query "Contents[?LastModified<='${CUTOFF}'].Key" \
+                      --output text \
+                  | tr '\t' '\n' \
+                  | grep -v '^None$' \
+                  | while read -r key; do
+                      [ -z "${key}" ] && continue
+                      echo "    deleting s3://{{ $bucket }}/${key}"
+                      aws --endpoint-url "${SPACES_ENDPOINT}" \
+                          s3api delete-object \
+                          --bucket "{{ $bucket }}" --key "${key}"
+                    done || echo "==> cleanup skipped (no old objects or error)"
+                  echo "==> done"
+              env:
+                - name: SPACES_ENDPOINT
+                  value: {{ $endpoint | quote }}
+                - name: AWS_DEFAULT_REGION
+                  value: {{ $region | quote }}
+                - name: AWS_ACCESS_KEY_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: backup-spaces-secret
+                      key: doSpacesKey
+                - name: AWS_SECRET_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: backup-spaces-secret
+                      key: doSpacesSecret
+              volumeMounts:
+                - name: backup-data
+                  mountPath: /backup
 ---
+# ─── MongoDB backup ──────────────────────────────────────────────────────────
 apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: backup-mongo
   namespace: {{ .Release.Namespace }}
+  labels:
+    app: backup-mongo
+    app.kubernetes.io/component: backup
+    app.kubernetes.io/part-of: collabspace
 spec:
-  schedule: "30 2 * * *" # Daily at 2:30 AM
+  schedule: {{ .Values.backup.mongo.schedule | quote }}
   concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
   jobTemplate:
     spec:
+      backoffLimit: 2
       template:
         spec:
-          containers:
-          - name: mongo-backup
-            image: mongo:6-jammy
-            command:
-            - /bin/sh
-            - -c
-            - |
-              echo "Starting Mongo backup..."
-              mongodump --uri="mongodb://root:${MONGO_PASSWORD}@collabspace-mongodb:27017/admin" --archive=/tmp/mongo-backup.gz --gzip
-              echo "Backup complete. (In a real setup, this would upload to S3)"
-            env:
-            - name: MONGO_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: task-service-secrets
-                  key: mongoPassword
           restartPolicy: OnFailure
+          volumes:
+            - name: backup-data
+              emptyDir: {}
+          initContainers:
+            - name: mongo-dump
+              image: mongo:6-jammy
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -eu
+                  STAMP=$(date -u +%Y%m%dT%H%M%SZ)
+                  echo "==> mongodump @ ${STAMP}"
+                  mongodump \
+                    --uri="mongodb://${MONGO_USER}:${MONGO_PASSWORD}@${MONGO_HOST}:27017/admin" \
+                    --archive=/backup/mongo.archive.gz \
+                    --gzip
+                  echo "${STAMP}" > /backup/.stamp
+                  echo "==> dump complete"
+              env:
+                - name: MONGO_HOST
+                  value: {{ $mongoHost | quote }}
+                - name: MONGO_USER
+                  value: {{ $mongoUser | quote }}
+                - name: MONGO_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: backup-spaces-secret
+                      key: mongoPassword
+              volumeMounts:
+                - name: backup-data
+                  mountPath: /backup
+          containers:
+            - name: upload
+              image: amazon/aws-cli:2.15.30
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -eu
+                  STAMP=$(cat /backup/.stamp)
+                  DATE_PREFIX="${STAMP:0:8}"
+                  DEST="s3://{{ $bucket }}/{{ $prefix }}/mongo/${DATE_PREFIX}/${STAMP}/mongo.archive.gz"
+
+                  echo "==> uploading to ${DEST}"
+                  aws --endpoint-url "${SPACES_ENDPOINT}" \
+                      s3 cp /backup/mongo.archive.gz "${DEST}"
+                  echo "==> upload complete"
+
+                  # Retention cleanup
+                  CUTOFF=$(date -u -d "{{ $retention }} days ago" +%Y-%m-%dT%H:%M:%SZ 2>/dev/null \
+                           || date -u -v-{{ $retention }}d +%Y-%m-%dT%H:%M:%SZ)
+                  echo "==> cleaning up objects before ${CUTOFF}"
+                  aws --endpoint-url "${SPACES_ENDPOINT}" \
+                      s3api list-objects-v2 \
+                      --bucket "{{ $bucket }}" \
+                      --prefix "{{ $prefix }}/mongo/" \
+                      --query "Contents[?LastModified<='${CUTOFF}'].Key" \
+                      --output text \
+                  | tr '\t' '\n' \
+                  | grep -v '^None$' \
+                  | while read -r key; do
+                      [ -z "${key}" ] && continue
+                      echo "    deleting s3://{{ $bucket }}/${key}"
+                      aws --endpoint-url "${SPACES_ENDPOINT}" \
+                          s3api delete-object \
+                          --bucket "{{ $bucket }}" --key "${key}"
+                    done || echo "==> cleanup skipped (no old objects or error)"
+                  echo "==> done"
+              env:
+                - name: SPACES_ENDPOINT
+                  value: {{ $endpoint | quote }}
+                - name: AWS_DEFAULT_REGION
+                  value: {{ $region | quote }}
+                - name: AWS_ACCESS_KEY_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: backup-spaces-secret
+                      key: doSpacesKey
+                - name: AWS_SECRET_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: backup-spaces-secret
+                      key: doSpacesSecret
+              volumeMounts:
+                - name: backup-data
+                  mountPath: /backup
+{{- end }}

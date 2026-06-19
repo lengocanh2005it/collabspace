@@ -71,6 +71,24 @@ jobs:
             echo "services=${json}" >> "$GITHUB_OUTPUT"
           fi
 
+  secret-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Block committed .env files
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Find any tracked file whose basename is exactly ".env"
+          hits=$(git ls-files | grep -E '(^|/)\.env$' || true)
+          if [[ -n "$hits" ]]; then
+            echo "::error::Committed .env file(s) detected — remove from git tracking:"
+            echo "$hits"
+            exit 1
+          fi
+          echo "No committed .env files found."
+
   service-ci:
     runs-on: ubuntu-latest
     needs: detect-changes
@@ -119,9 +137,18 @@ jobs:
 
   ci-gate:
     runs-on: ubuntu-latest
-    needs: [detect-changes, service-ci]
+    needs: [detect-changes, secret-scan, service-ci]
     if: always()
     steps:
+      - name: Verify secret-scan result
+        shell: bash
+        run: |
+          result="${{ needs.secret-scan.result }}"
+          if [[ "$result" != "success" ]]; then
+            echo "::error::secret-scan failed — committed .env file detected."
+            exit 1
+          fi
+
       - name: Verify CI result
         shell: bash
         run: |

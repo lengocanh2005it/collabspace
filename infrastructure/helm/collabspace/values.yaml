@@ -400,6 +400,24 @@ promtail:
       memory: 128Mi
       cpu: 100m
 
+backup:
+  # Enable in values-prod.yaml — off by default to avoid running on local/dev clusters.
+  enabled: false
+  postgres:
+    schedule: "0 2 * * *"      # daily 02:00 UTC
+  mongo:
+    schedule: "30 2 * * *"     # daily 02:30 UTC (after postgres)
+  retention:
+    days: 7                    # delete objects older than this from DO Spaces
+  doSpaces:
+    endpoint: "https://sgp1.digitaloceanspaces.com"
+    bucket: "collabspace-bucket"
+    region: "sgp1"
+    prefix: "backups"          # object key prefix: backups/postgres/YYYYMMDD/…
+    # accessKey / secretKey: set in values-prod.yaml (never commit real values)
+    accessKey: ""
+    secretKey: ""
+
 hpa:
   enabled: true
   minReplicas: 1

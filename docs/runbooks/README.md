@@ -13,6 +13,7 @@ Sổ tay xử lý sự cố cho cảnh báo Prometheus trong `infrastructure/mon
 | MongoDown | critical | [MongoDown.md](./MongoDown.md) |
 | RabbitMQHighQueueDepth | warning | [RabbitMQHighQueueDepth.md](./RabbitMQHighQueueDepth.md) |
 | RabbitMQDLQNotEmpty | warning | [RabbitMQDLQNotEmpty.md](./RabbitMQDLQNotEmpty.md) |
+| SecretRotation | ops | [SecretRotation.md](./SecretRotation.md) |
 
 ## Kiểm tra nhanh
 

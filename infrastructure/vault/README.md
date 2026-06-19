@@ -28,6 +28,7 @@ Keys in each path:
 | `rabbitmq_username` / `rabbitmq_password` | `RABBITMQ_*`, `RABBITMQ_URL` | all publishers/consumers |
 | `metrics_auth_token` | `METRICS_AUTH_TOKEN` | all five apps |
 | `azure_storage_connection_string` | `AZURE_STORAGE_CONNECTION_STRING` | user-service (avatar), task-service (attachments) |
+| `do_spaces_key` / `do_spaces_secret` | — (inject vào `backup-spaces-secret` qua ESO) | CronJob backup-postgres, backup-mongo |
 
 Non-secret Azure config for task attachments (Helm ConfigMap, not Vault):
 

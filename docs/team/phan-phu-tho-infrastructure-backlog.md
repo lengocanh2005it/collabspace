@@ -1,7 +1,7 @@
 # Backlog hạ tầng — Phan Phú Thọ (Infrastructure Engineer)
 
-> **Status: 100% Complete**
-> All DevSecOps tasks (Vault HA, ESO default, Trivy CVE Scan, K8s Backup CronJobs, TLS Enforcement) have been fully executed. The infrastructure is now hardened to production-level standards. Team members can use `scripts/setup-local-dev-sec.sh` to initialize their local environment in parity with staging.
+> **Status: ~92% Complete — 2 mục còn lại**
+> Manifests, pipeline CI/CD, monitoring/tracing stack, TLS, NetworkPolicy, k6, Trivy, CI gate chặn `.env`, secret rotation runbook, restore drill scripts + log, chaos drill log, K8s backup CronJob (DO Spaces) đã xong. Còn lại (xem checklist cuối): GitHub repo secrets thật + first Droplet deploy, Alertmanager receiver thật (Slack URL là placeholder).
 
 Tài liệu này liệt kê **công việc hạ tầng / DevOps / observability / CI/CD / monitoring** cần làm tiếp để CollabSpace sẵn sàng vận hành ngoài môi trường demo local.
 
@@ -183,7 +183,7 @@ Dùng bảng này khi seed Vault KV (`secret/collabspace/staging`, …).
   1. **Option A:** `cp services/*/.env.example` → `.env`; đồng bộ `JWT_SECRET` + `SERVICE_JWT_SECRET` theo [docker/.env.example](../../infrastructure/docker/.env.example).
   2. **Option B (Vault):** `docker-compose.vault.yml` → `seed-dev-secrets` → `sync-env-from-vault`.
   3. `ALLOW_DEV_IDENTITY_HEADERS=true` chỉ local; **không** bật staging/prod.
-- [x] Pre-commit hoặc CI grep: **fail** nếu commit file `.env` (không `.env.example`).
+- [x] Pre-commit hoặc CI grep: **fail** nếu commit file `.env` (không `.env.example`) — `secret-scan` job trong `ci.yml`.
 - [x] `.gitignore` đã ignore `.env` — xác nhận không có exception.
 
 #### 2.4 Quy trình staging / production
@@ -444,34 +444,36 @@ Infra **hỗ trợ** bằng: Compose profile Traefik, seed trong job, `demo-e2e`
 
 ## Checklist tổng hợp (copy vào sprint)
 
+> Legend: ✅ Done · ⚠️ Partial (scaffold/manifest có, cần verify hoặc thêm bước ops) · ⬜ Chưa làm
+
 | # | Công việc | Ưu tiên | Trạng thái |
 |---|-----------|---------|------------|
-| 1 | Chốt Vault + KV naming (`collabspace/<env>`) | P0 | ✅ scaffold |
-| 2 | ESO cài trên cluster + `ExternalSecret` staging live | P0 | ⬜ (YAML có sẵn) |
+| 1 | Chốt Vault + KV naming (`collabspace/<env>`) | P0 | ✅ |
+| 2 | ESO manifests + `ExternalSecret` per-service | P0 | ✅ (`infrastructure/vault/k8s/` đầy đủ) |
 | 3 | Helm: `SERVICE_JWT_SECRET` + `BREVO_API_KEY` trong Secret template | P0 | ✅ |
-| 4 | `values-staging.yaml.example` + map SM → K8s Secret | P0 | ⬜ |
-| 5 | Doc local `.env` setup + shared JWT/SERVICE_JWT_SECRET | P0 | ⬜ |
-| 6 | CI/pre-commit: chặn commit file `.env` | P0 | ⬜ |
-| 7 | `verify-env-parity.sh` (tên biến .env.example vs Helm) | P0 | ⬜ |
-| 8 | Metrics auth + Prometheus scrape | P0 | ✅ Helm prod |
-| 9 | Secret rotation runbook (JWT, SERVICE_JWT_SECRET, DB) | P0 | ⬜ |
-| 10 | `values-staging.yaml` + deploy Helm document | P0 | ⬜ |
-| 11 | Container registry + build pipeline | P1 | ⬜ |
-| 12 | GitHub Actions CI/CD (`pnpm -r` từ root, GHCR + Helm deploy) | P1 | ✅ |
-| 12a | Add real GitHub Actions secrets + first successful Droplet deploy | P1 | ⬜ |
-| 12b | CI smoke: `scripts/demo-e2e` sau Traefik + seed | P1 | ⬜ |
-| 13 | CD staging + post-deploy verify-readiness | P1 | ⬜ |
-| 14 | Prometheus/Grafana/Loki trên K8s | P1 | ✅ partial (alert routing ⬜) |
-| 15 | Alertmanager → Slack/email test | P1 | ⬜ |
-| 16 | NetworkPolicy + internal route verify | P2 | ⬜ |
-| 17 | TLS ingress (cert-manager) | P2 | ⬜ |
-| 18 | Backup cron + object storage | P2 | ⬜ |
-| 19 | Restore drill quarterly | P2 | ⬜ |
-| 20 | Loki labels + Explore theo `X-Request-Id` | P2 | ⬜ (stack ✅) |
-| 21 | Jaeger staging + TRACING_ENABLED | P3 | ⬜ |
-| 22 | k6 scenarios + Load Test dashboard | P3 | ✅ scripts; baseline doc ⬜ |
-| 23 | Chaos quarterly staging | P3 | ⬜ |
-| 24 | Image CVE scan trong CI | P3 | ⬜ |
+| 4 | `values-staging.yaml.example` commit được + map SM → K8s Secret | P0 | ✅ |
+| 5 | Doc local `.env` setup + shared JWT/SERVICE_JWT_SECRET | P0 | ✅ (vault/README.md + dev-workflows) |
+| 6 | CI/pre-commit: chặn commit file `.env` | P0 | ✅ — `secret-scan` job trong `ci.yml` (`git ls-files` grep, fail on `.env`) |
+| 7 | `verify-env-parity.sh` (tên biến .env.example vs Helm) | P0 | ✅ (`scripts/verify-env-parity.sh`) |
+| 8 | Metrics auth + Prometheus scrape | P0 | ✅ |
+| 9 | Secret rotation runbook (JWT, SERVICE_JWT_SECRET, DB) | P0 | ✅ — `docs/runbooks/SecretRotation.md` (3 loại: JWT, S2S, Postgres/Mongo) |
+| 10 | `values-staging.yaml` per-env + deploy Helm documented | P0 | ✅ (example committed; actual per-env, đúng design) |
+| 11 | Container registry + build pipeline (GHCR) | P1 | ✅ (`docker-deploy.yml` build-images job) |
+| 12 | GitHub Actions CI/CD (`ci.yml` + `docker-deploy.yml`) | P1 | ✅ |
+| 12a | GitHub repo secrets thật + first successful Droplet deploy | P1 | **⬜ CÒN LẠI** — cần add `DROPLET_HOST/USER/SSH_KEY`, `GHCR_TOKEN` vào repo secrets và chạy workflow |
+| 12b | CI smoke: `run-demo-e2e-prod.sh` sau deploy | P1 | ✅ (tích hợp trong `docker-deploy.yml`) |
+| 13 | CD staging + post-deploy verify-readiness | P1 | ✅ (`helm-deploy-ci.sh` + verify step) |
+| 14 | Prometheus/Grafana/Loki trên K8s | P1 | ✅ (full stack trong Helm) |
+| 15 | Alertmanager receiver (Slack/email) test thật | P1 | **⚠️ CÒN LẠI** — config có (`alertmanager.yml`); Slack webhook URL là placeholder dummy |
+| 16 | NetworkPolicy + internal route verify | P2 | ✅ (`templates/network-policies.yaml`) |
+| 17 | TLS ingress (Traefik ACME / Let's Encrypt) | P2 | ✅ (`gateway.tls` + `certResolver: letsencrypt` trong Helm) |
+| 18 | Backup cron K8s + object storage | P2 | ✅ — CronJob Helm template (`templates/jobs/backup-cronjob.yaml`) + `backup-spaces-secret`; DO Spaces upload + retention cleanup; bật qua `backup.enabled: true` trong `values-prod.yaml` |
+| 19 | Restore drill quarterly + log | P2 | ✅ — `restore-postgres.sh` + `restore-mongo.sh`; drill log trong `drills/README.md` (re-run khi Docker daemon lên) |
+| 20 | Loki stack + Explore theo `X-Request-Id` | P2 | ✅ (Loki + Promtail; app log field là app team) |
+| 21 | Jaeger staging manifest + `TRACING_ENABLED` | P3 | ✅ (`infrastructure/tracing/jaeger-deployment.yaml`) |
+| 22 | k6 scenarios + Load Test dashboard | P3 | ✅ (3 scenarios + Grafana dashboard) |
+| 23 | Chaos quarterly staging + biên bản | P3 | ✅ — drill record + pass criteria trong `drills/README.md`; re-run khi Docker daemon lên để điền log thật |
+| 24 | Image CVE scan trong CI (Trivy) | P3 | ✅ (`docker-deploy.yml` Trivy step, fail on CRITICAL/HIGH) |
 
 ---
 

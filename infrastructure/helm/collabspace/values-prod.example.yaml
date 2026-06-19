@@ -161,6 +161,24 @@ observability:
   exporters:
     enabled: true
 
+backup:
+  enabled: true
+  postgres:
+    schedule: "0 2 * * *"
+  mongo:
+    schedule: "30 2 * * *"
+  retention:
+    days: 7
+  doSpaces:
+    endpoint: "https://sgp1.digitaloceanspaces.com"   # đổi region nếu khác: nyc3, fra1, …
+    bucket: "collabspace-bucket"
+    region: "sgp1"
+    prefix: "backups"
+    # Lấy key từ DO console → Spaces → Access Keys (không phải API token)
+    # Trong prod (ESO enabled): để trống — inject qua backup-spaces-secret từ Vault
+    accessKey: ""
+    secretKey: ""
+
 hpa:
   enabled: false
 

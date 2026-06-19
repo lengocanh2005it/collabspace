@@ -25,7 +25,7 @@ set -a
 source "$ENV_FILE"
 set +a
 
-required=(JWT_SECRET SERVICE_JWT_SECRET POSTGRES_PASSWORD MONGO_PASSWORD REDIS_PASSWORD RABBITMQ_PASSWORD RABBITMQ_USERNAME METRICS_AUTH_TOKEN AZURE_STORAGE_CONNECTION_STRING)
+required=(JWT_SECRET SERVICE_JWT_SECRET POSTGRES_PASSWORD MONGO_PASSWORD REDIS_PASSWORD RABBITMQ_PASSWORD RABBITMQ_USERNAME METRICS_AUTH_TOKEN AZURE_STORAGE_CONNECTION_STRING DO_SPACES_KEY DO_SPACES_SECRET)
 for key in "${required[@]}"; do
   if [[ -z "${!key:-}" ]]; then
     echo "Missing $key in $ENV_FILE"
@@ -53,6 +53,8 @@ kubectl exec -n "$VAULT_NS" "$VAULT_POD" -- env \
   METRICS_AUTH_TOKEN="$METRICS_AUTH_TOKEN" \
   AZURE_B64="$azure_b64" \
   BREVO_API_KEY="$BREVO_API_KEY" \
+  DO_SPACES_KEY="$DO_SPACES_KEY" \
+  DO_SPACES_SECRET="$DO_SPACES_SECRET" \
   sh -ec '
     AZURE_STORAGE_CONNECTION_STRING="$(printf "%s" "$AZURE_B64" | base64 -d)"
     vault kv put "secret/${KV_PATH}" \
@@ -66,7 +68,9 @@ kubectl exec -n "$VAULT_NS" "$VAULT_POD" -- env \
       rabbitmq_password="${RABBITMQ_PASSWORD}" \
       metrics_auth_token="${METRICS_AUTH_TOKEN}" \
       azure_storage_connection_string="${AZURE_STORAGE_CONNECTION_STRING}" \
-      brevo_api_key="${BREVO_API_KEY}"
+      brevo_api_key="${BREVO_API_KEY}" \
+      do_spaces_key="${DO_SPACES_KEY}" \
+      do_spaces_secret="${DO_SPACES_SECRET}"
   '
 
 echo "Done. Verify:"
