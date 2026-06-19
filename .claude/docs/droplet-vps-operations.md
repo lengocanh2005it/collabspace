@@ -18,17 +18,38 @@ Hướng dẫn cho AI agents khi debug/deploy **production k3s trên DigitalOcea
 
 **Không** đọc/commit `phase0.env`, `values-prod.yaml`, hoặc in secret ra log/chat.
 
-## CI/CD pipeline
+## CI/CD pipeline (per-service)
 
-1. Push `main` → `.github/workflows/docker-deploy.yml`
-2. Build **cả 5** images (`infrastructure/docker/Dockerfile.service`) → cùng tag GHCR = commit SHA
-3. SSH Droplet step 1 → `git-sync-private-repo.sh`
-4. SSH Droplet step 2 → `helm-deploy-ci.sh` → `helm-rollout.sh` (một `IMAGE_TAG` cho cả 5 app; **không** migrate/seed)
-5. (Tùy chọn) `workflow_dispatch` + `run_e2e=true` → `run-demo-e2e-prod.sh`
+**Path filters:** `.github/path-filters.yml` — dùng chung cho `ci.yml` và `docker-deploy.yml`.
 
-Helm-only push (chỉ chart/infra, không có `IMAGE_TAG` từ CI) → giữ tag image trong `values-prod.yaml` trên Droplet; mỗi push `main` vẫn build cả 5 image cùng commit SHA.
+### CI (`ci.yml`) — mỗi PR / push `main`
 
-GitHub secrets cần có: `DROPLET_HOST`, `DROPLET_USER`, `DROPLET_SSH_KEY`, `GHCR_USERNAME`, `GHCR_TOKEN`.
+- Chỉ chạy **lint + build + test** cho service có file đổi (hoặc `packages/shared`, `nest-auth`, …).
+- PR chỉ sửa `docs/` → skip service CI (job `ci-gate` pass).
+- Manual: **Actions → CI → Run workflow** — `services` rỗng = cả 5.
+
+### CD (`docker-deploy.yml`) — push `main` / dispatch
+
+1. `detect-changes` → danh sách service cần build/deploy.
+2. **Build matrix** — chỉ image của service đổi → GHCR tag **`{service}-{sha7}`** (vd. `auth-service-a1b2c3d`).
+3. SSH Droplet → `git-sync-private-repo.sh` → `helm-deploy-ci.sh` → `helm-rollout.sh` với:
+   - `DEPLOY_SERVICES=auth-service,...`
+   - `SERVICE_IMAGE_TAGS=auth-service:auth-service-a1b2c3d,...`
+4. Service **không** đổi giữ nguyên tag trong `values-prod.yaml`.
+5. Push chỉ Helm/infra → deploy chart, **không** build image.
+6. Sau deploy `main` → `run-demo-e2e-prod.sh` (opt-out: dispatch + `run_e2e=false`).
+
+**Manual deploy một service:**
+
+```text
+Actions → Build Images And Deploy → Run workflow
+  services: task-service
+  image_tag: (để trống = task-service-<sha7>)
+```
+
+**Legacy (tay trên Droplet):** `IMAGE_TAG=<sha>` vẫn set cùng tag cho cả 5 app.
+
+GitHub secrets: `DROPLET_HOST`, `DROPLET_USER`, `DROPLET_SSH_KEY`, `GHCR_USERNAME`, `GHCR_TOKEN`.
 
 ## Dev local ≠ image production (nguyên nhân hay gặp)
 

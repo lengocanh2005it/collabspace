@@ -1,241 +1,297 @@
-name: Build Images And Deploy
-
-on:
-  push:
-    branches:
-      - main
-  workflow_dispatch:
-    inputs:
-      image_tag:
-        description: Image tag to build and deploy
-        required: false
-        default: latest
-      run_e2e:
-        description: Run MVP demo E2E smoke after deploy
-        required: false
-        type: boolean
-        default: false
-
-permissions:
-  contents: read
-  packages: write
-
-concurrency:
-  group: k3s-deploy
-  cancel-in-progress: false
-
-env:
-  REGISTRY: ghcr.io
-
-jobs:
-  detect-changes:
-    runs-on: ubuntu-latest
-    outputs:
-      any-service: ${{ steps.filter.outputs.any-service }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dorny/paths-filter@v3
-        id: filter
-        with:
-          filters: |
-            any-service:
-              - 'services/**'
-              - 'packages/typeorm-migrate/**'
-              - 'infrastructure/docker/Dockerfile.service'
-              - 'package.json'
-              - 'pnpm-workspace.yaml'
-              - 'pnpm-lock.yaml'
-
-  build-images:
-    runs-on: ubuntu-latest
-    needs: detect-changes
-    # MVP: mỗi push main / workflow_dispatch build cả 5 image cùng SHA (không skip theo paths).
-    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
-    strategy:
-      fail-fast: true
-      matrix:
-        service:
-          - auth-service
-          - user-service
-          - workspace-service
-          - task-service
-          - notification-service
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set image variables
-        id: vars
-        shell: bash
-        run: |
-          owner="${GITHUB_REPOSITORY_OWNER,,}"
-          tag="${{ github.event.inputs.image_tag || github.sha }}"
-          echo "owner=$owner" >> "$GITHUB_OUTPUT"
-          echo "tag=$tag" >> "$GITHUB_OUTPUT"
-          echo "image=ghcr.io/$owner/collabspace-${{ matrix.service }}" >> "$GITHUB_OUTPUT"
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Login to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and push ${{ matrix.service }}
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: infrastructure/docker/Dockerfile.service
-          build-args: |
-            SERVICE_NAME=${{ matrix.service }}
-          push: true
-          tags: |
-            ${{ steps.vars.outputs.image }}:${{ steps.vars.outputs.tag }}
-            ${{ steps.vars.outputs.image }}:latest
-          cache-from: type=gha,scope=${{ matrix.service }}
-          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
-
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: '${{ steps.vars.outputs.image }}:${{ steps.vars.outputs.tag }}'
-          format: 'table'
-          exit-code: '1'
-          ignore-unfixed: true
-          vuln-type: 'os,library'
-          severity: 'CRITICAL,HIGH'
-
-  deploy:
-    runs-on: ubuntu-latest
-    needs: [detect-changes, build-images]
-    # always() cho phép deploy chạy kể cả khi build-images bị skip (helm-only changes)
-    if: |
-      always() &&
-      !failure() &&
-      (github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch')
-    steps:
-      - name: Checkout (for helm chart hash)
-        uses: actions/checkout@v4
-
-      - name: Compute Helm chart hash
-        id: helm-hash
-        run: |
-          hash=$(sha256sum infrastructure/helm/collabspace/Chart.yaml | cut -d' ' -f1)
-          echo "chart_hash=$hash" >> "$GITHUB_OUTPUT"
-
-      - name: Cache Helm dependencies
-        id: helm-cache
-        uses: actions/cache@v4
-        with:
-          path: infrastructure/helm/collabspace/charts
-          key: helm-deps-${{ steps.helm-hash.outputs.chart_hash }}
-
-      - name: Set up Helm
-        if: steps.helm-cache.outputs.cache-hit != 'true'
-        uses: azure/setup-helm@v4
-        with:
-          version: v3.14.0
-
-      - name: Package Helm deps for Droplet
-        if: steps.helm-cache.outputs.cache-hit != 'true'
-        run: |
-          helm repo add grafana https://grafana.github.io/helm-charts
-          helm repo add bitnami https://charts.bitnami.com/bitnami
-          helm repo add traefik https://traefik.github.io/charts
-          helm repo update
-          helm dependency update infrastructure/helm/collabspace
-
-      - name: Upload Helm charts to Droplet
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.DROPLET_HOST }}
-          username: ${{ secrets.DROPLET_USER }}
-          key: ${{ secrets.DROPLET_SSH_KEY }}
-          source: infrastructure/helm/collabspace/charts
-          target: /opt/collabspace
-
-      - name: Compute deploy image tag
-        id: deploy-tag
-        run: |
-          # Mỗi deploy main/dispatch dùng cùng SHA cho cả 5 app images (sau build-images).
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]] || \
-             [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-            echo "tag=${{ github.event.inputs.image_tag || github.sha }}" >> "$GITHUB_OUTPUT"
-          else
-            echo "tag=" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Sync repo on Droplet
-        uses: appleboy/ssh-action@v1.2.0
-        env:
-          GHCR_OWNER: ${{ github.repository_owner }}
-          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          host: ${{ secrets.DROPLET_HOST }}
-          username: ${{ secrets.DROPLET_USER }}
-          key: ${{ secrets.DROPLET_SSH_KEY }}
-          command_timeout: 5m
-          envs: GHCR_OWNER,GHCR_TOKEN,GITHUB_TOKEN
-          script: |
-            set -euo pipefail
-            export APP_DIR=/opt/collabspace
-            export PHASE0_ENV=/opt/collabspace/infrastructure/deploy/phase0.env
-            export GITHUB_TOKEN="${GITHUB_TOKEN}"
-
-            # Deliberately no fallback. If git-sync-private-repo.sh fails, CI fails.
-            start=$SECONDS
-            bash /opt/collabspace/infrastructure/deploy/git-sync-private-repo.sh
-            echo "Repo sync finished in $((SECONDS - start))s"
-
-      - name: Deploy Helm on k3s over SSH
-        uses: appleboy/ssh-action@v1.2.0
-        env:
-          IMAGE_TAG: ${{ steps.deploy-tag.outputs.tag }}
-          GHCR_OWNER: ${{ github.repository_owner }}
-          GHCR_USERNAME: ${{ secrets.GHCR_USERNAME }}
-          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
-          SKIP_HELM_DEP_UPDATE: "true"
-        with:
-          host: ${{ secrets.DROPLET_HOST }}
-          username: ${{ secrets.DROPLET_USER }}
-          key: ${{ secrets.DROPLET_SSH_KEY }}
-          command_timeout: 25m
-          envs: IMAGE_TAG,GHCR_OWNER,GHCR_USERNAME,GHCR_TOKEN,SKIP_HELM_DEP_UPDATE
-          script: |
-            set -euo pipefail
-            export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
-            cd /opt/collabspace
-            export APP_DIR=/opt/collabspace
-            export PHASE0_ENV=/opt/collabspace/infrastructure/deploy/phase0.env
-            # Migrations and seed are manual on Droplet only — never from CI.
-            export RUN_K8S_MIGRATIONS=false
-            export IMAGE_TAG
-            export GHCR_OWNER
-            export GHCR_USERNAME
-            export GHCR_TOKEN
-            export SKIP_HELM_DEP_UPDATE
-            start=$SECONDS
-            bash infrastructure/deploy/helm-deploy-ci.sh
-            echo "Helm deploy finished in $((SECONDS - start))s"
-
-      - name: Run MVP demo E2E smoke over SSH
-        if: github.event.inputs.run_e2e == 'true'
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.DROPLET_HOST }}
-          username: ${{ secrets.DROPLET_USER }}
-          key: ${{ secrets.DROPLET_SSH_KEY }}
-          command_timeout: 10m
-          script: |
-            set -euo pipefail
-            export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
-            cd /opt/collabspace
-            echo "==> MVP demo E2E smoke (7 steps via Traefik)..."
-            export PHASE0_ENV=/opt/collabspace/infrastructure/deploy/phase0.env
-            start=$SECONDS
-            bash infrastructure/deploy/run-demo-e2e-prod.sh
-            echo "Demo E2E smoke finished in $((SECONDS - start))s"
+name: Build Images And Deploy
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      services:
+        description: Comma-separated services to build/deploy (empty = auto on push; all five on manual)
+        required: false
+        default: ""
+      image_tag:
+        description: Optional image tag override (default per service is <service>-<sha7>)
+        required: false
+        default: ""
+      run_e2e:
+        description: Run MVP demo E2E smoke after deploy (uncheck to skip on manual runs)
+        required: false
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: k3s-deploy
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      services: ${{ steps.matrix.outputs.services }}
+      helm_chart: ${{ steps.filter.outputs.helm_chart }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: .github/path-filters.yml
+
+      - name: Build deploy service matrix
+        id: matrix
+        shell: bash
+        run: |
+          set -euo pipefail
+          ALL_SERVICES=(auth-service user-service workspace-service task-service notification-service)
+
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            raw="${{ github.event.inputs.services }}"
+            if [[ -z "${raw// }" ]]; then
+              json=$(printf '%s\n' "${ALL_SERVICES[@]}" | jq -R . | jq -s -c .)
+              echo "services=${json}" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            IFS=',' read -ra picked <<< "$raw"
+            services=()
+            for s in "${picked[@]}"; do
+              s="${s// /}"
+              [[ -n "$s" ]] && services+=("$s")
+            done
+            json=$(printf '%s\n' "${services[@]}" | jq -R . | jq -s -c .)
+            echo "services=${json}" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          services=()
+          [[ "${{ steps.filter.outputs.auth_service }}" == "true" ]] && services+=(auth-service)
+          [[ "${{ steps.filter.outputs.user_service }}" == "true" ]] && services+=(user-service)
+          [[ "${{ steps.filter.outputs.workspace_service }}" == "true" ]] && services+=(workspace-service)
+          [[ "${{ steps.filter.outputs.task_service }}" == "true" ]] && services+=(task-service)
+          [[ "${{ steps.filter.outputs.notification_service }}" == "true" ]] && services+=(notification-service)
+
+          if [[ ${#services[@]} -eq 0 ]]; then
+            echo "services=[]" >> "$GITHUB_OUTPUT"
+          else
+            json=$(printf '%s\n' "${services[@]}" | jq -R . | jq -s -c .)
+            echo "services=${json}" >> "$GITHUB_OUTPUT"
+          fi
+
+  build-images:
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.services != '[]'
+    strategy:
+      fail-fast: false
+      matrix:
+        service: ${{ fromJson(needs.detect-changes.outputs.services) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set image variables
+        id: vars
+        shell: bash
+        run: |
+          owner="${GITHUB_REPOSITORY_OWNER,,}"
+          sha7="${GITHUB_SHA:0:7}"
+          override="${{ github.event.inputs.image_tag }}"
+          if [[ -n "$override" ]]; then
+            tag="$override"
+          else
+            tag="${{ matrix.service }}-${sha7}"
+          fi
+          echo "owner=$owner" >> "$GITHUB_OUTPUT"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "image=ghcr.io/$owner/collabspace-${{ matrix.service }}" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push ${{ matrix.service }}
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: infrastructure/docker/Dockerfile.service
+          build-args: |
+            SERVICE_NAME=${{ matrix.service }}
+          push: true
+          tags: |
+            ${{ steps.vars.outputs.image }}:${{ steps.vars.outputs.tag }}
+            ${{ steps.vars.outputs.image }}:latest
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: '${{ steps.vars.outputs.image }}:${{ steps.vars.outputs.tag }}'
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [detect-changes, build-images]
+    if: |
+      always() &&
+      !failure() &&
+      !cancelled() &&
+      (needs.detect-changes.outputs.services != '[]' || needs.detect-changes.outputs.helm_chart == 'true') &&
+      (github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch')
+    steps:
+      - name: Checkout (for helm chart hash)
+        uses: actions/checkout@v4
+
+      - name: Compute per-service deploy tags
+        id: deploy-vars
+        shell: bash
+        run: |
+          set -euo pipefail
+          services='${{ needs.detect-changes.outputs.services }}'
+          sha7="${GITHUB_SHA:0:7}"
+          override="${{ github.event.inputs.image_tag }}"
+          if [[ "$services" == "[]" ]]; then
+            echo "deploy_services=" >> "$GITHUB_OUTPUT"
+            echo "service_image_tags=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          deploy_services=""
+          service_image_tags=""
+          while IFS= read -r svc; do
+            [[ -z "$svc" ]] && continue
+            if [[ -n "$override" ]]; then
+              tag="$override"
+            else
+              tag="${svc}-${sha7}"
+            fi
+            deploy_services+="${svc},"
+            service_image_tags+="${svc}:${tag},"
+          done < <(echo "$services" | jq -r '.[]')
+          echo "deploy_services=${deploy_services%,}" >> "$GITHUB_OUTPUT"
+          echo "service_image_tags=${service_image_tags%,}" >> "$GITHUB_OUTPUT"
+
+      - name: Compute Helm chart hash
+        id: helm-hash
+        run: |
+          hash=$(sha256sum infrastructure/helm/collabspace/Chart.yaml | cut -d' ' -f1)
+          echo "chart_hash=$hash" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Helm dependencies
+        id: helm-cache
+        uses: actions/cache@v4
+        with:
+          path: infrastructure/helm/collabspace/charts
+          key: helm-deps-${{ steps.helm-hash.outputs.chart_hash }}
+
+      - name: Set up Helm
+        if: steps.helm-cache.outputs.cache-hit != 'true'
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.14.0
+
+      - name: Package Helm deps for Droplet
+        if: steps.helm-cache.outputs.cache-hit != 'true'
+        run: |
+          helm repo add grafana https://grafana.github.io/helm-charts
+          helm repo add bitnami https://charts.bitnami.com/bitnami
+          helm repo add traefik https://traefik.github.io/charts
+          helm repo update
+          helm dependency update infrastructure/helm/collabspace
+
+      - name: Upload Helm charts to Droplet
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DROPLET_HOST }}
+          username: ${{ secrets.DROPLET_USER }}
+          key: ${{ secrets.DROPLET_SSH_KEY }}
+          source: infrastructure/helm/collabspace/charts
+          target: /opt/collabspace
+
+      - name: Sync repo on Droplet
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          GHCR_OWNER: ${{ github.repository_owner }}
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          host: ${{ secrets.DROPLET_HOST }}
+          username: ${{ secrets.DROPLET_USER }}
+          key: ${{ secrets.DROPLET_SSH_KEY }}
+          command_timeout: 5m
+          envs: GHCR_OWNER,GHCR_TOKEN,GITHUB_TOKEN
+          script: |
+            set -euo pipefail
+            export APP_DIR=/opt/collabspace
+            export PHASE0_ENV=/opt/collabspace/infrastructure/deploy/phase0.env
+            export GITHUB_TOKEN="${GITHUB_TOKEN}"
+            start=$SECONDS
+            bash /opt/collabspace/infrastructure/deploy/git-sync-private-repo.sh
+            echo "Repo sync finished in $((SECONDS - start))s"
+
+      - name: Deploy Helm on k3s over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          DEPLOY_SERVICES: ${{ steps.deploy-vars.outputs.deploy_services }}
+          SERVICE_IMAGE_TAGS: ${{ steps.deploy-vars.outputs.service_image_tags }}
+          GHCR_OWNER: ${{ github.repository_owner }}
+          GHCR_USERNAME: ${{ secrets.GHCR_USERNAME }}
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+          SKIP_HELM_DEP_UPDATE: "true"
+        with:
+          host: ${{ secrets.DROPLET_HOST }}
+          username: ${{ secrets.DROPLET_USER }}
+          key: ${{ secrets.DROPLET_SSH_KEY }}
+          command_timeout: 25m
+          envs: DEPLOY_SERVICES,SERVICE_IMAGE_TAGS,GHCR_OWNER,GHCR_USERNAME,GHCR_TOKEN,SKIP_HELM_DEP_UPDATE
+          script: |
+            set -euo pipefail
+            export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+            cd /opt/collabspace
+            export APP_DIR=/opt/collabspace
+            export PHASE0_ENV=/opt/collabspace/infrastructure/deploy/phase0.env
+            export RUN_K8S_MIGRATIONS=false
+            export DEPLOY_SERVICES
+            export SERVICE_IMAGE_TAGS
+            export GHCR_OWNER
+            export GHCR_USERNAME
+            export GHCR_TOKEN
+            export SKIP_HELM_DEP_UPDATE
+            start=$SECONDS
+            bash infrastructure/deploy/helm-deploy-ci.sh
+            echo "Helm deploy finished in $((SECONDS - start))s"
+
+      - name: Run MVP demo E2E smoke over SSH
+        if: github.event_name == 'push' || github.event.inputs.run_e2e != 'false'
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DROPLET_HOST }}
+          username: ${{ secrets.DROPLET_USER }}
+          key: ${{ secrets.DROPLET_SSH_KEY }}
+          command_timeout: 10m
+          script: |
+            set -euo pipefail
+            export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+            cd /opt/collabspace
+            echo "==> MVP demo E2E smoke (7 steps via Traefik)..."
+            export PHASE0_ENV=/opt/collabspace/infrastructure/deploy/phase0.env
+            start=$SECONDS
+            bash infrastructure/deploy/run-demo-e2e-prod.sh
+            echo "Demo E2E smoke finished in $((SECONDS - start))s"
+

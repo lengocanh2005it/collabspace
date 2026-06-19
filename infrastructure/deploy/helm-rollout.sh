@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Helm upgrade + optional migration + rollout (dùng chung Phase 3 tay và Phase 4 CI).
-# Env: IMAGE_TAG (tùy chọn — nếu set sẽ override tag image qua helm --set)
+# Env: IMAGE_TAG (legacy — cùng tag cho cả 5 app khi set một mình)
+# Env: DEPLOY_SERVICES — danh sách service cần rollout (vd. auth-service,task-service)
+# Env: SERVICE_IMAGE_TAGS — tag riêng từng service (vd. auth-service:auth-service-abc1234,task-service:task-service-abc1234)
 # Env: RUN_K8S_MIGRATIONS (mặc định false) — chỉ true khi cần chạy Postgres migration Jobs.
 # Seed không bao giờ chạy ở đây; dùng run-k8s-seed.sh hoặc run-k8s-full-reset.sh khi cần demo data.
 set -euo pipefail
@@ -29,9 +31,48 @@ fi
 ci_image_tag="${IMAGE_TAG:-}"
 
 APP_SERVICES=(auth-service user-service workspace-service task-service notification-service)
+declare -A SERVICE_IMAGE_TAG_MAP=()
+DEPLOY_SERVICE_LIST=()
+
+load_service_image_tags() {
+  SERVICE_IMAGE_TAG_MAP=()
+  [[ -z "${SERVICE_IMAGE_TAGS:-}" ]] && return
+  local pair svc tag
+  local IFS=,
+  for pair in $SERVICE_IMAGE_TAGS; do
+    svc="${pair%%:*}"
+    tag="${pair#*:}"
+    [[ -z "$svc" || -z "$tag" ]] && continue
+    SERVICE_IMAGE_TAG_MAP["$svc"]="$tag"
+  done
+}
+
+resolve_deploy_service_list() {
+  DEPLOY_SERVICE_LIST=()
+  if [[ -n "${DEPLOY_SERVICES:-}" ]]; then
+    local IFS=,
+    read -ra DEPLOY_SERVICE_LIST <<< "$DEPLOY_SERVICES"
+    return
+  fi
+  if [[ ${#SERVICE_IMAGE_TAG_MAP[@]} -gt 0 ]]; then
+    DEPLOY_SERVICE_LIST=("${!SERVICE_IMAGE_TAG_MAP[@]}")
+    return
+  fi
+  DEPLOY_SERVICE_LIST=("${APP_SERVICES[@]}")
+}
+
+load_service_image_tags
+resolve_deploy_service_list
+
+if [[ ${#SERVICE_IMAGE_TAG_MAP[@]} -gt 0 ]]; then
+  ci_image_tag=""
+  unset IMAGE_TAG
+fi
 
 if [[ -f "$PHASE0_ENV" ]]; then
-  if [[ -n "$ci_image_tag" ]]; then
+  if [[ ${#SERVICE_IMAGE_TAG_MAP[@]} -gt 0 ]]; then
+    echo "==> Per-service image tags — skipping prepare-prod-values (helm --set per app)."
+  elif [[ -n "$ci_image_tag" ]]; then
     echo "==> Refreshing values-prod.yaml with IMAGE_TAG=${ci_image_tag}..."
     IMAGE_TAG="$ci_image_tag" bash "$SCRIPT_DIR/prepare-prod-values.sh"
   else
@@ -47,7 +88,9 @@ if [[ -f "$PHASE0_ENV" ]]; then
   source "$PHASE0_ENV"
   set +a
 fi
-if [[ -n "$ci_image_tag" ]]; then
+if [[ ${#SERVICE_IMAGE_TAG_MAP[@]} -gt 0 ]]; then
+  unset IMAGE_TAG
+elif [[ -n "$ci_image_tag" ]]; then
   export IMAGE_TAG="$ci_image_tag"
 else
   unset IMAGE_TAG
@@ -56,18 +99,30 @@ fi
 GHCR_OWNER="${GHCR_OWNER:-}"
 
 helm_image_tag_sets() {
+  local svc tag
+  if [[ ${#SERVICE_IMAGE_TAG_MAP[@]} -gt 0 ]]; then
+    for svc in "${!SERVICE_IMAGE_TAG_MAP[@]}"; do
+      tag="${SERVICE_IMAGE_TAG_MAP[$svc]}"
+      printf '%s\n' "--set" "apps.${svc}.image.tag=${tag}"
+    done
+    return
+  fi
   if [[ -z "${IMAGE_TAG:-}" ]]; then
     return
   fi
-  local svc
   for svc in "${APP_SERVICES[@]}"; do
     printf '%s\n' "--set" "apps.${svc}.image.tag=${IMAGE_TAG}"
   done
 }
 
 echo "==> Helm rollout (release=${RELEASE}, namespace=${APP_NS})"
-if [[ -n "${IMAGE_TAG:-}" ]]; then
+if [[ ${#SERVICE_IMAGE_TAG_MAP[@]} -gt 0 ]]; then
+  echo "    Per-service image tags: ${SERVICE_IMAGE_TAGS}"
+elif [[ -n "${IMAGE_TAG:-}" ]]; then
   echo "    Image tag (all app services): ${IMAGE_TAG}"
+fi
+if [[ -n "${DEPLOY_SERVICES:-}" ]]; then
+  echo "    Rollout scope: ${DEPLOY_SERVICES}"
 fi
 
 adopt_namespace_for_helm() {
@@ -162,9 +217,32 @@ helm upgrade --install "$RELEASE" "$CHART_DIR" \
   -f "$VALUES_PROD" \
   "${tag_sets[@]}"
 
-# Persist the deployed image tag back into values-prod.yaml so that
-# subsequent helm-only deploys (no IMAGE_TAG) don't revert to an old tag.
-if [[ -n "${ci_image_tag:-}" ]]; then
+# Persist deployed image tag(s) back into values-prod.yaml.
+if [[ ${#SERVICE_IMAGE_TAG_MAP[@]} -gt 0 ]]; then
+  echo "==> Persisting per-service image tags to values-prod.yaml..."
+  python3 - <<PYEOF
+import re
+
+tag_map = {
+$(for svc in "${!SERVICE_IMAGE_TAG_MAP[@]}"; do
+  printf '    "%s": "%s",\n' "$svc" "${SERVICE_IMAGE_TAG_MAP[$svc]}"
+done)
+}
+
+with open("${VALUES_PROD}", "r") as f:
+    content = f.read()
+
+for svc, tag in tag_map.items():
+    pattern = r'(  ' + re.escape(svc) + r':.*?image:\s*\n\s+repository:[^\n]+\n\s+tag:\s*)\S+'
+    replacement = r'\g<1>' + tag
+    content = re.sub(pattern, replacement, content, flags=re.DOTALL)
+
+with open("${VALUES_PROD}", "w") as f:
+    f.write(content)
+
+print("Updated image tags:", ", ".join(f"{k}={v}" for k, v in tag_map.items()))
+PYEOF
+elif [[ -n "${ci_image_tag:-}" ]]; then
   echo "==> Persisting image tag ${IMAGE_TAG} for all app services..."
   python3 - <<PYEOF
 import re
@@ -332,29 +410,45 @@ wait_deployment_rollout() {
 }
 
 echo "==> Waiting for application rollouts..."
-# Roll core services in parallel; notification-service last (RabbitMQ consumer often
-# leaves old pods stuck in Terminating on small single-node clusters).
-core_deps=(auth-service user-service workspace-service task-service)
-rollout_pids=()
-for dep in "${core_deps[@]}"; do
+rollout_targets=()
+for dep in "${DEPLOY_SERVICE_LIST[@]}"; do
   if kubectl get deployment "$dep" -n "$APP_NS" >/dev/null 2>&1; then
-    wait_deployment_rollout "$dep" 420 &
-    rollout_pids+=($!)
+    rollout_targets+=("$dep")
   fi
 done
-rollout_failed=0
-for pid in "${rollout_pids[@]}"; do
-  wait "$pid" || rollout_failed=$((rollout_failed + 1))
-done
-if [[ "$rollout_failed" -gt 0 ]]; then
-  echo "ERROR: $rollout_failed core deployment(s) failed to roll out."
-  exit 1
-fi
 
-if kubectl get deployment notification-service -n "$APP_NS" >/dev/null 2>&1; then
-  if ! wait_deployment_rollout notification-service 600; then
-    echo "ERROR: notification-service failed to roll out."
+if [[ ${#rollout_targets[@]} -eq 0 ]]; then
+  echo "No application deployments in rollout scope — skipping wait."
+else
+  core_deps=()
+  notif_in_scope=false
+  for dep in "${rollout_targets[@]}"; do
+    if [[ "$dep" == "notification-service" ]]; then
+      notif_in_scope=true
+    else
+      core_deps+=("$dep")
+    fi
+  done
+
+  rollout_pids=()
+  for dep in "${core_deps[@]}"; do
+    wait_deployment_rollout "$dep" 420 &
+    rollout_pids+=($!)
+  done
+  rollout_failed=0
+  for pid in "${rollout_pids[@]}"; do
+    wait "$pid" || rollout_failed=$((rollout_failed + 1))
+  done
+  if [[ "$rollout_failed" -gt 0 ]]; then
+    echo "ERROR: $rollout_failed deployment(s) failed to roll out."
     exit 1
+  fi
+
+  if [[ "$notif_in_scope" == "true" ]]; then
+    if ! wait_deployment_rollout notification-service 600; then
+      echo "ERROR: notification-service failed to roll out."
+      exit 1
+    fi
   fi
 fi
 

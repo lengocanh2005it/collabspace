@@ -5,6 +5,12 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
+    inputs:
+      services:
+        description: Comma-separated services to test (empty = all five)
+        required: false
+        default: ""
 
 permissions:
   contents: read
@@ -14,8 +20,65 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  lint:
+  detect-changes:
     runs-on: ubuntu-latest
+    outputs:
+      services: ${{ steps.matrix.outputs.services }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: .github/path-filters.yml
+
+      - name: Build service matrix
+        id: matrix
+        shell: bash
+        run: |
+          set -euo pipefail
+          ALL_SERVICES=(auth-service user-service workspace-service task-service notification-service)
+
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            raw="${{ github.event.inputs.services }}"
+            if [[ -z "${raw// }" ]]; then
+              json=$(printf '%s\n' "${ALL_SERVICES[@]}" | jq -R . | jq -s -c .)
+              echo "services=${json}" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            IFS=',' read -ra picked <<< "$raw"
+            services=()
+            for s in "${picked[@]}"; do
+              s="${s// /}"
+              [[ -n "$s" ]] && services+=("$s")
+            done
+            json=$(printf '%s\n' "${services[@]}" | jq -R . | jq -s -c .)
+            echo "services=${json}" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          services=()
+          [[ "${{ steps.filter.outputs.auth_service }}" == "true" ]] && services+=(auth-service)
+          [[ "${{ steps.filter.outputs.user_service }}" == "true" ]] && services+=(user-service)
+          [[ "${{ steps.filter.outputs.workspace_service }}" == "true" ]] && services+=(workspace-service)
+          [[ "${{ steps.filter.outputs.task_service }}" == "true" ]] && services+=(task-service)
+          [[ "${{ steps.filter.outputs.notification_service }}" == "true" ]] && services+=(notification-service)
+
+          if [[ ${#services[@]} -eq 0 ]]; then
+            echo "services=[]" >> "$GITHUB_OUTPUT"
+          else
+            json=$(printf '%s\n' "${services[@]}" | jq -R . | jq -s -c .)
+            echo "services=${json}" >> "$GITHUB_OUTPUT"
+          fi
+
+  service-ci:
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.services != '[]'
+    strategy:
+      fail-fast: false
+      matrix:
+        service: ${{ fromJson(needs.detect-changes.outputs.services) }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -34,32 +97,43 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Lint (format + Biome + ESLint)
-        run: pnpm run lint:ci
+      - name: Build workspace deps
+        run: |
+          pnpm --filter @collabspace/shared build
+          pnpm --filter @collabspace/nest-auth build
 
-  build-test:
+      - name: Format check (${{ matrix.service }})
+        run: biome format "services/${{ matrix.service }}"
+
+      - name: Biome check (${{ matrix.service }})
+        run: biome check --assist-enabled=false --error-on-warnings "services/${{ matrix.service }}"
+
+      - name: ESLint (${{ matrix.service }})
+        run: pnpm --filter ${{ matrix.service }} run lint
+
+      - name: Build (${{ matrix.service }})
+        run: pnpm --filter ${{ matrix.service }} run build
+
+      - name: Test (${{ matrix.service }})
+        run: pnpm --filter ${{ matrix.service }} run test
+
+  ci-gate:
     runs-on: ubuntu-latest
-    needs: lint
+    needs: [detect-changes, service-ci]
+    if: always()
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Build
-        run: pnpm run build
-
-      - name: Test
-        run: pnpm -r --parallel run test
+      - name: Verify CI result
+        shell: bash
+        run: |
+          set -euo pipefail
+          services='${{ needs.detect-changes.outputs.services }}'
+          if [[ "$services" == "[]" ]]; then
+            echo "No app service changes detected — per-service CI skipped (docs/infra-only OK)."
+            exit 0
+          fi
+          result="${{ needs.service-ci.result }}"
+          if [[ "$result" != "success" ]]; then
+            echo "Per-service CI failed or was cancelled (result=${result})."
+            exit 1
+          fi
+          echo "Per-service CI passed for: ${services}"
