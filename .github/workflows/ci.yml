@@ -119,6 +119,11 @@ jobs:
         run: |
           pnpm --filter @collabspace/shared build
           pnpm --filter @collabspace/nest-auth build
+          case "${{ matrix.service }}" in
+            auth-service|user-service|workspace-service)
+              pnpm --filter @collabspace/typeorm-migrate build
+              ;;
+          esac
 
       - name: Format check (${{ matrix.service }})
         run: pnpm exec biome format "services/${{ matrix.service }}"
