@@ -31,6 +31,7 @@ describe('WorkspaceOutboxProcessor', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    process.env.WORKSPACE_OUTBOX_PUBLISH_MODE = 'rabbitmq';
     jest.spyOn(workspaceOutboxServiceMock, 'markExhaustedClaims').mockResolvedValue(0);
     jest.spyOn(workspaceOutboxServiceMock, 'reclaimStaleClaims').mockResolvedValue(0);
     processor = new WorkspaceOutboxProcessor(
@@ -103,6 +104,29 @@ describe('WorkspaceOutboxProcessor', () => {
       data: payload,
     });
     expect(workspaceOutboxServiceMock.markProcessed).toHaveBeenCalledWith('outbox-2');
+  });
+
+  it('does not poll RabbitMQ when publish mode is debezium', async () => {
+    const originalMode = process.env.WORKSPACE_OUTBOX_PUBLISH_MODE;
+    process.env.WORKSPACE_OUTBOX_PUBLISH_MODE = 'debezium';
+    try {
+      const debeziumProcessor = new WorkspaceOutboxProcessor(
+        dataSourceMock,
+        workspaceOutboxServiceMock,
+        null,
+      );
+
+      await debeziumProcessor.onModuleInit();
+
+      expect(rabbitChannelMock.publish).not.toHaveBeenCalled();
+      expect(workspaceOutboxServiceMock.claimPendingBatch).not.toHaveBeenCalled();
+    } finally {
+      if (originalMode === undefined) {
+        delete process.env.WORKSPACE_OUTBOX_PUBLISH_MODE;
+      } else {
+        process.env.WORKSPACE_OUTBOX_PUBLISH_MODE = originalMode;
+      }
+    }
   });
 
   it('marks unsupported event types as failed', async () => {

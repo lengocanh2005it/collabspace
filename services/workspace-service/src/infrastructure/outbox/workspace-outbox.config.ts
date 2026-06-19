@@ -15,12 +15,24 @@ const toNumber = (value: string | undefined, fallback: number): number => {
   return Number.isFinite(parsed) ? parsed : fallback;
 };
 
+export type WorkspaceOutboxPublishMode = 'rabbitmq' | 'debezium';
+
 export type WorkspaceOutboxConfig = {
   batchSize: number;
   enabled: boolean;
   maxAttempts: number;
   pollIntervalMs: number;
+  publishMode: WorkspaceOutboxPublishMode;
   staleClaimThresholdMs: number;
+};
+
+export const getWorkspaceOutboxPublishMode = (): WorkspaceOutboxPublishMode => {
+  const raw = process.env.WORKSPACE_OUTBOX_PUBLISH_MODE?.toLowerCase();
+  if (raw === 'debezium') {
+    return 'debezium';
+  }
+
+  return 'rabbitmq';
 };
 
 export const getWorkspaceOutboxConfig = (): WorkspaceOutboxConfig => ({
@@ -28,5 +40,6 @@ export const getWorkspaceOutboxConfig = (): WorkspaceOutboxConfig => ({
   enabled: toBoolean(process.env.WORKSPACE_OUTBOX_ENABLED, true),
   maxAttempts: toNumber(process.env.WORKSPACE_OUTBOX_MAX_ATTEMPTS, 8),
   pollIntervalMs: toNumber(process.env.WORKSPACE_OUTBOX_POLL_INTERVAL_MS, 2000),
+  publishMode: getWorkspaceOutboxPublishMode(),
   staleClaimThresholdMs: toNumber(process.env.WORKSPACE_OUTBOX_STALE_CLAIM_THRESHOLD_MS, 60_000),
 });

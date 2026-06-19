@@ -59,7 +59,8 @@ import { NotificationRealtimeService } from "./application/services/notification
 import { NotificationAdminController } from "./presentation/controllers/notification-admin.controller";
 import { platformAdminAuthProviders } from "./integrations/auth/platform-admin-auth.providers";
 import { WorkspaceInviteNotificationService } from "./application/services/workspace-invite-notification.service";
-import { WorkspaceInvitedKafkaConsumer } from "./infrastructure/messaging/kafka/workspace-invited-kafka.consumer";
+import { WorkspaceDeletedNotificationService } from "./application/services/workspace-deleted-notification.service";
+import { WorkspaceEventsKafkaConsumer } from "./infrastructure/messaging/kafka/workspace-events-kafka.consumer";
 
 const Handlers = [
   CreateNotificationHandler,
@@ -112,7 +113,8 @@ const Handlers = [
     UserReplicaLookupService,
     BroadcastJobService,
     WorkspaceInviteNotificationService,
-    WorkspaceInvitedKafkaConsumer,
+    WorkspaceDeletedNotificationService,
+    WorkspaceEventsKafkaConsumer,
     ...platformAdminAuthProviders,
     {
       provide: NOTIFICATION_REPOSITORY_TOKEN,

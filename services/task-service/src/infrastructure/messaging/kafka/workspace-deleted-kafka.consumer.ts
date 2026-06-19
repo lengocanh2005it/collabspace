@@ -1,18 +1,18 @@
 import { Injectable, Logger, type OnModuleDestroy, type OnModuleInit } from "@nestjs/common";
 import { Kafka, type Consumer } from "kafkajs";
 import { ConfigurationService } from "../../../configuration/configuration.service";
-import { WorkspaceInviteNotificationService } from "../../../application/services/workspace-invite-notification.service";
-import { parseKafkaOutboxJsonValue, toWorkspaceInvitedEventPayload } from "./kafka-outbox-message";
+import { WorkspaceDeletionService } from "../../../application/services/workspace-deletion.service";
+import { parseKafkaOutboxJsonValue, toWorkspaceDeletedEventPayload } from "./kafka-outbox-message";
 
 @Injectable()
-export class WorkspaceInvitedKafkaConsumer implements OnModuleInit, OnModuleDestroy {
-  private readonly logger = new Logger(WorkspaceInvitedKafkaConsumer.name);
+export class WorkspaceDeletedKafkaConsumer implements OnModuleInit, OnModuleDestroy {
+  private readonly logger = new Logger(WorkspaceDeletedKafkaConsumer.name);
   private consumer: Consumer | null = null;
   private runPromise: Promise<void> | null = null;
 
   constructor(
     private readonly configurationService: ConfigurationService,
-    private readonly workspaceInviteNotification: WorkspaceInviteNotificationService,
+    private readonly deletionService: WorkspaceDeletionService,
   ) {}
 
   async onModuleInit(): Promise<void> {
@@ -30,7 +30,7 @@ export class WorkspaceInvitedKafkaConsumer implements OnModuleInit, OnModuleDest
     this.consumer = kafka.consumer({ groupId: kafkaConfig.groupId });
     await this.consumer.connect();
     await this.consumer.subscribe({
-      topic: kafkaConfig.workspaceInvitedTopic,
+      topic: kafkaConfig.workspaceDeletedTopic,
       fromBeginning: false,
     });
 
@@ -38,23 +38,26 @@ export class WorkspaceInvitedKafkaConsumer implements OnModuleInit, OnModuleDest
       eachMessage: async ({ message }) => {
         const record = parseKafkaOutboxJsonValue(message.value);
         if (!record) {
-          this.logger.warn("Skipping Kafka workspace_invited message with empty or invalid JSON");
+          this.logger.warn("Skipping Kafka workspace_deleted message with empty or invalid JSON");
           return;
         }
 
-        const payload = toWorkspaceInvitedEventPayload(record);
+        const payload = toWorkspaceDeletedEventPayload(record);
         if (!payload) {
           this.logger.warn(
-            `Skipping Kafka workspace_invited message missing workspaceId/invitedById keys=${Object.keys(record).join(",")}`,
+            `Skipping Kafka workspace_deleted message missing workspaceId/deletedById keys=${Object.keys(record).join(",")}`,
           );
           return;
         }
 
         try {
-          await this.workspaceInviteNotification.processWorkspaceInvited(payload, "kafka");
+          const deletedTasks = await this.deletionService.deleteWorkspaceData(payload.workspaceId);
+          this.logger.warn(
+            `workspace_deleted via kafka workspaceId=${payload.workspaceId} deletedTasks=${deletedTasks}`,
+          );
         } catch (error) {
           this.logger.error(
-            "Failed to process workspace_invited Kafka message",
+            `Failed to clean task data for workspaceId=${payload.workspaceId}`,
             error instanceof Error ? error.stack : undefined,
           );
           throw error;
@@ -63,7 +66,7 @@ export class WorkspaceInvitedKafkaConsumer implements OnModuleInit, OnModuleDest
     });
 
     this.logger.log(
-      `Kafka consumer listening topic=${kafkaConfig.workspaceInvitedTopic} group=${kafkaConfig.groupId}`,
+      `Kafka consumer listening topic=${kafkaConfig.workspaceDeletedTopic} group=${kafkaConfig.groupId}`,
     );
   }
 

@@ -1,11 +1,5 @@
-import type {
-  WorkspaceDeletedEventPayload,
-  WorkspaceInvitedEventPayload,
-} from "../../../domain/events/workspace-events";
+import type { WorkspaceDeletedEventPayload } from "@collabspace/shared";
 
-/**
- * Debezium Outbox Event Router with expand.json.payload emits the domain JSON as the value.
- */
 export function parseKafkaOutboxJsonValue(
   value: Buffer | string | null | undefined,
 ): Record<string, unknown> | null {
@@ -28,23 +22,6 @@ export function parseKafkaOutboxJsonValue(
   }
 
   return null;
-}
-
-export function toWorkspaceInvitedEventPayload(
-  record: Record<string, unknown>,
-): WorkspaceInvitedEventPayload | null {
-  const workspaceId = record.workspaceId;
-  const invitedById = record.invitedById;
-
-  if (typeof workspaceId !== "string" || workspaceId.length === 0) {
-    return null;
-  }
-
-  if (typeof invitedById !== "string" || invitedById.length === 0) {
-    return null;
-  }
-
-  return record as unknown as WorkspaceInvitedEventPayload;
 }
 
 export function toWorkspaceDeletedEventPayload(

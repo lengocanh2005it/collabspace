@@ -378,8 +378,11 @@ Workspace events **chỉ** qua Kafka; không còn publish RMQ từ workspace-ser
 
 ### DoD
 
-- [ ] Invite + delete workspace E2E pass
-- [ ] Không còn message mới trên RMQ routing keys workspace
+- [x] Kafka consumer `workspace_invited` + `workspace_deleted` (notification-service)
+- [x] Kafka consumer `workspace_deleted` (task-service)
+- [x] `WORKSPACE_OUTBOX_PUBLISH_MODE=debezium` skips RMQ processor
+- [ ] Invite + delete workspace E2E pass (local Kafka stack)
+- [ ] Không còn message mới trên RMQ routing keys workspace (prod deploy)
 - [ ] `demo-e2e.sh` pass
 
 ### Rollback

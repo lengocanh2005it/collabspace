@@ -15,6 +15,14 @@ export type RabbitMqConfig = {
   noAck: boolean;
 };
 
+export type KafkaConfig = {
+  enabled: boolean;
+  brokers: string[];
+  clientId: string;
+  groupId: string;
+  workspaceDeletedTopic: string;
+};
+
 @Injectable()
 export class ConfigurationService {
   constructor(private readonly configService: ConfigService) {}
@@ -51,6 +59,26 @@ export class ConfigurationService {
       prefetchCount: Number(this.configService.get<number>("RABBITMQ_PREFETCH_COUNT")) || 10,
 
       noAck: this.configService.get<string>("RABBITMQ_NO_ACK") === "true",
+    };
+  }
+
+  getKafkaConfig(): KafkaConfig {
+    const brokersRaw =
+      this.configService.get<string>("KAFKA_BROKERS") ??
+      this.configService.get<string>("KAFKA_BROKERS_HOST") ??
+      "kafka:9092";
+
+    return {
+      enabled: this.configService.get<string>("KAFKA_CONSUMERS_ENABLED") === "true",
+      brokers: brokersRaw
+        .split(",")
+        .map((broker) => broker.trim())
+        .filter((broker) => broker.length > 0),
+      clientId: this.configService.get<string>("KAFKA_CLIENT_ID") ?? "task-service",
+      groupId: this.configService.get<string>("KAFKA_GROUP_ID") ?? "task-service",
+      workspaceDeletedTopic:
+        this.configService.get<string>("KAFKA_TOPIC_WORKSPACE_DELETED") ??
+        "collabspace.workspace.workspace_deleted",
     };
   }
 }

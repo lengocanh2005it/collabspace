@@ -401,9 +401,23 @@ Implementation in `@collabspace/shared` (`packages/shared/src/auth/`):
 ### RabbitMQ wire format
 
 - **Routing keys** (topic exchange `collabspace_exchange`): snake_case — `workspace_invited`, `workspace_deleted`, `task_assigned`, `comment_created`, `comment_mentioned`, `user_registered`, `user_profile_updated`. Do **not** use dotted keys such as `workspace.invited`.
-- **Outbox DB event types** (`workspace-service`): `workspace.workspace_invited`, `workspace.workspace_deleted` — mapped to routing keys above before publish.
+- **Outbox DB event types** (`workspace-service`): `workspace.workspace_invited`, `workspace.workspace_deleted` — mapped to routing keys above before publish (RMQ path; legacy until Phase 6).
 - **Message body**: NestJS emit envelope `{ "pattern": "<routing_key>", "data": { ...payload }, "id": "uuid" }`. `workspace-service` outbox publishes this shape; consumers also accept legacy raw JSON (routing key = pattern) during rollout.
 - **Bindings**: `infrastructure/deploy/reconcile-rabbitmq-queues.sh` (also end of `run-k8s-full-reset.sh`) binds `collabspace_exchange` → `notification-service` / `task-service` queues. `task-service` / `user-service` may also `emit` directly to consumer queues without exchange.
+
+### Kafka topics (workspace events — Phase 1–3)
+
+Debezium Outbox Event Router on `workspace_outbox_events` (`infrastructure/kafka/connectors/workspace-outbox-connector.json`):
+
+| Outbox `event_type` | Kafka topic | Consumers |
+|---------------------|-------------|-----------|
+| `workspace.workspace_invited` | `collabspace.workspace.workspace_invited` | `notification-service` |
+| `workspace.workspace_deleted` | `collabspace.workspace.workspace_deleted` | `notification-service`, `task-service` |
+
+- **Message value**: expanded domain JSON from outbox `payload` column (`transforms.outbox.table.expand.json.payload=true`).
+- **Producer path (Phase 3+)**: `WORKSPACE_OUTBOX_PUBLISH_MODE=debezium` — workspace-service does not publish workspace events to RabbitMQ; CDC only.
+- **Consumer env**: `KAFKA_CONSUMERS_ENABLED=true`, `KAFKA_BROKERS`, `KAFKA_GROUP_ID`, topic overrides `KAFKA_TOPIC_WORKSPACE_*`.
+- **RMQ workspace listeners** remain in code for prod rollback until Phase 6; local Kafka-only dev sets `RABBITMQ_ENABLED=false` on consumers.
 
 ### User directory replicas (`user_registered`, `user_profile_updated`)
 

@@ -2,6 +2,7 @@ import {
   Inject,
   Injectable,
   Logger,
+  Optional,
   type OnModuleDestroy,
   type OnModuleInit,
 } from '@nestjs/common';
@@ -31,14 +32,22 @@ export class WorkspaceOutboxProcessor implements OnModuleInit, OnModuleDestroy {
     @InjectDataSource()
     private readonly dataSource: DataSource,
     private readonly workspaceOutboxService: WorkspaceOutboxService,
+    @Optional()
     @Inject('RABBITMQ_CHANNEL')
-    private readonly rabbitChannel: amqp.Channel,
+    private readonly rabbitChannel: amqp.Channel | null,
   ) {}
 
   onModuleInit(): void {
-    const { enabled, pollIntervalMs } = getWorkspaceOutboxConfig();
+    const { enabled, pollIntervalMs, publishMode } = getWorkspaceOutboxConfig();
     if (!enabled) {
       this.logger.log('Workspace outbox processor is disabled.');
+      return;
+    }
+
+    if (publishMode === 'debezium') {
+      this.logger.log(
+        'Workspace outbox RMQ processor disabled (WORKSPACE_OUTBOX_PUBLISH_MODE=debezium; CDC → Kafka).',
+      );
       return;
     }
 
@@ -65,6 +74,11 @@ export class WorkspaceOutboxProcessor implements OnModuleInit, OnModuleDestroy {
 
   async processPendingEvents(): Promise<void> {
     if (!this.dataSource.isInitialized) {
+      return;
+    }
+
+    const { publishMode } = getWorkspaceOutboxConfig();
+    if (publishMode === 'debezium') {
       return;
     }
 
@@ -114,6 +128,10 @@ export class WorkspaceOutboxProcessor implements OnModuleInit, OnModuleDestroy {
   }
 
   private async publishEvent(eventType: string, payload: Record<string, unknown>): Promise<void> {
+    if (!this.rabbitChannel) {
+      throw new Error('RabbitMQ channel is not configured for workspace outbox publish');
+    }
+
     const routingKey =
       eventType === WORKSPACE_OUTBOX_EVENT_WORKSPACE_INVITED
         ? WORKSPACE_INVITED_EVENT

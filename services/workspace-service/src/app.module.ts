@@ -55,7 +55,7 @@ import { platformAdminAuthProviders } from './presentation/http/platform-admin-a
     DatabaseModule,
     MetricsModule,
     OutboxModule,
-    RabbitMqModule,
+    RabbitMqModule.forRoot(),
     AuthModule,
     RedisModule,
   ],

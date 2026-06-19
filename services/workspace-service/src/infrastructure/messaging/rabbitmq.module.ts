@@ -1,25 +1,38 @@
-import { Module, Global } from '@nestjs/common';
+import { DynamicModule, Global, Module } from '@nestjs/common';
 import * as amqp from 'amqplib';
+import { getWorkspaceOutboxPublishMode } from '../outbox/workspace-outbox.config';
 
 @Global()
-@Module({
-  providers: [
-    {
-      provide: 'RABBITMQ_CHANNEL',
-      useFactory: async () => {
-        const url = process.env.RABBITMQ_URL || 'amqp://guest:guest@localhost:5672';
-        const connection = await amqp.connect(url);
-        const channel = await connection.createChannel();
+@Module({})
+export class RabbitMqModule {
+  static forRoot(): DynamicModule {
+    if (getWorkspaceOutboxPublishMode() === 'debezium') {
+      return {
+        module: RabbitMqModule,
+        providers: [],
+        exports: [],
+      };
+    }
 
-        // Assert exchange exists as defined in the master definitions.json
-        await channel.assertExchange('collabspace_exchange', 'topic', {
-          durable: true,
-        });
+    return {
+      module: RabbitMqModule,
+      providers: [
+        {
+          provide: 'RABBITMQ_CHANNEL',
+          useFactory: async () => {
+            const url = process.env.RABBITMQ_URL || 'amqp://guest:guest@localhost:5672';
+            const connection = await amqp.connect(url);
+            const channel = await connection.createChannel();
 
-        return channel;
-      },
-    },
-  ],
-  exports: ['RABBITMQ_CHANNEL'],
-})
-export class RabbitMqModule {}
+            await channel.assertExchange('collabspace_exchange', 'topic', {
+              durable: true,
+            });
+
+            return channel;
+          },
+        },
+      ],
+      exports: ['RABBITMQ_CHANNEL'],
+    };
+  }
+}

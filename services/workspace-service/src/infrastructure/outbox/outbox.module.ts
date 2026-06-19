@@ -6,7 +6,7 @@ import { WorkspaceOutboxProcessor } from './workspace-outbox.processor';
 import { WorkspaceOutboxService } from './workspace-outbox.service';
 
 @Module({
-  imports: [RabbitMqModule, TypeOrmModule.forFeature([WorkspaceOutboxEventEntity])],
+  imports: [RabbitMqModule.forRoot(), TypeOrmModule.forFeature([WorkspaceOutboxEventEntity])],
   providers: [WorkspaceOutboxService, WorkspaceOutboxProcessor],
   exports: [WorkspaceOutboxService],
 })
