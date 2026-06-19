@@ -128,6 +128,15 @@ Run core local stack from `infrastructure/docker` (includes hot-reload **and** P
 docker-compose -f docker-compose.yml -f docker-compose.db.yml -f docker-compose.override.yml up -d
 ```
 
+**Kafka + Debezium (Phase 0 migration, optional overlay — does not replace RabbitMQ):**
+
+```sh
+docker compose -f docker-compose.yml -f docker-compose.db.yml -f docker-compose.kafka.yml up -d kafka debezium-connect
+# Smoke: ../../scripts/kafka-phase0-smoke.sh (or .ps1 on Windows)
+```
+
+See `infrastructure/kafka/README.md` and `docs/kafka-debezium-migration-roadmap.md`.
+
 Add Traefik:
 
 ```sh
@@ -163,6 +172,9 @@ Important local URLs:
 - Jaeger: `http://localhost:16686`
 - Traefik dashboard: `http://localhost:8080`
 - RabbitMQ dashboard: `http://localhost:15672`
+- Debezium Connect REST: `http://localhost:8083`
+- Kafka (host client): `localhost:29092`
+- Kafka UI (profile `kafka-ui`): `http://localhost:8088`
 
 ## Auth Service Workflow
 

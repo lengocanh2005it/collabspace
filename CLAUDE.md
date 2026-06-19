@@ -26,6 +26,7 @@ Read before broad changes:
 - Trust boundaries (Phase B): `docs/production-hardening.md`, `.claude/docs/service-contracts.md` → Auth Header Propagation
 - Correlation ID (Phase C): `X-Request-Id` — `.claude/docs/service-contracts.md` → Correlation ID
 - Infra backlog: `docs/team/phan-phu-tho-infrastructure-backlog.md`
+- **Kafka + Debezium migration roadmap:** `docs/kafka-debezium-migration-roadmap.md`
 - Secrets (HashiCorp Vault): `infrastructure/vault/README.md`
 - App backlog (Anh, Tiến, Tín): `docs/team/application-backlog.md`
 - Cross-service data: `docs/cross-service-data.md`, `.claude/docs/read-models.md`

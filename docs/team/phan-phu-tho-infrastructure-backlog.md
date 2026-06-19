@@ -38,6 +38,7 @@ Tài liệu này liệt kê **công việc hạ tầng / DevOps / observability 
 - [infrastructure/k8s/README.md](../../infrastructure/k8s/README.md)
 - [infrastructure/vault/README.md](../../infrastructure/vault/README.md) — **HashiCorp Vault** (local dev + ESO)
 - [infrastructure/docker/.env.example](../../infrastructure/docker/.env.example) — shared dev secrets (Compose / align Vault seed)
+- [kafka-debezium-migration-roadmap.md](../kafka-debezium-migration-roadmap.md) — **lộ trình** RabbitMQ → Kafka + Debezium CDC (theo phase; chưa triển khai)
 - Per-service contract: `services/*/.env.example` (gitignored `.env` thật)
 
 ---
