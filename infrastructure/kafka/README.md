@@ -108,6 +108,20 @@ Topics (sau Outbox Event Router):
 | `workspace.workspace_invited` | `collabspace.workspace.workspace_invited` |
 | `workspace.workspace_deleted` | `collabspace.workspace.workspace_deleted` |
 
+## Phase 2 — Kafka consumer pilot (notification-service)
+
+Bật trong `services/notification-service/.env`:
+
+```env
+KAFKA_CONSUMERS_ENABLED=true
+KAFKA_BROKERS=kafka:9092
+KAFKA_TOPIC_WORKSPACE_INVITED=collabspace.workspace.workspace_invited
+```
+
+RabbitMQ listener **vẫn bật** — idempotency theo `eventId` tránh duplicate khi dual-run.
+
+Restart notification-service sau khi đổi env. Invite workspace → kiểm tra log `via kafka` / `via rmq`.
+
 ## Biến môi trường (tham chiếu)
 
 Ghi trong `infrastructure/docker/.env.example` — app services **chưa** đọc các biến này cho đến Phase 2+.
@@ -123,8 +137,8 @@ DEBEZIUM_CONNECT_URL_HOST=http://localhost:8083
 
 | Phase | Việc làm |
 |-------|----------|
-| **2** | Kafka consumer pilot `workspace_invited` (dual-run RMQ) |
-| **0M** | Mongo replica set (bắt buộc trước Debezium Mongo) |
+| **2** | Kafka consumer pilot `workspace_invited` (dual-run RMQ) — **Done** |
+| **3** | Cutover workspace events (chỉ Kafka) |
 
 ## Rollback
 

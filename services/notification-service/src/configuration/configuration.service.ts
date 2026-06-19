@@ -18,6 +18,14 @@ export type RabbitMqConfig = {
   deadLetterRoutingKey: string;
 };
 
+export type KafkaConfig = {
+  enabled: boolean;
+  brokers: string[];
+  clientId: string;
+  groupId: string;
+  workspaceInvitedTopic: string;
+};
+
 @Injectable()
 export class ConfigurationService {
   constructor(private readonly configService: ConfigService) {}
@@ -62,6 +70,26 @@ export class ConfigurationService {
 
       deadLetterRoutingKey:
         this.configService.get<string>("RABBITMQ_DLX_ROUTING_KEY") ?? "notification-service.dlq",
+    };
+  }
+
+  getKafkaConfig(): KafkaConfig {
+    const brokersRaw =
+      this.configService.get<string>("KAFKA_BROKERS") ??
+      this.configService.get<string>("KAFKA_BROKERS_HOST") ??
+      "kafka:9092";
+
+    return {
+      enabled: this.configService.get<string>("KAFKA_CONSUMERS_ENABLED") === "true",
+      brokers: brokersRaw
+        .split(",")
+        .map((broker) => broker.trim())
+        .filter((broker) => broker.length > 0),
+      clientId: this.configService.get<string>("KAFKA_CLIENT_ID") ?? "notification-service",
+      groupId: this.configService.get<string>("KAFKA_GROUP_ID") ?? "notification-service",
+      workspaceInvitedTopic:
+        this.configService.get<string>("KAFKA_TOPIC_WORKSPACE_INVITED") ??
+        "collabspace.workspace.workspace_invited",
     };
   }
 

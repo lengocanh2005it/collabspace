@@ -1,11 +1,10 @@
 import { Controller, Logger } from "@nestjs/common";
-import { Ctx, EventPattern, Payload, type RmqContext } from "@nestjs/microservices";
 import { CommandBus } from "@nestjs/cqrs";
+import { Ctx, EventPattern, Payload, type RmqContext } from "@nestjs/microservices";
 import type { Channel, ConsumeMessage } from "amqplib";
 import { WORKSPACE_INVITED_EVENT } from "../../../domain/events/workspace-events";
 import type { WorkspaceInvitedEventPayload } from "../../../domain/events/workspace-events";
-import { InboundNotificationEventMapper } from "../../../application/mappers/inbound-notification-event.mapper";
-import { UserReplicaLookupService } from "../../../application/services/user-replica-lookup.service";
+import { WorkspaceInviteNotificationService } from "../../../application/services/workspace-invite-notification.service";
 import { consumeNotificationEvent } from "../../helpers/rmq-notification-consumer.helper";
 
 @Controller()
@@ -14,7 +13,7 @@ export class WorkspaceInviteEventListenerController {
 
   constructor(
     private readonly commandBus: CommandBus,
-    private readonly userReplicaLookup: UserReplicaLookupService,
+    private readonly workspaceInviteNotification: WorkspaceInviteNotificationService,
   ) {}
 
   @EventPattern(WORKSPACE_INVITED_EVENT)
@@ -24,12 +23,11 @@ export class WorkspaceInviteEventListenerController {
   ) {
     const channel = context.getChannelRef() as Channel;
     const originalMessage = context.getMessage() as ConsumeMessage;
-    const resolvedPayload = await this.resolveInviteRecipient(data);
-    const command = InboundNotificationEventMapper.toWorkspaceInvitedCommand(resolvedPayload);
+    const command = await this.workspaceInviteNotification.prepareWorkspaceInvitedCommand(data);
 
     if (!command) {
       this.logger.warn(
-        `Skipping workspace_invited notification without recipient user id for workspaceId=${data.workspaceId} inviteEmail=${data.inviteEmail ?? "unknown"}`,
+        `Skipping workspace_invited via rmq without recipient user id for workspaceId=${data.workspaceId} inviteEmail=${data.inviteEmail ?? "unknown"}`,
       );
       channel.ack(originalMessage);
       return;
@@ -41,24 +39,9 @@ export class WorkspaceInviteEventListenerController {
         channel,
         message: originalMessage,
         logger: this.logger,
-        eventLabel: "workspace_invited",
+        eventLabel: "workspace_invited (rmq)",
       },
       command,
     );
-  }
-
-  private async resolveInviteRecipient(
-    data: WorkspaceInvitedEventPayload,
-  ): Promise<WorkspaceInvitedEventPayload> {
-    if (data.recipientId?.trim() || data.invitedUserId?.trim() || !data.inviteEmail?.trim()) {
-      return data;
-    }
-
-    const recipientId = await this.userReplicaLookup.findActiveUserIdByEmailAsync(data.inviteEmail);
-    if (!recipientId) {
-      return data;
-    }
-
-    return { ...data, recipientId };
   }
 }

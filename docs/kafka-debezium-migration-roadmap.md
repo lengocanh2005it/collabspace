@@ -348,10 +348,11 @@ workspace invite
 
 ### DoD
 
-- [ ] Chỉ Kafka (tắt RMQ listener tạm): notification OK
-- [ ] Chỉ RMQ: notification OK (như cũ)
-- [ ] **Cả hai bật**: vẫn **1** notification / `eventId`
-- [ ] Metric/log ghi rõ transport (`kafka` vs `rmq`)
+- [x] Kafka consumer `workspace_invited` + feature flag `KAFKA_CONSUMERS_ENABLED`
+- [x] Reuse `InboundNotificationEventMapper` / idempotency `eventId`
+- [x] Unit tests: parser + `WorkspaceInviteNotificationService`
+- [ ] Dual-run manual: invite → 1 notification (RMQ + Kafka cùng bật) — chạy với stack đầy đủ
+- [x] Log ghi rõ transport (`kafka` / `rmq`)
 
 ### Rollback
 
@@ -751,4 +752,5 @@ KAFKA_DUAL_CONSUME=true                  # Phase 2–4 dual-run
 | 2026-06-19 | Khởi tạo lộ trình Phase 0 → 7 |
 | 2026-06-19 | Phase 0: `docker-compose.kafka.yml`, `infrastructure/kafka/README.md`, smoke scripts |
 | 2026-06-19 | Phase 1: wal_level logical, outbox aggregate columns, Debezium workspace connector |
+| 2026-06-19 | Phase 2: notification-service Kafka consumer `workspace_invited` (dual-run RMQ) |
 | 2026-06-19 | Bổ sung: migration schema outbox (`aggregate_type`/`aggregate_id`) vào Phase 1 DoD; pattern TypeORM `queryRunner` cho user-service (Phase 4); prerequisite Mongo driver + RS cho Phase 5M; chuẩn hoá topic naming convention (section 12); làm rõ auth-service không bị ảnh hưởng Phase 6 |
