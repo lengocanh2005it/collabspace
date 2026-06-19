@@ -136,7 +136,7 @@ Chi tiết kỹ thuật:
 | Contract docs | API + event | ✅ `service-contracts.md`, `api-routes.md` |
 | Contract test tự động | Pact / schema test event | ❌ Chỉ doc + `@collabspace/shared`; chưa consumer-driven contract test |
 | Unit tests | Logic nghiệp vụ | ✅ auth, user, task, notification (mức độ khác nhau) |
-| E2E cross-service | Demo story tự động | ⚠️ `scripts/demo-e2e.sh` + `.ps1` (7 bước qua Traefik) **Done**; chưa gắn CI smoke; workspace/task/notification chưa có `*.e2e-spec.ts` |
+| E2E cross-service | Demo story tự động | ✅ `scripts/demo-e2e.sh` + `.ps1`; CI gate sau deploy `main` (`run-demo-e2e-prod.sh`) |
 | Coding conventions | Layering nhất quán | ✅ `.claude/docs/coding-conventions.md`, per-service CLAUDE.md |
 
 ---

@@ -11,10 +11,10 @@ on:
         required: false
         default: latest
       run_e2e:
-        description: Run MVP demo E2E smoke after deploy
+        description: Run MVP demo E2E smoke after deploy (uncheck to skip on manual runs)
         required: false
         type: boolean
-        default: false
+        default: true
 
 permissions:
   contents: read
@@ -223,7 +223,7 @@ jobs:
             echo "Helm deploy finished in $((SECONDS - start))s"
 
       - name: Run MVP demo E2E smoke over SSH
-        if: github.event.inputs.run_e2e == 'true'
+        if: github.event_name == 'push' || github.event.inputs.run_e2e != 'false'
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.DROPLET_HOST }}
