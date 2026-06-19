@@ -419,6 +419,17 @@ Debezium Outbox Event Router on `workspace_outbox_events` (`infrastructure/kafka
 - **Consumer env**: `KAFKA_CONSUMERS_ENABLED=true`, `KAFKA_BROKERS`, `KAFKA_GROUP_ID`, topic overrides `KAFKA_TOPIC_WORKSPACE_*`.
 - **RMQ workspace listeners** remain in code for prod rollback until Phase 6; local Kafka-only dev sets `RABBITMQ_ENABLED=false` on consumers.
 
+### Kafka topics (user events — Phase 4a)
+
+Debezium Outbox Event Router on `user_outbox_events` (`infrastructure/kafka/connectors/user-outbox-connector.json`):
+
+| Outbox `event_type` | Kafka topic | Consumers |
+|---------------------|-------------|-----------|
+| `user.profile_updated` | `collabspace.user.profile_updated` | `task-service`, `notification-service` |
+
+- **Producer path (Phase 4a)**: `UpdateUserProfileUseCase` INSERT outbox in same TX as profile UPDATE; **RMQ dual-run** still publishes `user_profile_updated` after commit until Phase 4b cutover.
+- **Consumer env**: `KAFKA_TOPIC_USER_PROFILE_UPDATED` (default `collabspace.user.profile_updated`).
+
 ### User directory replicas (`user_registered`, `user_profile_updated`)
 
 Producer: `user-service` (broadcast to `task-service` and `notification-service` queues).

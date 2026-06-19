@@ -2,6 +2,7 @@ import type {
   WorkspaceDeletedEventPayload,
   WorkspaceInvitedEventPayload,
 } from "../../../domain/events/workspace-events";
+import type { UserProfileUpdatedEventPayload } from "../../../domain/events/user-profile-update.event";
 
 /**
  * Debezium Outbox Event Router with expand.json.payload emits the domain JSON as the value.
@@ -62,4 +63,16 @@ export function toWorkspaceDeletedEventPayload(
   }
 
   return record as unknown as WorkspaceDeletedEventPayload;
+}
+
+export function toUserProfileUpdatedEventPayload(
+  record: Record<string, unknown>,
+): UserProfileUpdatedEventPayload | null {
+  const userId = record.userId;
+
+  if (typeof userId !== "string" || userId.length === 0) {
+    return null;
+  }
+
+  return record as unknown as UserProfileUpdatedEventPayload;
 }

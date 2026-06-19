@@ -25,6 +25,7 @@ export type KafkaConfig = {
   groupId: string;
   workspaceInvitedTopic: string;
   workspaceDeletedTopic: string;
+  userProfileUpdatedTopic: string;
 };
 
 @Injectable()
@@ -94,6 +95,9 @@ export class ConfigurationService {
       workspaceDeletedTopic:
         this.configService.get<string>("KAFKA_TOPIC_WORKSPACE_DELETED") ??
         "collabspace.workspace.workspace_deleted",
+      userProfileUpdatedTopic:
+        this.configService.get<string>("KAFKA_TOPIC_USER_PROFILE_UPDATED") ??
+        "collabspace.user.profile_updated",
     };
   }
 

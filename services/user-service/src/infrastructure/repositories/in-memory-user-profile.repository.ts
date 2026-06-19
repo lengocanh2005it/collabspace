@@ -197,6 +197,14 @@ export class InMemoryUserProfileRepository implements UserProfileRepository {
     return profile;
   }
 
+  async updateProfileInTransaction(
+    _context: import('../../domain/ports/unit-of-work.port').TransactionContext,
+    userId: string,
+    input: UpdateUserProfileInput,
+  ): Promise<UserProfile> {
+    return this.updateProfile(userId, input);
+  }
+
   async updateProfile(userId: string, input: UpdateUserProfileInput): Promise<UserProfile> {
     const profile = await this.findByUserId(userId);
 

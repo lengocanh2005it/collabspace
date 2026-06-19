@@ -51,6 +51,7 @@ export function createUserProfileRepositoryMock(): UserProfileRepository {
     list: jest.fn(),
     updatePreferences: jest.fn(),
     updateProfile: jest.fn(),
+    updateProfileInTransaction: jest.fn(),
     updateStatus: jest.fn(),
     upsertPending: jest.fn(),
   };

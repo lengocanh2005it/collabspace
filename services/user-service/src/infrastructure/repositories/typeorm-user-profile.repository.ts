@@ -1,7 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'node:crypto';
-import { In, type Repository } from 'typeorm';
+import { In, type EntityManager, type Repository } from 'typeorm';
+import type { TransactionContext } from '../../domain/ports/unit-of-work.port';
 import { UserProfile } from '../../domain/entities/user-profile.entity';
 import { UserPreferences } from '../../domain/entities/user-preferences.entity';
 import { UserStatus } from '../../domain/entities/user-status.entity';
@@ -250,7 +251,17 @@ export class TypeOrmUserProfileRepository implements UserProfileRepository {
   }
 
   async updateProfile(userId: string, input: UpdateUserProfileInput): Promise<UserProfile> {
-    const profile = await this.repository.findOne({
+    return this.updateProfileInTransaction({ manager: this.repository.manager }, userId, input);
+  }
+
+  async updateProfileInTransaction(
+    context: TransactionContext,
+    userId: string,
+    input: UpdateUserProfileInput,
+  ): Promise<UserProfile> {
+    const manager = context.manager as EntityManager;
+    const repository = manager.getRepository(UserProfileOrmEntity);
+    const profile = await repository.findOne({
       where: {
         userId,
       },
@@ -269,7 +280,7 @@ export class TypeOrmUserProfileRepository implements UserProfileRepository {
     profile.fullName = input.fullName ?? profile.fullName;
     profile.username = input.username === undefined ? profile.username : input.username;
 
-    const result = this.toDomainProfile(await this.repository.save(profile));
+    const result = this.toDomainProfile(await repository.save(profile));
     await this.cache.deleteProfile(userId);
     return result;
   }

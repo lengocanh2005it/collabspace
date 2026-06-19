@@ -48,6 +48,7 @@ import { TaskCommentCountService } from "./application/services/task-comment-cou
 import { TaskCommentNotificationPublisher } from "./application/services/task-comment-notification.publisher";
 import { WorkspaceDeletionService } from "./application/services/workspace-deletion.service";
 import { WorkspaceDeletedKafkaConsumer } from "./infrastructure/messaging/kafka/workspace-deleted-kafka.consumer";
+import { UserProfileUpdatedKafkaConsumer } from "./infrastructure/messaging/kafka/user-profile-updated-kafka.consumer";
 import { TaskOutboxService } from "./infrastructure/outbox/task-outbox.service";
 import { TaskOutboxProcessor } from "./infrastructure/outbox/task-outbox.processor";
 import { TaskOutboxEvent, TaskOutboxEventSchema } from "./infrastructure/outbox/task-outbox.schema";
@@ -167,6 +168,7 @@ const Handlers = [
     TaskCommentCountService,
     WorkspaceDeletionService,
     WorkspaceDeletedKafkaConsumer,
+    UserProfileUpdatedKafkaConsumer,
     IdempotencyService,
     AuthGuard,
     WorkspaceValidationGuard,
