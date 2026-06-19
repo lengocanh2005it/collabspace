@@ -9,7 +9,7 @@ Nền tảng **Phase 0** của lộ trình migrate RabbitMQ → Kafka + CDC + De
 | Service | Image | Port (host) | Mục đích |
 |---------|-------|-------------|----------|
 | `kafka` | `apache/kafka:3.8.0` (KRaft) | `9092`, `29092` | Broker (in-docker: `kafka:9092`, host: `localhost:29092`) |
-| `debezium-connect` | `debezium/connect:2.7` | `8083` | Kafka Connect REST — đăng ký connector Phase 1+ |
+| `debezium-connect` | `quay.io/debezium/connect:2.7.3.Final` | `8083` | Kafka Connect REST — đăng ký connector Phase 1+ |
 | `kafka-ui` | `provectuslabs/kafka-ui` (profile `kafka-ui`) | `8088` | Xem topic / message (tùy chọn) |
 
 RabbitMQ và app services **không đổi** ở Phase 0.
@@ -64,6 +64,50 @@ docker exec kafka /opt/kafka/bin/kafka-console-consumer.sh --bootstrap-server lo
 
 Kafka UI: http://localhost:8088 (khi bật profile `kafka-ui`).
 
+## Phase 1 — CDC workspace outbox (quan sát)
+
+**Mục tiêu:** INSERT `workspace_outbox_events` → Debezium → Kafka topic `collabspace.workspace.workspace_invited` (RMQ processor **vẫn chạy**).
+
+### 1. Postgres `wal_level=logical`
+
+`docker-compose.db.yml` đã set `wal_level=logical`. Nếu volume Postgres **cũ** (tạo trước Phase 1), recreate hoặc:
+
+```powershell
+docker compose -f docker-compose.yml -f docker-compose.db.yml up -d --force-recreate postgres
+docker exec postgres psql -U postgres -c "SHOW wal_level;"
+# phải thấy: logical
+```
+
+### 2. Migration workspace outbox
+
+```powershell
+cd services/workspace-service
+pnpm run migrate
+```
+
+### 3. Đăng ký connector
+
+```powershell
+.\scripts\register-workspace-outbox-connector.ps1
+```
+
+Config: `infrastructure/kafka/connectors/workspace-outbox-connector.json`
+
+### 4. Smoke test Phase 1
+
+```powershell
+.\scripts\kafka-phase1-smoke.ps1
+```
+
+Hoặc invite workspace qua API → xem topic trên Kafka UI.
+
+Topics (sau Outbox Event Router):
+
+| `event_type` | Kafka topic |
+|--------------|-------------|
+| `workspace.workspace_invited` | `collabspace.workspace.workspace_invited` |
+| `workspace.workspace_deleted` | `collabspace.workspace.workspace_deleted` |
+
 ## Biến môi trường (tham chiếu)
 
 Ghi trong `infrastructure/docker/.env.example` — app services **chưa** đọc các biến này cho đến Phase 2+.
@@ -79,7 +123,7 @@ DEBEZIUM_CONNECT_URL_HOST=http://localhost:8083
 
 | Phase | Việc làm |
 |-------|----------|
-| **1** | `wal_level=logical` Postgres + Debezium connector `workspace_outbox_events` |
+| **2** | Kafka consumer pilot `workspace_invited` (dual-run RMQ) |
 | **0M** | Mongo replica set (bắt buộc trước Debezium Mongo) |
 
 ## Rollback
