@@ -3,6 +3,7 @@ import {
   toWorkspaceInvitedEventPayload,
   toWorkspaceDeletedEventPayload,
   toUserProfileUpdatedEventPayload,
+  toUserRegisteredEventPayload,
 } from "./kafka-outbox-message";
 
 describe("kafka-outbox-message", () => {
@@ -63,5 +64,23 @@ describe("kafka-outbox-message", () => {
 
     expect(toUserProfileUpdatedEventPayload(record)).toEqual(payload);
     expect(toUserProfileUpdatedEventPayload({ fullName: "x" })).toBeNull();
+  });
+
+  it("parses user registered payload", () => {
+    const payload = {
+      userId: "user-1",
+      fullName: "Jane Doe",
+      email: "jane@collabspace.dev",
+      occurredAt: "2026-06-19T00:00:00.000Z",
+    };
+
+    const record = parseKafkaOutboxJsonValue(Buffer.from(JSON.stringify(payload)));
+    expect(record).not.toBeNull();
+    if (!record) {
+      throw new Error("expected parsed record");
+    }
+
+    expect(toUserRegisteredEventPayload(record)).toEqual(payload);
+    expect(toUserRegisteredEventPayload({ userId: "user-1" })).toBeNull();
   });
 });

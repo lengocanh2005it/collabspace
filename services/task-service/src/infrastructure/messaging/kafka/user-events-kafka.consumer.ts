@@ -1,17 +1,19 @@
 import { Injectable, Logger, type OnModuleDestroy, type OnModuleInit } from "@nestjs/common";
 import { CommandBus } from "@nestjs/cqrs";
 import { Kafka, type Consumer } from "kafkajs";
+import { CreateUserReplicaCommand } from "../../../application/commands/create-user-replica.command";
 import { SyncUserReplicaCommand } from "../../../application/commands/sync-user-replica.command";
 import { ConfigurationService } from "../../../configuration/configuration.service";
 import { MetricsService } from "../../../metrics/metrics.service";
 import {
   parseKafkaOutboxJsonValue,
   toUserProfileUpdatedEventPayload,
+  toUserRegisteredEventPayload,
 } from "./kafka-outbox-message";
 
 @Injectable()
-export class UserProfileUpdatedKafkaConsumer implements OnModuleInit, OnModuleDestroy {
-  private readonly logger = new Logger(UserProfileUpdatedKafkaConsumer.name);
+export class UserEventsKafkaConsumer implements OnModuleInit, OnModuleDestroy {
+  private readonly logger = new Logger(UserEventsKafkaConsumer.name);
   private consumer: Consumer | null = null;
   private runPromise: Promise<void> | null = null;
 
@@ -36,7 +38,7 @@ export class UserProfileUpdatedKafkaConsumer implements OnModuleInit, OnModuleDe
     this.consumer = kafka.consumer({ groupId: kafkaConfig.groupId });
     await this.consumer.connect();
     await this.consumer.subscribe({
-      topic: kafkaConfig.userProfileUpdatedTopic,
+      topics: [kafkaConfig.userProfileUpdatedTopic, kafkaConfig.userRegisteredTopic],
       fromBeginning: false,
     });
 
@@ -48,31 +50,21 @@ export class UserProfileUpdatedKafkaConsumer implements OnModuleInit, OnModuleDe
           return;
         }
 
-        const payload = toUserProfileUpdatedEventPayload(record);
-        if (!payload) {
-          this.logger.warn(
-            `Skipping Kafka user_profile_updated message missing userId keys=${Object.keys(record).join(",")}`,
-          );
-          return;
-        }
-
         try {
-          await this.commandBus.execute(
-            new SyncUserReplicaCommand(
-              payload.userId,
-              payload.fullName || "",
-              payload.displayName || undefined,
-              payload.avatarUrl || undefined,
-              payload.username || undefined,
-              payload.email,
-              payload.isActive,
-            ),
-          );
-          this.recordSyncLag(payload.occurredAt);
-          this.logger.log(`user_profile_updated via kafka userId=${payload.userId}`);
+          if (topic === kafkaConfig.userRegisteredTopic) {
+            await this.handleUserRegistered(record);
+            return;
+          }
+
+          if (topic === kafkaConfig.userProfileUpdatedTopic) {
+            await this.handleUserProfileUpdated(record);
+            return;
+          }
+
+          this.logger.warn(`Skipping Kafka message from unhandled topic=${topic}`);
         } catch (error) {
           this.logger.error(
-            `Failed to sync user profile update via kafka userId=${payload.userId}`,
+            `Failed to process Kafka message topic=${topic}`,
             error instanceof Error ? error.stack : undefined,
           );
           throw error;
@@ -81,8 +73,55 @@ export class UserProfileUpdatedKafkaConsumer implements OnModuleInit, OnModuleDe
     });
 
     this.logger.log(
-      `Kafka consumer listening topic=${kafkaConfig.userProfileUpdatedTopic} group=${kafkaConfig.groupId}`,
+      `Kafka consumer listening topics=${kafkaConfig.userProfileUpdatedTopic},${kafkaConfig.userRegisteredTopic} group=${kafkaConfig.groupId}`,
     );
+  }
+
+  private async handleUserRegistered(record: Record<string, unknown>): Promise<void> {
+    const payload = toUserRegisteredEventPayload(record);
+    if (!payload) {
+      this.logger.warn(
+        `Skipping Kafka user_registered message missing userId keys=${Object.keys(record).join(",")}`,
+      );
+      return;
+    }
+
+    await this.commandBus.execute(
+      new CreateUserReplicaCommand(
+        payload.userId,
+        payload.fullName,
+        payload.email,
+        payload.username,
+        payload.displayName,
+        payload.avatarUrl,
+      ),
+    );
+    this.recordSyncLag(payload.occurredAt);
+    this.logger.log(`user_registered via kafka userId=${payload.userId}`);
+  }
+
+  private async handleUserProfileUpdated(record: Record<string, unknown>): Promise<void> {
+    const payload = toUserProfileUpdatedEventPayload(record);
+    if (!payload) {
+      this.logger.warn(
+        `Skipping Kafka user_profile_updated message missing userId keys=${Object.keys(record).join(",")}`,
+      );
+      return;
+    }
+
+    await this.commandBus.execute(
+      new SyncUserReplicaCommand(
+        payload.userId,
+        payload.fullName || "",
+        payload.displayName || undefined,
+        payload.avatarUrl || undefined,
+        payload.username || undefined,
+        payload.email,
+        payload.isActive,
+      ),
+    );
+    this.recordSyncLag(payload.occurredAt);
+    this.logger.log(`user_profile_updated via kafka userId=${payload.userId}`);
   }
 
   private recordSyncLag(occurredAt?: string): void {

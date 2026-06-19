@@ -213,7 +213,17 @@ export class TypeOrmUserProfileRepository implements UserProfileRepository {
   }
 
   async upsertPending(input: CreatePendingUserProfileInput): Promise<UserProfile> {
-    const existingProfile = await this.repository.findOne({
+    return this.upsertPendingInTransaction({ manager: this.repository.manager }, input);
+  }
+
+  async upsertPendingInTransaction(
+    context: TransactionContext,
+    input: CreatePendingUserProfileInput,
+  ): Promise<UserProfile> {
+    const manager = context.manager as EntityManager;
+    const repository = manager.getRepository(UserProfileOrmEntity);
+
+    const existingProfile = await repository.findOne({
       where: {
         userId: input.userId,
       },
@@ -230,10 +240,10 @@ export class TypeOrmUserProfileRepository implements UserProfileRepository {
           input.userId,
         );
       }
-      savedProfile = await this.repository.save(existingProfile);
+      savedProfile = await repository.save(existingProfile);
     } else {
-      savedProfile = await this.repository.save(
-        this.repository.create({
+      savedProfile = await repository.save(
+        repository.create({
           avatarUrl: null,
           bio: null,
           deletedAt: null,

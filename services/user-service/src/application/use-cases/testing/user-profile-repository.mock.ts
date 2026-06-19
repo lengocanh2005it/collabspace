@@ -54,5 +54,6 @@ export function createUserProfileRepositoryMock(): UserProfileRepository {
     updateProfileInTransaction: jest.fn(),
     updateStatus: jest.fn(),
     upsertPending: jest.fn(),
+    upsertPendingInTransaction: jest.fn(),
   };
 }

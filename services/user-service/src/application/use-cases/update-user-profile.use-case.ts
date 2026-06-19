@@ -11,6 +11,7 @@ import {
   toUserProfileResponseDto,
 } from '../dto/user-profile-response.dto';
 import { RabbitMqEventsService } from '../../infrastructure/messaging/rabbitmq/rabbitmq-events.service';
+import { shouldPublishUserEventsToRabbitMq } from '../../infrastructure/outbox/user-outbox.config';
 import { UserOutboxService } from '../../infrastructure/outbox/user-outbox.service';
 
 @Injectable()
@@ -52,21 +53,23 @@ export class UpdateUserProfileUseCase {
       return profile;
     });
 
-    try {
-      await this.rabbitMqEvents.publishUserProfileUpdated({
-        userId,
-        fullName: updatedProfile.fullName,
-        displayName: updatedProfile.displayName,
-        avatarUrl: updatedProfile.avatarUrl,
-        username: updatedProfile.username,
-        isActive: updatedProfile.deletedAt === null,
-        occurredAt,
-      });
-    } catch (error) {
-      this.logger.warn(
-        `Failed to publish profile updated event for ${userId}`,
-        error instanceof Error ? error.stack : undefined,
-      );
+    if (shouldPublishUserEventsToRabbitMq()) {
+      try {
+        await this.rabbitMqEvents.publishUserProfileUpdated({
+          userId,
+          fullName: updatedProfile.fullName,
+          displayName: updatedProfile.displayName,
+          avatarUrl: updatedProfile.avatarUrl,
+          username: updatedProfile.username,
+          isActive: updatedProfile.deletedAt === null,
+          occurredAt,
+        });
+      } catch (error) {
+        this.logger.warn(
+          `Failed to publish profile updated event for ${userId}`,
+          error instanceof Error ? error.stack : undefined,
+        );
+      }
     }
 
     return toUserProfileResponseDto(updatedProfile);

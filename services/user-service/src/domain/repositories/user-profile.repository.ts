@@ -71,4 +71,8 @@ export interface UserProfileRepository {
   ): Promise<UserProfile>;
   updateStatus(userId: string, input: UpdateUserStatusInput): Promise<UserStatus>;
   upsertPending(input: CreatePendingUserProfileInput): Promise<UserProfile>;
+  upsertPendingInTransaction(
+    context: TransactionContext,
+    input: CreatePendingUserProfileInput,
+  ): Promise<UserProfile>;
 }

@@ -11,6 +11,7 @@ import {
   USER_PROFILE_UPDATED_EVENT,
   type UserProfileUpdatedEventPayload,
 } from '../../../domain/events/user-profile-update.event';
+import { shouldPublishUserEventsToRabbitMq } from '../../outbox/user-outbox.config';
 
 @Injectable()
 export class RabbitMqEventsService implements OnModuleDestroy {
@@ -20,14 +21,25 @@ export class RabbitMqEventsService implements OnModuleDestroy {
   constructor(private readonly config: ConfigurationService) {}
 
   async publishUserRegistered(payload: UserRegisteredEventPayload): Promise<void> {
+    if (!shouldPublishUserEventsToRabbitMq()) {
+      return;
+    }
+
     await this.broadcast(USER_REGISTERED_EVENT, payload);
   }
 
   async publishUserProfileUpdated(payload: UserProfileUpdatedEventPayload): Promise<void> {
+    if (!shouldPublishUserEventsToRabbitMq()) {
+      return;
+    }
+
     await this.broadcast(USER_PROFILE_UPDATED_EVENT, payload);
   }
 
-  private async broadcast(pattern: string, payload: any): Promise<void> {
+  private async broadcast(
+    pattern: string,
+    payload: UserRegisteredEventPayload | UserProfileUpdatedEventPayload,
+  ): Promise<void> {
     const taskClient = this.getTaskClient();
     const notiClient = this.getNotiClient();
 

@@ -1,5 +1,6 @@
 import type { WorkspaceDeletedEventPayload } from "@collabspace/shared";
 import type { UserProfileUpdatedEventPayload } from "../../../domain/events/user-profile-update.event";
+import type { UserRegisteredEventPayload } from "../../../domain/events/user-create.event";
 
 export function parseKafkaOutboxJsonValue(
   value: Buffer | string | null | undefined,
@@ -52,4 +53,21 @@ export function toUserProfileUpdatedEventPayload(
   }
 
   return record as unknown as UserProfileUpdatedEventPayload;
+}
+
+export function toUserRegisteredEventPayload(
+  record: Record<string, unknown>,
+): UserRegisteredEventPayload | null {
+  const userId = record.userId;
+  const fullName = record.fullName;
+
+  if (typeof userId !== "string" || userId.length === 0) {
+    return null;
+  }
+
+  if (typeof fullName !== "string" || fullName.length === 0) {
+    return null;
+  }
+
+  return record as unknown as UserRegisteredEventPayload;
 }

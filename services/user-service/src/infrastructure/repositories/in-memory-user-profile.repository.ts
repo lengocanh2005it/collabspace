@@ -170,6 +170,13 @@ export class InMemoryUserProfileRepository implements UserProfileRepository {
     };
   }
 
+  async upsertPendingInTransaction(
+    _context: import('../../domain/ports/unit-of-work.port').TransactionContext,
+    input: CreatePendingUserProfileInput,
+  ): Promise<UserProfile> {
+    return this.upsertPending(input);
+  }
+
   async upsertPending(input: CreatePendingUserProfileInput): Promise<UserProfile> {
     const existingProfile = await this.findByUserId(input.userId);
     const now = new Date();

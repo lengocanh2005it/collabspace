@@ -1,6 +1,7 @@
 import { Column, CreateDateColumn, Entity, PrimaryColumn, UpdateDateColumn } from 'typeorm';
 
 export const USER_OUTBOX_EVENT_PROFILE_UPDATED = 'user.profile_updated';
+export const USER_OUTBOX_EVENT_REGISTERED = 'user.registered';
 export const USER_OUTBOX_AGGREGATE_TYPE = 'User';
 
 @Entity({ name: 'user_outbox_events' })
