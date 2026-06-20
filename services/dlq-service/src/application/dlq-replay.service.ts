@@ -19,6 +19,8 @@ export type ReplayOutcome = {
 export type BatchReplayFilter = {
   sourceTopic?: string;
   errorCategory?: DlqErrorCategory;
+  statuses?: DlqStatus[];
+  nextRetryAtBefore?: Date;
   limit: number;
 };
 
@@ -47,11 +49,12 @@ export class DlqReplayService {
   }
 
   async replayBatch(filter: BatchReplayFilter, triggeredBy: string): Promise<ReplayOutcome[]> {
-    const statuses: DlqStatus[] = ['pending', 'requires_manual_review'];
+    const statuses: DlqStatus[] = filter.statuses ?? ['pending', 'requires_manual_review'];
     const replayFilter: FindForReplayFilter = {
       statuses,
       sourceTopic: filter.sourceTopic,
       errorCategory: filter.errorCategory,
+      nextRetryAtBefore: filter.nextRetryAtBefore,
       limit: Math.min(filter.limit, 50),
     };
 

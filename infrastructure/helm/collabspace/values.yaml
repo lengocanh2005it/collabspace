@@ -648,7 +648,7 @@ apps:
       KAFKA_CONSUMER_RETRY_DELAY_MS: "1000"
 
   dlq-service:
-    enabled: false  # enable sau khi PR 2 (ingest + API) merge
+    enabled: true
     replicas: 1
     image:
       repository: collabspace/dlq-service

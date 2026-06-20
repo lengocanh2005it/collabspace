@@ -48,6 +48,7 @@ export type FindForReplayFilter = {
   statuses: DlqStatus[];
   sourceTopic?: string;
   errorCategory?: DlqErrorCategory;
+  nextRetryAtBefore?: Date;
   limit: number;
 };
 
@@ -65,6 +66,10 @@ export interface IDlqRecordRepository {
   // Replay lifecycle (atomic)
   acquireLock(id: string, lockedBy: string): Promise<DlqRecord | null>;
   releaseAfterReplay(id: string, update: PostReplayUpdate): Promise<DlqRecord | null>;
+
+  // Scheduler helpers
+  releaseStaleLocks(lockedBefore: Date): Promise<number>;
+  findOldestPending(): Promise<DlqRecord | null>;
 
   // Admin terminal actions
   updateStatusByAdmin(

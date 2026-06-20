@@ -68,6 +68,7 @@ export class MongoDlqRecordRepository implements IDlqRecordRepository {
     };
     if (filter.sourceTopic) query.sourceTopic = filter.sourceTopic;
     if (filter.errorCategory) query.errorCategory = filter.errorCategory;
+    if (filter.nextRetryAtBefore) query.nextRetryAt = { $lte: filter.nextRetryAtBefore };
 
     return this.model
       .find(query)
@@ -157,6 +158,24 @@ export class MongoDlqRecordRepository implements IDlqRecordRepository {
       )
       .lean()
       .exec() as unknown as Promise<DlqRecord | null>;
+  }
+
+  async releaseStaleLocks(lockedBefore: Date): Promise<number> {
+    const result = await this.model
+      .updateMany(
+        { status: 'replaying', lockedAt: { $lt: lockedBefore } },
+        { $set: { status: 'pending', lockedAt: null, lockedBy: null } },
+      )
+      .exec();
+    return result.modifiedCount;
+  }
+
+  async findOldestPending(): Promise<DlqRecord | null> {
+    return this.model
+      .findOne({ status: 'pending' })
+      .sort({ createdAt: 1 })
+      .lean()
+      .exec() as Promise<DlqRecord | null>;
   }
 
   async updateStatusByAdmin(

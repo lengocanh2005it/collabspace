@@ -17,6 +17,7 @@ import { DlqIngestService } from './application/dlq-ingest.service';
 import { DlqReplayService } from './application/dlq-replay.service';
 import { DlqReplayProducer } from './infrastructure/kafka/dlq-replay.producer';
 
+import { DlqAutoRetryScheduler } from './scheduler/dlq-auto-retry.scheduler';
 import { DlqHealthService } from './health/dlq-health.service';
 import { HealthController } from './presentation/controllers/health.controller';
 import { MetricsController } from './presentation/controllers/metrics.controller';
@@ -50,6 +51,7 @@ import { DlqActionsController } from './presentation/controllers/dlq-actions.con
     DlqReplayService,
     DlqEventsConsumer,
     DlqReplayProducer,
+    DlqAutoRetryScheduler,
   ],
 })
 export class AppModule {}
