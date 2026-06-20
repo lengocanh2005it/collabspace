@@ -61,11 +61,6 @@ app.kubernetes.io/version: {{ .root.Chart.AppVersion | quote }}
 {{- $r.Values.infra.hosts.redis | default "redis" }}
 {{- end }}
 
-{{- define "collabspace.rabbitmq.host" -}}
-{{- $r := .root | default . -}}
-{{- $r.Values.infra.hosts.rabbitmq | default "rabbitmq" }}
-{{- end }}
-
 {{- define "collabspace.jwtSecret" -}}
 {{- $r := .root | default . -}}
 {{- $r.Values.global.secrets.jwtSecret | required "global.secrets.jwtSecret is required" }}
@@ -84,23 +79,6 @@ app.kubernetes.io/version: {{ .root.Chart.AppVersion | quote }}
 {{- define "collabspace.redisPassword" -}}
 {{- $r := .root | default . -}}
 {{- $r.Values.global.secrets.redisPassword | default $r.Values.redis.auth.password }}
-{{- end }}
-
-{{- define "collabspace.rabbitmqUser" -}}
-{{- $r := .root | default . -}}
-{{- $r.Values.global.secrets.rabbitmqUsername | default $r.Values.rabbitmq.auth.username }}
-{{- end }}
-
-{{- define "collabspace.rabbitmqPassword" -}}
-{{- $r := .root | default . -}}
-{{- $r.Values.global.secrets.rabbitmqPassword | default $r.Values.rabbitmq.auth.password }}
-{{- end }}
-
-{{- define "collabspace.rabbitmqUrl" -}}
-{{- $r := .root | default . -}}
-{{- $user := include "collabspace.rabbitmqUser" (dict "root" $r) | urlquery -}}
-{{- $pass := include "collabspace.rabbitmqPassword" (dict "root" $r) | urlquery -}}
-{{- printf "amqp://%s:%s@%s:5672/collabspace" $user $pass (include "collabspace.rabbitmq.host" (dict "root" $r)) }}
 {{- end }}
 
 {{- define "collabspace.mongoUri" -}}

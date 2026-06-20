@@ -36,10 +36,7 @@ SERVICE_JWT_SECRET=$(rand_b64)
 POSTGRES_PASSWORD=$(rand_b64)
 MONGO_PASSWORD=$(rand_b64)
 REDIS_PASSWORD=$(rand_b64)
-RABBITMQ_PASSWORD=$(rand_b64)
-RABBITMQ_USERNAME=collabspace
 METRICS_AUTH_TOKEN=$(rand_b64)
-RABBITMQ_ERLANG_COOKIE=$(rand_hex)
 
 # --- Brevo (auth-service) ---
 BREVO_API_KEY=

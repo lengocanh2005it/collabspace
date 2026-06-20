@@ -263,35 +263,6 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: allow-rabbitmq-clients
-  namespace: {{ $ns }}
-spec:
-  podSelector:
-    matchLabels:
-      app.kubernetes.io/name: rabbitmq
-  policyTypes:
-    - Ingress
-  ingress:
-    - from:
-        - podSelector:
-            matchExpressions:
-              - key: app
-                operator: In
-                values: {{ toJson $appServices }}
-      ports:
-        - port: 5672
-          protocol: TCP
-    - from:
-        - podSelector:
-            matchLabels:
-              app.kubernetes.io/name: traefik
-      ports:
-        - port: 15672
-          protocol: TCP
----
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
   name: allow-prometheus-scraping
   namespace: {{ $ns }}
 spec:

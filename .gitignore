@@ -56,9 +56,6 @@ CLAUDE.local.md
 **/*.log
 logs/
 
-# RabbitMQ Data
-/infrastructure/rabbitmq/data
-
 # ELK Data
 /infrastructure/logging/esdata
 

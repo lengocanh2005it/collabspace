@@ -141,7 +141,8 @@ DEBEZIUM_CONNECT_URL_HOST=http://localhost:8083
 | **3** | Cutover workspace events (chỉ Kafka) — **Done** (local E2E) |
 | **4** | User outbox + CDC — **Done** (local E2E) |
 | **5M** | Task Mongo outbox + Debezium — **Done** (local E2E script) |
-| **6** | Gỡ RabbitMQ — **Next** |
+| **6** | Gỡ RabbitMQ — **Done** (local) |
+| **7** | Tùy chọn: Schema Registry, DLQ topic, replay |
 
 ## E2E verify (Phase 3 + 4 + 5M)
 
@@ -171,7 +172,7 @@ docker compose -f docker-compose.yml -f docker-compose.db.yml -f docker-compose.
 docker volume rm collabspace_kafka_data
 ```
 
-App CollabSpace vẫn chạy bình thường chỉ với RabbitMQ.
+App CollabSpace requires Kafka + Debezium Connect for cross-service events (no RabbitMQ).
 
 ## Troubleshooting
 

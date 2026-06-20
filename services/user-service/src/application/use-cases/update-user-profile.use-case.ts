@@ -1,4 +1,4 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import type { EntityManager } from 'typeorm';
 import {
   type UpdateUserProfileInput,
@@ -10,21 +10,16 @@ import {
   type UserProfileResponseDto,
   toUserProfileResponseDto,
 } from '../dto/user-profile-response.dto';
-import { RabbitMqEventsService } from '../../infrastructure/messaging/rabbitmq/rabbitmq-events.service';
-import { shouldPublishUserEventsToRabbitMq } from '../../infrastructure/outbox/user-outbox.config';
 import { UserOutboxService } from '../../infrastructure/outbox/user-outbox.service';
 
 @Injectable()
 export class UpdateUserProfileUseCase {
-  private readonly logger = new Logger(UpdateUserProfileUseCase.name);
-
   constructor(
     @Inject(USER_PROFILE_REPOSITORY)
     private readonly userProfileRepository: UserProfileRepository,
     @Inject(UNIT_OF_WORK)
     private readonly unitOfWork: IUnitOfWork,
     private readonly userOutboxService: UserOutboxService,
-    private readonly rabbitMqEvents: RabbitMqEventsService,
   ) {}
 
   async execute(userId: string, input: UpdateUserProfileInput): Promise<UserProfileResponseDto> {
@@ -52,25 +47,6 @@ export class UpdateUserProfileUseCase {
 
       return profile;
     });
-
-    if (shouldPublishUserEventsToRabbitMq()) {
-      try {
-        await this.rabbitMqEvents.publishUserProfileUpdated({
-          userId,
-          fullName: updatedProfile.fullName,
-          displayName: updatedProfile.displayName,
-          avatarUrl: updatedProfile.avatarUrl,
-          username: updatedProfile.username,
-          isActive: updatedProfile.deletedAt === null,
-          occurredAt,
-        });
-      } catch (error) {
-        this.logger.warn(
-          `Failed to publish profile updated event for ${userId}`,
-          error instanceof Error ? error.stack : undefined,
-        );
-      }
-    }
 
     return toUserProfileResponseDto(updatedProfile);
   }

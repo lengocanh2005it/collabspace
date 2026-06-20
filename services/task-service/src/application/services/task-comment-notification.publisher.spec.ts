@@ -36,10 +36,13 @@ describe("TaskCommentNotificationPublisher", () => {
     });
 
     expect(mockTaskOutboxService.enqueueTaskCommented).toHaveBeenCalledTimes(1);
-    expect(mockTaskOutboxService.enqueueCommentMentionedBatch).toHaveBeenCalledWith([
-      expect.objectContaining({ recipientId: "user-2" }),
-      expect.objectContaining({ recipientId: "user-3" }),
-    ]);
+    expect(mockTaskOutboxService.enqueueCommentMentionedBatch).toHaveBeenCalledWith(
+      [
+        expect.objectContaining({ recipientId: "user-2" }),
+        expect.objectContaining({ recipientId: "user-3" }),
+      ],
+      undefined,
+    );
     expect(mockTaskOutboxService.enqueueCommentMentioned).not.toHaveBeenCalled();
   });
 

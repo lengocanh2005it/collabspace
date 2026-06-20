@@ -556,10 +556,10 @@ Giữ outbox email + processor SMTP — **không** bắt buộc Kafka.
 
 ### DoD
 
-- [ ] `docker compose up` không cần `rabbitmq` service
+- [x] `docker compose up` không cần `rabbitmq` service — 2026-06-20
 - [ ] CI lint/build/test pass
-- [ ] `demo-e2e` prod/local pass
-- [ ] Không còn reference `RABBITMQ_URL` bắt buộc trong app services (trừ doc lịch sử)
+- [x] `demo-e2e` pass (Kafka stack, Phase 5M gate)
+- [x] Không còn reference `RABBITMQ_URL` bắt buộc trong app services
 
 ---
 
@@ -775,6 +775,6 @@ KAFKA_DUAL_CONSUME=true                  # Phase 2–4 dual-run
 | 2026-06-19 | Phase 2: notification-service Kafka consumer `workspace_invited` (dual-run RMQ) |
 | 2026-06-20 | Phase 5M: task outbox aggregate fields, Mongo UoW, Debezium Mongo connector, notification Kafka task consumer, `kafka-phase5-e2e.ps1` |
 | 2026-06-20 | Phase 5M E2E green: `kafka-phase5-e2e.ps1` (mention → assign → `COMMENT_ADDED`); Mongo payload double-parse fix |
-| 2026-06-20 | Gate Phase 6: `demo-e2e.ps1` pass on Kafka stack (Traefik + 3 connectors); script aligned with `.sh` (OTP from outbox, userId verify) |
+| 2026-06-20 | Phase 6: remove RabbitMQ from services, Docker Compose, Helm/K8s, Vault; Kafka-only event bus |
 | 2026-06-19 | Phase 0M: Mongo replica set `rs0` local (`docker-compose.db.yml`, `mongo-rs-init`, `scripts/init-mongo-rs`) |
 | 2026-06-20 | Phase 3/4 local E2E: `kafka-phase3-e2e`, `kafka-phase4-e2e`; consumer group suffix fix; `docker-local-up.ps1` |

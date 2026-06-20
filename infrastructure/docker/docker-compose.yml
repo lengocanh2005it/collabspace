@@ -1,177 +1,145 @@
-services:
-  rabbitmq:
-    build: ../rabbitmq
-    container_name: rabbitmq
-    restart: unless-stopped
-    env_file:
-      - ../rabbitmq/.env
-      - ../rabbitmq/.env.vault
-    ports:
-      - "5672:5672"
-      - "15672:15672"
-      - "15692:15692"
-    volumes:
-      - ../rabbitmq/data:/var/lib/rabbitmq
-    healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
-    networks:
-      - collabspace-network
-
-  auth-service:
-    build:
-      context: ../../
-      dockerfile: infrastructure/docker/Dockerfile.service
-      args:
-        SERVICE_NAME: auth-service
-    image: collabspace-auth-service
-    container_name: auth-service
-    restart: unless-stopped
-    mem_limit: 1g
-    env_file:
-      - ../../services/auth-service/.env
-      - ../../services/auth-service/.env.vault
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-      postgres:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/v1/auth/health/ready"]
-      interval: 15s
-      timeout: 5s
-      retries: 5
-      start_period: 45s
-    networks:
-      - collabspace-network
-
-  user-service:
-    build:
-      context: ../../
-      dockerfile: infrastructure/docker/Dockerfile.service
-      args:
-        SERVICE_NAME: user-service
-    image: collabspace-user-service
-    container_name: user-service
-    restart: unless-stopped
-    mem_limit: 1g
-    env_file:
-      - ../../services/user-service/.env
-      - ../../services/user-service/.env.vault
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      auth-service:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/v1/users/health/ready"]
-      interval: 15s
-      timeout: 5s
-      retries: 5
-      start_period: 45s
-    networks:
-      - collabspace-network
-
-  workspace-service:
-    build:
-      context: ../../
-      dockerfile: infrastructure/docker/Dockerfile.service
-      args:
-        SERVICE_NAME: workspace-service
-    image: collabspace-workspace-service
-    container_name: workspace-service
-    restart: unless-stopped
-    mem_limit: 1g
-    env_file:
-      - ../../services/workspace-service/.env
-      - ../../services/workspace-service/.env.vault
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8080/api/v1/workspaces/health/ready"]
-      interval: 15s
-      timeout: 5s
-      retries: 5
-      start_period: 45s
-    networks:
-      - collabspace-network
-
-  task-service:
-    build:
-      context: ../../
-      dockerfile: infrastructure/docker/Dockerfile.service
-      args:
-        SERVICE_NAME: task-service
-    image: collabspace-task-service
-    container_name: task-service
-    restart: unless-stopped
-    mem_limit: 1g
-    env_file:
-      - ../../services/task-service/.env
-      - ../../services/task-service/.env.vault
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-      mongo:
-        condition: service_healthy
-      mongo-rs-init:
-        condition: service_completed_successfully
-      redis:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/v1/tasks/health/ready"]
-      interval: 15s
-      timeout: 5s
-      retries: 5
-      start_period: 45s
-    networks:
-      - collabspace-network
-
-  notification-service:
-    build:
-      context: ../../
-      dockerfile: infrastructure/docker/Dockerfile.service
-      args:
-        SERVICE_NAME: notification-service
-    image: collabspace-notification-service
-    container_name: notification-service
-    restart: unless-stopped
-    mem_limit: 1g
-    environment:
-      - PORT=3000
-    env_file:
-      - ../../services/notification-service/.env
-      - ../../services/notification-service/.env.vault
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      mongo:
-        condition: service_healthy
-      mongo-rs-init:
-        condition: service_completed_successfully
-    healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/v1/notifications/health/ready"]
-      interval: 15s
-      timeout: 5s
-      retries: 5
-      start_period: 45s
-    networks:
-      - collabspace-network
-
-networks:
-  collabspace-network:
-    driver: bridge
+services:
+  auth-service:
+    build:
+      context: ../../
+      dockerfile: infrastructure/docker/Dockerfile.service
+      args:
+        SERVICE_NAME: auth-service
+    image: collabspace-auth-service
+    container_name: auth-service
+    restart: unless-stopped
+    mem_limit: 1g
+    env_file:
+      - ../../services/auth-service/.env
+      - ../../services/auth-service/.env.vault
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/v1/auth/health/ready"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 45s
+    networks:
+      - collabspace-network
+
+  user-service:
+    build:
+      context: ../../
+      dockerfile: infrastructure/docker/Dockerfile.service
+      args:
+        SERVICE_NAME: user-service
+    image: collabspace-user-service
+    container_name: user-service
+    restart: unless-stopped
+    mem_limit: 1g
+    env_file:
+      - ../../services/user-service/.env
+      - ../../services/user-service/.env.vault
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/v1/users/health/ready"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 45s
+    networks:
+      - collabspace-network
+
+  workspace-service:
+    build:
+      context: ../../
+      dockerfile: infrastructure/docker/Dockerfile.service
+      args:
+        SERVICE_NAME: workspace-service
+    image: collabspace-workspace-service
+    container_name: workspace-service
+    restart: unless-stopped
+    mem_limit: 1g
+    env_file:
+      - ../../services/workspace-service/.env
+      - ../../services/workspace-service/.env.vault
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/api/v1/workspaces/health/ready"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 45s
+    networks:
+      - collabspace-network
+
+  task-service:
+    build:
+      context: ../../
+      dockerfile: infrastructure/docker/Dockerfile.service
+      args:
+        SERVICE_NAME: task-service
+    image: collabspace-task-service
+    container_name: task-service
+    restart: unless-stopped
+    mem_limit: 1g
+    env_file:
+      - ../../services/task-service/.env
+      - ../../services/task-service/.env.vault
+    depends_on:
+      mongo:
+        condition: service_healthy
+      mongo-rs-init:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/v1/tasks/health/ready"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 45s
+    networks:
+      - collabspace-network
+
+  notification-service:
+    build:
+      context: ../../
+      dockerfile: infrastructure/docker/Dockerfile.service
+      args:
+        SERVICE_NAME: notification-service
+    image: collabspace-notification-service
+    container_name: notification-service
+    restart: unless-stopped
+    mem_limit: 1g
+    environment:
+      - PORT=3000
+    env_file:
+      - ../../services/notification-service/.env
+      - ../../services/notification-service/.env.vault
+    depends_on:
+      redis:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+      mongo-rs-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/v1/notifications/health/ready"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 45s
+    networks:
+      - collabspace-network
+
+networks:
+  collabspace-network:
+    driver: bridge

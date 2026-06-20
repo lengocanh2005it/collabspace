@@ -16,7 +16,6 @@ import { RedisModule } from './infrastructure/cache/redis.module';
 import { UserProfileCacheService } from './infrastructure/cache/user-profile-cache.service';
 import { DatabaseModule } from './infrastructure/database/database.module';
 import { OutboxModule } from './infrastructure/outbox/outbox.module';
-import { RabbitMqModule } from './infrastructure/messaging/rabbitmq/rabbitmq.module';
 import { AuthModule } from './integrations/auth/auth.module';
 import { InMemoryUserProfileRepository } from './infrastructure/repositories/in-memory-user-profile.repository';
 import { TypeOrmUserProfileRepository } from './infrastructure/repositories/typeorm-user-profile.repository';
@@ -40,7 +39,6 @@ import { AuthGuard } from './presentation/http/guards/auth.guard';
     RedisModule,
     DatabaseModule,
     OutboxModule,
-    RabbitMqModule,
   ],
   controllers: [
     UsersController,

@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
 # Full data reset on k3s:
-#   stop apps → wipe DB + Redis + RabbitMQ PVC → bootstrap PG → migrate → seed (DB only) → restore apps
+#   stop apps → wipe DB + Redis → bootstrap PG → migrate → seed (DB only) → restore apps
 #
-# Seed does not use RabbitMQ (user_replicas written directly in task/notification Mongo).
-# RabbitMQ reset = delete PVC + restart StatefulSet; reconcile bindings after apps restore.
+# Seed does not use the event bus (user_replicas written directly in task/notification Mongo).
 #
 # Usage (on Droplet):
 #   export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
@@ -97,7 +96,7 @@ k8s_job_log "Step 0/5: stop all app services (scale to 0, wait for pods)"
 ensure_app_services_stopped "$APP_NS"
 
 if [[ "$SKIP_WIPE" != "true" ]]; then
-  k8s_job_log "Step 1/5: wipe data (Postgres, Mongo, Redis, RabbitMQ PVC)"
+  k8s_job_log "Step 1/5: wipe data (Postgres, Mongo, Redis)"
   SKIP_APP_SCALE_DOWN=true bash "$SCRIPT_DIR/wipe-prod-data.sh"
 else
   k8s_job_log "Step 1/5: SKIP_WIPE=true — keeping existing databases"
@@ -130,17 +129,8 @@ if ! APP_DIR="$APP_DIR" APP_NS="$APP_NS" IMAGE_TAG="$IMAGE_TAG" VALUES_PROD="$VA
   exit 1
 fi
 
-k8s_job_log "Step 5/6: restore app deployments"
+k8s_job_log "Step 5/5: restore app deployments"
 restore_replicas
-
-k8s_job_log "Step 6/6: reconcile RabbitMQ exchange bindings (workspace/user integration events)"
-if kubectl get pod -n "$APP_NS" rabbitmq-0 >/dev/null 2>&1; then
-  kubectl wait --for=condition=Ready pod/rabbitmq-0 -n "$APP_NS" --timeout=180s
-  APP_NS="$APP_NS" bash "$SCRIPT_DIR/reconcile-rabbitmq-queues.sh"
-  restore_replicas
-else
-  k8s_job_log "WARN: rabbitmq-0 not found — skip reconcile (run reconcile-rabbitmq-queues.sh after RabbitMQ is up)"
-fi
 
 k8s_job_log "Waiting for core pods..."
 sleep 20

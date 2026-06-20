@@ -5,7 +5,7 @@
 #   .\infrastructure\vault\scripts\seed-vault-from-phase0.ps1
 #   .\infrastructure\vault\scripts\seed-vault-from-phase0.ps1 -UsePhase0InfraPasswords
 #
-# Default (-LocalDocker): postgres/mongo/redis/rabbitmq passwords match docker-compose.db.yml
+# Default (-LocalDocker): postgres/mongo/redis passwords match docker-compose.db.yml
 # and vault/.env.example so local stack connects. JWT/SERVICE_JWT/METRICS/Azure/Brevo from phase0.
 
 param(
@@ -76,15 +76,11 @@ if (-not $UsePhase0InfraPasswords) {
   $mongoUser = Get-VaultConfig "COLLABSPACE_MONGO_USERNAME" "admin"
   $mongoPass = Get-VaultConfig "COLLABSPACE_MONGO_PASSWORD" "password"
   $redisPass = Get-VaultConfig "COLLABSPACE_REDIS_PASSWORD" "collabspace123"
-  $rmqUser = Get-VaultConfig "COLLABSPACE_RABBITMQ_USERNAME" "guest"
-  $rmqPass = Get-VaultConfig "COLLABSPACE_RABBITMQ_PASSWORD" "guest"
 } else {
   $pgPass = Get-Phase0 "POSTGRES_PASSWORD"
   $mongoUser = "admin"
   $mongoPass = Get-Phase0 "MONGO_PASSWORD"
   $redisPass = Get-Phase0 "REDIS_PASSWORD"
-  $rmqUser = Get-Phase0 "RABBITMQ_USERNAME" "collabspace"
-  $rmqPass = Get-Phase0 "RABBITMQ_PASSWORD"
 }
 
 $payload = @{
@@ -95,8 +91,6 @@ $payload = @{
     mongo_username                 = $mongoUser
     mongo_password                 = $mongoPass
     redis_password                 = $redisPass
-    rabbitmq_username              = $rmqUser
-    rabbitmq_password              = $rmqPass
     metrics_auth_token             = Get-Phase0 "METRICS_AUTH_TOKEN"
     azure_storage_connection_string = Get-Phase0 "AZURE_STORAGE_CONNECTION_STRING"
     brevo_api_key                  = Get-Phase0 "BREVO_API_KEY"

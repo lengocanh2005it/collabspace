@@ -1,18 +1,14 @@
-// src/app.module.ts
 import { Module } from "@nestjs/common";
-import { CqrsModule } from "@nestjs/cqrs";
+import { ConfigService } from "@nestjs/config";
 import { MongooseModule } from "@nestjs/mongoose";
-import { ConfigModule, ConfigService } from "@nestjs/config";
+import { CqrsModule } from "@nestjs/cqrs";
 
 import { TaskController } from "./presentation/controllers/task.controller";
 import { TaskAdminController } from "./presentation/controllers/task-admin.controller";
 import { HealthController } from "./presentation/controllers/health.controller";
 import { TaskCommentController } from "./presentation/controllers/task-comment.controller";
 import { TaskHealthService } from "./health/task-health.service";
-import { UserEventController } from "./presentation/controllers/internal/user-event-internal.controller";
-import { WorkspaceEventController } from "./presentation/controllers/internal/workspace-event-internal.controller";
 
-// Command & Query Handlers
 import { CreateTaskHandler } from "./application/usecases/create-task.handler";
 import { UpdateTaskDetailsHandler } from "./application/usecases/update-task-details.handler";
 import { ChangeTaskStatusHandler } from "./application/usecases/change-task-status.handler";
@@ -33,7 +29,6 @@ import { GetTaskActivityHandler } from "./application/usecases/get-task-activity
 import { CountTasksByWorkspaceAdminUseCase } from "./application/usecases/count-tasks-by-workspace-admin.use-case";
 import { GetPlatformTaskStatsAdminUseCase } from "./application/usecases/get-platform-task-stats-admin.use-case";
 
-// Services
 import { AzureBlobService } from "./infrastructure/services/azure-blob.service";
 import { WORKSPACE_CLIENT_TOKEN } from "./application/ports/IWorkspaceClient";
 import { WorkspaceHttpClient } from "./infrastructure/clients/workspace-http.client";
@@ -50,7 +45,6 @@ import { WorkspaceDeletionService } from "./application/services/workspace-delet
 import { WorkspaceDeletedKafkaConsumer } from "./infrastructure/messaging/kafka/workspace-deleted-kafka.consumer";
 import { UserEventsKafkaConsumer } from "./infrastructure/messaging/kafka/user-events-kafka.consumer";
 import { TaskOutboxService } from "./infrastructure/outbox/task-outbox.service";
-import { TaskOutboxProcessor } from "./infrastructure/outbox/task-outbox.processor";
 import { TaskOutboxEvent, TaskOutboxEventSchema } from "./infrastructure/outbox/task-outbox.schema";
 import { MongoUnitOfWork } from "./infrastructure/database/mongo-unit-of-work";
 import { MONGO_UNIT_OF_WORK } from "./domain/ports/mongo-unit-of-work.port";
@@ -60,11 +54,9 @@ import {
 } from "./infrastructure/idempotency/idempotency-key.schema";
 import { IdempotencyService } from "./infrastructure/idempotency/idempotency.service";
 
-// Guards
 import { WorkspaceValidationGuard } from "./presentation/guards/workspace-validation.guard";
 import { AuthGuard } from "./presentation/guards/auth.guard";
 
-// Repository & Schema
 import { ITaskRepository } from "./application/ports/ITaskRepository";
 import { EventSourcedMongoTaskRepository } from "./infrastructure/repositories/event-sourced-mongo-task.repository";
 import { MongoTaskEventStore } from "./infrastructure/repositories/mongo-task-event.store";
@@ -84,15 +76,15 @@ import { COMMENT_REPOSITORY_TOKEN } from "./domain/repositories/comment.reposito
 import { CommentRepository } from "./infrastructure/repositories/comment.repository";
 import { TaskComment, TaskCommentSchema } from "./infrastructure/persistence/task-comment.schema";
 import { UserReplica, UserReplicaSchema } from "./infrastructure/persistence/user-replica.schema";
-import { USER_REPLICA_REPOSITORY_TOKEN } from "./application/ports/IUserReplicaRepository"; // Dùng Symbol 2-trong-1
+import { USER_REPLICA_REPOSITORY_TOKEN } from "./application/ports/IUserReplicaRepository";
 import { UserReplicaRepository } from "./infrastructure/repositories/mongo-user-replica.repository";
 
-import { RabbitMqModule } from "./infrastructure/messaging/rabbitmq/rabbitmq.module";
 import { ConfigurationModule } from "./configuration/configuration.module";
 import { MetricsModule } from "./metrics/metrics.module";
 import { AuthModule } from "./integrations/auth/auth.module";
 import { platformAdminAuthProviders } from "./integrations/auth/platform-admin-auth.providers";
 import { RedisModule } from "./infrastructure/cache/redis.module";
+import { ConfigModule } from "@nestjs/config";
 
 const Handlers = [
   CreateTaskHandler,
@@ -121,14 +113,11 @@ const Handlers = [
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-
     ConfigurationModule,
     MetricsModule,
-    RabbitMqModule,
     AuthModule,
     RedisModule,
     CqrsModule,
-
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
@@ -136,7 +125,6 @@ const Handlers = [
       }),
       inject: [ConfigService],
     }),
-
     MongooseModule.forFeature([
       { name: TaskPersistence.name, schema: TaskSchema },
       { name: TaskEventPersistence.name, schema: TaskEventSchema },
@@ -147,14 +135,7 @@ const Handlers = [
       { name: IdempotencyKeyRecord.name, schema: IdempotencyKeySchema },
     ]),
   ],
-  controllers: [
-    HealthController,
-    TaskController,
-    TaskAdminController,
-    TaskCommentController,
-    UserEventController,
-    WorkspaceEventController,
-  ],
+  controllers: [HealthController, TaskController, TaskAdminController, TaskCommentController],
   providers: [
     ...Handlers,
     TaskHealthService,
@@ -165,7 +146,6 @@ const Handlers = [
     UserProfileHttpClient,
     UserReplicaLookupService,
     TaskOutboxService,
-    TaskOutboxProcessor,
     MongoUnitOfWork,
     {
       provide: MONGO_UNIT_OF_WORK,

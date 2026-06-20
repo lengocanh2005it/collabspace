@@ -7,7 +7,6 @@ metadata:
     app.kubernetes.io/part-of: collabspace
 data:
   NODE_ENV: "production"
-  RABBITMQ_URL: "amqp://guest:guest@rabbitmq:5672/collabspace"
   JWT_EXPIRY: "24h"
   # In production, secrets like JWT_SECRET should be in a Secret, not ConfigMap.
   # But for dev consistency, we map common non-secret values here.

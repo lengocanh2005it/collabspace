@@ -398,14 +398,9 @@ Implementation in `@collabspace/shared` (`packages/shared/src/auth/`):
 
 ## Event Contracts
 
-### RabbitMQ wire format
+Domain events flow **Kafka only** (Debezium CDC from transactional outbox). Outbox `event_type` / `eventType` values map to topics via Debezium Outbox Event Router SMTs.
 
-- **Routing keys** (topic exchange `collabspace_exchange`): snake_case — `workspace_invited`, `workspace_deleted`, `task_assigned`, `comment_created`, `comment_mentioned`, `user_registered`, `user_profile_updated`. Do **not** use dotted keys such as `workspace.invited`.
-- **Outbox DB event types** (`workspace-service`): `workspace.workspace_invited`, `workspace.workspace_deleted` — mapped to routing keys above before publish (RMQ path; legacy until Phase 6).
-- **Message body**: NestJS emit envelope `{ "pattern": "<routing_key>", "data": { ...payload }, "id": "uuid" }`. `workspace-service` outbox publishes this shape; consumers also accept legacy raw JSON (routing key = pattern) during rollout.
-- **Bindings**: `infrastructure/deploy/reconcile-rabbitmq-queues.sh` (also end of `run-k8s-full-reset.sh`) binds `collabspace_exchange` → `notification-service` / `task-service` queues. `task-service` / `user-service` may also `emit` directly to consumer queues without exchange.
-
-### Kafka topics (workspace events — Phase 1–3)
+### Kafka topics (workspace events)
 
 Debezium Outbox Event Router on `workspace_outbox_events` (`infrastructure/kafka/connectors/workspace-outbox-connector.json`):
 
@@ -415,10 +410,9 @@ Debezium Outbox Event Router on `workspace_outbox_events` (`infrastructure/kafka
 | `workspace.workspace_deleted` | `collabspace.workspace.workspace_deleted` | `notification-service`, `task-service` |
 
 - **Message value**: expanded domain JSON from outbox `payload` column (`transforms.outbox.table.expand.json.payload=true`).
-- **Producer path (Phase 3+)**: `WORKSPACE_OUTBOX_PUBLISH_MODE=debezium` — workspace-service does not publish workspace events to RabbitMQ; CDC only.
+- **Producer path**: `WORKSPACE_OUTBOX_PUBLISH_MODE=debezium` (default) — CDC only; no in-app broker publish.
 - **Consumer env**: `KAFKA_CONSUMERS_ENABLED=true`, `KAFKA_BROKERS`, `KAFKA_GROUP_ID` (base), topic overrides `KAFKA_TOPIC_WORKSPACE_*`.
-- **Consumer groups**: `${KAFKA_GROUP_ID}-workspace-events` (workspace topics), `${KAFKA_GROUP_ID}-user-events` (user topics) — **never share one group** across multiple `kafkajs` consumers in the same service (KafkaJS partition assignment bug).
-- **RMQ workspace listeners** remain in code for prod rollback until Phase 6; local Kafka cutover sets `RABBITMQ_ENABLED=false` on consumers.
+- **Consumer groups**: `${KAFKA_GROUP_ID}-workspace-events` (workspace topics), `${KAFKA_GROUP_ID}-user-events` (user topics), `${KAFKA_GROUP_ID}-task-events` (task topics) — **never share one group** across multiple `kafkajs` consumers in the same service.
 - **Local E2E**: `scripts/kafka-phase3-e2e.ps1` — invite notification + workspace delete → task cleanup.
 
 ### Kafka topics (user events — Phase 4a–4b)
@@ -430,8 +424,7 @@ Debezium Outbox Event Router on `user_outbox_events` (`infrastructure/kafka/conn
 | `user.profile_updated` | `collabspace.user.profile_updated` | `task-service`, `notification-service` |
 | `user.registered` | `collabspace.user.registered` | `task-service`, `notification-service` |
 
-- **Producer path (Phase 4b cutover)**: `USER_OUTBOX_PUBLISH_MODE=debezium` — user-service does not publish user events to RabbitMQ; CDC only.
-- **Dual-run (default `rabbitmq`)**: outbox INSERT in same TX as profile write; RMQ broadcast after commit until cutover.
+- **Producer path**: `USER_OUTBOX_PUBLISH_MODE=debezium` (default) — CDC only.
 - **Consumer env**: `KAFKA_TOPIC_USER_PROFILE_UPDATED`, `KAFKA_TOPIC_USER_REGISTERED`; groups `${KAFKA_GROUP_ID}-user-events` / `-workspace-events` (see workspace section).
 - **Local E2E**: `scripts/kafka-phase4-e2e.ps1` — `user_registered` + `user_profile_updated` → `user_replicas` in task-service Mongo.
 

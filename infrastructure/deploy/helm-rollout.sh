@@ -277,9 +277,6 @@ print(f"Updated image tags to {tag} for: {', '.join(services)}")
 PYEOF
 fi
 
-echo "==> Reconciling RabbitMQ consumer queues (DLX)..."
-bash "$SCRIPT_DIR/reconcile-rabbitmq-queues.sh"
-
 restore_app_replicas() {
   echo "==> Restoring app replica counts from values-prod..."
   for dep in auth-service user-service workspace-service task-service notification-service; do
@@ -290,7 +287,6 @@ restore_app_replicas() {
   done
 }
 
-# reconcile-rabbitmq may scale consumer deployments to 0 — always restore before rollouts.
 restore_app_replicas
 
 if [[ "${RUN_K8S_MIGRATIONS:-false}" == "true" ]]; then
@@ -306,7 +302,6 @@ if [[ "${RUN_K8S_MIGRATIONS:-false}" == "true" ]]; then
   kubectl wait --for=condition=Ready pod -l app.kubernetes.io/name=postgresql -n "$APP_NS" --timeout=300s || true
   kubectl wait --for=condition=Ready pod -l app.kubernetes.io/name=mongodb -n "$APP_NS" --timeout=300s || true
   kubectl wait --for=condition=Ready pod -l app.kubernetes.io/name=redis -n "$APP_NS" --timeout=300s || true
-  kubectl wait --for=condition=Ready pod -l app.kubernetes.io/name=rabbitmq -n "$APP_NS" --timeout=300s || true
 
   echo "==> Running database migrations..."
   migration_failed=0

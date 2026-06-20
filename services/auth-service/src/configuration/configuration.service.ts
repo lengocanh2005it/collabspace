@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Transport, type GrpcOptions, type RmqOptions } from '@nestjs/microservices';
-import { buildConsumerQueueOptions } from '@collabspace/shared';
+import { Transport, type GrpcOptions } from '@nestjs/microservices';
 import type { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import type { RedisOptions } from 'ioredis';
 import { join } from 'node:path';
@@ -87,17 +86,6 @@ export type GrpcConfig = {
 export type RefreshTokenConfig = {
   byteLength: number;
   ttlDays: number;
-};
-
-export type RabbitMqConfig = {
-  enabled: boolean;
-  noAck: boolean;
-  publishTimeoutMs: number;
-  prefetchCount: number;
-  queue: string;
-  queueDurable: boolean;
-  userServiceQueue: string;
-  url?: string;
 };
 
 export type RedisConfig = {
@@ -280,43 +268,6 @@ export class ConfigurationService {
         url: grpcConfig.url,
       },
       transport: Transport.GRPC,
-    };
-  }
-
-  getRabbitMqConfig(): RabbitMqConfig {
-    return {
-      enabled: this.configService.get<boolean>('rabbitmq.enabled') ?? false,
-      noAck: this.configService.get<boolean>('rabbitmq.noAck') ?? false,
-      publishTimeoutMs: this.configService.get<number>('rabbitmq.publishTimeoutMs') ?? 3000,
-      prefetchCount: this.configService.get<number>('rabbitmq.prefetchCount') ?? 10,
-      queue: this.configService.get<string>('rabbitmq.queue') ?? 'auth-service',
-      queueDurable: this.configService.get<boolean>('rabbitmq.queueDurable') ?? true,
-      userServiceQueue:
-        this.configService.get<string>('rabbitmq.userServiceQueue') ?? 'user-service',
-      url: this.configService.get<string>('rabbitmq.url') || undefined,
-    };
-  }
-
-  getRabbitMqMicroserviceOptions(): RmqOptions {
-    const rabbitMqConfig = this.getRabbitMqConfig();
-    const dlxExchange =
-      this.configService.get<string>('RABBITMQ_DLX_EXCHANGE') ?? 'collabspace_dlx';
-    const dlxRoutingKey =
-      this.configService.get<string>('RABBITMQ_DLX_ROUTING_KEY') ?? `${rabbitMqConfig.queue}.dlq`;
-
-    return {
-      options: {
-        noAck: rabbitMqConfig.noAck,
-        prefetchCount: rabbitMqConfig.prefetchCount,
-        queue: rabbitMqConfig.queue,
-        queueOptions: buildConsumerQueueOptions({
-          durable: rabbitMqConfig.queueDurable,
-          deadLetterExchange: dlxExchange,
-          deadLetterRoutingKey: dlxRoutingKey,
-        }),
-        urls: rabbitMqConfig.url ? [rabbitMqConfig.url] : [],
-      },
-      transport: Transport.RMQ,
     };
   }
 

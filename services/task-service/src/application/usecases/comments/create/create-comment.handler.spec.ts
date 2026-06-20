@@ -116,6 +116,7 @@ describe("CreateCommentHandler", () => {
         assigneeId: "assignee-1",
         authorId: "author-1",
       }),
+      expect.anything(),
     );
   });
 

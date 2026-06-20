@@ -56,8 +56,6 @@ $pgPass = $secrets.postgres_password
 $mongoUser = $secrets.mongo_username
 $mongoPass = $secrets.mongo_password
 $redisPass = $secrets.redis_password
-$rmqUser = $secrets.rabbitmq_username
-$rmqPass = $secrets.rabbitmq_password
 $metrics = $secrets.metrics_auth_token
 $azure = $secrets.azure_storage_connection_string
 $brevo = $secrets.brevo_api_key
@@ -111,14 +109,6 @@ function Build-MongoUrl {
   return $url
 }
 
-function Build-RabbitUrl {
-  param([string]$ConfigEnv)
-  $raw = Read-EnvValue $ConfigEnv "RABBITMQ_URL" "amqp://${rmqUser}:VAULT_SYNC@rabbitmq:5672/collabspace"
-  $userEnc = [uri]::EscapeDataString($rmqUser)
-  $passEnc = [uri]::EscapeDataString($rmqPass)
-  return [regex]::Replace($raw, '(amqp://)[^@]+@', "`${1}${userEnc}:${passEnc}@")
-}
-
 $services = Join-Path $RepoRoot "services"
 $authConfig = Join-Path $services "auth-service\.env"
 $userConfig = Join-Path $services "user-service\.env"
@@ -131,14 +121,12 @@ $userVault = Join-Path $services "user-service\.env.vault"
 $wsVault = Join-Path $services "workspace-service\.env.vault"
 $taskVault = Join-Path $services "task-service\.env.vault"
 $notifVault = Join-Path $services "notification-service\.env.vault"
-$rabbitVault = Join-Path $RepoRoot "infrastructure\rabbitmq\.env.vault"
 $redisVault = Join-Path $RepoRoot "infrastructure\redis\.env.vault"
 
 $authEntries = @{
   JWT_SECRET = $jwt
   SERVICE_JWT_SECRET = $serviceJwt
   DATABASE_URL = (Build-PostgresUrl $authConfig "collabspace_auth")
-  RABBITMQ_URL = (Build-RabbitUrl $authConfig)
   REDIS_PASSWORD = $redisPass
 }
 if ($metrics) { $authEntries["METRICS_AUTH_TOKEN"] = $metrics }
@@ -148,7 +136,6 @@ Write-VaultEnvFile $authVault $authEntries
 $userEntries = @{
   SERVICE_JWT_SECRET = $serviceJwt
   DATABASE_URL = (Build-PostgresUrl $userConfig "collabspace_user")
-  RABBITMQ_URL = (Build-RabbitUrl $userConfig)
 }
 if ($metrics) { $userEntries["METRICS_AUTH_TOKEN"] = $metrics }
 if ($azure) { $userEntries["AZURE_STORAGE_CONNECTION_STRING"] = $azure }
@@ -164,7 +151,6 @@ Write-VaultEnvFile $wsVault $wsEntries
 $taskEntries = @{
   SERVICE_JWT_SECRET = $serviceJwt
   MONGO_URI = (Build-MongoUrl $taskConfig "collabspace_task")
-  RABBITMQ_URL = (Build-RabbitUrl $taskConfig)
 }
 if ($metrics) { $taskEntries["METRICS_AUTH_TOKEN"] = $metrics }
 if ($azure) { $taskEntries["AZURE_STORAGE_CONNECTION_STRING"] = $azure }
@@ -174,17 +160,10 @@ $notifEntries = @{
   JWT_SECRET = $jwt
   SERVICE_JWT_SECRET = $serviceJwt
   MONGO_URI = (Build-MongoUrl $notifConfig "collabspace_notification")
-  RABBITMQ_URL = (Build-RabbitUrl $notifConfig)
   REDIS_PASSWORD = $redisPass
 }
 if ($metrics) { $notifEntries["METRICS_AUTH_TOKEN"] = $metrics }
 Write-VaultEnvFile $notifVault $notifEntries
-
-Write-VaultEnvFile $rabbitVault @{
-  RABBITMQ_DEFAULT_USER = $rmqUser
-  RABBITMQ_DEFAULT_PASS = $rmqPass
-  RABBITMQ_DEFAULT_VHOST = "collabspace"
-}
 
 Write-VaultEnvFile $redisVault @{ REDIS_PASSWORD = $redisPass }
 
@@ -198,5 +177,5 @@ if ((Test-Path $redisConf) -and $redisPass) {
   }
 }
 
-Write-Host "Wrote Vault secrets to .env.vault files (services + rabbitmq + redis)."
+Write-Host "Wrote Vault secrets to .env.vault files (services + redis)."
 Write-Host "Docker Compose loads .env + .env.vault — keep .env secret fields empty."
