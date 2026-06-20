@@ -221,6 +221,14 @@ unlock_stuck_helm_release
 
 mapfile -t tag_sets < <(helm_image_tag_sets)
 
+echo "==> Ensuring MongoDB secret has replica-set key (one-time migration from standalone)..."
+if kubectl get secret mongo -n "$APP_NS" >/dev/null 2>&1; then
+  if ! kubectl get secret mongo -n "$APP_NS" -o jsonpath='{.data.mongodb-replica-set-key}' | grep -q .; then
+    echo "    Secret 'mongo' missing mongodb-replica-set-key — deleting so Helm recreates it."
+    kubectl delete secret mongo -n "$APP_NS"
+  fi
+fi
+
 echo "==> helm upgrade --install..."
 helm upgrade --install "$RELEASE" "$CHART_DIR" \
   -n "$APP_NS" \

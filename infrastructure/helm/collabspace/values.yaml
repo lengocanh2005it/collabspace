@@ -93,6 +93,7 @@ mongodb:
     enabled: true
     rootUser: admin
     rootPassword: password
+    replicaSetKey: collabspace-rs0-key
   persistence:
     enabled: true
     size: 5Gi
