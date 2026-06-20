@@ -1,4 +1,5 @@
 import http from 'k6/http';
+import encoding from 'k6/encoding';
 
 const DEFAULT_BASE = '/grafana/api/annotations';
 
