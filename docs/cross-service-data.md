@@ -56,7 +56,7 @@ Mỗi service **sở hữu schema riêng**. Câu hỏi kiến trúc: khi `task-s
 
 ### 3.2 Đồng bộ bằng event
 
-Khi profile thay đổi, `user-service` ghi **`user_outbox_events`** (cùng transaction) → **Debezium CDC** → Kafka topics `collabspace.user.user_registered` / `collabspace.user.user_profile_updated`:
+Khi profile thay đổi, `user-service` ghi **`user_outbox_events`** (cùng transaction) → **Debezium CDC** → Kafka topics `collabspace.user.registered` / `collabspace.user.profile_updated`:
 
 | Event | Khi nào |
 |-------|---------|
@@ -132,7 +132,7 @@ Sau khi đọc replica, task-service embed **`UserSnapshot`** vào document/even
 
 ```
 1. PATCH /users/me          → user-service cập nhật Postgres
-2. Outbox row → Debezium → Kafka topic `collabspace.user.user_profile_updated` (occurredAt = T0)
+2. Outbox row → Debezium → Kafka topic `collabspace.user.profile_updated` (occurredAt = T0)
 3. Kafka → task-service + notification-service (consumer groups)
 4. Upsert user_replicas (fullName, username mới)
 5. GET /notifications       → actor.name từ replica (tên mới)

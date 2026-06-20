@@ -16,7 +16,7 @@ Tài liệu chốt **phạm vi backend** cho Admin UI (team đã có frontend ri
 | **Backend admin HTTP** | ✅ **Done** — A1–A7, AUTH-1→12, USER-1/2, WS-1→3, NOTIF-1, USER-T1 |
 | **Shared guard** | ✅ `@collabspace/nest-auth` — `PlatformAdminGuard`, `@RequirePlatformAdmin()`, `@RequirePermission()`, `@AdminUserId()` |
 | Admin UI handoff | Backend sẵn sàng — checklist § Đồng bộ Admin UI chờ team UI |
-| Workspace membership | `owner`, `manager` (**Planned**), `member` — tách khỏi platform `admin`; xem [roles-and-permissions.md](../roles-and-permissions.md) |
+| Workspace membership | `owner`, `manager`, `member` — Done; tách khỏi platform `admin`; xem [roles-and-permissions.md](../roles-and-permissions.md) |
 
 **Implementation refs:** `packages/nest-auth`, `auth-admin.controller.ts`, `users-admin.controller.ts`, `workspace-admin.controller.ts`, `notification-admin.controller.ts`, `BroadcastJobService`, event `workspace_deleted`.
 

@@ -273,8 +273,8 @@ Auth/user package names:
   - `workspace_deleted` → `collabspace.workspace.workspace_deleted`
   - `comment_created` → `collabspace.task.comment_created`
   - `comment_mentioned` → `collabspace.task.comment_mentioned`
-  - `user_registered` → `collabspace.user.user_registered`
-  - `user_profile_updated` → `collabspace.user.user_profile_updated`
+  - `user_registered` → `collabspace.user.registered`
+  - `user_profile_updated` → `collabspace.user.profile_updated`
 - Consumers should dedupe repeated events (`eventId`).
 - Consumers should tolerate unknown event fields.
 - Failed messages: retry with backoff → DLQ topic `collabspace.dlq.events` (see `infrastructure/kafka/README.md`).

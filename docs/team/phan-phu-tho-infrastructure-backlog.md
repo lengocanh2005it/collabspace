@@ -425,7 +425,7 @@ Xem chi tiết: [application-backlog.md](./application-backlog.md) (Lê Ngọc A
 |----------|-------|----------------|
 | Demo E2E script 7 bước MVP | Võ Trung Tín (lead) | ✅ `scripts/demo-e2e.*` — infra gắn CI |
 | Activity feed task-level | Võ Trung Tín | ✅ `GET /tasks/:id/activity` |
-| Activity feed workspace-level | Võ Trung Tín | Planned — không block smoke |
+| Activity feed workspace-level | Võ Trung Tín | ✅ `GET /workspaces/:id/activity` |
 | E2E `*.e2e-spec.ts` per service | Tiến / Tín | Infra cung cấp DB ephemeral trong CI |
 | Swagger/OpenAPI | Anh / Tiến / Tín | ✅ 5/5 UI + response schemas; gateway `/swagger/<service>` — [service-urls.md](../service-urls.md) |
 | Inject `requestId` vào Nest Logger | Application devs | Infra: Loki labels / Explore query |

@@ -124,7 +124,7 @@ Restart notification-service sau khi đổi env. Invite workspace → kiểm tra
 
 ## Biến môi trường (tham chiếu)
 
-Ghi trong `infrastructure/docker/.env.example` — app services **chưa** đọc các biến này cho đến Phase 2+.
+Ghi trong `infrastructure/docker/.env.example`; app services hiện đọc các biến Kafka khi `KAFKA_CONSUMERS_ENABLED=true`.
 
 ```env
 KAFKA_BROKERS=kafka:9092
@@ -137,7 +137,7 @@ DEBEZIUM_CONNECT_URL_HOST=http://localhost:8083
 
 | Phase | Việc làm |
 |-------|----------|
-| **2** | Kafka consumer pilot `workspace_invited` (dual-run RMQ) — **Done** |
+| **2** | Kafka consumer pilot `workspace_invited` (historical dual-run RMQ) — **Done** |
 | **3** | Cutover workspace events (chỉ Kafka) — **Done** (local E2E) |
 | **4** | User outbox + CDC — **Done** (local E2E) |
 | **5M** | Task Mongo outbox + Debezium — **Done** (local E2E script) |

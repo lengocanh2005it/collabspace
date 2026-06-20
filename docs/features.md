@@ -25,7 +25,7 @@ Tài liệu này là **nguồn chính** mô tả chức năng và mức độ ho
 | Project | **Done** | CRUD trong workspace (NestJS `workspace-service`) |
 | Task & Board | **Done** | Task CRUD, assign, status, board API, priority/due date/labels, xóa task, ES |
 | Comment & Mention | **Done** | Comment CRUD, `@username` + replica sync, notification mention |
-| Notifications | **Done** | Lưu + list + mark-read; polling API (không WebSocket) |
+| Notifications | **Done** | Lưu + list + mark-read/archive; SSE invalidation stream (không WebSocket) |
 | Nền tảng (resilience, observability) | **Done** | Health, outbox, metrics; **K8s:** Grafana/Prometheus/Loki + 3 dashboards + k6 scenarios — [observability.md](./observability.md) |
 
 ---

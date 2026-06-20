@@ -21,10 +21,10 @@ Read:
 
 If the user says "continue MVP" without a target, read `docs/features.md` for **Planned** / **Partial** items first. Typical gaps (2026-06 sync):
 
-1. **E2E + CI** - task and notification E2E are Done; workspace E2E and CI demo smoke remain.
-2. **Contract test** - Pact/schema automation remains backlog. OpenAPI 5/5 is Done.
+1. **Contract test** - Pact/schema automation remains backlog. OpenAPI 5/5 is Done.
+2. **Frontend UI / Playwright** - frontend lives in `collabspace-fe`; backend contract support is Done.
 3. **Admin UI integration** - backend Admin Platform APIs are Done; verify the external UI contract as it evolves.
-4. **Frontend UI** - out of scope for this repository.
+4. **Infra polish** - offsite backup/restore drill and k6 capacity baseline remain outside app feature work.
 
 Do **not** re-implement: board API, task/workspace activity, task delete,
 mark-read, Admin Platform API, or Phase B/C platform work. See

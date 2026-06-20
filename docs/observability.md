@@ -20,6 +20,7 @@ Apps (5) ──metrics──► Prometheus ◄── scrape ── Traefik, expo
 | Loki + Promtail | subcharts trong `values.yaml` | Chỉ namespace `collabspace`; **Loki canary tắt** (`loki.lokiCanary.enabled: false`) |
 | Dashboard JSON | `infrastructure/helm/collabspace/dashboards/*.json` | Sync bản copy: `infrastructure/monitoring/grafana-dashboards/` |
 | Alert rules (tham chiếu) | `infrastructure/monitoring/alert-rules.yml` | Runbook: `docs/runbooks/` |
+| Alertmanager | `templates/observability/alertmanager.yaml` | Slack receiver qua Vault/ESO `alertmanager-slack-secret`; test trên Droplet 2026-06-20 |
 | k6 | `infrastructure/load-testing/` | Scenario `smoke`, `demo-flow` |
 
 **Local Docker** (profile tách): `docker-compose.monitoring.yml`, `docker-compose.logging.yml`, `docker-compose.loadtest.yml` — xem [development-workflows.md](../.claude/docs/development-workflows.md).
@@ -121,7 +122,6 @@ Chi tiết: [infrastructure/load-testing/README.md](../infrastructure/load-testi
 
 ## Còn lại (backlog)
 
-- Alertmanager -> Slack đã test trên Droplet 2026-06-20; email receiver chưa cấu hình riêng
 - Sync `alert-rules.yml` vào Prometheus K8s
 - Sửa postgres/redis exporter scrape
 - Ghi **capacity baseline** sau k6 (P3)

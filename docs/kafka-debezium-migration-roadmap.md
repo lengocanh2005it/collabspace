@@ -74,8 +74,8 @@ flowchart TB
 | `task_assigned` | `collabspace.task.task_assigned` | task-service Mongo outbox | notification-service |
 | `comment_created` | `collabspace.task.comment_created` | task-service Mongo outbox | notification-service |
 | `comment_mentioned` | `collabspace.task.comment_mentioned` | task-service Mongo outbox | notification-service |
-| `user_registered` | `collabspace.user.user_registered` | user-service Postgres outbox | task-service, notification-service |
-| `user_profile_updated` | `collabspace.user.user_profile_updated` | user-service Postgres outbox | task-service, notification-service |
+| `user_registered` | `collabspace.user.registered` | user-service Postgres outbox | task-service, notification-service |
+| `user_profile_updated` | `collabspace.user.profile_updated` | user-service Postgres outbox | task-service, notification-service |
 
 **Nguyên tắc:**
 
@@ -597,11 +597,11 @@ Giữ outbox email + processor SMTP — **không** bắt buộc Kafka.
 
 | Domain event | Topic | Partition key | Consumer group |
 |--------------|-------|---------------|----------------|
-| `workspace_invited` | `collabspace.workspace.invited` | `workspaceId` | `notification-service` |
-| `workspace_deleted` | `collabspace.workspace.deleted` | `workspaceId` | `notification-service`, `task-service` |
+| `workspace_invited` | `collabspace.workspace.workspace_invited` | `workspaceId` | `notification-service` |
+| `workspace_deleted` | `collabspace.workspace.workspace_deleted` | `workspaceId` | `notification-service`, `task-service` |
 | `user_registered` | `collabspace.user.registered` | `userId` | `task-service`, `notification-service` |
 | `user_profile_updated` | `collabspace.user.profile_updated` | `userId` | `task-service`, `notification-service` |
-| `task_assigned` | `collabspace.task.assigned` | `taskId` | `notification-service` |
+| `task_assigned` | `collabspace.task.task_assigned` | `taskId` | `notification-service` |
 | `comment_created` | `collabspace.task.comment_created` | `taskId` | `notification-service` |
 | `comment_mentioned` | `collabspace.task.comment_mentioned` | `taskId` | `notification-service` |
 
@@ -679,7 +679,7 @@ Ví dụ `notification-service`: `notification-service-user-events`, `notificati
 ```env
 WORKSPACE_OUTBOX_PUBLISH_MODE=debezium   # debezium (default prod/local)
 TASK_OUTBOX_PUBLISH_MODE=debezium
-KAFKA_DUAL_CONSUME=true                  # Phase 2–4 dual-run
+# Historical only: KAFKA_DUAL_CONSUME was used during RMQ dual-run; code is Kafka-only after Phase 6.
 ```
 
 ---
@@ -776,7 +776,7 @@ KAFKA_DUAL_CONSUME=true                  # Phase 2–4 dual-run
 ## 19. Lịch sử / ghi chú repo
 
 - Runtime từng có Kafka dead code ở `notification-service` (`kafka-node`) — đã xóa (xem `docs/team/application-backlog.md`). Migrate mới dùng `kafkajs` hoặc Nest Kafka transport.
-- RabbitMQ hiện có DLX + reconcile script: `infrastructure/deploy/reconcile-rabbitmq-queues.sh` — tham khảo semantics khi thiết kế DLQ topic Kafka.
+- Legacy RabbitMQ từng có DLX + reconcile script; Phase 6 đã gỡ RabbitMQ. Semantics DLQ hiện nằm ở Kafka topic `collabspace.dlq.events`.
 
 ---
 

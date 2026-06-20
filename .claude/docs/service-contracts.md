@@ -648,7 +648,7 @@ Authorization baseline:
 - Any authenticated user can create a workspace (creator becomes `owner`).
 - `owner` or `manager` can invite; invitees join as `member`.
 - `owner` can update workspace settings and delete workspace; `manager` cannot.
-- `owner` can promote/demote between `member` and `manager` (**Planned**).
+- `owner` can promote/demote between `member` and `manager` (**Done**).
 - `owner` can remove `manager` or `member`; `manager` can remove `member` only.
 - Only members can list workspace members and activity.
 - Owner cannot be removed without ownership transfer (not in MVP).
