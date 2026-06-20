@@ -14,11 +14,14 @@ import { DLQ_RECORD_REPOSITORY } from './domain/dlq-record.repository';
 import { MongoDlqRecordRepository } from './infrastructure/mongo/dlq-record.mongo.repository';
 import { DlqEventsConsumer } from './infrastructure/kafka/dlq-events.consumer';
 import { DlqIngestService } from './application/dlq-ingest.service';
+import { DlqReplayService } from './application/dlq-replay.service';
+import { DlqReplayProducer } from './infrastructure/kafka/dlq-replay.producer';
 
 import { DlqHealthService } from './health/dlq-health.service';
 import { HealthController } from './presentation/controllers/health.controller';
 import { MetricsController } from './presentation/controllers/metrics.controller';
 import { DlqMessagesController } from './presentation/controllers/dlq-messages.controller';
+import { DlqActionsController } from './presentation/controllers/dlq-actions.controller';
 
 @Module({
   imports: [
@@ -35,7 +38,7 @@ import { DlqMessagesController } from './presentation/controllers/dlq-messages.c
     }),
     MongooseModule.forFeature([{ name: DlqRecord.name, schema: DlqRecordSchema }]),
   ],
-  controllers: [HealthController, MetricsController, DlqMessagesController],
+  controllers: [HealthController, MetricsController, DlqMessagesController, DlqActionsController],
   providers: [
     DlqHealthService,
     ...platformAdminAuthProviders,
@@ -44,7 +47,9 @@ import { DlqMessagesController } from './presentation/controllers/dlq-messages.c
       useClass: MongoDlqRecordRepository,
     },
     DlqIngestService,
+    DlqReplayService,
     DlqEventsConsumer,
+    DlqReplayProducer,
   ],
 })
 export class AppModule {}

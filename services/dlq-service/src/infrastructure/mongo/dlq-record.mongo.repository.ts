@@ -4,9 +4,11 @@ import type { Model } from 'mongoose';
 import { DlqRecord, type DlqRecordDocument } from '../../domain/dlq-record.schema';
 import type {
   CreateDlqRecordInput,
+  FindForReplayFilter,
   IDlqRecordRepository,
   ListDlqFilter,
   ListDlqResult,
+  PostReplayUpdate,
 } from '../../domain/dlq-record.repository';
 
 @Injectable()
@@ -59,6 +61,22 @@ export class MongoDlqRecordRepository implements IDlqRecordRepository {
     return this.model.findById(id).lean().exec() as Promise<DlqRecord | null>;
   }
 
+  async findForReplay(filter: FindForReplayFilter): Promise<DlqRecord[]> {
+    const query: Record<string, unknown> = {
+      status: { $in: filter.statuses },
+      lockedBy: null,
+    };
+    if (filter.sourceTopic) query.sourceTopic = filter.sourceTopic;
+    if (filter.errorCategory) query.errorCategory = filter.errorCategory;
+
+    return this.model
+      .find(query)
+      .sort({ createdAt: 1 })
+      .limit(filter.limit)
+      .lean()
+      .exec() as unknown as Promise<DlqRecord[]>;
+  }
+
   async upsertFromEnvelope(input: CreateDlqRecordInput): Promise<DlqRecord> {
     const filter = {
       sourceTopic: input.sourceTopic,
@@ -93,5 +111,84 @@ export class MongoDlqRecordRepository implements IDlqRecordRepository {
       .exec();
 
     return result as unknown as DlqRecord;
+  }
+
+  async acquireLock(id: string, lockedBy: string): Promise<DlqRecord | null> {
+    const now = new Date();
+    return this.model
+      .findOneAndUpdate(
+        {
+          _id: id,
+          status: { $in: ['pending', 'requires_manual_review'] },
+          lockedBy: null,
+        },
+        { $set: { status: 'replaying', lockedAt: now, lockedBy } },
+        { new: true },
+      )
+      .lean()
+      .exec() as unknown as Promise<DlqRecord | null>;
+  }
+
+  async releaseAfterReplay(id: string, update: PostReplayUpdate): Promise<DlqRecord | null> {
+    const historyEntry = {
+      at: new Date(),
+      by: update.by,
+      action: update.action,
+      result: update.result,
+      errorMessage: update.errorMessage,
+    };
+
+    return this.model
+      .findOneAndUpdate(
+        { _id: id },
+        {
+          $set: {
+            status: update.nextStatus,
+            retryCount: update.newRetryCount,
+            lastRetriedAt: new Date(),
+            nextRetryAt: update.nextRetryAt,
+            replayedBy: update.by,
+            lockedAt: null,
+            lockedBy: null,
+          },
+          $push: { retryHistory: historyEntry },
+        },
+        { new: true },
+      )
+      .lean()
+      .exec() as unknown as Promise<DlqRecord | null>;
+  }
+
+  async updateStatusByAdmin(
+    id: string,
+    newStatus: 'resolved' | 'discarded',
+    adminId: string,
+    note: string,
+  ): Promise<DlqRecord | null> {
+    const historyEntry = {
+      at: new Date(),
+      by: adminId,
+      action: newStatus === 'resolved' ? 'resolve' : 'discard',
+      result: 'success',
+    };
+
+    const setFields: Record<string, unknown> = {
+      status: newStatus,
+      resolutionNote: note,
+    };
+    if (newStatus === 'resolved') {
+      setFields.resolvedBy = adminId;
+    } else {
+      setFields.discardedBy = adminId;
+    }
+
+    return this.model
+      .findOneAndUpdate(
+        { _id: id, status: { $ne: 'discarded' } },
+        { $set: setFields, $push: { retryHistory: historyEntry } },
+        { new: true },
+      )
+      .lean()
+      .exec() as unknown as Promise<DlqRecord | null>;
   }
 }
