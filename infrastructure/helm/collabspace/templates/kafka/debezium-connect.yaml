@@ -90,4 +90,69 @@ spec:
             failureThreshold: 6
           resources:
             {{- toYaml $dc.resources | nindent 12 }}
+          volumeMounts:
+            - name: connectors
+              mountPath: /connectors
+            - name: scripts
+              mountPath: /scripts
+        - name: connector-watcher
+          image: alpine:3.20
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              apk add --no-cache curl jq >/dev/null 2>&1
+              CONNECT_URL="${DEBEZIUM_CONNECT_URL:-http://localhost:8083}"
+
+              # Wait until Connect REST API is ready
+              echo "[watcher] Waiting for Debezium Connect..."
+              until curl -sf "$CONNECT_URL/connectors" >/dev/null 2>&1; do sleep 5; done
+              echo "[watcher] Connect ready — registering connectors..."
+              /scripts/register-connectors.sh
+
+              # Poll every 60s; restart any FAILED connector tasks
+              while true; do
+                sleep 60
+                for name in $(curl -sf "$CONNECT_URL/connectors" | jq -r '.[]' 2>/dev/null); do
+                  state=$(curl -sf "$CONNECT_URL/connectors/$name/status" \
+                    | jq -r '.tasks[0].state // "UNKNOWN"' 2>/dev/null)
+                  if [ "$state" = "FAILED" ]; then
+                    echo "[watcher] Task FAILED for $name — restarting..."
+                    curl -sf -X POST "$CONNECT_URL/connectors/$name/tasks/0/restart" >/dev/null || true
+                  fi
+                done
+              done
+          env:
+            - name: DEBEZIUM_CONNECT_URL
+              value: http://localhost:8083
+          resources:
+            requests:
+              memory: 32Mi
+              cpu: 10m
+            limits:
+              memory: 64Mi
+              cpu: 100m
+          volumeMounts:
+            - name: connectors
+              mountPath: /connectors
+            - name: scripts
+              mountPath: /scripts
+      volumes:
+        - name: connectors
+          configMap:
+            name: debezium-connectors
+            items:
+              - key: workspace-outbox.json
+                path: workspace-outbox.json
+              - key: user-outbox.json
+                path: user-outbox.json
+              - key: task-outbox.json
+                path: task-outbox.json
+        - name: scripts
+          configMap:
+            name: debezium-connectors
+            defaultMode: 0755
+            items:
+              - key: register-connectors.sh
+                path: register-connectors.sh
 {{- end }}

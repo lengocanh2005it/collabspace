@@ -1,0 +1,30 @@
+{{- if .Values.mongodb.enabled }}
+{{- $ns := include "collabspace.namespace" . }}
+---
+# ClusterIP service so app pods can reach MongoDB via "mongo:27017".
+# Bitnami MongoDB replicaset mode only creates a headless service by default;
+# this adds the named ClusterIP that the rest of the stack expects.
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongo
+  namespace: {{ $ns }}
+  labels:
+    app.kubernetes.io/name: mongodb
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: mongodb
+    app.kubernetes.io/part-of: collabspace
+  annotations:
+    helm.sh/resource-policy: keep
+spec:
+  type: ClusterIP
+  ports:
+    - name: mongodb
+      port: 27017
+      targetPort: mongodb
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: mongodb
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: mongodb
+{{- end }}
