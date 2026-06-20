@@ -272,6 +272,19 @@ apps:
       TASK_OUTBOX_ENABLED: "true"
       ALLOW_DEV_IDENTITY_HEADERS: "false"
 
+  dlq-service:
+    enabled: true
+    replicas: 1
+    image:
+      repository: ghcr.io/REPLACE_ME_GHCR_OWNER/collabspace-dlq-service
+      tag: REPLACE_ME_IMAGE_TAG
+    extraEnv:
+      KAFKA_CONSUMERS_ENABLED: "true"
+      KAFKA_BROKERS: "kafka:9092"
+      KAFKA_CLIENT_ID: "dlq-service"
+      KAFKA_GROUP_ID: "dlq-service"
+      ALLOW_DEV_IDENTITY_HEADERS: "false"
+
   notification-service:
     replicas: 1
     image:
