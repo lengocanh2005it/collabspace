@@ -646,3 +646,34 @@ apps:
       KAFKA_DLQ_TOPIC: "collabspace.dlq.events"
       KAFKA_CONSUMER_MAX_RETRIES: "3"
       KAFKA_CONSUMER_RETRY_DELAY_MS: "1000"
+
+  dlq-service:
+    enabled: false  # enable sau khi PR 2 (ingest + API) merge
+    replicas: 1
+    image:
+      repository: collabspace/dlq-service
+      tag: latest
+    httpPort: 3000
+    metricsPath: /api/v1/dlq/metrics
+    health:
+      readyPath: /api/v1/dlq/health/ready
+      livePath: /api/v1/dlq/health/live
+      preStopSleep: 5
+      terminationGracePeriodSeconds: 30
+    resources:
+      requests:
+        memory: 128Mi
+        cpu: 100m
+      limits:
+        memory: 256Mi
+        cpu: 250m
+    extraEnv:
+      KAFKA_CONSUMERS_ENABLED: "true"
+      KAFKA_BROKERS: "kafka:9092"
+      KAFKA_CLIENT_ID: "dlq-service"
+      KAFKA_GROUP_ID: "dlq-service"
+      KAFKA_DLQ_TOPIC: "collabspace.dlq.events"
+      DLQ_AUTO_RETRY_ENABLED: "true"
+      DLQ_AUTO_RETRY_BATCH_SIZE: "50"
+      DLQ_MAX_RETRIES_TRANSIENT: "3"
+      DLQ_MAX_RETRIES_UNKNOWN: "1"

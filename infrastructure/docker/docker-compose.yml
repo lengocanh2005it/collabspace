@@ -140,6 +140,33 @@ services:
     networks:
       - collabspace-network
 
+  dlq-service:
+    build:
+      context: ../../
+      dockerfile: infrastructure/docker/Dockerfile.service
+      args:
+        SERVICE_NAME: dlq-service
+    image: collabspace-dlq-service
+    container_name: dlq-service
+    restart: unless-stopped
+    mem_limit: 512m
+    environment:
+      - PORT=3000
+    env_file:
+      - ../../services/dlq-service/.env
+    depends_on:
+      mongo:
+        condition: service_healthy
+      mongo-rs-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/v1/dlq/health/ready"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 45s
+    networks:
+      - collabspace-network
 networks:
   collabspace-network:
     driver: bridge
