@@ -53,6 +53,9 @@ else
   # Force HTTPS remote to overwrite any legacy SSH remotes
   git remote set-url origin "$REPO_URL"
   git fetch origin "$GIT_BRANCH"
+  # Discard any local modifications (e.g. generated Chart.lock from helm dependency update)
+  # before switching branches so checkout never aborts with "would be overwritten".
+  git restore . 2>/dev/null || git checkout -- .
   git checkout "$GIT_BRANCH" || git checkout -b "$GIT_BRANCH" --track "origin/${GIT_BRANCH}"
   # Droplet may have hotfixed files from scp; deploy server should match origin exactly.
   git reset --hard "origin/${GIT_BRANCH}"
