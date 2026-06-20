@@ -15,4 +15,6 @@ data:
 {{ .Files.Get "dashboards/logs-errors.json" | indent 4 }}
   load-test-run.json: |-
 {{ .Files.Get "dashboards/load-test-run.json" | indent 4 }}
+  dlq-service.json: |-
+{{ .Files.Get "dashboards/dlq-service.json" | indent 4 }}
 {{- end }}
