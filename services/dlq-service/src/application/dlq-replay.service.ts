@@ -105,6 +105,13 @@ export class DlqReplayService {
     return updated;
   }
 
+  private calcBackoff(retryCount: number): Date {
+    // attempt 1 → +5min, attempt 2 → +30min, attempt 3+ → +2h
+    const delayMs =
+      retryCount <= 1 ? 5 * 60 * 1000 : retryCount === 2 ? 30 * 60 * 1000 : 2 * 60 * 60 * 1000;
+    return new Date(Date.now() + delayMs);
+  }
+
   private async executeReplay(
     locked: DlqRecord & { _id: { toString(): string } },
     triggeredBy: string,
@@ -140,7 +147,7 @@ export class DlqReplayService {
       const exhausted = newRetryCount >= locked.maxRetries;
 
       const nextStatus: DlqStatus = exhausted ? 'requires_manual_review' : 'pending';
-      const nextRetryAt = exhausted ? null : new Date(Date.now() + 5 * 60 * 1000);
+      const nextRetryAt = exhausted ? null : this.calcBackoff(newRetryCount);
 
       this.logger.error(
         `DLQ replay produce failed: id=${id} attempt=${attemptNumber} exhausted=${exhausted}: ${errorMessage}`,

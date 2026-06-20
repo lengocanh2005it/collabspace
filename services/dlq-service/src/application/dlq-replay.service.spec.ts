@@ -108,7 +108,7 @@ describe('DlqReplayService', () => {
       expect(result.status).toBe('pending');
     });
 
-    it('on Kafka produce failure and retries not exhausted → pending with backoff', async () => {
+    it('on Kafka produce failure attempt 1 → pending with +5min backoff', async () => {
       const locked = baseRecord({ status: 'replaying', retryCount: 0, maxRetries: 3 });
       const released = baseRecord({ status: 'pending', retryCount: 1 });
 
@@ -116,12 +116,45 @@ describe('DlqReplayService', () => {
       producer.produce.mockRejectedValue(new Error('Kafka broker unavailable'));
       repo.releaseAfterReplay.mockResolvedValue(released);
 
+      const before = Date.now();
       await service.replayOne('record-id-001', 'admin-1');
 
       const releaseCall = repo.releaseAfterReplay.mock.calls[0][1];
       expect(releaseCall.nextStatus).toBe('pending');
-      expect(releaseCall.nextRetryAt).not.toBeNull();
       expect(releaseCall.result).toBe('failure');
+      const delay = (releaseCall.nextRetryAt as Date).getTime() - before;
+      expect(delay).toBeGreaterThanOrEqual(5 * 60 * 1000 - 100);
+      expect(delay).toBeLessThan(6 * 60 * 1000);
+    });
+
+    it('on Kafka produce failure attempt 2 → pending with +30min backoff', async () => {
+      const locked = baseRecord({ status: 'replaying', retryCount: 1, maxRetries: 3 });
+      repo.acquireLock.mockResolvedValue(locked);
+      producer.produce.mockRejectedValue(new Error('Kafka broker unavailable'));
+      repo.releaseAfterReplay.mockResolvedValue(baseRecord({ status: 'pending', retryCount: 2 }));
+
+      const before = Date.now();
+      await service.replayOne('record-id-001', 'admin-1');
+
+      const delay =
+        (repo.releaseAfterReplay.mock.calls[0][1].nextRetryAt as Date).getTime() - before;
+      expect(delay).toBeGreaterThanOrEqual(30 * 60 * 1000 - 100);
+      expect(delay).toBeLessThan(31 * 60 * 1000);
+    });
+
+    it('on Kafka produce failure attempt 3+ → pending with +2h backoff', async () => {
+      const locked = baseRecord({ status: 'replaying', retryCount: 2, maxRetries: 5 });
+      repo.acquireLock.mockResolvedValue(locked);
+      producer.produce.mockRejectedValue(new Error('Kafka broker unavailable'));
+      repo.releaseAfterReplay.mockResolvedValue(baseRecord({ status: 'pending', retryCount: 3 }));
+
+      const before = Date.now();
+      await service.replayOne('record-id-001', 'admin-1');
+
+      const delay =
+        (repo.releaseAfterReplay.mock.calls[0][1].nextRetryAt as Date).getTime() - before;
+      expect(delay).toBeGreaterThanOrEqual(2 * 60 * 60 * 1000 - 100);
+      expect(delay).toBeLessThan(2 * 60 * 60 * 1000 + 60 * 1000);
     });
 
     it('on Kafka produce failure and retries exhausted → requires_manual_review', async () => {
