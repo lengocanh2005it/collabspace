@@ -1,3 +1,8 @@
+import {
+  WorkspaceDeletedEventSchema,
+  UserRegisteredEventSchema,
+  UserProfileUpdatedEventSchema,
+} from "@collabspace/shared";
 import type { WorkspaceDeletedEventPayload } from "@collabspace/shared";
 import type { UserProfileUpdatedEventPayload } from "../../../domain/events/user-profile-update.event";
 import type { UserRegisteredEventPayload } from "../../../domain/events/user-create.event";
@@ -29,45 +34,23 @@ export function parseKafkaOutboxJsonValue(
 export function toWorkspaceDeletedEventPayload(
   record: Record<string, unknown>,
 ): WorkspaceDeletedEventPayload | null {
-  const workspaceId = record.workspaceId;
-  const deletedById = record.deletedById;
-
-  if (typeof workspaceId !== "string" || workspaceId.length === 0) {
-    return null;
-  }
-
-  if (typeof deletedById !== "string" || deletedById.length === 0) {
-    return null;
-  }
-
-  return record as unknown as WorkspaceDeletedEventPayload;
-}
-
-export function toUserProfileUpdatedEventPayload(
-  record: Record<string, unknown>,
-): UserProfileUpdatedEventPayload | null {
-  const userId = record.userId;
-
-  if (typeof userId !== "string" || userId.length === 0) {
-    return null;
-  }
-
-  return record as unknown as UserProfileUpdatedEventPayload;
+  const result = WorkspaceDeletedEventSchema.safeParse(record);
+  if (!result.success) return null;
+  return result.data as WorkspaceDeletedEventPayload;
 }
 
 export function toUserRegisteredEventPayload(
   record: Record<string, unknown>,
 ): UserRegisteredEventPayload | null {
-  const userId = record.userId;
-  const fullName = record.fullName;
+  const result = UserRegisteredEventSchema.safeParse(record);
+  if (!result.success) return null;
+  return result.data as UserRegisteredEventPayload;
+}
 
-  if (typeof userId !== "string" || userId.length === 0) {
-    return null;
-  }
-
-  if (typeof fullName !== "string" || fullName.length === 0) {
-    return null;
-  }
-
-  return record as unknown as UserRegisteredEventPayload;
+export function toUserProfileUpdatedEventPayload(
+  record: Record<string, unknown>,
+): UserProfileUpdatedEventPayload | null {
+  const result = UserProfileUpdatedEventSchema.safeParse(record);
+  if (!result.success) return null;
+  return result.data as UserProfileUpdatedEventPayload;
 }

@@ -11,7 +11,8 @@
     "test": "jest"
   },
   "dependencies": {
-    "jsonwebtoken": "^9.0.2"
+    "jsonwebtoken": "^9.0.2",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@collabspace/eslint-config": "workspace:*",

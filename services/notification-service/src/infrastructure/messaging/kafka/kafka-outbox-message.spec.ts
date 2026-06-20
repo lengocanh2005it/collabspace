@@ -10,6 +10,7 @@ describe("kafka-outbox-message", () => {
   it("parses expanded Debezium outbox JSON value", () => {
     const payload = {
       eventId: "evt-1",
+      occurredAt: "2026-06-20T00:00:00.000Z",
       workspaceId: "ws-1",
       invitedById: "user-1",
       recipientId: "user-2",
@@ -33,6 +34,7 @@ describe("kafka-outbox-message", () => {
   it("parses workspace deleted payload", () => {
     const payload = {
       eventId: "evt-del",
+      occurredAt: "2026-06-20T00:00:00.000Z",
       workspaceId: "ws-del",
       deletedById: "user-del",
     };
