@@ -134,7 +134,9 @@ data:
         static_configs:
           - targets: ['mongodb-exporter:9216']
       {{- end }}
-      {{- if and (dig "kafka" "enabled" false .Values) (dig "kafka" "exporter" "enabled" false .Values) }}
+      {{- $_kafka := index .Values "kafka" | default dict }}
+      {{- $_kafkaExp := index $_kafka "exporter" | default dict }}
+      {{- if and (index $_kafka "enabled") (index $_kafkaExp "enabled") }}
       - job_name: kafka-exporter
         static_configs:
           - targets: ['kafka-exporter:9308']
