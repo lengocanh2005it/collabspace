@@ -18,7 +18,7 @@ describe('WorkspaceOutboxProcessor', () => {
   it('releases in-flight claims on startup in Debezium mode', async () => {
     const processor = new WorkspaceOutboxProcessor(dataSourceMock, workspaceOutboxServiceMock);
 
-    await processor.onModuleInit();
+    processor.onModuleInit();
     await processor.bootstrapOutboxProcessing();
 
     expect(workspaceOutboxServiceMock.releaseInFlightClaimsOnStartup).toHaveBeenCalled();
