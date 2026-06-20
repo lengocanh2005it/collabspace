@@ -11,5 +11,14 @@ dependencies:
 - name: traefik
   repository: https://traefik.github.io/charts
   version: 33.2.1
-digest: sha256:da71a513bd69b7013f504f2b339c21ae499586efce748addcb0469ef45385db3
-generated: "2026-06-10T21:35:34.7716492+07:00"
+- name: grafana
+  repository: https://grafana.github.io/helm-charts
+  version: 8.4.2
+- name: loki
+  repository: https://grafana.github.io/helm-charts
+  version: 6.7.4
+- name: promtail
+  repository: https://grafana.github.io/helm-charts
+  version: 6.16.4
+digest: sha256:53099b313fed1908731efc78c4aa2ec330797f57ccf7bcebedbda730415e747b
+generated: "2026-06-21T00:07:02.9702602+07:00"
