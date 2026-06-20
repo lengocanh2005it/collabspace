@@ -43,6 +43,7 @@ Folder Grafana: **CollabSpace**
 | **CollabSpace Service Health** | `collabspace-service-health` | UP/DOWN, request rate, latency, CPU/RAM app |
 | **CollabSpace App Logs** | `collabspace-logs-errors` | **Xu hướng** log (volume, error lines) — **không** tail ở đây |
 | **CollabSpace Load Test Run** | `collabspace-load-test` | Xem metric khi chạy k6; annotation tag `k6` |
+| **CollabSpace DLQ** | `collabspace-dlq` | Records by status/category, replay success/fail rate, oldest pending age gauge (alert ≥30min), events ingested per topic |
 
 ### Đọc log chi tiết → Explore (Loki)
 
