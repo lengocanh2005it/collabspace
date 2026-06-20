@@ -1,11 +1,11 @@
 @echo off
 color 0A
 echo =======================================================
-echo     ACT 1: THE HEARTBEAT (TRAFFIC SIMULATION)
+echo     ACT 1: THE HEARTBEAT (K6 LOAD TEST - DEMO FLOW)
 echo =======================================================
 echo.
-echo Injecting live traffic into the production gateway...
-ssh root@167.172.77.110 "timeout 60s sh -c 'while true; do curl -k -s https://collabspace.ngocanh2005it.site/api/v1/workspaces > /dev/null; sleep 0.1; done'"
+echo Launching actual k6 load test via Docker...
+docker run --rm -i -v "%~dp0..\..\infrastructure\load-testing\k6:/k6" -e BASE_URL=https://collabspace.ngocanh2005it.site/api/v1 -e GRAFANA_URL=https://collabspace.ngocanh2005it.site/grafana -e GRAFANA_PASSWORD=admin123 grafana/k6 run /k6/scenarios/demo-flow.js
 echo.
-echo Traffic Simulation Completed!
+echo Load Test Completed!
 pause
