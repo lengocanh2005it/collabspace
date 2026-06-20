@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       services:
-        description: Comma-separated services to test (empty = all five)
+        description: Comma-separated services to test (empty = all services)
         required: false
         default: ""
 
@@ -37,7 +37,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          ALL_SERVICES=(auth-service user-service workspace-service task-service notification-service)
+          ALL_SERVICES=(auth-service user-service workspace-service task-service notification-service dlq-service)
 
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
             raw="${{ github.event.inputs.services }}"
@@ -63,6 +63,7 @@ jobs:
           [[ "${{ steps.filter.outputs.workspace_service }}" == "true" ]] && services+=(workspace-service)
           [[ "${{ steps.filter.outputs.task_service }}" == "true" ]] && services+=(task-service)
           [[ "${{ steps.filter.outputs.notification_service }}" == "true" ]] && services+=(notification-service)
+          [[ "${{ steps.filter.outputs.dlq_service }}" == "true" ]] && services+=(dlq-service)
 
           if [[ ${#services[@]} -eq 0 ]]; then
             echo "services=[]" >> "$GITHUB_OUTPUT"

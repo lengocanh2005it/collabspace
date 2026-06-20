@@ -19,6 +19,7 @@ Traefik API Gateway
   +--> workspace-service     NestJS, PostgreSQL, port 8080
   +--> task-service          NestJS + CQRS, MongoDB
   +--> notification-service  NestJS + CQRS, MongoDB, Kafka consumer
+  +--> dlq-service           NestJS, MongoDB, Kafka DLQ consumer/replay API
 
 Kafka + Debezium Connect sit beside services as the async event bus (transactional outbox → CDC → topics).
 Observability: **K8s/Helm** — Prometheus, Grafana (`/grafana`), Loki + Promtail, k6 scenarios; **Docker** — optional profiles (monitoring, ELK, Jaeger). Guide: [docs/observability.md](../../docs/observability.md).
@@ -214,6 +215,35 @@ Current status:
 - Protected HTTP: `AuthGuard` + auth gRPC (not raw `X-User-Id`).
 - Mark-as-read and WebSocket are optional / not required for MVP.
 
+### dlq-service
+
+Path: `services/dlq-service`
+
+Technology:
+
+- NestJS
+- Mongoose / MongoDB (`collabspace_dlq`)
+- Kafka consumer for `collabspace.dlq.events`
+- Kafka producer for replaying records to the original `sourceTopic`
+
+Responsibilities:
+
+- Persist DLQ envelopes as queryable records with status, retry counters, locks, and retry history.
+- Provide platform-admin APIs for list/detail/replay/resolve/discard.
+- Auto-retry eligible records with bounded backoff and move exhausted records to `requires_manual_review`.
+- Expose health, metrics, and Swagger like the other HTTP services.
+
+Important source paths:
+
+- `src/application/dlq-ingest.service.ts`, `dlq-replay.service.ts`
+- `src/infrastructure/kafka/` — DLQ consumer + replay producer
+- `src/infrastructure/mongo/dlq-record.mongo.repository.ts`
+- `src/presentation/controllers/`
+
+Current status:
+
+- DLQ management workflow implemented. Protected HTTP uses `PlatformAdminGuard` and auth gRPC; permissions are `dlq.read` and `dlq.manage`.
+
 ## Infrastructure
 
 ### API Gateway
@@ -230,7 +260,7 @@ Trust boundaries (Phase B):
 
 Correlation ID (Phase C):
 
-- `X-Request-Id` middleware on all five HTTP services; S2S HTTP clients forward when present in async context.
+- `X-Request-Id` middleware on all HTTP services; S2S HTTP clients forward when present in async context.
 - See `.claude/docs/service-contracts.md` → Correlation ID.
 
 Infra operations backlog: `docs/team/phan-phu-tho-infrastructure-backlog.md`.
@@ -284,8 +314,9 @@ PostgreSQL:
 
 MongoDB:
 
-- `collabspace_task` planned for task-service.
-- notification persistence may use MongoDB depending on implementation.
+- `collabspace_task` for task-service.
+- `collabspace_notification` for notification-service.
+- `collabspace_dlq` for dlq-service DLQ records and retry history.
 
 Redis:
 
@@ -301,7 +332,7 @@ Cross-service events use **transactional outbox → Debezium → Kafka**. App se
 | Outbox tables | `workspace_outbox_events`, `user_outbox_events`, `task_outbox_events` (Mongo) |
 | Debezium Connect | CDC from Postgres WAL / Mongo change streams; Outbox Event Router SMT |
 | Kafka topics | `collabspace.workspace.*`, `collabspace.user.*`, `collabspace.task.*` |
-| Consumers | `notification-service`, `task-service` (kafkajs); DLQ topic `collabspace.dlq.events` |
+| Consumers | `notification-service`, `task-service` (kafkajs); `dlq-service` consumes DLQ topic `collabspace.dlq.events` |
 
 Canonical topic mapping: `.claude/docs/service-contracts.md` → Event Contracts. Ops: `infrastructure/kafka/README.md`, `docs/kafka-debezium-migration-roadmap.md`.
 

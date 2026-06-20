@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import type { Model } from 'mongoose';
+import { Types, type Model } from 'mongoose';
 import { DlqRecord, type DlqRecordDocument } from '../../domain/dlq-record.schema';
 import type {
   CreateDlqRecordInput,
@@ -20,9 +20,15 @@ export class MongoDlqRecordRepository implements IDlqRecordRepository {
 
   async list(filter: ListDlqFilter): Promise<ListDlqResult> {
     const query: Record<string, unknown> = {};
-    if (filter.status) query.status = filter.status;
+    if (filter.statuses?.length) query.status = { $in: filter.statuses };
     if (filter.errorCategory) query.errorCategory = filter.errorCategory;
     if (filter.sourceTopic) query.sourceTopic = filter.sourceTopic;
+    if (filter.from || filter.to) {
+      query.createdAt = {
+        ...(filter.from ? { $gte: filter.from } : {}),
+        ...(filter.to ? { $lte: filter.to } : {}),
+      };
+    }
 
     const total = await this.model.countDocuments(query);
 
@@ -58,7 +64,8 @@ export class MongoDlqRecordRepository implements IDlqRecordRepository {
   }
 
   async findById(id: string): Promise<DlqRecord | null> {
-    return this.model.findById(id).lean().exec() as Promise<DlqRecord | null>;
+    if (!Types.ObjectId.isValid(id)) return null;
+    return this.model.findById(id).lean().exec();
   }
 
   async findForReplay(filter: FindForReplayFilter): Promise<DlqRecord[]> {
@@ -66,16 +73,16 @@ export class MongoDlqRecordRepository implements IDlqRecordRepository {
       status: { $in: filter.statuses },
       lockedBy: null,
     };
+    if (filter.ids?.length) {
+      const ids = filter.ids.filter((id) => Types.ObjectId.isValid(id));
+      if (!ids.length) return [];
+      query._id = { $in: ids.map((id) => new Types.ObjectId(id)) };
+    }
     if (filter.sourceTopic) query.sourceTopic = filter.sourceTopic;
     if (filter.errorCategory) query.errorCategory = filter.errorCategory;
     if (filter.nextRetryAtBefore) query.nextRetryAt = { $lte: filter.nextRetryAtBefore };
 
-    return this.model
-      .find(query)
-      .sort({ createdAt: 1 })
-      .limit(filter.limit)
-      .lean()
-      .exec() as unknown as Promise<DlqRecord[]>;
+    return this.model.find(query).sort({ createdAt: 1 }).limit(filter.limit).lean().exec();
   }
 
   async upsertFromEnvelope(input: CreateDlqRecordInput): Promise<DlqRecord> {
@@ -104,6 +111,7 @@ export class MongoDlqRecordRepository implements IDlqRecordRepository {
       retryHistory: [],
       lockedAt: null,
       lockedBy: null,
+      lockedFromStatus: null,
     };
 
     const result = await this.model
@@ -111,10 +119,11 @@ export class MongoDlqRecordRepository implements IDlqRecordRepository {
       .lean()
       .exec();
 
-    return result as unknown as DlqRecord;
+    return result;
   }
 
   async acquireLock(id: string, lockedBy: string): Promise<DlqRecord | null> {
+    if (!Types.ObjectId.isValid(id)) return null;
     const now = new Date();
     return this.model
       .findOneAndUpdate(
@@ -123,14 +132,24 @@ export class MongoDlqRecordRepository implements IDlqRecordRepository {
           status: { $in: ['pending', 'requires_manual_review'] },
           lockedBy: null,
         },
-        { $set: { status: 'replaying', lockedAt: now, lockedBy } },
+        [
+          {
+            $set: {
+              lockedFromStatus: '$status',
+              status: 'replaying',
+              lockedAt: now,
+              lockedBy,
+            },
+          },
+        ],
         { new: true },
       )
       .lean()
-      .exec() as unknown as Promise<DlqRecord | null>;
+      .exec();
   }
 
   async releaseAfterReplay(id: string, update: PostReplayUpdate): Promise<DlqRecord | null> {
+    if (!Types.ObjectId.isValid(id)) return null;
     const historyEntry = {
       at: new Date(),
       by: update.by,
@@ -151,31 +170,34 @@ export class MongoDlqRecordRepository implements IDlqRecordRepository {
             replayedBy: update.by,
             lockedAt: null,
             lockedBy: null,
+            lockedFromStatus: null,
           },
           $push: { retryHistory: historyEntry },
         },
         { new: true },
       )
       .lean()
-      .exec() as unknown as Promise<DlqRecord | null>;
+      .exec();
   }
 
   async releaseStaleLocks(lockedBefore: Date): Promise<number> {
     const result = await this.model
-      .updateMany(
-        { status: 'replaying', lockedAt: { $lt: lockedBefore } },
-        { $set: { status: 'pending', lockedAt: null, lockedBy: null } },
-      )
+      .updateMany({ status: 'replaying', lockedAt: { $lt: lockedBefore } }, [
+        {
+          $set: {
+            status: { $ifNull: ['$lockedFromStatus', 'pending'] },
+            lockedAt: null,
+            lockedBy: null,
+            lockedFromStatus: null,
+          },
+        },
+      ])
       .exec();
     return result.modifiedCount;
   }
 
   async findOldestPending(): Promise<DlqRecord | null> {
-    return this.model
-      .findOne({ status: 'pending' })
-      .sort({ createdAt: 1 })
-      .lean()
-      .exec() as Promise<DlqRecord | null>;
+    return this.model.findOne({ status: 'pending' }).sort({ createdAt: 1 }).lean().exec();
   }
 
   async updateStatusByAdmin(
@@ -184,6 +206,7 @@ export class MongoDlqRecordRepository implements IDlqRecordRepository {
     adminId: string,
     note: string,
   ): Promise<DlqRecord | null> {
+    if (!Types.ObjectId.isValid(id)) return null;
     const historyEntry = {
       at: new Date(),
       by: adminId,
@@ -208,6 +231,6 @@ export class MongoDlqRecordRepository implements IDlqRecordRepository {
         { new: true },
       )
       .lean()
-      .exec() as unknown as Promise<DlqRecord | null>;
+      .exec();
   }
 }

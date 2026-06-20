@@ -32,6 +32,7 @@ const baseRecord = (
     retryHistory: [],
     lockedAt: null,
     lockedBy: null,
+    lockedFromStatus: null,
     createdAt: new Date(),
     updatedAt: new Date(),
     ...overrides,
@@ -53,7 +54,7 @@ describe('DlqReplayService', () => {
       findForReplay: jest.fn(),
       list: jest.fn(),
       upsertFromEnvelope: jest.fn(),
-    } as unknown as jest.Mocked<IDlqRecordRepository>;
+    };
 
     producer = { produce: jest.fn() };
     config = { getInstanceId: jest.fn().mockReturnValue('dlq-pod-1') };
@@ -61,7 +62,7 @@ describe('DlqReplayService', () => {
 
     service = new DlqReplayService(
       repo,
-      producer as unknown as DlqReplayProducer,
+      producer,
       config as unknown as ConfigurationService,
       metrics as unknown as MetricsService,
     );

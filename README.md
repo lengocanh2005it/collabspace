@@ -4,7 +4,7 @@
 
 **Product features & status:** [docs/features.md](docs/features.md) · **MVP demo scope:** [docs/mvp-demo-scope.md](docs/mvp-demo-scope.md) · **API routes:** [docs/api-routes.md](docs/api-routes.md) · **URLs (API/Swagger/Grafana):** [docs/service-urls.md](docs/service-urls.md) · **App backlog:** [docs/team/application-backlog.md](docs/team/application-backlog.md) · **Infra backlog:** [docs/team/phan-phu-tho-infrastructure-backlog.md](docs/team/phan-phu-tho-infrastructure-backlog.md)
 
-**MVP backend (2026-06):** Luồng demo 7 bước **Done** (API + `scripts/demo-e2e` + CI smoke sau deploy `main`). **OpenAPI 5/5 Done**. **Frontend:** `collabspace-fe` MVP UI **Done**; còn polish + Playwright E2E. **Backend gaps:** contract tests.
+**MVP backend (2026-06):** Luồng demo 7 bước **Done** (API + `scripts/demo-e2e` + CI smoke sau deploy `main`). **OpenAPI Done** for app/ops services. **Frontend:** `collabspace-fe` MVP UI **Done**; còn polish + Playwright E2E. **Backend gaps:** contract tests.
 
 ## Architecture
 
@@ -26,7 +26,7 @@
          │        │       │         │              │
          │   PostgreSQL   │     MongoDB        MongoDB
          │    :5432       │     :27017         :27017
-         │                │                    (task + notification)
+         │                │                    (task + notification + dlq)
          │    Redis :6379 (auth OTP/session)
          │                │
          └────────────────┘
@@ -43,6 +43,7 @@
 | **workspace-service** | NestJS + TypeORM | **8080** | PostgreSQL (`collabspace_workspace`) | `/api/v1/workspaces/health/ready` |
 | **task-service** | NestJS + MongoDB | 3000 | MongoDB (`collabspace_task`) | `/api/v1/tasks/health/ready` |
 | **notification-service** | NestJS + MongoDB | 3000 | MongoDB | `/api/v1/notifications/health/ready` |
+| **dlq-service** | NestJS + MongoDB + Kafka | 3000 | MongoDB (`collabspace_dlq`) | `/api/v1/dlq/health/ready` |
 
 > **CRITICAL**: `workspace-service` runs on port **8080**, not 3000 like the other NestJS services.
 
@@ -54,7 +55,7 @@
 | Kafka + Debezium Connect | apache/kafka + debezium/connect | 9092, 8083 | Async event bus (CDC outbox) |
 | Redis | redis:7 | 6379 | Caching, notifications |
 | PostgreSQL | postgres:15 | 5432 | Auth, User, Workspace DBs (Native CronJob Backups) |
-| MongoDB | mongo:6 (**replica set `rs0`**) | 27017 | task + notification — [infrastructure/mongo/README.md](infrastructure/mongo/README.md) |
+| MongoDB | mongo:6 (**replica set `rs0`**) | 27017 | task + notification + dlq — [infrastructure/mongo/README.md](infrastructure/mongo/README.md) |
 | Prometheus | prom/prometheus | 9090 | Metrics collection |
 | Grafana | grafana/grafana | 3005 | Dashboards (local Compose) |
 | Loki + Promtail | Helm subcharts (K8s) | 3100 | **Log aggregation (production path)** |
@@ -248,13 +249,13 @@ Details: [docs/mvp-demo-scope.md](docs/mvp-demo-scope.md). CI integration: [infr
 
 ## API Routes
 
-Route index by service (auth, user, workspace, task, notification), gateway headers, and gRPC entry points: **[docs/api-routes.md](docs/api-routes.md)**.
+Route index by service (auth, user, workspace, task, notification, dlq), gateway headers, and gRPC entry points: **[docs/api-routes.md](docs/api-routes.md)**.
 
 Request/response contracts and event payloads: [`.claude/docs/service-contracts.md`](.claude/docs/service-contracts.md).
 
 ### OpenAPI (Swagger UI)
 
-**Trạng thái:** ✅ 5/5 service — UI tại `/swagger`, request/response schema (`@ApiOkResponse` / `@ApiCreatedResponse`). Bảng URL đầy đủ (prod Droplet, local, Grafana): **[docs/service-urls.md](docs/service-urls.md)**.
+**Trạng thái:** ✅ app/ops services expose UI tại `/swagger`, request/response schema (`@ApiOkResponse` / `@ApiCreatedResponse`). Bảng URL đầy đủ (prod Droplet, local, Grafana): **[docs/service-urls.md](docs/service-urls.md)**.
 
 **K8s / Traefik gateway** (`gateway.swagger.expose: true`):
 
@@ -265,6 +266,7 @@ Request/response contracts and event payloads: [`.claude/docs/service-contracts.
 | workspace-service | https://collabspace.ngocanh2005it.site/swagger/workspace |
 | task-service | https://collabspace.ngocanh2005it.site/swagger/task |
 | notification-service | https://collabspace.ngocanh2005it.site/swagger/notification |
+| dlq-service | https://collabspace.ngocanh2005it.site/swagger/dlq |
 
 **Docker local** (trực tiếp cổng mapped):
 
@@ -275,6 +277,7 @@ Request/response contracts and event payloads: [`.claude/docs/service-contracts.
 | workspace-service | http://localhost:3002/swagger |
 | task-service | http://localhost:3003/swagger |
 | notification-service | http://localhost:3004/swagger |
+| dlq-service | http://localhost:3006/swagger |
 
 Protected routes: **Authorize** → Bearer JWT. Internal S2S routes (user/workspace): Service JWT (`Authorization: Bearer …`).
 
@@ -356,6 +359,7 @@ Chart docs: [infrastructure/helm/README.md](infrastructure/helm/README.md). **Pr
 | workspace-service | 2 | 256Mi | 512Mi | 200m | 500m |
 | task-service | 2 | 128Mi | 256Mi | 100m | 250m |
 | notification-service | 2 | 128Mi | 256Mi | 100m | 250m |
+| dlq-service | 1 | 128Mi | 256Mi | 100m | 250m |
 | traefik | 2 | 64Mi | 128Mi | 100m | 200m |
 | grafana | 1 | 128Mi | 256Mi | 100m | 200m |
 | prometheus | 1 | 256Mi | 512Mi | 100m | 500m |
@@ -369,7 +373,7 @@ Chart docs: [infrastructure/helm/README.md](infrastructure/helm/README.md). **Pr
 GitHub Actions workflows:
 
 1. `.github/workflows/ci.yml` — `lint` (`pnpm run lint:ci`) then build + test on PRs and `main`.
-2. `.github/workflows/docker-deploy.yml` — build five service images, push GHCR; **Helm deploy on k3s Droplet** via SSH (`infrastructure/deploy/helm-deploy-ci.sh`).
+2. `.github/workflows/docker-deploy.yml` — build app service images, push GHCR; **Helm deploy on k3s Droplet** via SSH (`infrastructure/deploy/helm-deploy-ci.sh`).
 
 Lộ trình production: [docs/deployment-k3s-phases.md](docs/deployment-k3s-phases.md). URL prod/local: [docs/service-urls.md](docs/service-urls.md). Compose legacy: [docs/deployment-digitalocean-droplet.md](docs/deployment-digitalocean-droplet.md).
 
@@ -391,7 +395,8 @@ collabspace/
 │   ├── user-service/        # Profiles (NestJS + TypeORM + gRPC)
 │   ├── workspace-service/   # Workspace, project, invite (NestJS + TypeORM, port 8080)
 │   ├── task-service/        # Tasks, comments, board (NestJS + CQRS + MongoDB)
-│   └── notification-service/# Notifications (NestJS + CQRS + MongoDB)
+│   ├── notification-service/# Notifications (NestJS + CQRS + MongoDB)
+│   └── dlq-service/         # Dead-letter queue ops workflow
 ├── infrastructure/
 │   ├── docker/              # Docker Compose (app, db, traefik, monitoring, vault, logging profile, …)
 │   ├── deploy/              # Droplet/k3s scripts (Phase 0–3, helm-deploy-ci, seed/migrate prod)
@@ -433,13 +438,13 @@ This project is for educational purposes.
 
 **Infrastructure Engineer**: Phan Phu Tho  
 **Auth & DO Deploy & HTTPS**: Lê Ngọc Anh  
-**Last Updated**: 2026-06-15
+**Last Updated**: 2026-06-20
 
 ---
 
 ## 🏗 Platform Foundation V2 (Convergence Hardening)
 
-All five application services run on **NestJS** (`workspace-service` listens on port **8080**). **Secrets:** HashiCorp Vault + ESO trên K8s prod ([infrastructure/vault/](infrastructure/vault/)); Vault HA + rotation operational — [docs/team/phan-phu-tho-infrastructure-backlog.md](docs/team/phan-phu-tho-infrastructure-backlog.md).
+All application services run on **NestJS** (`workspace-service` listens on port **8080**). **Secrets:** HashiCorp Vault + ESO trên K8s prod ([infrastructure/vault/](infrastructure/vault/)); Vault HA + rotation operational — [docs/team/phan-phu-tho-infrastructure-backlog.md](docs/team/phan-phu-tho-infrastructure-backlog.md).
 
 ### Key Upgrades:
 - **API Gateway**: Routes `/api/v1/*` with `forward-auth` via `auth-service`; internal S2S paths blocked at gateway.

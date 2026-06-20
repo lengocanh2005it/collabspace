@@ -93,6 +93,11 @@ Other services:
 - `DELETE /api/v1/workspaces/admin/{id}`
 - `POST /api/v1/workspaces/admin/{id}/force-join`
 - `POST /api/v1/notifications/admin/broadcast`
+- `GET /api/v1/dlq/messages` (`dlq.read`)
+- `POST /api/v1/dlq/messages/{id}/replay` (`dlq.manage`)
+- `POST /api/v1/dlq/replay-batch` (`dlq.manage`)
+- `POST /api/v1/dlq/messages/{id}/resolve` (`dlq.manage`)
+- `POST /api/v1/dlq/messages/{id}/discard` (`dlq.manage`)
 
 Admin status and role changes revoke all refresh tokens for the target user.
 Successful login updates `lastLoginAt`; a timestamp write failure is logged but
@@ -276,7 +281,7 @@ In local `NODE_ENV=development` only, inbound services may allow requests withou
 | TTL | **5 minutes** (`exp` − `iat` ≤ 300s) |
 | Clock skew | ±30 seconds when verifying `iat` / `exp` |
 
-**Trade-off (Phase 0):** one shared signing secret per environment, not per-service asymmetric keys or JWKS. Simpler for five NestJS services; rotation = dual-key deploy (future hardening).
+**Trade-off (Phase 0):** one shared signing secret per environment, not per-service asymmetric keys or JWKS. Simpler for the current NestJS services; rotation = dual-key deploy (future hardening).
 
 ### Required JWT claims
 
@@ -354,7 +359,7 @@ Outbound HTTP clients sign a fresh service JWT per request (default: **new token
 
 | Variable | Consumers | Purpose |
 | -------- | --------- | ------- |
-| `SERVICE_JWT_SECRET` | task-service, notification-service (sign); workspace-service, user-service (verify) | Sign and verify service JWTs. **Must match** across all services in the same environment. |
+| `SERVICE_JWT_SECRET` | task-service, notification-service (sign); workspace-service, user-service (verify); dlq-service (prod bootstrap guard requirement) | Sign and verify service JWTs. **Must match** across all services in the same environment. |
 
 ### Error responses
 
@@ -458,6 +463,40 @@ Debezium Mongo Outbox Event Router on `task_outbox_events` (`infrastructure/kafk
 | Lag metrics | `kafka-exporter` (:9308) → alert `KafkaConsumerLagHigh` |
 
 Optional JSON Schema reference files (Schema Registry profile `schema-registry`): `infrastructure/kafka/schemas/`.
+
+### DLQ Service HTTP Contract
+
+Base prefix: `/api/v1/dlq`.
+
+All routes require a verified bearer user JWT through auth gRPC. Read routes require permission `dlq.read`; mutating routes require `dlq.manage`. Platform role `admin` receives these permissions from auth-service seed/migration.
+
+Routes:
+
+- `GET /api/v1/dlq/health/live`
+- `GET /api/v1/dlq/health/ready`
+- `GET /api/v1/dlq/messages?status=&errorCategory=&sourceTopic=&from=&to=&cursor=&limit=`
+- `GET /api/v1/dlq/messages/{id}`
+- `POST /api/v1/dlq/messages/{id}/replay`
+- `POST /api/v1/dlq/replay-batch`
+- `POST /api/v1/dlq/messages/{id}/resolve`
+- `POST /api/v1/dlq/messages/{id}/discard`
+
+List filters:
+
+- `status`: one or many values (`pending`, `replaying`, `requires_manual_review`, `resolved`, `discarded`); CSV query values are accepted.
+- `errorCategory`: `transient`, `logic`, `schema`, `unknown`.
+- `sourceTopic`: exact Kafka topic.
+- `from` / `to`: ISO date bounds for record creation time.
+- `cursor` / `limit`: cursor pagination; `limit` max 100.
+
+Batch replay accepts either explicit `ids` (max 50) or a filter (`status`, `sourceTopic`, `errorCategory`, `limit`), not both. Replay publishes the original payload back to `sourceTopic` and appends DLQ replay headers. A successful produce means DLQ has handed the message back to Kafka; if the downstream consumer fails again, it emits a new DLQ record.
+
+State rules:
+
+- Ingested `transient` and `unknown` records start as `pending`.
+- Ingested `logic` and `schema` records start as `requires_manual_review`.
+- Auto-retry only picks eligible `pending` records, uses bounded backoff, and moves exhausted records to `requires_manual_review`.
+- `resolved` and `discarded` are terminal admin decisions for the current record.
 
 ### User directory replicas (`user_registered`, `user_profile_updated`)
 

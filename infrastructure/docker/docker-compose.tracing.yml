@@ -38,3 +38,9 @@ services:
     environment:
       TRACING_ENABLED: "true"
       OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318/v1/traces
+
+  dlq-service:
+    environment:
+      TRACING_ENABLED: "true"
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318/v1/traces
+      AUTH_SERVICE_GRPC_URL: auth-service:50051

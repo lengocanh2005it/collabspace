@@ -27,7 +27,7 @@ Chi tiết kỹ thuật:
 
 | NFR | Mục tiêu | CollabSpace |
 |-----|----------|-------------|
-| Health phân tầng | Phân biệt process sống vs sẵn sàng nhận traffic | ✅ `/health/live`, `/health/ready` trên 5 app services; `503` khi dependency required down |
+| Health phân tầng | Phân biệt process sống vs sẵn sàng nhận traffic | ✅ `/health/live`, `/health/ready` trên app services; `503` khi dependency required down |
 | Loại traffic khi chưa ready | LB/gateway không gửi request vào instance unhealthy | ✅ Traefik health check; K8s readiness probe (Helm/k8s manifests) |
 | Graceful shutdown | Giảm request bị cắt khi deploy | ✅ `preStop` + `terminationGracePeriodSeconds` (K8s/Helm) |
 | Single-instance demo | Chạy end-to-end trên Docker Compose | ✅ |
@@ -82,7 +82,7 @@ Chi tiết kỹ thuật:
 
 | NFR | Mục tiêu | CollabSpace |
 |-----|----------|-------------|
-| Metrics | Golden signals per service | ✅ Prometheus `/metrics` (5 services); Grafana dashboards (Service Health, App Logs, Load Test) — [observability.md](./observability.md) |
+| Metrics | Golden signals per service | ✅ Prometheus `/metrics` (app services); Grafana dashboards (Service Health, App Logs, Load Test) — [observability.md](./observability.md) |
 | Alerting | Cảnh báo down / 5xx / queue depth | ✅ `alert-rules.yml` + runbooks; Alertmanager -> Slack đã test trên Droplet 2026-06-20; email receiver chưa cấu hình riêng |
 | Distributed tracing | Trace request xuyên service | ⚠️ OpenTelemetry → Jaeger (`docker-compose.tracing.yml`); prod tắt mặc định |
 | Centralized logging | Log tập trung | ⚠️ **K8s:** Loki + Promtail + Grafana Explore ✅; tail theo `X-Request-Id` phụ thuộc app log field; Docker ELK profile tùy chọn (không dùng trên prod) |
@@ -111,7 +111,7 @@ Chi tiết kỹ thuật:
 | Backup scripts | Postgres + Mongo dump | ✅ `infrastructure/backup/scripts/` |
 | Automated backup schedule | Cron prod | ❌ Chưa — checklist prod |
 | Restore drill | Kiểm chứng khôi phục | 📋 Quarterly — manual |
-| DLQ | Message hỏng không mất | ✅ Kafka DLQ topic `collabspace.dlq.events` |
+| DLQ | Message hỏng không mất | ✅ Kafka DLQ topic `collabspace.dlq.events` + `dlq-service` inspect/replay workflow |
 
 ---
 
@@ -132,7 +132,7 @@ Chi tiết kỹ thuật:
 
 | NFR | Mục tiêu | CollabSpace |
 |-----|----------|-------------|
-| Service boundaries rõ | Một team/feature → một service | ✅ auth, user, workspace, task, notification |
+| Service boundaries rõ | Một team/feature → một service | ✅ auth, user, workspace, task, notification, dlq ops |
 | Contract docs | API + event | ✅ `service-contracts.md`, `api-routes.md` |
 | Contract test tự động | Pact / schema test event | ❌ Chỉ doc + `@collabspace/shared`; chưa consumer-driven contract test |
 | Unit tests | Logic nghiệp vụ | ✅ auth, user, task, notification (mức độ khác nhau) |
@@ -146,7 +146,7 @@ Chi tiết kỹ thuật:
 | NFR | Mục tiêu | CollabSpace |
 |-----|----------|-------------|
 | API versioning | `/api/v1` ổn định | ✅ |
-| OpenAPI | Swagger 5/5 tại `/swagger` + response schemas; gateway prod `/swagger/<service>` | ✅ auth, user, workspace, task, notification — [service-urls.md](./service-urls.md) |
+| OpenAPI | Swagger tại `/swagger` + response schemas; gateway prod `/swagger/<service>` | ✅ app/ops services — [service-urls.md](./service-urls.md) |
 | Frontend client | UI end-user | ❌ Backend + infra focus |
 | i18n / accessibility | — | ❌ Out of scope |
 

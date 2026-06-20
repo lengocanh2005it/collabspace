@@ -34,11 +34,11 @@ Read these files as needed:
    - notification/activity
    - infrastructure/observability/CI
 2. Map the request to the owning service.
-3. Check `docs/features.md` for Done / Planned. All five app services,
-   workspace/task activity feeds, task/notification E2E, workspace E2E,
+3. Check `docs/features.md` for Done / Planned. All core app services plus
+   `dlq-service`, workspace/task activity feeds, task/notification E2E, workspace E2E,
    CI demo smoke, and the Admin Platform APIs are implemented. Main gaps are
    automated contract tests, frontend polish/tests, restore drill/offsite
-   backup, capacity baseline, and infra operations. OpenAPI 5/5 is Done.
+   backup, capacity baseline, and infra operations.
 4. Read `services/<service>/CLAUDE.md` and `.claude/docs/service-architecture.md` for that service's layering rules.
 5. Read the target service's `src/app.module.ts`, controllers, use cases/handlers, entities, repositories, migrations, and tests.
 6. For **TypeORM migrations** (auth, workspace): file `{timestamp}-{PascalCase}.ts`, class `{PascalCase}{timestamp}` — see `nest-service-change` skill. user-service uses `migrations/NNN_*.sql`.
@@ -51,10 +51,11 @@ Read these files as needed:
 - Workspace CRUD, membership, invitations, workspace roles (`owner` / `manager` / `member`): `services/workspace-service`.
 - Projects, boards, tasks, comments, mentions, activity: `services/task-service`.
 - Notification persistence, notification list/read API, event consumption: `services/notification-service`.
+- DLQ ops, Kafka dead-letter inspect/replay workflow: `services/dlq-service`.
 - Gateway routing: `api-gateway`.
 - Compose/K8s/Vault/observability/CI: `infrastructure` (`infrastructure/vault/` for secrets). **DO Droplet hands-on deploy:** Lê Ngọc Anh (phối hợp Phan Phú Thọ — infra backlog).
 
-**S2S HTTP (internal routes):** chỉ **Service JWT** — `SERVICE_JWT_SECRET` chung trên user/workspace/task/notification. Contract: `.claude/docs/service-contracts.md` → Service JWT.
+**S2S HTTP (internal routes):** chỉ **Service JWT** — `SERVICE_JWT_SECRET` chung trên user/workspace/task/notification; `dlq-service` cũng require secret ở prod bootstrap. Contract: `.claude/docs/service-contracts.md` → Service JWT.
 
 ## Output Style
 

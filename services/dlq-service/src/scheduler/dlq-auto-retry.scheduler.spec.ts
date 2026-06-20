@@ -51,8 +51,8 @@ describe('DlqAutoRetryScheduler', () => {
     };
 
     scheduler = new DlqAutoRetryScheduler(
-      replayService as unknown as DlqReplayService,
-      repo as unknown as IDlqRecordRepository,
+      replayService,
+      repo,
       config as unknown as ConfigurationService,
       metrics as unknown as MetricsService,
     );

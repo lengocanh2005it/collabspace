@@ -39,6 +39,7 @@ const makeRecord = (overrides: Partial<DlqRecord> = {}): DlqRecord =>
     retryHistory: [],
     lockedAt: null,
     lockedBy: null,
+    lockedFromStatus: null,
     createdAt: new Date(),
     updatedAt: new Date(),
     ...overrides,
@@ -55,7 +56,7 @@ describe('DlqIngestService', () => {
       upsertFromEnvelope: jest.fn(),
       list: jest.fn(),
       findById: jest.fn(),
-    } as unknown as jest.Mocked<IDlqRecordRepository>;
+    };
 
     config = {
       getDlqSchedulerConfig: jest.fn().mockReturnValue({
@@ -70,11 +71,7 @@ describe('DlqIngestService', () => {
       dlqConsumerEventsIngestedTotal: { inc: jest.fn() },
     };
 
-    service = new DlqIngestService(
-      repo,
-      config as unknown as ConfigurationService,
-      metrics as unknown as MetricsService,
-    );
+    service = new DlqIngestService(repo, config, metrics as unknown as MetricsService);
   });
 
   describe('errorCategory classification', () => {

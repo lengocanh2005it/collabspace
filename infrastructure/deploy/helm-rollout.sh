@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Helm upgrade + optional migration + rollout (dùng chung Phase 3 tay và Phase 4 CI).
-# Env: IMAGE_TAG (legacy — cùng tag cho cả 5 app khi set một mình)
+# Env: IMAGE_TAG (legacy — cùng tag cho toàn bộ app services khi set một mình)
 # Env: DEPLOY_SERVICES — danh sách service cần rollout (vd. auth-service,task-service)
 # Env: SERVICE_IMAGE_TAGS — tag riêng từng service (vd. auth-service:auth-service-abc1234,task-service:task-service-abc1234)
 # Env: RUN_K8S_MIGRATIONS (mặc định false) — chỉ true khi cần chạy Postgres migration Jobs.
@@ -30,7 +30,7 @@ fi
 # CI/workflow may export IMAGE_TAG before this script; phase0.env must not override it.
 ci_image_tag="${IMAGE_TAG:-}"
 
-APP_SERVICES=(auth-service user-service workspace-service task-service notification-service)
+APP_SERVICES=(auth-service user-service workspace-service task-service notification-service dlq-service)
 declare -A SERVICE_IMAGE_TAG_MAP=()
 DEPLOY_SERVICE_LIST=()
 
@@ -164,7 +164,7 @@ ensure_app_external_secrets() {
       kubectl apply -f "$extra"
     fi
   done
-  for es in auth-service user-service workspace-service task-service notification-service; do
+  for es in auth-service user-service workspace-service task-service notification-service dlq-service; do
     kubectl wait --for=condition=Ready "externalsecret/${es}-secrets" -n "$APP_NS" --timeout=180s
   done
   for es in backup-spaces-secret alertmanager-slack-secret; do
@@ -276,7 +276,7 @@ elif [[ -n "${ci_image_tag:-}" ]]; then
 import re
 
 tag = "${IMAGE_TAG}"
-services = ["auth-service", "user-service", "workspace-service", "task-service", "notification-service"]
+services = ["auth-service", "user-service", "workspace-service", "task-service", "notification-service", "dlq-service"]
 
 with open("${VALUES_PROD}", "r") as f:
     content = f.read()
@@ -295,7 +295,7 @@ fi
 
 restore_app_replicas() {
   echo "==> Restoring app replica counts from values-prod..."
-  for dep in auth-service user-service workspace-service task-service notification-service; do
+  for dep in auth-service user-service workspace-service task-service notification-service dlq-service; do
     replicas="$(grep -A20 "^  ${dep}:" "$VALUES_PROD" | grep -m1 'replicas:' | awk '{print $2}' || echo 1)"
     if kubectl get deployment "$dep" -n "$APP_NS" >/dev/null 2>&1; then
       kubectl scale deployment "$dep" -n "$APP_NS" --replicas="${replicas:-1}"

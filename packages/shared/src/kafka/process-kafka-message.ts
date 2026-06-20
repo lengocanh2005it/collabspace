@@ -1,4 +1,8 @@
-import { buildKafkaDlqEnvelope, type KafkaDlqEnvelope } from './dlq-envelope';
+import {
+  buildKafkaDlqEnvelope,
+  type DlqErrorCategory,
+  type KafkaDlqEnvelope,
+} from './dlq-envelope';
 import { retryWithBackoff } from './consumer-retry';
 
 export type KafkaConsumerMessageContext = {
@@ -20,6 +24,7 @@ export type ProcessKafkaConsumerMessageOptions = {
   maxRetries: number;
   retryDelayMs: number;
   publishToDlq: (envelope: KafkaDlqEnvelope) => Promise<void>;
+  classifyError?: (error: unknown) => DlqErrorCategory;
   log: KafkaConsumerLogger;
   parseValue: (value: Buffer | null) => Record<string, unknown> | null;
   handler: (record: Record<string, unknown>, topic: string) => Promise<void>;
@@ -27,6 +32,49 @@ export type ProcessKafkaConsumerMessageOptions = {
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
+}
+
+function classifyKafkaConsumerError(error: unknown): DlqErrorCategory {
+  const message = errorMessage(error).toLowerCase();
+  const name = error instanceof Error ? error.name.toLowerCase() : '';
+  const statusCode =
+    typeof error === 'object' && error !== null && 'statusCode' in error
+      ? Number((error as { statusCode?: unknown }).statusCode)
+      : undefined;
+
+  if (
+    statusCode === 503 ||
+    statusCode === 504 ||
+    message.includes('etimedout') ||
+    message.includes('econnrefused') ||
+    message.includes('econnreset') ||
+    message.includes('timeout') ||
+    message.includes('temporar')
+  ) {
+    return 'transient';
+  }
+
+  if (
+    name.includes('validation') ||
+    name.includes('zod') ||
+    message.includes('invalid json') ||
+    message.includes('not valid json') ||
+    message.includes('validation') ||
+    message.includes('schema')
+  ) {
+    return 'schema';
+  }
+
+  if (
+    name.includes('notfound') ||
+    name.includes('business') ||
+    message.includes('not found') ||
+    message.includes('business rule')
+  ) {
+    return 'logic';
+  }
+
+  return 'unknown';
 }
 
 /**
@@ -45,6 +93,7 @@ export async function processKafkaConsumerMessage(
     publishToDlq,
     log,
     consumerGroup,
+    classifyError = classifyKafkaConsumerError,
   } = options;
   const record = parseValue(context.value);
 
@@ -57,6 +106,7 @@ export async function processKafkaConsumerMessage(
         key: context.key?.toString('utf8'),
         payload: context.value?.toString('utf8') ?? null,
         errorMessage: 'Invalid or empty JSON payload',
+        errorCategory: 'schema',
         failedAt: new Date().toISOString(),
         consumerGroup,
       }),
@@ -87,6 +137,7 @@ export async function processKafkaConsumerMessage(
         key: context.key?.toString('utf8'),
         payload: record,
         errorMessage: message,
+        errorCategory: classifyError(error),
         failedAt: new Date().toISOString(),
         consumerGroup,
       }),

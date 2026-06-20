@@ -105,7 +105,7 @@ Do **not** map dependency failures to generic `500` if the cause is known.
 - `mode: "degraded"` → optional dependencies unhealthy; required deps still up (auth outbox uses this pattern).
 - Required vs optional checks MUST be explicit in each `*-health.service.ts`.
 
-**Implemented:** auth-service, user-service, workspace-service, task-service, notification-service (`/health/live`, `/health/ready` with dependency checks).
+**Implemented:** auth-service, user-service, workspace-service, task-service, notification-service, dlq-service (`/health/live`, `/health/ready` with dependency checks).
 
 ---
 
@@ -122,7 +122,7 @@ Do **not** map dependency failures to generic `500` if the cause is known.
 | Prometheus alerts | `infrastructure/monitoring/alert-rules.yml` + Alertmanager | ServiceDown, 5xx rate, … |
 | Infra exporters | `docker-compose.exporters.yml`, `k8s/exporters-deployment.yaml` | Postgres/Redis/Mongo/Kafka metrics |
 
-**DONE:** All five services expose Prometheus `/metrics` (see each service health or root controller). Optional lockdown via `METRICS_AUTH_TOKEN` (Bearer or `X-Metrics-Token`). Alert rules in `infrastructure/monitoring/alert-rules.yml` fire when scrape targets are up.
+**DONE:** App services expose Prometheus `/metrics` (see each service health or root controller). Optional lockdown via `METRICS_AUTH_TOKEN` (Bearer or `X-Metrics-Token`). Alert rules in `infrastructure/monitoring/alert-rules.yml` fire when scrape targets are up.
 
 ---
 

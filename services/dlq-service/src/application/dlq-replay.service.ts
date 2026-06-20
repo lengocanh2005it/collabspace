@@ -10,13 +10,15 @@ import { ConfigurationService } from '../configuration/configuration.service';
 import { MetricsService } from '../metrics/metrics.service';
 
 export type ReplayOutcome = {
-  record: DlqRecord;
+  id?: string;
+  record?: DlqRecord;
   produced: boolean;
   skipped: boolean;
   reason?: string;
 };
 
 export type BatchReplayFilter = {
+  ids?: string[];
   sourceTopic?: string;
   errorCategory?: DlqErrorCategory;
   statuses?: DlqStatus[];
@@ -52,6 +54,7 @@ export class DlqReplayService {
     const statuses: DlqStatus[] = filter.statuses ?? ['pending', 'requires_manual_review'];
     const replayFilter: FindForReplayFilter = {
       statuses,
+      ids: filter.ids,
       sourceTopic: filter.sourceTopic,
       errorCategory: filter.errorCategory,
       nextRetryAtBefore: filter.nextRetryAtBefore,
@@ -62,13 +65,12 @@ export class DlqReplayService {
     const outcomes: ReplayOutcome[] = [];
 
     for (const candidate of candidates) {
-      const locked = await this.repo.acquireLock(
-        String((candidate as DlqRecord & { _id: { toString(): string } })._id),
-        this.config.getInstanceId(),
-      );
+      const id = String((candidate as DlqRecord & { _id: { toString(): string } })._id);
+      const locked = await this.repo.acquireLock(id, this.config.getInstanceId());
 
       if (!locked) {
         outcomes.push({
+          id,
           record: candidate,
           produced: false,
           skipped: true,
@@ -81,9 +83,27 @@ export class DlqReplayService {
         locked as DlqRecord & { _id: { toString(): string } },
         triggeredBy,
       );
-      outcomes.push({ record: result, produced: true, skipped: false });
+      outcomes.push({ id, record: result, produced: true, skipped: false });
     }
 
+    return outcomes;
+  }
+
+  async replayManyByIds(ids: string[], triggeredBy: string): Promise<ReplayOutcome[]> {
+    const outcomes: ReplayOutcome[] = [];
+    for (const id of ids) {
+      try {
+        const record = await this.replayOne(id, triggeredBy);
+        outcomes.push({ id, record, produced: true, skipped: false });
+      } catch (error) {
+        outcomes.push({
+          id,
+          produced: false,
+          skipped: true,
+          reason: error instanceof Error ? error.message : String(error),
+        });
+      }
+    }
     return outcomes;
   }
 

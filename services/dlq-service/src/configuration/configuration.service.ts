@@ -68,6 +68,10 @@ export class ConfigurationService {
   }
 
   getInstanceId(): string {
-    return this.configService.get<string>('INSTANCE_ID') ?? 'dlq-service-local';
+    return (
+      this.configService.get<string>('INSTANCE_ID') ??
+      this.configService.get<string>('HOSTNAME') ??
+      'dlq-service-local'
+    );
   }
 }

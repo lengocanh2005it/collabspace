@@ -64,3 +64,16 @@ services:
       - /monorepo/packages/shared/node_modules
     ports:
       - "3004:3000"
+
+  dlq-service:
+    image: node:20-alpine
+    working_dir: /monorepo
+    command: sh -c "corepack enable && corepack prepare pnpm@9.15.9 --activate && pnpm install --no-frozen-lockfile --ignore-scripts && cd services/dlq-service && pnpm run start:dev"
+    volumes:
+      - ../../:/monorepo
+      - /monorepo/node_modules
+      - /monorepo/services/dlq-service/node_modules
+      - /monorepo/packages/shared/node_modules
+      - /monorepo/packages/nest-auth/node_modules
+    ports:
+      - "3006:3000"

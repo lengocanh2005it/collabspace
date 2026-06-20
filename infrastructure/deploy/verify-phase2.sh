@@ -31,9 +31,10 @@ check "user-service K8s Secret exists" kubectl get secret user-service-secrets -
 check "workspace-service K8s Secret exists" kubectl get secret workspace-service-secrets -n "$APP_NS"
 check "task-service K8s Secret exists" kubectl get secret task-service-secrets -n "$APP_NS"
 check "notification-service K8s Secret exists" kubectl get secret notification-service-secrets -n "$APP_NS"
+check "dlq-service K8s Secret exists" kubectl get secret dlq-service-secrets -n "$APP_NS"
 
 ready_count="$(kubectl get externalsecrets -n "$APP_NS" -o json 2>/dev/null | jq '[.items[] | select(any(.status.conditions[]?; .type=="Ready" and .status=="True"))] | length')"
-check "all 5 ExternalSecrets Ready" test "${ready_count:-0}" -eq 5
+check "all 6 app ExternalSecrets Ready" test "${ready_count:-0}" -eq 6
 
 if [[ "$fail" -ne 0 ]]; then
   echo ""

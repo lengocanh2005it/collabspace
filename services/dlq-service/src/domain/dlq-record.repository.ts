@@ -6,9 +6,11 @@ import type {
 } from './dlq-record.schema';
 
 export type ListDlqFilter = {
-  status?: DlqStatus;
+  statuses?: DlqStatus[];
   errorCategory?: DlqErrorCategory;
   sourceTopic?: string;
+  from?: Date;
+  to?: Date;
   cursor?: string;
   limit: number;
 };
@@ -45,6 +47,7 @@ export type PostReplayUpdate = {
 };
 
 export type FindForReplayFilter = {
+  ids?: string[];
   statuses: DlqStatus[];
   sourceTopic?: string;
   errorCategory?: DlqErrorCategory;

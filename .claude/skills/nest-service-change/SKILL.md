@@ -157,6 +157,14 @@ pnpm run build
 pnpm run test
 ```
 
+For dlq-service:
+
+```sh
+cd services/dlq-service
+pnpm run build
+pnpm run test
+```
+
 Run `test:e2e` when changing routing, validation, bootstrap, or auth guards/integration.
 
 ## Format, lint, build, test

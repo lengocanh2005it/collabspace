@@ -107,6 +107,13 @@ export class DlqRecord {
   @Prop({ type: String, default: null })
   lockedBy!: string | null;
 
+  @Prop({
+    type: String,
+    enum: ['pending', 'requires_manual_review'],
+    default: null,
+  })
+  lockedFromStatus!: 'pending' | 'requires_manual_review' | null;
+
   @Prop({ type: Date })
   createdAt!: Date;
 

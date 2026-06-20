@@ -22,9 +22,11 @@ export class DlqMessagesController {
   @ApiOperation({ summary: 'List DLQ messages with optional filters and cursor pagination' })
   async list(@Query() query: ListDlqMessagesQueryDto): Promise<ListDlqMessagesResponseDto> {
     const result = await this.repo.list({
-      status: query.status,
+      statuses: query.status,
       errorCategory: query.errorCategory,
       sourceTopic: query.sourceTopic,
+      from: query.from,
+      to: query.to,
       cursor: query.cursor,
       limit: query.limit,
     });
