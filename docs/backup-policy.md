@@ -46,7 +46,7 @@ Artifact lưu tại `infrastructure/backup/artifacts/` (gitignored). Xoay vòng 
 2. Restore archive Mongo vào cluster test; verify API đọc task/notification.
 3. Ghi thời gian thực tế so với RTO; cập nhật gap vào tài liệu này.
 
-**Hiện trạng repo:** có `backup-postgres.sh` / `backup-mongo.sh` (chạy tay, Docker); Helm CronJob `backup-postgres` / `backup-mongo` dump vào `/tmp` pod (chưa offsite). **Chưa có** `restore-*.sh`, restore drill log, copy artifact sang object storage — xem [phan-phu-tho-infrastructure-backlog.md](./team/phan-phu-tho-infrastructure-backlog.md) mục 14–15.
+**Hiện trạng repo:** có `backup-postgres.sh` / `backup-mongo.sh` (chạy tay, Docker); `restore-postgres.sh` / `restore-mongo.sh` (local Docker); `restore-from-spaces.sh` (download từ DO Spaces rồi restore). Helm CronJob `backup-postgres` / `backup-mongo` bật trên prod (`values-prod.yaml backup.enabled: true`) — upload sang DO Spaces `collabspace-bucket/backups/` hàng ngày 02:00/02:30 UTC, giữ 7 ngày. Secrets inject qua ESO từ Vault (`kv/backup-spaces-secret`). **Restore drill 2026-06-20:** ✅ Pass — xem `infrastructure/resilience/drills/README.md`.
 
 ## Tài liệu liên quan
 

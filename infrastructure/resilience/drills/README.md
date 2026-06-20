@@ -115,6 +115,7 @@ The script: stops container → runs `verify-readiness.sh` (expected failures) �
 | Ngày | Người chạy | Artifact | PG restore | Mongo restore | verify-readiness | Thời gian thực tế | Ghi chú |
 |------|-----------|----------|------------|---------------|-----------------|-------------------|---------|
 | 2026-06-10 | Phan Phú Thọ | — | Skipped | Skipped | Skipped | — | Docker daemon offline (`dockerDesktopLinuxEngine` pipe missing) |
+| 2026-06-20 | Lê Ngọc Anh | local Docker stack | ✅ Pass | ✅ Pass | ✅ All 5 OK | ~8 min | 3 PG DBs + Mongo (558 docs, 11 collections) restored; services restart clean; backup offsite DO Spaces CronJob bật prod (`values-prod.yaml backup.enabled: true`) |
 
 ### Chaos drill log
 
