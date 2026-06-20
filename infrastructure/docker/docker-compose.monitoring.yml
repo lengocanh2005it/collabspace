@@ -2,6 +2,12 @@ services:
   prometheus:
     image: prom/prometheus:latest
     container_name: prometheus
+    env_file:
+      - ../../services/workspace-service/.env
+      - ../../services/workspace-service/.env.vault
+    entrypoint:
+      - /bin/sh
+      - /etc/prometheus/entrypoint.sh
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.retention.time=15d'
@@ -11,6 +17,7 @@ services:
     volumes:
       - ../monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
       - ../monitoring/alert-rules.yml:/etc/prometheus/alert-rules.yml
+      - ../monitoring/prometheus-entrypoint.sh:/etc/prometheus/entrypoint.sh:ro
       - prometheus_data:/prometheus
     depends_on:
       - alertmanager

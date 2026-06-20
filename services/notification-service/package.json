@@ -10,7 +10,7 @@
     "start:prod": "node dist/main",
     "seed": "node -r ts-node/register src/seed.ts",
     "seed:prod": "node dist/seed/seed.js",
-    "build": "nest build && tsc -p tsconfig.seed.json",
+    "build": "node -e \"for (const f of ['tsconfig.tsbuildinfo','tsconfig.build.tsbuildinfo']) { try { require('fs').unlinkSync(f); } catch {} }\" && nest build && tsc -p tsconfig.seed.json",
     "format": "pnpm -w exec biome format --write src test",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix --format json --max-warnings 0",
     "test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js",

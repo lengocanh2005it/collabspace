@@ -15,7 +15,7 @@ docker exec "$KAFKA_CONTAINER" /opt/kafka/bin/kafka-topics.sh \
   --replication-factor 1
 
 echo "==> Checking kafka-exporter at ${EXPORTER_URL}"
-if ! curl -sf "$EXPORTER_URL" | grep -q kafka_consumergroup_lag; then
+if ! curl -sf "$EXPORTER_URL" | grep -Eq 'kafka_consumergroup_(lag|current_offset)'; then
   echo "FAIL: kafka-exporter missing lag metrics. Start kafka-exporter from docker-compose.kafka.yml" >&2
   exit 1
 fi

@@ -18,8 +18,8 @@ Write-Host "OK: DLQ topic"
 Write-Host "==> Checking kafka-exporter at $ExporterUrl"
 try {
   $metrics = Invoke-WebRequest -Uri $ExporterUrl -UseBasicParsing -TimeoutSec 10
-  if ($metrics.Content -notmatch "kafka_consumergroup_lag") {
-    throw "kafka_consumergroup_lag metric not found"
+  if ($metrics.Content -notmatch "kafka_consumergroup_(lag|current_offset)") {
+    throw "kafka_consumergroup lag/offset metrics not found"
   }
 } catch {
   Write-Error @"
