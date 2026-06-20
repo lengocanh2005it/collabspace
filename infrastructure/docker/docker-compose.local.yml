@@ -25,3 +25,7 @@ services:
   notification-service:
     ports:
       - "3004:3000"
+
+  dlq-service:
+    ports:
+      - "3006:3000"

@@ -46,6 +46,10 @@ data:
   REDIS_PORT: "6379"
   REDIS_DB: "0"
   {{- end }}
+  {{- if eq $name "dlq-service" }}
+  MONGO_URI: {{ include "collabspace.mongoUri" (dict "database" "collabspace_dlq" "root" $root) | quote }}
+  AUTH_SERVICE_GRPC_URL: "auth-service:50051"
+  {{- end }}
   {{- range $key, $val := $app.extraEnv }}
   {{ $key }}: {{ $val | quote }}
   {{- end }}

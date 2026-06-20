@@ -26,6 +26,7 @@ Tài liệu này là **nguồn chính** mô tả chức năng và mức độ ho
 | Task & Board | **Done** | Task CRUD, assign, status, board API, priority/due date/labels, xóa task, ES |
 | Comment & Mention | **Done** | Comment CRUD, `@username` + replica sync, notification mention |
 | Notifications | **Done** | Lưu + list + mark-read/archive; SSE invalidation stream (không WebSocket) |
+| DLQ Ops | **Done** | `dlq-service`: ingest, inspect, replay, resolve/discard DLQ records; admin permissions `dlq.read` / `dlq.manage` |
 | Nền tảng (resilience, observability) | **Done** | Health, outbox, metrics; **K8s:** Grafana/Prometheus/Loki + 3 dashboards + k6 scenarios — [observability.md](./observability.md) |
 
 ---
@@ -167,7 +168,7 @@ Không phải tính năng end-user nhưng hỗ trợ demo và vận hành:
 | Khả năng | Trạng thái |
 |----------|------------|
 | API Gateway (Traefik) | Done |
-| Event bus (Kafka + Debezium CDC) + DLQ topic | Done |
+| Event bus (Kafka + Debezium CDC) + managed DLQ workflow | Done — `collabspace.dlq.events` + `dlq-service` storage/replay |
 | Transactional outbox (auth email, workspace invite, task events) | Done |
 | Health `/live` + `/ready` | Done |
 | Prometheus metrics + Grafana dashboards | Done — K8s Helm: Service Health, App Logs, Load Test Run |
@@ -219,6 +220,7 @@ Hướng dẫn chạy demo: [mvp-demo-scope.md](./mvp-demo-scope.md#demo-story).
 | `workspace-service` | Workspace, membership, invite, project |
 | `task-service` | Task, comment, assign, attachment, board |
 | `notification-service` | Notification từ events, list, mark-read |
+| `dlq-service` | Ops/Admin quản lý Dead Letter Queue: list/detail/replay/resolve/discard |
 
 ---
 

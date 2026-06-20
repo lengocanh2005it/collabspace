@@ -55,22 +55,23 @@ USER_ENV="$REPO_ROOT/services/user-service/.env"
 WS_ENV="$REPO_ROOT/services/workspace-service/.env"
 TASK_ENV="$REPO_ROOT/services/task-service/.env"
 NOTIF_ENV="$REPO_ROOT/services/notification-service/.env"
+DLQ_ENV="$REPO_ROOT/services/dlq-service/.env"
 REDIS_ENV="$REPO_ROOT/infrastructure/redis/.env"
 REDIS_CONF="$REPO_ROOT/infrastructure/redis/redis.conf"
 
-for f in "$AUTH_ENV" "$USER_ENV" "$WS_ENV" "$TASK_ENV" "$NOTIF_ENV" "$REDIS_ENV"; do
+for f in "$AUTH_ENV" "$USER_ENV" "$WS_ENV" "$TASK_ENV" "$NOTIF_ENV" "$DLQ_ENV" "$REDIS_ENV"; do
   ensure_env "$f"
 done
 
 set_env_key "$AUTH_ENV" "JWT_SECRET" "$jwt"
 set_env_key "$NOTIF_ENV" "JWT_SECRET" "$jwt"
 
-for f in "$USER_ENV" "$WS_ENV" "$TASK_ENV" "$NOTIF_ENV"; do
+for f in "$USER_ENV" "$WS_ENV" "$TASK_ENV" "$NOTIF_ENV" "$DLQ_ENV"; do
   set_env_key "$f" "SERVICE_JWT_SECRET" "$service_jwt"
 done
 
 if [[ -n "$metrics" ]]; then
-  for f in "$AUTH_ENV" "$USER_ENV" "$WS_ENV" "$TASK_ENV" "$NOTIF_ENV"; do
+  for f in "$AUTH_ENV" "$USER_ENV" "$WS_ENV" "$TASK_ENV" "$NOTIF_ENV" "$DLQ_ENV"; do
     set_env_key "$f" "METRICS_AUTH_TOKEN" "$metrics"
   done
 fi
@@ -94,7 +95,7 @@ for f in "$AUTH_ENV" "$USER_ENV" "$WS_ENV"; do
   sed -i.bak -E "s|(postgresql://)[^@]+@|\1${pg_user_enc}:${pg_pass_enc}@|" "$f" && rm -f "${f}.bak"
 done
 
-for f in "$TASK_ENV" "$NOTIF_ENV"; do
+for f in "$TASK_ENV" "$NOTIF_ENV" "$DLQ_ENV"; do
   [[ -f "$f" ]] || continue
   sed -i.bak -E "s|(mongodb://)[^@]+@|\1${mongo_user_enc}:${mongo_pass_enc}@|" "$f" && rm -f "${f}.bak"
 done

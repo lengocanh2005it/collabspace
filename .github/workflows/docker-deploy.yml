@@ -16,7 +16,7 @@ on:
 
       services:
 
-        description: Comma-separated services to build/deploy (empty = auto on push; all five on manual)
+        description: Comma-separated services to build/deploy (empty = auto on push; all services on manual)
 
         required: false
 
@@ -102,7 +102,7 @@ jobs:
 
           set -euo pipefail
 
-          ALL_SERVICES=(auth-service user-service workspace-service task-service notification-service)
+          ALL_SERVICES=(auth-service user-service workspace-service task-service notification-service dlq-service)
 
 
 
@@ -153,6 +153,8 @@ jobs:
           [[ "${{ steps.filter.outputs.task_service }}" == "true" ]] && services+=(task-service)
 
           [[ "${{ steps.filter.outputs.notification_service }}" == "true" ]] && services+=(notification-service)
+
+          [[ "${{ steps.filter.outputs.dlq_service }}" == "true" ]] && services+=(dlq-service)
 
 
 

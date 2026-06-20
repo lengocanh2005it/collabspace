@@ -1,6 +1,6 @@
 {{- if .Values.networkPolicies.enabled }}
 {{- $ns := include "collabspace.namespace" . }}
-{{- $appServices := list "auth-service" "user-service" "workspace-service" "task-service" "notification-service" }}
+{{- $appServices := list "auth-service" "user-service" "workspace-service" "task-service" "notification-service" "dlq-service" }}
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -78,7 +78,7 @@ spec:
             matchExpressions:
               - key: app
                 operator: In
-                values: [user-service, workspace-service, task-service, notification-service]
+                values: [user-service, workspace-service, task-service, notification-service, dlq-service]
       ports:
         - port: 50051
           protocol: TCP
@@ -122,7 +122,7 @@ spec:
             matchExpressions:
               - key: app
                 operator: In
-                values: [task-service, notification-service]
+                values: [task-service, notification-service, dlq-service]
       ports:
         - port: 3000
           protocol: TCP
@@ -236,7 +236,7 @@ spec:
             matchExpressions:
               - key: app
                 operator: In
-                values: [task-service, notification-service]
+                values: [task-service, notification-service, dlq-service]
         - podSelector:
             matchLabels:
               app: debezium-connect
@@ -284,7 +284,7 @@ spec:
             matchExpressions:
               - key: app
                 operator: In
-                values: [task-service, notification-service]
+                values: [task-service, notification-service, dlq-service]
         - podSelector:
             matchLabels:
               app: debezium-connect

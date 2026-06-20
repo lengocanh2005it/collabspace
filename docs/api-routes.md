@@ -34,6 +34,7 @@ Bật `gateway.swagger.expose: true` trong Helm. Mỗi service tại **`/swagger
 | workspace | `http://<HOST>/swagger/workspace` |
 | task | `http://<HOST>/swagger/task` |
 | notification | `http://<HOST>/swagger/notification` |
+| dlq | `http://<HOST>/swagger/dlq` |
 
 Ví dụ Droplet: `http://167.172.77.110/swagger/auth`
 
@@ -46,6 +47,7 @@ Ví dụ Droplet: `http://167.172.77.110/swagger/auth`
 | workspace | http://localhost:3002/swagger |
 | task | http://localhost:3003/swagger |
 | notification | http://localhost:3004/swagger |
+| dlq | http://localhost:3006/swagger |
 
 Dùng **Authorize** với Bearer JWT cho route protected. Route S2S nội bộ: Service JWT — xem service-contracts.
 
@@ -173,6 +175,26 @@ Route protected yêu cầu `Authorization: Bearer …` (auth gRPC). Dev-only `X-
 
 ---
 
+## DLQ Service
+
+Base: `/api/v1/dlq` · Cổng **3000** (host **3006**)
+
+Read routes require platform permission `dlq.read`; write routes require `dlq.manage`.
+
+| Method | Path | Mô tả |
+|--------|------|-------|
+| GET | `/health/live`, `/health/ready` | Health |
+| GET | `/messages?status=&errorCategory=&sourceTopic=&from=&to=&cursor=&limit=` | List DLQ records; `status` hỗ trợ CSV hoặc repeated query |
+| GET | `/messages/{id}` | Chi tiết record, payload, error, retry history |
+| POST | `/messages/{id}/replay` | Replay một record về `sourceTopic` |
+| POST | `/replay-batch` | Replay nhiều record theo `ids` hoặc filter (`status`, `sourceTopic`, `errorCategory`) |
+| POST | `/messages/{id}/resolve` | Đánh dấu đã xử lý thủ công |
+| POST | `/messages/{id}/discard` | Discard, không retry nữa |
+
+**Event consume:** `collabspace.dlq.events`. **Replay publish:** re-publish về `sourceTopic` gốc với DLQ replay headers.
+
+---
+
 ## Platform Admin API
 
 All routes below require a bearer token with platform role `admin` or
@@ -197,6 +219,11 @@ permission `auth.manage`.
 | workspace | DELETE | `/api/v1/workspaces/admin/{id}` | Soft delete and cascade by event |
 | workspace | POST | `/api/v1/workspaces/admin/{id}/force-join` | Audited admin investigation access |
 | notification | POST | `/api/v1/notifications/admin/broadcast` | Queue broadcast; requires `Idempotency-Key` |
+| dlq | GET | `/api/v1/dlq/messages` | List/inspect DLQ records; requires `dlq.read` |
+| dlq | POST | `/api/v1/dlq/messages/{id}/replay` | Replay one DLQ record; requires `dlq.manage` |
+| dlq | POST | `/api/v1/dlq/replay-batch` | Replay batch by ids or filter; requires `dlq.manage` |
+| dlq | POST | `/api/v1/dlq/messages/{id}/resolve` | Mark resolved; requires `dlq.manage` |
+| dlq | POST | `/api/v1/dlq/messages/{id}/discard` | Discard; requires `dlq.manage` |
 
 `workspace-service` publishes `workspace_deleted`; `task-service` consumes it
 and removes task projections, comments, activity, and event streams.

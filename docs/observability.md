@@ -6,7 +6,7 @@ Stack chính trên **K8s/Helm**; Docker Compose dùng cho local dev.
 ## Kiến trúc (K8s production)
 
 ```text
-Apps (5) ──metrics──► Prometheus ◄── scrape ── Traefik, exporters
+Apps ──metrics──► Prometheus ◄── scrape ── Traefik, exporters
    │                      │
    │ logs (stdout)        └── datasource ──► Grafana (/grafana)
    ▼
@@ -81,7 +81,7 @@ Default metrics app dùng prefix `collabspace_` (ví dụ `collabspace_process_c
 ## Load test (k6)
 
 ```bash
-# Smoke — health 5 service, VU thấp (an toàn prod)
+# Smoke — app health, VU thấp (an toàn prod)
 BASE_URL=http://<HOST>/api/v1 \
 GRAFANA_URL=http://<HOST>/grafana \
 GRAFANA_PASSWORD=<admin-password> \
@@ -115,7 +115,7 @@ Chi tiết: [infrastructure/load-testing/README.md](../infrastructure/load-testi
 |-------------|---------------------------|
 | Dashboard metric trống | Prometheus chưa scrape — kiểm tra Targets; pod Prometheus dùng SA `prometheus` |
 | App metrics 401 | Thiếu `metricsAuthToken` trên Prometheus scrape |
-| Log toàn exporter/loki canary | Dùng **App Logs** (lọc 5 app) hoặc Explore; tắt canary: `loki.lokiCanary.enabled: false` + `loki.test.enabled: false` |
+| Log toàn exporter/loki canary | Dùng **App Logs** (lọc app services) hoặc Explore; tắt canary: `loki.lokiCanary.enabled: false` + `loki.test.enabled: false` |
 | `pg_up` / `redis_up` = 0 | Exporter chưa kết nối DB (NetworkPolicy/password) — backlog infra |
 | Grafana login fail | PVC giữ password cũ — reset hoặc `grafana-cli admin reset-admin-password` |
 | k6 demo-flow fail login | Chưa seed demo users |

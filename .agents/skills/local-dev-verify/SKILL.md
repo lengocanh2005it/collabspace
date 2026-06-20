@@ -130,6 +130,7 @@ Health checks:
 ```sh
 curl http://localhost:3000/api/v1/auth/health
 curl http://localhost:3001/api/v1/users/health
+curl http://localhost:3006/api/v1/dlq/health/ready
 ```
 
 Seed:

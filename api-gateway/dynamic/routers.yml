@@ -140,6 +140,23 @@ http:
         - retry-policy
         - circuit-breaker
 
+    # ============================================================
+    # DLQ Service — prefix: /api/v1/dlq (platform admin only)
+    # ============================================================
+    dlq-router:
+      rule: "PathPrefix(`/api/v1/dlq`)"
+      service: dlq-service
+      entryPoints:
+        - web
+      middlewares:
+        - cors-headers
+        - strip-identity-headers
+        - forward-auth
+        - rate-limit
+        - security-headers
+        - retry-policy
+        - circuit-breaker
+
   services:
     internal-api-reject:
       loadBalancer:
@@ -183,5 +200,13 @@ http:
           - url: "http://notification-service:3000"
         healthCheck:
           path: /api/v1/notifications/health
+          interval: 10s
+          timeout: 3s
+    dlq-service:
+      loadBalancer:
+        servers:
+          - url: "http://dlq-service:3000"
+        healthCheck:
+          path: /api/v1/dlq/health/ready
           interval: 10s
           timeout: 3s

@@ -84,6 +84,16 @@ const SEED_PERMISSIONS: SeedPermission[] = [
     id: '81000000-0000-4000-8000-000000000008',
     name: 'notifications.read',
   },
+  {
+    description: 'Read DLQ records and retry history',
+    id: '81000000-0000-4000-8000-000000000009',
+    name: 'dlq.read',
+  },
+  {
+    description: 'Replay, resolve, and discard DLQ records',
+    id: '81000000-0000-4000-8000-000000000010',
+    name: 'dlq.manage',
+  },
 ];
 
 const SEED_ROLES: SeedRole[] = [

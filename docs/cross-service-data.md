@@ -107,7 +107,7 @@ Env (consumer):
 USER_SERVICE_URL=http://user-service:3000
 USER_SERVICE_TIMEOUT_MS=3000
 USER_REPLICA_FALLBACK_ENABLED=true
-SERVICE_JWT_SECRET=collabspace-dev-service-jwt-secret-change-me  # khớp trên user/workspace/task/notification
+SERVICE_JWT_SECRET=collabspace-dev-service-jwt-secret-change-me  # khớp trên user/workspace/task/notification; dlq-service cũng require ở prod
 ```
 
 ### 3.5b Workspace membership (không dùng replica)

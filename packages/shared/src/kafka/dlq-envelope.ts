@@ -1,3 +1,5 @@
+export type DlqErrorCategory = 'transient' | 'logic' | 'schema' | 'unknown';
+
 /** Dead-letter envelope published to `collabspace.dlq.events` when a consumer exhausts retries. */
 export type KafkaDlqEnvelope = {
   version: 1;
@@ -7,6 +9,7 @@ export type KafkaDlqEnvelope = {
   key?: string;
   payload: unknown;
   errorMessage: string;
+  errorCategory?: DlqErrorCategory;
   failedAt: string;
   consumerGroup?: string;
 };
@@ -20,6 +23,7 @@ export function buildKafkaDlqEnvelope(input: {
   key?: string;
   payload: unknown;
   errorMessage: string;
+  errorCategory?: DlqErrorCategory;
   failedAt: string;
   consumerGroup?: string;
 }): KafkaDlqEnvelope {
@@ -31,6 +35,7 @@ export function buildKafkaDlqEnvelope(input: {
     key: input.key,
     payload: input.payload,
     errorMessage: input.errorMessage,
+    errorCategory: input.errorCategory,
     failedAt: input.failedAt,
     consumerGroup: input.consumerGroup,
   };

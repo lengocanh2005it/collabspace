@@ -115,12 +115,14 @@ $userConfig = Join-Path $services "user-service\.env"
 $wsConfig = Join-Path $services "workspace-service\.env"
 $taskConfig = Join-Path $services "task-service\.env"
 $notifConfig = Join-Path $services "notification-service\.env"
+$dlqConfig = Join-Path $services "dlq-service\.env"
 
 $authVault = Join-Path $services "auth-service\.env.vault"
 $userVault = Join-Path $services "user-service\.env.vault"
 $wsVault = Join-Path $services "workspace-service\.env.vault"
 $taskVault = Join-Path $services "task-service\.env.vault"
 $notifVault = Join-Path $services "notification-service\.env.vault"
+$dlqVault = Join-Path $services "dlq-service\.env.vault"
 $redisVault = Join-Path $RepoRoot "infrastructure\redis\.env.vault"
 
 $authEntries = @{
@@ -164,6 +166,13 @@ $notifEntries = @{
 }
 if ($metrics) { $notifEntries["METRICS_AUTH_TOKEN"] = $metrics }
 Write-VaultEnvFile $notifVault $notifEntries
+
+$dlqEntries = @{
+  SERVICE_JWT_SECRET = $serviceJwt
+  MONGO_URI = (Build-MongoUrl $dlqConfig "collabspace_dlq")
+}
+if ($metrics) { $dlqEntries["METRICS_AUTH_TOKEN"] = $metrics }
+Write-VaultEnvFile $dlqVault $dlqEntries
 
 Write-VaultEnvFile $redisVault @{ REDIS_PASSWORD = $redisPass }
 

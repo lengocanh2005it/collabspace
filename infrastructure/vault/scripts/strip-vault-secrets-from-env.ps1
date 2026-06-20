@@ -45,25 +45,26 @@ function Set-UrlVaultSyncPlaceholder {
 $services = Join-Path $RepoRoot "services"
 $authEnv = Join-Path $services "auth-service\.env"
 $userEnv = Join-Path $services "user-service\.env"
-$wsEnv = Join-Path $services "workspace-service\.env"
-$taskEnv = Join-Path $services "task-service\.env"
-$notifEnv = Join-Path $services "notification-service\.env"
-$redisEnv = Join-Path $RepoRoot "infrastructure\redis\.env"
-
-foreach ($f in @($authEnv, $userEnv, $wsEnv, $taskEnv, $notifEnv, $redisEnv)) {
-  $example = "$f.example"
-  if (-not (Test-Path $f) -and (Test-Path $example)) {
-    Copy-Item $example $f
+$wsEnv = Join-Path $services "workspace-service\.env"
+$taskEnv = Join-Path $services "task-service\.env"
+$notifEnv = Join-Path $services "notification-service\.env"
+$dlqEnv = Join-Path $services "dlq-service\.env"
+$redisEnv = Join-Path $RepoRoot "infrastructure\redis\.env"
+
+foreach ($f in @($authEnv, $userEnv, $wsEnv, $taskEnv, $notifEnv, $dlqEnv, $redisEnv)) {
+  $example = "$f.example"
+  if (-not (Test-Path $f) -and (Test-Path $example)) {
+    Copy-Item $example $f
     Write-Host "Created $f from .env.example"
   }
 }
 
-# Scalar secrets — empty in .env
-foreach ($f in @($authEnv, $notifEnv)) { Set-EnvKeyEmpty $f "JWT_SECRET" }
-foreach ($f in @($authEnv, $userEnv, $wsEnv, $taskEnv, $notifEnv)) {
-  Set-EnvKeyEmpty $f "SERVICE_JWT_SECRET"
-  Set-EnvKeyEmpty $f "METRICS_AUTH_TOKEN"
-}
+# Scalar secrets — empty in .env
+foreach ($f in @($authEnv, $notifEnv)) { Set-EnvKeyEmpty $f "JWT_SECRET" }
+foreach ($f in @($authEnv, $userEnv, $wsEnv, $taskEnv, $notifEnv, $dlqEnv)) {
+  Set-EnvKeyEmpty $f "SERVICE_JWT_SECRET"
+  Set-EnvKeyEmpty $f "METRICS_AUTH_TOKEN"
+}
 Set-EnvKeyEmpty $authEnv "REDIS_PASSWORD"
 Set-EnvKeyEmpty $notifEnv "REDIS_PASSWORD"
 Set-EnvKeyEmpty $userEnv "AZURE_STORAGE_CONNECTION_STRING"
@@ -74,8 +75,8 @@ Set-EnvKeyEmpty $redisEnv "REDIS_PASSWORD"
 foreach ($f in @($authEnv, $userEnv, $wsEnv)) {
   Set-UrlVaultSyncPlaceholder $f "postgresql://" "postgres:"
 }
-foreach ($f in @($taskEnv, $notifEnv)) {
-  Set-UrlVaultSyncPlaceholder $f "mongodb://" "admin:"
-}
+foreach ($f in @($taskEnv, $notifEnv, $dlqEnv)) {
+  Set-UrlVaultSyncPlaceholder $f "mongodb://" "admin:"
+}
 
 Write-Host "Cleared Vault-managed values in .env files (secrets belong in Vault → .env.vault via sync)."

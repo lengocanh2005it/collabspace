@@ -17,7 +17,7 @@ Expected tools:
 - Node.js 18+ for NestJS services.
 - `pnpm` 8+ — **workspace root** (`pnpm install`, `pnpm run build`, `pnpm run test`) or per `services/*`.
 - Shared package: `packages/shared` (`@collabspace/shared`) — rebuild after event type changes.
-- All five app services are NestJS; `workspace-service` uses port **8080**.
+- All app services are NestJS; `workspace-service` uses port **8080**.
 
 ## Lint, format, build, test (toolchain)
 
@@ -88,6 +88,7 @@ Environment examples exist for most services and infrastructure components:
 - `services/workspace-service/.env.example`
 - `services/task-service/.env.example`
 - `services/notification-service/.env.example`
+- `services/dlq-service/.env.example`
 - `infrastructure/kafka/.env.example`
 - `infrastructure/redis/.env.example`
 - `infrastructure/load-testing/k6/.env.example`
@@ -98,7 +99,7 @@ Rules:
 
 - Do not commit real secrets.
 - When adding required env vars, update the matching `.env.example`, config service, Docker Compose file, and README/doc references.
-- **Shared secrets (local Docker):** use the same `SERVICE_JWT_SECRET` in `user-service`, `workspace-service`, `task-service`, and `notification-service` `.env` files; align `JWT_SECRET` between `auth-service` and `notification-service`. See `infrastructure/docker/.env.example`.
+- **Shared secrets (local Docker):** use the same `SERVICE_JWT_SECRET` in `user-service`, `workspace-service`, `task-service`, `notification-service`, and `dlq-service` `.env` files; align `JWT_SECRET` between `auth-service` and `notification-service`. See `infrastructure/docker/.env.example`.
 - **Vault (local dev):** khuyến nghị `.\scripts\docker-local-up.ps1` (Vault bootstrap + stack). Thủ công: `reset-local-env-from-vault.ps1` rồi `docker compose … override.yml up -d`. See `infrastructure/vault/README.md`.
 - **K8s + Vault:** External Secrets Operator manifests in `infrastructure/vault/k8s/`; Helm `global.externalSecrets.enabled: true` skips chart `Secret` templates.
 - **Trust boundaries:** `ALLOW_DEV_IDENTITY_HEADERS=true` only in local `.env` for workspace/task/notification direct-port testing; production and gateway traffic require `Authorization: Bearer …`.
@@ -205,6 +206,7 @@ Important local URLs:
 - Workspace readiness: `http://localhost:3002/api/v1/workspaces/health/ready`
 - Task readiness: `http://localhost:3003/api/v1/tasks/health/ready`
 - Notification readiness: `http://localhost:3004/api/v1/notifications/health/ready`
+- DLQ readiness: `http://localhost:3006/api/v1/dlq/health/ready`
 - App metrics example: `http://localhost:3000/api/v1/auth/metrics`
 - Grafana: `http://localhost:3005`
 - Prometheus: `http://localhost:9090`
@@ -408,7 +410,7 @@ Path: `infrastructure/load-testing` — see [infrastructure/load-testing/README.
 
 | Script | Purpose |
 |--------|---------|
-| `k6/scenarios/smoke.js` | Health all 5 app services (low VU) |
+| `k6/scenarios/smoke.js` | Health app services (low VU) |
 | `k6/scenarios/demo-flow.js` | Login seeded demo users → read workspaces/tasks/notifications |
 
 ```bash
@@ -475,7 +477,7 @@ Rules:
 GitHub Actions is the preferred CI/CD path for Droplet deployment:
 
 - `.github/workflows/ci.yml` runs `pnpm run lint:ci` (format + Biome + ESLint), then `pnpm run build` and `pnpm run test`.
-- `.github/workflows/docker-deploy.yml` builds five service images using `infrastructure/docker/Dockerfile.service`, pushes them to GHCR, then SSH deploys to k3s via `helm-deploy-ci.sh` + `verify-k8s-readiness.sh` (Phase 4).
+- `.github/workflows/docker-deploy.yml` builds app service images using `infrastructure/docker/Dockerfile.service`, pushes them to GHCR, then SSH deploys to k3s via `helm-deploy-ci.sh` + `verify-k8s-readiness.sh` (Phase 4).
 - Droplet scripts live in `infrastructure/deploy/` (`helm-rollout.sh`, `run-k8s-migrations.sh`, phase checklists).
 - Production Compose overlay: `infrastructure/docker/docker-compose.prod.yml`.
 - DigitalOcean production (k3s + Helm): `docs/deployment-k3s-phases.md`.

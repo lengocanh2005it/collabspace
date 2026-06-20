@@ -34,8 +34,9 @@ Related docs:
 | workspace-service    | Clean Architecture          | Postgres / TypeORM | `api/v1`      | `/api/v1/workspaces`    | **8080** |
 | task-service         | Clean + CQRS                | Mongo / Mongoose   | `api/v1`      | `/api/v1/tasks`         | 3000     |
 | notification-service | Clean + CQRS (event-driven) | Mongo / Mongoose   | `api/v1`      | `/api/v1/notifications` | 3000     |
+| dlq-service          | Layered ops service         | Mongo / Mongoose   | `api/v1`      | `/api/v1/dlq`           | 3000     |
 
-**All five services** use `app.setGlobalPrefix('api/v1')`. Controllers use the resource name directly (e.g. `@Controller('tasks')`, `@Controller('notifications')`) — no `v1/` prefix in controller decorators.
+Most services use `app.setGlobalPrefix('api/v1')` and controllers use the resource name directly (e.g. `@Controller('tasks')`, `@Controller('notifications')`) — no `v1/` prefix in controller decorators. Task and notification keep the older `api` global prefix + `v1/...` controller convention.
 
 ---
 
@@ -406,6 +407,57 @@ Bind repositories with tokens in `app.module.ts` (`NOTIFICATION_REPOSITORY_TOKEN
 
 ---
 
+## dlq-service
+
+**Path:** `services/dlq-service`  
+**Stack:** NestJS, Mongoose, Kafka consumer/producer, auth gRPC  
+**Spec:** `docs/dlq-service.md`
+
+### Pattern: layered ops service
+
+DLQ service owns an operational workflow rather than product domain state:
+
+```text
+Kafka DLQ consumer → ingest service → repository
+Admin HTTP controller → replay service → repository + Kafka replay producer
+Scheduler → replay service → bounded auto-retry
+```
+
+### Folder map
+
+```text
+src/
+├── application/                 # ingest + replay orchestration
+├── domain/                      # DlqRecord schema, repository port, statuses
+├── infrastructure/
+│   ├── kafka/                   # DLQ consumer + replay producer
+│   └── mongo/                   # Mongoose repository adapter
+├── integrations/auth/           # auth gRPC + PlatformAdminGuard providers
+├── presentation/
+│   ├── controllers/
+│   └── dto/
+├── scheduler/
+├── health/
+└── metrics/
+```
+
+### Conventions
+
+- Global prefix `api/v1`; routes under `/dlq`.
+- Protected admin routes use `PlatformAdminGuard`; read requires `dlq.read`, actions require `dlq.manage`.
+- Records use explicit state transitions: `pending`, `replaying`, `requires_manual_review`, `resolved`, `discarded`.
+- Replay locks records atomically and restores stale locks to their previous status.
+- Query/list API supports status CSV, topic/category/date filters, and cursor pagination.
+- Auto-retry is bounded; exhausted records move to `requires_manual_review`.
+
+### Do not
+
+- Replay directly from Kafka offsets for production operations; use DLQ records and audit history.
+- Bypass lock acquisition before producing replay messages.
+- Let admin routes rely on raw `X-User-Id` headers.
+
+---
+
 ## Choosing the right pattern (for agents)
 
 ```mermaid
@@ -414,10 +466,12 @@ flowchart TD
   A --> C{user-service}
   A --> D{workspace-service}
   A --> E{task / notification}
+  A --> F{dlq-service}
   B --> B1[Use case + domain port + infra adapter]
   C --> C1[Use case + domain port + infra repo]
   D --> D1[Use case + domain port + TypeORM adapter]
   E --> E1[Command/Query + Handler + domain entity]
+  F --> F1[Controller/Scheduler + application service + repository port]
 ```
 
 When unsure, run:
@@ -438,6 +492,8 @@ head -30 services/<service>/src/app.module.ts
 | user-service      | auth-service      | gRPC `VerifyAccessToken`                        |
 | workspace-service | notification      | Kafka `collabspace.workspace.workspace_invited` |
 | task-service      | notification      | Kafka `collabspace.task.task_assigned`, `comment_created` |
+| task/notification consumers | dlq-service | Kafka DLQ topic `collabspace.dlq.events` |
+| dlq-service | Kafka source topics | Replay producer back to original `sourceTopic` |
 | API gateway       | all HTTP services | Traefik routes + forward-auth to auth `/verify` |
 
 ---

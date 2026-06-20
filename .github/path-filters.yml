@@ -88,6 +88,20 @@ notification_service:
   - '.github/workflows/ci.yml'
   - '.github/workflows/docker-deploy.yml'
 
+dlq_service:
+  - 'services/dlq-service/**'
+  - 'packages/shared/**'
+  - 'packages/nest-auth/**'
+  - 'packages/eslint-config/**'
+  - 'package.json'
+  - 'pnpm-workspace.yaml'
+  - 'pnpm-lock.yaml'
+  - 'biome.json'
+  - 'infrastructure/docker/Dockerfile.service'
+  - '.github/path-filters.yml'
+  - '.github/workflows/ci.yml'
+  - '.github/workflows/docker-deploy.yml'
+
 helm_chart:
   - 'infrastructure/helm/**'
   - 'infrastructure/vault/k8s/**'
