@@ -10,9 +10,15 @@ import { AuthModule } from './integrations/auth/auth.module';
 import { platformAdminAuthProviders } from './integrations/auth/platform-admin-auth.providers';
 
 import { DlqRecord, DlqRecordSchema } from './domain/dlq-record.schema';
+import { DLQ_RECORD_REPOSITORY } from './domain/dlq-record.repository';
+import { MongoDlqRecordRepository } from './infrastructure/mongo/dlq-record.mongo.repository';
+import { DlqEventsConsumer } from './infrastructure/kafka/dlq-events.consumer';
+import { DlqIngestService } from './application/dlq-ingest.service';
+
 import { DlqHealthService } from './health/dlq-health.service';
 import { HealthController } from './presentation/controllers/health.controller';
 import { MetricsController } from './presentation/controllers/metrics.controller';
+import { DlqMessagesController } from './presentation/controllers/dlq-messages.controller';
 
 @Module({
   imports: [
@@ -29,7 +35,16 @@ import { MetricsController } from './presentation/controllers/metrics.controller
     }),
     MongooseModule.forFeature([{ name: DlqRecord.name, schema: DlqRecordSchema }]),
   ],
-  controllers: [HealthController, MetricsController],
-  providers: [DlqHealthService, ...platformAdminAuthProviders],
+  controllers: [HealthController, MetricsController, DlqMessagesController],
+  providers: [
+    DlqHealthService,
+    ...platformAdminAuthProviders,
+    {
+      provide: DLQ_RECORD_REPOSITORY,
+      useClass: MongoDlqRecordRepository,
+    },
+    DlqIngestService,
+    DlqEventsConsumer,
+  ],
 })
 export class AppModule {}
