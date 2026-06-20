@@ -1,9 +1,10 @@
-export {
-  WORKSPACE_INVITED_EVENT,
-  WORKSPACE_DELETED_EVENT,
-  type EventEnvelopeFields,
-  type WorkspaceInvitedEventPayload,
-  type WorkspaceDeletedEventPayload,
+import { WORKSPACE_DELETED_EVENT, WORKSPACE_INVITED_EVENT } from "@collabspace/shared";
+
+export { WORKSPACE_DELETED_EVENT, WORKSPACE_INVITED_EVENT };
+export type {
+  EventEnvelopeFields,
+  WorkspaceDeletedEventPayload,
+  WorkspaceInvitedEventPayload,
 } from "@collabspace/shared";
 
 // Notification-service-specific workspace event types

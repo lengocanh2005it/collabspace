@@ -60,7 +60,7 @@ export class UserOutboxService {
         failedAt: null,
         id: randomUUID(),
         lastError: null,
-        payload,
+        payload: payload as unknown as Record<string, unknown>,
         processedAt: null,
       }),
     );

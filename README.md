@@ -54,7 +54,7 @@
 | RabbitMQ | rabbitmq:3-management | 5672, 15672 | Async event bus |
 | Redis | redis:7 | 6379 | Caching, notifications |
 | PostgreSQL | postgres:15 | 5432 | Auth, User, Workspace DBs (Native CronJob Backups) |
-| MongoDB | mongo:6 | 27017 | Task service (Native CronJob Backups) |
+| MongoDB | mongo:6 (**replica set `rs0`**) | 27017 | task + notification — [infrastructure/mongo/README.md](infrastructure/mongo/README.md) |
 | Prometheus | prom/prometheus | 9090 | Metrics collection |
 | Grafana | grafana/grafana | 3005 | Dashboards (local Compose) |
 | Loki + Promtail | Helm subcharts (K8s) | 3100 | **Log aggregation (production path)** |
@@ -112,17 +112,16 @@ docker-compose -f docker-compose.yml -f docker-compose.db.yml -f docker-compose.
    cd collabspace
    ```
 
-2. **Set up environment files**
+2. **Set up environment + start Docker**
    ```powershell
-   # Khuyến nghị — HashiCorp Vault dev (cùng luồng secret với K8s prod)
-   cd infrastructure/docker
-   docker compose -f docker-compose.vault.yml up -d
-   cd ../..
-   .\infrastructure\vault\scripts\seed-dev-secrets.ps1
-   .\infrastructure\vault\scripts\sync-env-from-vault.ps1
+   # Khuyến nghị — Vault + built images (Dockerfile.service, có cache)
+   .\scripts\docker-local-up.ps1 -Kafka
 
-   # Hoặc — copy templates thủ công (nhanh, không qua Vault)
-   # ./scripts/env-setup.sh
+   # Rebuild sau khi đổi code:
+   .\scripts\docker-local-up.ps1 -Kafka -Build
+
+   # Hot-reload khi dev code (chậm hơn lúc start — pnpm install mỗi container):
+   .\scripts\docker-local-up.ps1 -Dev
    ```
    See [infrastructure/vault/README.md](infrastructure/vault/README.md). **K8s prod:** Vault + External Secrets Operator (Phase 2).
 

@@ -194,16 +194,18 @@ Debezium Mongo connector **bắt buộc replica set** (change streams). Compose 
 
 | # | Task |
 |---|------|
-| 0M.1 | Đổi `mongo` service: `command: ["--replSet", "rs0", "--bind_ip_all"]` |
-| 0M.2 | Script init `rs.initiate()` (entrypoint hoặc `scripts/init-mongo-rs.sh`) |
-| 0M.3 | Connection string task-service: `mongodb://...@mongo:27017/?replicaSet=rs0` |
-| 0M.4 | Verify `rs.status()` OK; task-service migrate/seed vẫn chạy |
+| 0M.1 | Đổi `mongo` service: `command: ["--replSet", "rs0", "--bind_ip_all"]` | ✅ `docker-compose.db.yml` + `mongo/docker-entrypoint-replset.sh` |
+| 0M.2 | Script init `rs.initiate()` (entrypoint hoặc `scripts/init-mongo-rs.sh`) | ✅ `mongo-rs-init` sidecar + `scripts/init-mongo-rs.{sh,ps1}` |
+| 0M.3 | Connection string task-service: `mongodb://...@mongo:27017/?replicaSet=rs0` | ✅ `.env.example` + Vault sync default |
+| 0M.4 | Verify `rs.status()` OK; task-service migrate/seed vẫn chạy | ✅ `scripts/mongo-phase0m-smoke.ps1` / `.sh` |
 
 ### DoD
 
-- [ ] `mongosh --eval "rs.status().ok"` === 1
-- [ ] task-service health + CRUD task bình thường
-- [ ] Ghi chú trong doc: prod K8s Mongo cũng cần RS (đã có statefulset — verify topology)
+- [x] `mongosh --eval "rs.status().ok"` === 1
+- [x] Mongo `withTransaction` commit OK (smoke script)
+- [x] task-service + notification-service `/health/ready` === 200
+- [x] `MONGO_URI` có `replicaSet=rs0` (`.env.example` + Vault sync)
+- [x] Ghi chú prod K8s: [infrastructure/mongo/README.md](../../infrastructure/mongo/README.md)
 
 ### Lưu ý
 
@@ -467,7 +469,7 @@ Collection: `services/task-service/src/infrastructure/outbox/task-outbox.schema.
 
 ### Phase 5M.0 — Prerequisites
 
-- [ ] Phase 0M (Mongo RS) xong — **bắt buộc**, `withTransaction` Mongo không chạy được trên standalone
+- [x] Phase 0M (Mongo RS) xong — **bắt buộc**, `withTransaction` Mongo không chạy được trên standalone
 - [ ] Phase 0 (Kafka + Connect) xong
 - [ ] Mongo driver >= 4 (kiểm tra `package.json` task-service: `mongoose` ≥ 7 / `mongodb` ≥ 5)
 
@@ -756,4 +758,4 @@ KAFKA_DUAL_CONSUME=true                  # Phase 2–4 dual-run
 | 2026-06-19 | Phase 0: `docker-compose.kafka.yml`, `infrastructure/kafka/README.md`, smoke scripts |
 | 2026-06-19 | Phase 1: wal_level logical, outbox aggregate columns, Debezium workspace connector |
 | 2026-06-19 | Phase 2: notification-service Kafka consumer `workspace_invited` (dual-run RMQ) |
-| 2026-06-19 | Bổ sung: migration schema outbox (`aggregate_type`/`aggregate_id`) vào Phase 1 DoD; pattern TypeORM `queryRunner` cho user-service (Phase 4); prerequisite Mongo driver + RS cho Phase 5M; chuẩn hoá topic naming convention (section 12); làm rõ auth-service không bị ảnh hưởng Phase 6 |
+| 2026-06-19 | Phase 0M: Mongo replica set `rs0` local (`docker-compose.db.yml`, `mongo-rs-init`, `scripts/init-mongo-rs`) |

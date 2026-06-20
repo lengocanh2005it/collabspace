@@ -35,7 +35,7 @@ export class UserEventsKafkaConsumer implements OnModuleInit, OnModuleDestroy {
       brokers: kafkaConfig.brokers,
     });
 
-    this.consumer = kafka.consumer({ groupId: kafkaConfig.groupId });
+    this.consumer = kafka.consumer({ groupId: `${kafkaConfig.groupId}-user-events` });
     await this.consumer.connect();
     await this.consumer.subscribe({
       topics: [kafkaConfig.userProfileUpdatedTopic, kafkaConfig.userRegisteredTopic],
@@ -73,7 +73,7 @@ export class UserEventsKafkaConsumer implements OnModuleInit, OnModuleDestroy {
     });
 
     this.logger.log(
-      `Kafka consumer listening topics=${kafkaConfig.userProfileUpdatedTopic},${kafkaConfig.userRegisteredTopic} group=${kafkaConfig.groupId}`,
+      `Kafka consumer listening topics=${kafkaConfig.userProfileUpdatedTopic},${kafkaConfig.userRegisteredTopic} group=${kafkaConfig.groupId}-user-events`,
     );
   }
 

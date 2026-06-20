@@ -1,7 +1,8 @@
 import { Module, Logger } from "@nestjs/common";
 import { ConfigModule, ConfigService } from "@nestjs/config";
 import Redis from "ioredis";
-import { REDIS_CLIENT } from "./redis-client.token";
+
+export const REDIS_CLIENT = Symbol("REDIS_CLIENT");
 
 @Module({
   imports: [ConfigModule],

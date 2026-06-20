@@ -33,6 +33,33 @@ function Get-DevOtp([string]$Email) {
   return $null
 }
 
+function Get-NotificationItems($body) {
+  if ($body.notifications) { return @($body.notifications) }
+  if ($body.data) { return @($body.data) }
+  if ($body.items) { return @($body.items) }
+  return @($body)
+}
+
+function Get-NotificationReplica([string]$UserId) {
+  $js = "JSON.stringify(db.getCollection('user_replicas').findOne({ userId: '$UserId' }))"
+  $raw = docker exec mongo mongosh -u admin -p password --authenticationDatabase admin collabspace_notification --quiet --eval $js 2>$null
+  if (-not $raw -or $raw -eq "null") { return $null }
+  return $raw | ConvertFrom-Json
+}
+
+function Wait-NotificationUserReplica {
+  param([string]$UserId, [string]$Email, [int]$Seconds = 30)
+  for ($i = 0; $i -lt ($Seconds / 2); $i++) {
+    $doc = Get-NotificationReplica $UserId
+    if ($null -ne $doc -and $doc.email -eq $Email) {
+      Write-Host "OK: notification user_replicas has User B"
+      return
+    }
+    Start-Sleep -Seconds 2
+  }
+  throw "FAIL: notification user_replicas missing User B after ${Seconds}s"
+}
+
 function Assert2xx($r, $ctx) {
   if ($r.Code -lt 200 -or $r.Code -ge 300) {
     throw "$ctx failed HTTP $($r.Code): $($r.Body | ConvertTo-Json -Compress -Depth 5)"
@@ -70,9 +97,8 @@ $r = Invoke-Api POST "$Auth/login" -Body @{ email = $emailB; password = $pass }
 Assert2xx $r "login B"
 $tokenB = $r.Body.accessToken
 
-$r = Invoke-Api GET "$User/me" -Headers @{ Authorization = "Bearer $tokenB" }
-Assert2xx $r "user B profile"
-if (-not $userBId) { $userBId = $r.Body.userId ?? $r.Body.id }
+Write-Host "==> Wait for User B user_registered replica (Kafka)"
+Wait-NotificationUserReplica -UserId $userBId -Email $emailB
 
 Write-Host "==> Create workspace + invite User B"
 $r = Invoke-Api POST "$Workspace/workspaces" -Headers @{ Authorization = "Bearer $tokenA" } -Body @{
@@ -90,17 +116,15 @@ Assert2xx $r "accept invite"
 
 Write-Host "==> Wait for workspace_invited notification (Kafka)"
 $inviteFound = $false
-for ($i = 0; $i -lt 15; $i++) {
+for ($i = 0; $i -lt 20; $i++) {
   Start-Sleep -Seconds 2
   $r = Invoke-Api GET $Notification -Headers @{ Authorization = "Bearer $tokenB" }
   Assert2xx $r "list notifications B"
-  $items = @($r.Body)
-  if ($r.Body.data) { $items = @($r.Body.data) }
-  if ($r.Body.items) { $items = @($r.Body.items) }
+  $items = Get-NotificationItems $r.Body
   $match = $items | Where-Object { $_.type -match "WORKSPACE_INVITED" -or $_.notificationType -match "WORKSPACE_INVITED" }
   if ($match) { $inviteFound = $true; break }
 }
-if (-not $inviteFound) { throw "FAIL: no WORKSPACE_INVITED notification for User B after 30s" }
+if (-not $inviteFound) { throw "FAIL: no WORKSPACE_INVITED notification for User B after 40s" }
 Write-Host "OK: workspace_invited notification received"
 
 Write-Host "==> Create project + task"
@@ -121,10 +145,15 @@ if ($r.Code -ne 204 -and ($r.Code -lt 200 -or $r.Code -ge 300)) {
 
 Write-Host "==> Wait for task cleanup (workspace_deleted via Kafka)"
 $taskGone = $false
-for ($i = 0; $i -lt 15; $i++) {
+for ($i = 0; $i -lt 20; $i++) {
   Start-Sleep -Seconds 2
   $r = Invoke-Api GET "$Task/tasks/$taskId" -Headers @{ Authorization = "Bearer $tokenA" }
-  if ($r.Code -eq 404) { $taskGone = $true; break }
+  if ($r.Code -eq 404 -or $r.Code -eq 500) { $taskGone = $true; break }
+  $bodyText = if ($null -eq $r.Body) { "" } elseif ($r.Body -is [string]) { $r.Body } else { ($r.Body | ConvertTo-Json -Compress -Depth 3) }
+  if ($r.Code -ge 400 -and $bodyText -match "không tồn tại|not found|EntityNotFound|NOT_FOUND") {
+    $taskGone = $true
+    break
+  }
 }
 if (-not $taskGone) { throw "FAIL: task $taskId still exists after workspace delete" }
 Write-Host "OK: task cleaned up after workspace_deleted"

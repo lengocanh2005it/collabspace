@@ -55,7 +55,7 @@ All endpoints are prefixed with `/api/v1/tasks`. Requests require an `X-User-Id`
 
 - `NODE_ENV`: Application environment (e.g., `production`, `development`)
 - `PORT`: Service port (default: 3000)
-- `MONGO_URI`: MongoDB connection string (e.g., `mongodb://localhost:27017/collabspace_task?authSource=admin`)
+- `MONGO_URI`: MongoDB connection string (e.g. `mongodb://admin:password@localhost:27017/collabspace_task?authSource=admin&replicaSet=rs0`)
 - `WORKSPACE_CLIENT_MODE`: `http` (production) or `mock` (local dev only)
 - `WORKSPACE_SERVICE_URL`: Base URL for workspace internal HTTP API
 - `SERVICE_JWT_SECRET`: Shared secret for service-to-service JWT (required in production)

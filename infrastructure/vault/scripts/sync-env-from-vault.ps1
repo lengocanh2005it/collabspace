@@ -101,10 +101,14 @@ function Build-PostgresUrl {
 
 function Build-MongoUrl {
   param([string]$ConfigEnv, [string]$DbName)
-  $raw = Read-EnvValue $ConfigEnv "MONGO_URI" "mongodb://${mongoUser}:VAULT_SYNC@mongo:27017/${DbName}?authSource=admin"
+  $raw = Read-EnvValue $ConfigEnv "MONGO_URI" "mongodb://${mongoUser}:VAULT_SYNC@mongo:27017/${DbName}?authSource=admin&replicaSet=rs0"
   $userEnc = [uri]::EscapeDataString($mongoUser)
   $passEnc = [uri]::EscapeDataString($mongoPass)
-  return [regex]::Replace($raw, '(mongodb://)[^@]+@', "`${1}${userEnc}:${passEnc}@")
+  $url = [regex]::Replace($raw, '(mongodb://)[^@]+@', "`${1}${userEnc}:${passEnc}@")
+  if ($url -notmatch 'replicaSet=') {
+    $url = if ($url -match '\?') { "$url&replicaSet=rs0" } else { "$url?replicaSet=rs0" }
+  }
+  return $url
 }
 
 function Build-RabbitUrl {

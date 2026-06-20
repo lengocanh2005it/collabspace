@@ -33,7 +33,7 @@ export class WorkspaceEventsKafkaConsumer implements OnModuleInit, OnModuleDestr
       brokers: kafkaConfig.brokers,
     });
 
-    this.consumer = kafka.consumer({ groupId: kafkaConfig.groupId });
+    this.consumer = kafka.consumer({ groupId: `${kafkaConfig.groupId}-workspace-events` });
     await this.consumer.connect();
     await this.consumer.subscribe({
       topics: [kafkaConfig.workspaceInvitedTopic, kafkaConfig.workspaceDeletedTopic],
@@ -71,7 +71,7 @@ export class WorkspaceEventsKafkaConsumer implements OnModuleInit, OnModuleDestr
     });
 
     this.logger.log(
-      `Kafka consumer listening topics=${kafkaConfig.workspaceInvitedTopic},${kafkaConfig.workspaceDeletedTopic} group=${kafkaConfig.groupId}`,
+      `Kafka consumer listening topics=${kafkaConfig.workspaceInvitedTopic},${kafkaConfig.workspaceDeletedTopic} group=${kafkaConfig.groupId}-workspace-events`,
     );
   }
 

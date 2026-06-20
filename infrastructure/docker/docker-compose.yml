@@ -126,6 +126,8 @@ services:
         condition: service_healthy
       mongo:
         condition: service_healthy
+      mongo-rs-init:
+        condition: service_completed_successfully
       redis:
         condition: service_healthy
     healthcheck:
@@ -159,6 +161,8 @@ services:
         condition: service_healthy
       mongo:
         condition: service_healthy
+      mongo-rs-init:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/v1/notifications/health/ready"]
       interval: 15s

@@ -99,7 +99,7 @@ Rules:
 - Do not commit real secrets.
 - When adding required env vars, update the matching `.env.example`, config service, Docker Compose file, and README/doc references.
 - **Shared secrets (local Docker):** use the same `SERVICE_JWT_SECRET` in `user-service`, `workspace-service`, `task-service`, and `notification-service` `.env` files; align `JWT_SECRET` between `auth-service` and `notification-service`. See `infrastructure/docker/.env.example`.
-- **Vault (local dev):** `docker compose -f docker-compose.vault.yml up -d` → `infrastructure/vault/scripts/seed-dev-secrets.ps1` → `sync-env-from-vault.ps1`. See `infrastructure/vault/README.md`.
+- **Vault (local dev):** khuyến nghị `.\scripts\docker-local-up.ps1` (Vault bootstrap + stack). Thủ công: `reset-local-env-from-vault.ps1` rồi `docker compose … override.yml up -d`. See `infrastructure/vault/README.md`.
 - **K8s + Vault:** External Secrets Operator manifests in `infrastructure/vault/k8s/`; Helm `global.externalSecrets.enabled: true` skips chart `Secret` templates.
 - **Trust boundaries:** `ALLOW_DEV_IDENTITY_HEADERS=true` only in local `.env` for workspace/task/notification direct-port testing; production and gateway traffic require `Authorization: Bearer …`.
 - In NestJS services, prefer a configuration wrapper over scattered `process.env` reads when the service already has one. `auth-service` uses `ConfigurationService`; `user-service` currently reads more directly in `main.ts` and module factories.
@@ -108,24 +108,42 @@ Rules:
 
 Single source for shared dev secrets (`JWT_SECRET`, `SERVICE_JWT_SECRET`, DB/RabbitMQ/Redis passwords). Apps still read `.env` — Vault does not replace Compose `env_file` at runtime unless you sync first.
 
+**Khuyến nghị — một lệnh (Vault + `.env.vault` + stack):**
+
 ```powershell
-cd infrastructure/docker
-docker compose -f docker-compose.vault.yml up -d
-cd ../..
-.\infrastructure\vault\scripts\seed-dev-secrets.ps1
-.\infrastructure\vault\scripts\sync-env-from-vault.ps1
+.\scripts\docker-local-up.ps1              # built images (Dockerfile.service) — mặc định
+.\scripts\docker-local-up.ps1 -Kafka       # + Kafka/Debezium
+.\scripts\docker-local-up.ps1 -Build       # rebuild image (dùng cache layer pnpm)
+.\scripts\docker-local-up.ps1 -Dev         # hot-reload: override.yml (pnpm install mỗi lần start)
 ```
 
-Linux/macOS: `infrastructure/vault/scripts/seed-dev-secrets.sh` and `sync-env-from-vault.sh`.
+Hoặc `infrastructure\dev\dev.bat` / `dev-mode.ps1` (cùng luồng Vault). Thủ công:
+
+```powershell
+.\infrastructure\vault\scripts\reset-local-env-from-vault.ps1
+cd infrastructure/docker
+docker compose -f docker-compose.yml -f docker-compose.db.yml -f docker-compose.local.yml up -d
+```
+
+Linux/macOS: `./scripts/docker-local-up.sh` (hoặc `seed-dev-secrets.sh` + `sync-env-from-vault.ps1` nếu không có `pwsh`).
 
 K8s staging/prod: Vault + External Secrets Operator — `infrastructure/vault/README.md`; Helm `global.externalSecrets.enabled: true`.
 
 ## Docker Compose
 
-Run core local stack from `infrastructure/docker` (includes hot-reload **and** Prometheus + Grafana via `docker-compose.override.yml` → `include` exporters + monitoring):
+Run core local stack from `infrastructure/docker`. **Prefer** `scripts/docker-local-up.ps1` (Vault first).
+
+| Mode | Compose | Khi nào dùng |
+|------|---------|--------------|
+| **Built (default)** | `docker-compose.local.yml` | Full stack nhanh — image từ `Dockerfile.service`, pnpm cache trong build |
+| **Dev hot-reload** | `docker-compose.override.yml` + `-Dev` | Sửa code liên tục — `pnpm install` + `start:dev` mỗi lần start container |
 
 ```sh
-docker-compose -f docker-compose.yml -f docker-compose.db.yml -f docker-compose.override.yml up -d
+# Built images (khuyến nghị demo / full stack)
+docker compose -f docker-compose.yml -f docker-compose.db.yml -f docker-compose.local.yml up -d
+
+# Hot-reload (chậm hơn lúc start)
+docker compose -f docker-compose.yml -f docker-compose.db.yml -f docker-compose.override.yml up -d
 ```
 
 **Kafka + Debezium (Phase 0 migration, optional overlay — does not replace RabbitMQ):**
@@ -136,6 +154,16 @@ docker compose -f docker-compose.yml -f docker-compose.db.yml -f docker-compose.
 ```
 
 See `infrastructure/kafka/README.md` and `docs/kafka-debezium-migration-roadmap.md`.
+
+**Mongo replica set (Phase 0M — bắt buộc trước Phase 5M):**
+
+Full stack: `.\scripts\docker-local-up.ps1 -Kafka`. Verify Phase 0M:
+
+```powershell
+.\scripts\mongo-phase0m-smoke.ps1   # rs0 + withTransaction + task/notification ready
+```
+
+Chi tiết: `infrastructure/mongo/README.md`.
 
 Add Traefik:
 

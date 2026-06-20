@@ -96,21 +96,17 @@ pnpm run test
 pnpm run test:e2e
 ```
 
-Optional Vault (shared secrets → service `.env`):
+**Local Docker (Vault + stack — khuyến nghị):**
 
 ```powershell
-cd infrastructure/docker
-docker compose -f docker-compose.vault.yml up -d
-cd ../..
-.\infrastructure\vault\scripts\seed-dev-secrets.ps1
-.\infrastructure\vault\scripts\sync-env-from-vault.ps1
+.\scripts\docker-local-up.ps1 -Kafka          # built images (Dockerfile.service) — default
+.\scripts\docker-local-up.ps1 -Kafka -Build   # rebuild sau đổi code
+.\scripts\docker-local-up.ps1 -Dev            # hot-reload (override — chậm lúc start)
 ```
 
-Vault seeds `jwt_secret` + `service_jwt_secret` (và DB/RabbitMQ/Redis). **S2S HTTP:** cùng `SERVICE_JWT_SECRET` trên user, workspace, task, notification — xem `infrastructure/docker/.env.example`.
+Hoặc `infrastructure\dev\dev.bat` (gọi `dev-mode.ps1` — cùng luồng Vault). Vault → `services/*/.env.vault` (secrets); `.env` chỉ config. **S2S:** cùng `SERVICE_JWT_SECRET` — xem `infrastructure/docker/.env.example`. Chi tiết: `infrastructure/vault/README.md`.
 
-See `infrastructure/vault/README.md`.
-
-Core Docker stack (app + DB + Prometheus + Grafana — monitoring via `override.yml` include):
+Thủ công (không dùng script gộp):
 
 ```sh
 cd infrastructure/docker
