@@ -486,6 +486,10 @@ jobs:
 
             start=$SECONDS
 
+            # Discard any generated files (e.g. Chart.lock from helm dependency update)
+            # that would block git checkout before the sync script can pull the fix itself.
+            git -C /opt/collabspace restore . 2>/dev/null || true
+
             bash /opt/collabspace/infrastructure/deploy/git-sync-private-repo.sh
 
             echo "Repo sync finished in $((SECONDS - start))s"
