@@ -157,7 +157,11 @@ spec:
                   STAMP=$(date -u +%Y%m%dT%H%M%SZ)
                   echo "==> mongodump @ ${STAMP}"
                   mongodump \
-                    --uri="mongodb://${MONGO_USER}:${MONGO_PASSWORD}@${MONGO_HOST}:27017/admin" \
+                    --host="${MONGO_HOST}" \
+                    --port=27017 \
+                    --username="${MONGO_USER}" \
+                    --password="${MONGO_PASSWORD}" \
+                    --authenticationDatabase=admin \
                     --archive=/backup/mongo.archive.gz \
                     --gzip
                   echo "${STAMP}" > /backup/.stamp
