@@ -383,9 +383,9 @@ Workspace events **chỉ** qua Kafka; không còn publish RMQ từ workspace-ser
 - [x] Kafka consumer `workspace_invited` + `workspace_deleted` (notification-service)
 - [x] Kafka consumer `workspace_deleted` (task-service)
 - [x] `WORKSPACE_OUTBOX_PUBLISH_MODE=debezium` skips RMQ processor
-- [ ] Invite + delete workspace E2E pass (local Kafka stack)
+- [x] Invite + delete workspace E2E pass (local Kafka stack) — `scripts/kafka-phase3-e2e.ps1` / `.sh`
 - [ ] Không còn message mới trên RMQ routing keys workspace (prod deploy)
-- [ ] `demo-e2e.sh` pass
+- [ ] `demo-e2e.sh` pass (MVP qua Traefik; stack Kafka cutover local đã verify riêng)
 
 ### Rollback
 
@@ -395,11 +395,11 @@ Bật lại processor RMQ; tắt Kafka consumer workspace.
 
 ## 8. Phase 4 — User-service: outbox Postgres + CDC
 
-### Hiện trạng
+### Hiện trạng (sau 4a + 4b code)
 
-`user-service` **không có outbox** — `RabbitMqEventsService.broadcast()` gửi thẳng queue `task-service` và `notification-service`.
+`user-service` có **`user_outbox_events`** + `UserOutboxService`; use case ghi outbox cùng TX với profile. Local Kafka cutover: `USER_OUTBOX_PUBLISH_MODE=debezium` (skip RMQ sau commit). `RabbitMqEventsService` vẫn trong code cho dual-run / prod rollback (`rabbitmq` mode).
 
-File: `services/user-service/src/infrastructure/messaging/rabbitmq/rabbitmq-events.service.ts`
+File: `services/user-service/src/infrastructure/outbox/`, `services/user-service/src/infrastructure/messaging/rabbitmq/rabbitmq-events.service.ts`
 
 ### Lưu ý transaction — TypeORM queryRunner (bắt buộc đọc trước 4a)
 
@@ -423,7 +423,7 @@ async execute(cmd: UpdateUserProfileCommand): Promise<void> {
 }
 ```
 
-Cần thêm:
+Cần thêm (đã có trong repo):
 - `IUnitOfWork` port trong `domain/ports/`
 - `TypeOrmUnitOfWork` adapter trong `infrastructure/`
 - Repository ports nhận `queryRunner` tuỳ chọn
@@ -432,27 +432,29 @@ Cần thêm:
 
 | # | Task |
 |---|------|
-| 4a.1 | Migration `user_outbox_events` — **dùng schema chuẩn** (`aggregate_type`, `aggregate_id`, `event_type`, `payload`, `occurred_at`) — tham khảo pattern đã làm ở Phase 1 |
-| 4a.2 | Thêm `IUnitOfWork` port + `TypeOrmUnitOfWork` adapter |
-| 4a.3 | `UpdateUserProfileUseCase`: **cùng transaction** UPDATE profile + INSERT outbox (xem pattern trên) |
-| 4a.4 | Debezium connector DB `collabspace_user`, table `user_outbox_events` |
-| 4a.5 | Kafka consumers task + notification (dual-run, RMQ vẫn bật) |
-| 4a.6 | Test đổi tên → `user_replicas` sync |
+| 4a.1 | Migration `user_outbox_events` — **dùng schema chuẩn** (`aggregate_type`, `aggregate_id`, `event_type`, `payload`, `occurred_at`) — tham khảo pattern đã làm ở Phase 1 | ✅ |
+| 4a.2 | Thêm `IUnitOfWork` port + `TypeOrmUnitOfWork` adapter | ✅ |
+| 4a.3 | `UpdateUserProfileUseCase`: **cùng transaction** UPDATE profile + INSERT outbox (xem pattern trên) | ✅ |
+| 4a.4 | Debezium connector DB `collabspace_user`, table `user_outbox_events` | ✅ `scripts/register-user-outbox-connector.ps1` |
+| 4a.5 | Kafka consumers task + notification (dual-run, RMQ vẫn bật) | ✅ |
+| 4a.6 | Test đổi tên → `user_replicas` sync | ✅ `scripts/kafka-phase4-e2e.ps1` |
 
 ### Phase 4b — `user_registered`
 
 | # | Task |
 |---|------|
-| 4b.1 | `CreatePendingUserProfileUseCase`: TX + INSERT outbox `user_registered` (cùng pattern 4a) |
-| 4b.2 | Consumers dual-run cho `user_registered` |
-| 4b.3 | Tắt `RabbitMqEventsService` / xóa RMQ client factory sau khi dual-run ổn định |
-| 4b.4 | Verify fallback hydrate HTTP khi replica race (`.claude/docs/read-models.md`) |
+| 4b.1 | `CreatePendingUserProfileUseCase`: TX + INSERT outbox `user_registered` (cùng pattern 4a) | ✅ |
+| 4b.2 | Consumers dual-run cho `user_registered` | ✅ |
+| 4b.3 | Tắt `RabbitMqEventsService` / xóa RMQ client factory sau khi dual-run ổn định | ⏳ local `debezium` mode; xóa RMQ module ở Phase 6 |
+| 4b.4 | Verify fallback hydrate HTTP khi replica race (`.claude/docs/read-models.md`) | ✅ E2E đợi replica trước invite (Phase 3 script) |
 
 ### DoD (cả 4a + 4b)
 
-- [ ] Không còn RMQ publish từ user-service
-- [ ] Replica lag chấp nhận được; metric `user_replica_sync_lag_seconds` vẫn có ý nghĩa
-- [ ] `occurredAt` trong payload giữ nguyên contract
+- [x] Local cutover: `USER_OUTBOX_PUBLISH_MODE=debezium` — không RMQ publish user events (verified E2E)
+- [x] `user_registered` + `user_profile_updated` → `user_replicas` sync — `scripts/kafka-phase4-e2e.ps1`
+- [x] Replica lag metric `user_replica_sync_lag_seconds` vẫn ghi từ Kafka consumer
+- [x] `occurredAt` trong payload giữ nguyên contract
+- [ ] Prod deploy: không message mới trên RMQ user routing keys
 
 ---
 
@@ -602,8 +604,8 @@ id | aggregate_type | aggregate_id | event_type | payload | occurred_at
 
 | Service | Table / Collection | Trạng thái |
 |---------|-------------------|-----------|
-| workspace-service | `workspace_outbox_events` | Migration cần thêm `aggregate_type`, `aggregate_id` (Phase 1) |
-| user-service | `user_outbox_events` | Tạo mới theo schema chuẩn (Phase 4a) |
+| workspace-service | `workspace_outbox_events` | ✅ `aggregate_type`, `aggregate_id` (Phase 1) |
+| user-service | `user_outbox_events` | ✅ schema chuẩn (Phase 4a) |
 | task-service | `task_outbox_events` (Mongo) | Align field với MongoEventRouter (Phase 5M.3) |
 
 Làm **một lần** ở Phase 1 (workspace) → copy pattern sang user/task để tránh điều chỉnh connector config sau.
@@ -635,16 +637,22 @@ App **không** cần `KAFKA_BROKERS` nếu chỉ INSERT outbox; Debezium là pub
 ```env
 KAFKA_BROKERS=kafka:9092
 KAFKA_CONSUMERS_ENABLED=true
-KAFKA_GROUP_ID=notification-service
-KAFKA_TOPIC_WORKSPACE_INVITED=collabspace.workspace.invited
-KAFKA_TOPIC_WORKSPACE_DELETED=collabspace.workspace.deleted
+KAFKA_GROUP_ID=notification-service   # base id; xem consumer groups thật bên dưới
+KAFKA_TOPIC_WORKSPACE_INVITED=collabspace.workspace.workspace_invited
+KAFKA_TOPIC_WORKSPACE_DELETED=collabspace.workspace.workspace_deleted
 KAFKA_TOPIC_USER_REGISTERED=collabspace.user.registered
 KAFKA_TOPIC_USER_PROFILE_UPDATED=collabspace.user.profile_updated
-KAFKA_TOPIC_TASK_ASSIGNED=collabspace.task.assigned
-KAFKA_TOPIC_COMMENT_CREATED=collabspace.task.comment_created
-KAFKA_TOPIC_COMMENT_MENTIONED=collabspace.task.comment_mentioned
-# ... hoặc dùng pattern subscribe: collabspace.*
+# ... task topics (Phase 5M+)
 ```
+
+**Consumer groups (bắt buộc tách):** mỗi service có thể chạy **nhiều** `kafkajs` consumer (user events vs workspace events). **Không** dùng chung một `groupId` — Kafka chia partition giữa members và consumer sẽ miss topic. Code dùng suffix:
+
+| Consumer class | Effective group id |
+|----------------|-------------------|
+| `*UserEventsKafkaConsumer` | `${KAFKA_GROUP_ID}-user-events` |
+| `*WorkspaceEventsKafkaConsumer` / `WorkspaceDeletedKafkaConsumer` | `${KAFKA_GROUP_ID}-workspace-events` |
+
+Ví dụ `notification-service`: `notification-service-user-events`, `notification-service-workspace-events`.
 
 ### Feature flags migrate
 
@@ -722,6 +730,7 @@ KAFKA_DUAL_CONSUME=true                  # Phase 2–4 dual-run
 | Rủi ro | Giảm thiểu |
 |--------|------------|
 | Dual consumer tạo duplicate | Idempotency `eventId` (bắt buộc Phase 2) |
+| Hai Kafka consumer cùng `groupId` trong một process | Tách `${KAFKA_GROUP_ID}-user-events` vs `-workspace-events` (Phase 3 E2E verify) |
 | Debezium slot lag / disk WAL | Monitor replication slot; retention Postgres |
 | Mongo standalone không CDC | Phase 0M bắt buộc |
 | Connector down → event kẹt trong outbox | Outbox row vẫn trong DB; replay khi Connect lên; alert lag |
@@ -759,3 +768,4 @@ KAFKA_DUAL_CONSUME=true                  # Phase 2–4 dual-run
 | 2026-06-19 | Phase 1: wal_level logical, outbox aggregate columns, Debezium workspace connector |
 | 2026-06-19 | Phase 2: notification-service Kafka consumer `workspace_invited` (dual-run RMQ) |
 | 2026-06-19 | Phase 0M: Mongo replica set `rs0` local (`docker-compose.db.yml`, `mongo-rs-init`, `scripts/init-mongo-rs`) |
+| 2026-06-20 | Phase 3/4 local E2E: `kafka-phase3-e2e`, `kafka-phase4-e2e`; consumer group suffix fix; `docker-local-up.ps1` |

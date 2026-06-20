@@ -106,6 +106,16 @@ pnpm run test:e2e
 
 Hoặc `infrastructure\dev\dev.bat` (gọi `dev-mode.ps1` — cùng luồng Vault). Vault → `services/*/.env.vault` (secrets); `.env` chỉ config. **S2S:** cùng `SERVICE_JWT_SECRET` — xem `infrastructure/docker/.env.example`. Chi tiết: `infrastructure/vault/README.md`.
 
+**Kafka migration E2E (Phase 3 + 4):**
+
+```powershell
+.\scripts\docker-local-up.ps1 -Kafka
+.\scripts\register-workspace-outbox-connector.ps1
+.\scripts\register-user-outbox-connector.ps1
+.\scripts\kafka-phase3-e2e.ps1
+.\scripts\kafka-phase4-e2e.ps1
+```
+
 Thủ công (không dùng script gộp):
 
 ```sh

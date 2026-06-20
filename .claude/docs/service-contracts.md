@@ -416,8 +416,10 @@ Debezium Outbox Event Router on `workspace_outbox_events` (`infrastructure/kafka
 
 - **Message value**: expanded domain JSON from outbox `payload` column (`transforms.outbox.table.expand.json.payload=true`).
 - **Producer path (Phase 3+)**: `WORKSPACE_OUTBOX_PUBLISH_MODE=debezium` — workspace-service does not publish workspace events to RabbitMQ; CDC only.
-- **Consumer env**: `KAFKA_CONSUMERS_ENABLED=true`, `KAFKA_BROKERS`, `KAFKA_GROUP_ID`, topic overrides `KAFKA_TOPIC_WORKSPACE_*`.
-- **RMQ workspace listeners** remain in code for prod rollback until Phase 6; local Kafka-only dev sets `RABBITMQ_ENABLED=false` on consumers.
+- **Consumer env**: `KAFKA_CONSUMERS_ENABLED=true`, `KAFKA_BROKERS`, `KAFKA_GROUP_ID` (base), topic overrides `KAFKA_TOPIC_WORKSPACE_*`.
+- **Consumer groups**: `${KAFKA_GROUP_ID}-workspace-events` (workspace topics), `${KAFKA_GROUP_ID}-user-events` (user topics) — **never share one group** across multiple `kafkajs` consumers in the same service (KafkaJS partition assignment bug).
+- **RMQ workspace listeners** remain in code for prod rollback until Phase 6; local Kafka cutover sets `RABBITMQ_ENABLED=false` on consumers.
+- **Local E2E**: `scripts/kafka-phase3-e2e.ps1` — invite notification + workspace delete → task cleanup.
 
 ### Kafka topics (user events — Phase 4a–4b)
 
@@ -430,11 +432,12 @@ Debezium Outbox Event Router on `user_outbox_events` (`infrastructure/kafka/conn
 
 - **Producer path (Phase 4b cutover)**: `USER_OUTBOX_PUBLISH_MODE=debezium` — user-service does not publish user events to RabbitMQ; CDC only.
 - **Dual-run (default `rabbitmq`)**: outbox INSERT in same TX as profile write; RMQ broadcast after commit until cutover.
-- **Consumer env**: `KAFKA_TOPIC_USER_PROFILE_UPDATED`, `KAFKA_TOPIC_USER_REGISTERED`.
+- **Consumer env**: `KAFKA_TOPIC_USER_PROFILE_UPDATED`, `KAFKA_TOPIC_USER_REGISTERED`; groups `${KAFKA_GROUP_ID}-user-events` / `-workspace-events` (see workspace section).
+- **Local E2E**: `scripts/kafka-phase4-e2e.ps1` — `user_registered` + `user_profile_updated` → `user_replicas` in task-service Mongo.
 
 ### User directory replicas (`user_registered`, `user_profile_updated`)
 
-Producer: `user-service` (broadcast to `task-service` and `notification-service` queues).
+Producer: `user-service` (outbox → Debezium → Kafka when `USER_OUTBOX_PUBLISH_MODE=debezium`; legacy RMQ broadcast when `rabbitmq`).
 
 Consumers: `task-service`, `notification-service` → Mongo collection `user_replicas`.
 

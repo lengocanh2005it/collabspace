@@ -138,7 +138,26 @@ DEBEZIUM_CONNECT_URL_HOST=http://localhost:8083
 | Phase | Việc làm |
 |-------|----------|
 | **2** | Kafka consumer pilot `workspace_invited` (dual-run RMQ) — **Done** |
-| **3** | Cutover workspace events (chỉ Kafka) |
+| **3** | Cutover workspace events (chỉ Kafka) — **Done** (local E2E) |
+| **4** | User outbox + CDC — **Done** (local E2E) |
+| **5M** | Task Mongo outbox + Debezium — **Next** |
+
+## E2E verify (Phase 3 + 4)
+
+Full stack (built images + Kafka):
+
+```powershell
+.\scripts\docker-local-up.ps1 -Kafka
+.\scripts\register-workspace-outbox-connector.ps1
+.\scripts\register-user-outbox-connector.ps1
+.\scripts\kafka-phase3-e2e.ps1
+.\scripts\kafka-phase4-e2e.ps1
+```
+
+Phase 3: register 2 user → invite → `WORKSPACE_INVITED` notification → delete workspace → task gone.  
+Phase 4: register → `user_replicas` → PATCH profile → replica `displayName` updated.
+
+**Consumer groups:** code dùng `${KAFKA_GROUP_ID}-user-events` và `-workspace-events` — không gộp một group.
 
 ## Rollback
 

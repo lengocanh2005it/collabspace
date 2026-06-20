@@ -165,6 +165,17 @@ Full stack: `.\scripts\docker-local-up.ps1 -Kafka`. Verify Phase 0M:
 
 Chi tiết: `infrastructure/mongo/README.md`.
 
+**Kafka migration E2E (Phase 3 + 4 — sau `docker-local-up.ps1 -Kafka`):**
+
+```powershell
+.\scripts\register-workspace-outbox-connector.ps1
+.\scripts\register-user-outbox-connector.ps1
+.\scripts\kafka-phase3-e2e.ps1   # workspace invite + delete → task cleanup
+.\scripts\kafka-phase4-e2e.ps1     # user_registered + profile_updated → replicas
+```
+
+Yêu cầu env cutover: `WORKSPACE_OUTBOX_PUBLISH_MODE=debezium`, `USER_OUTBOX_PUBLISH_MODE=debezium`, `KAFKA_CONSUMERS_ENABLED=true`, `RABBITMQ_ENABLED=false` trên task/notification consumers. Xem `docs/kafka-debezium-migration-roadmap.md`.
+
 Add Traefik:
 
 ```sh
