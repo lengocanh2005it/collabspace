@@ -1,11 +1,11 @@
 # Read models & local replicas
 
-CollabSpace avoids cross-service SQL joins. When service **A** needs user directory data frequently, it keeps a **local read model** (`user_replicas`) synced from **user-service** via RabbitMQ events.
+CollabSpace avoids cross-service SQL joins. When service **A** needs user directory data frequently, it keeps a **local read model** (`user_replicas`) synced from **user-service** via Kafka topics (transactional outbox → Debezium CDC).
 
 ## Pattern (mandatory for new cross-service reads)
 
 1. **Source of truth:** `user-service` PostgreSQL profiles.
-2. **Change events:** `user_registered`, `user_profile_updated` (include `occurredAt`).
+2. **Change events:** `user_registered`, `user_profile_updated` on Kafka (`collabspace.user.*`); include `occurredAt`. Producer path: `user_outbox_events` + Debezium (no in-app broker publish).
 3. **Consumers:** `task-service`, `notification-service` → upsert Mongo `user_replicas`.
 4. **Reads:** Handlers use `UserReplicaLookupService` (local first).
 5. **Fallback:** If replica missing and `USER_REPLICA_FALLBACK_ENABLED=true`, call `POST /api/v1/users/internal/replicas` on user-service (Service JWT `user.replicas.read`), upsert, retry read.

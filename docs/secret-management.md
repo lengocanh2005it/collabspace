@@ -22,7 +22,7 @@ Production:  Vault pod  →  ESO (1h)     →  K8s Secret       →  Pod envFrom
 | `postgres_password` | trong `DATABASE_URL` | auth, user, workspace |
 | `mongo_username` / `mongo_password` | trong `MONGO_URI` | task, notification |
 | `redis_password` | `REDIS_PASSWORD` | auth, notification |
-| `rabbitmq_username` / `rabbitmq_password` | trong `RABBITMQ_URL` | tất cả |
+| `kafka_bootstrap_servers` | `KAFKA_BROKERS` | user, workspace, task, notification |
 | `metrics_auth_token` | `METRICS_AUTH_TOKEN` | tất cả |
 
 Config không phải secret (PORT, host, grpc url...) vẫn nằm trong `.env` / ConfigMap — **Vault không quản lý**.
@@ -108,7 +108,7 @@ Vault pod (vault-0, namespace: vault)
         ├── postgres_password
         ├── mongo_username / mongo_password
         ├── redis_password
-        ├── rabbitmq_username / rabbitmq_password
+        ├── kafka_bootstrap_servers (optional — often ConfigMap)
         └── metrics_auth_token
 
 External Secrets Operator (namespace: external-secrets)

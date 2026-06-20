@@ -224,7 +224,7 @@ if [[ -n "$TOKEN" ]]; then
     expect_2xx "PATCH /notifications/read-all" PATCH "$BASE_URL/notifications/read-all" \
       -H "Authorization: Bearer $TOKEN" >/dev/null || true
   else
-    warn "no notifications yet after task assign (RabbitMQ lag or consumer issue)"
+    warn "no notifications yet after task assign (Kafka lag or consumer issue)"
   fi
 else
   skip "notifications (no token)"
@@ -236,32 +236,17 @@ expect_code "POST /auth/login wrong password" "401" POST "$BASE_URL/auth/login" 
   -d "{\"email\":\"$EMAIL\",\"password\":\"wrong\"}" >/dev/null || true
 expect_code "GET /users/me without token" "401" GET "$BASE_URL/users/me" >/dev/null || true
 
-log "=== RabbitMQ queues & consumers (kubectl) ==="
-if kubectl get pod rabbitmq-0 -n "$APP_NS" >/dev/null 2>&1; then
-  kubectl exec -n "$APP_NS" rabbitmq-0 -- rabbitmqctl list_queues name messages consumers 2>/dev/null | while read -r q msgs cons; do
-    [[ "$q" == "name" || -z "$q" ]] && continue
-    if [[ "${cons:-0}" -gt 0 ]]; then
-      ok "queue $q — messages=$msgs consumers=$cons"
-    elif [[ "$msgs" -gt 0 ]]; then
-      warn "queue $q — messages=$msgs but consumers=0"
-    else
-      log "queue $q — idle (consumers=$cons)"
-    fi
-  done || warn "rabbitmqctl list_queues failed"
-  kubectl exec -n "$APP_NS" rabbitmq-0 -- rabbitmqctl list_bindings -p collabspace 2>/dev/null | head -20 || true
-else
-  skip "RabbitMQ pod not found"
-fi
-
-log "=== Pod log hints (notification consumer) ==="
+log "=== Kafka / event consumer hints (kubectl) ==="
 if kubectl get deploy notification-service -n "$APP_NS" >/dev/null 2>&1; then
-  recent=$(kubectl logs -n "$APP_NS" deploy/notification-service --tail=30 2>/dev/null | grep -iE 'task_assigned|workspace_invited|comment|notification|error' | tail -5 || true)
+  recent=$(kubectl logs -n "$APP_NS" deploy/notification-service --tail=30 2>/dev/null | grep -iE 'via kafka|task_assigned|workspace_invited|comment|notification|error' | tail -5 || true)
   if [[ -n "$recent" ]]; then
     log "notification-service recent event lines:"
     echo "$recent"
   else
-    warn "no recent event keywords in notification-service logs (last 30 lines)"
+    warn "no recent Kafka event keywords in notification-service logs (last 30 lines)"
   fi
+else
+  skip "notification-service deployment not found"
 fi
 
 echo ""

@@ -1,76 +1,45 @@
-# workspace-service
+# workspace-service — agent cheat sheet
 
-NestJS + TypeORM + PostgreSQL + RabbitMQ. Port **8080** (not 3000).
-
-## Pattern
-
-**Clean Architecture** — domain entities, repository port interfaces, TypeORM adapters, use cases inject ports only.
-
-```text
-presentation/http → application/use-cases → domain/repositories (ports)
-                                                  ↑ implemented by
-                                          infrastructure/repositories (TypeORM adapters)
-```
+NestJS + TypeORM + PostgreSQL + Kafka (Debezium CDC outbox). Port **8080** (not 3000).
 
 ## Layout
 
 ```text
-application/dto/                         # Input DTOs (class-validator)
-application/use-cases/
-  workspace/ | project/ | invitation/    # Inject domain ports via @Inject(SYMBOL)
-domain/entities/                         # Workspace, Project, WorkspaceMember, Invitation (plain, no ORM)
-domain/repositories/                     # IWorkspaceRepository, IProjectRepository, ... (port interfaces + symbols)
-domain/events/                           # RabbitMQ routing keys + payload types
-infrastructure/database/entities/        # *.orm-entity.ts (TypeORM)
-infrastructure/repositories/             # typeorm-*.repository.ts (port implementations)
-presentation/http/                       # controllers, guards, decorators
-health/
+src/
+├── application/use-cases/workspace|project|invitation/
+├── domain/entities/, domain/repositories/, domain/events/
+├── infrastructure/
+│   ├── database/entities/, repositories/
+│   └── outbox/                          # workspace_outbox_events + processor (debezium mode)
+├── presentation/http/
+└── health/
 ```
 
-## Commands
+Key paths:
 
-```sh
-pnpm install
-pnpm run build
-pnpm run test
-pnpm run migrate
-pnpm run seed
+```text
+domain/events/                           # event types + payload contracts
+infrastructure/outbox/                   # WorkspaceOutboxService, processor
 ```
-
-**Swagger:** `http://localhost:8080/swagger` (Docker host port **3002**).
 
 ## Conventions
 
-- Global prefix `/api/v1`; routes `/workspaces/*`, `/workspaces/:id/projects/*`, `/workspaces/:id/invitations`
-- Public routes: `AuthGuard` + auth gRPC → `@UserId()`; dev fallback `X-User-Id` when `ALLOW_DEV_IDENTITY_HEADERS=true`
-- Internal S2S: `GET /workspaces/internal/:id/membership` — Service JWT (`Authorization: Bearer …`, not on Traefik); env `SERVICE_JWT_SECRET`
-- ORM columns snake_case; multi-step writes use transactions
-- Events: `collabspace_exchange` + routing key from `domain/events/`
-- TypeORM migrations: `migrations/{timestamp}-{PascalCase}.ts` — class `{PascalCase}{timestamp}` (shared runner `@collabspace/typeorm-migrate`; xem `nest-service-change` skill)
-- Tests: `*.use-case.spec.ts` next to use case; inject in-memory stub implementing the port interface
-- Do **not** inject `@InjectRepository(OrmEntity)` in use cases — all DB access goes through port adapters
+- Global prefix `api/v1`; container port **8080**
+- Public: `AuthGuard` + auth gRPC; dev `ALLOW_DEV_IDENTITY_HEADERS`
+- Internal S2S: `GET /workspaces/internal/:id/membership` + Service JWT
+- Outbox: `workspace_outbox_events` in same Postgres transaction as invite/delete
+- Events reach Kafka via **Debezium** (not in-app publish): topics `collabspace.workspace.*`
+- Include `eventId` + `occurredAt` on every outbox row
 
-## Where to add code
+## Env (local)
 
-| Task | Path |
-|------|------|
-| HTTP route | `presentation/http/*controller.ts` |
-| Use case | `application/use-cases/<area>/<action>.use-case.ts` |
-| Domain entity | `domain/entities/` |
-| Repository port | `domain/repositories/<name>.repository.ts` |
-| TypeORM adapter | `infrastructure/repositories/typeorm-<name>.repository.ts` |
-| Input DTO | `application/dto/` |
-| DB entity (ORM) | `infrastructure/database/entities/` |
-| Event name/payload | `domain/events/` |
+```env
+WORKSPACE_OUTBOX_PUBLISH_MODE=debezium
+DATABASE_URL=...
+SERVICE_JWT_SECRET=...
+AUTH_SERVICE_GRPC_URL=...
+```
 
-Deep docs: `@../../.claude/docs/service-architecture.md` (workspace section), `@../../.claude/docs/service-contracts.md`, `@../../docs/roles-and-permissions.md`
+Register connector after stack up: `scripts/register-workspace-outbox-connector.ps1`
 
-## Workspace roles
-
-Membership `workspace_members.role`: **`owner` > `manager` > `member`**. Không dùng workspace `admin` (nhầm platform admin).
-
-- **owner** — tạo workspace; sửa/xóa workspace; promote/demote manager (**Done**); remove manager/member
-- **manager** — invite; sửa/xóa project; remove member (**Done**)
-- **member** — dùng task/project/comment trong workspace
-
-Platform `admin` (`auth-service`) là lớp khác — xem `docs/roles-and-permissions.md`.
+See: `.claude/docs/service-architecture.md` → workspace-service, `.claude/docs/service-contracts.md` → events.

@@ -25,7 +25,6 @@ Keys in each path:
 | `postgres_password` | `POSTGRES_PASSWORD`, `DATABASE_URL` | auth, user, workspace |
 | `mongo_username` / `mongo_password` | `MONGO_URI` | task, notification |
 | `redis_password` | `REDIS_PASSWORD` | auth, notification |
-| `rabbitmq_username` / `rabbitmq_password` | `RABBITMQ_*`, `RABBITMQ_URL` | all publishers/consumers |
 | `metrics_auth_token` | `METRICS_AUTH_TOKEN` | all five apps |
 | `azure_storage_connection_string` | `AZURE_STORAGE_CONNECTION_STRING` | user-service (avatar), task-service (attachments) |
 | `do_spaces_key` / `do_spaces_secret` | — (inject vào `backup-spaces-secret` qua ESO) | CronJob backup-postgres, backup-mongo |

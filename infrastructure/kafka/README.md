@@ -1,6 +1,6 @@
 # Kafka + Debezium Connect (local dev)
 
-Nền tảng **Phase 0** của lộ trình migrate RabbitMQ → Kafka + CDC + Debezium.
+Nền tảng event bus **Kafka + CDC + Debezium** cho CollabSpace (migration hoàn tất Phase 0–7).
 
 **Lộ trình đầy đủ:** [docs/kafka-debezium-migration-roadmap.md](../../docs/kafka-debezium-migration-roadmap.md)
 
@@ -14,7 +14,7 @@ Nền tảng **Phase 0** của lộ trình migrate RabbitMQ → Kafka + CDC + De
 | `kafka-exporter` | `danielqsj/kafka-exporter` | `9308` | Consumer lag metrics (Phase 7) |
 | `schema-registry` | Confluent (profile `schema-registry`) | `8081` | JSON Schema registry (tùy chọn) |
 
-RabbitMQ và app services **không đổi** ở Phase 0.
+RabbitMQ đã gỡ — app services dùng Kafka + Debezium (Phase 6+).
 
 ## Khởi động
 
@@ -68,7 +68,7 @@ Kafka UI: http://localhost:8088 (khi bật profile `kafka-ui`).
 
 ## Phase 1 — CDC workspace outbox (quan sát)
 
-**Mục tiêu:** INSERT `workspace_outbox_events` → Debezium → Kafka topic `collabspace.workspace.workspace_invited` (RMQ processor **vẫn chạy**).
+**Mục tiêu (Phase 1):** INSERT `workspace_outbox_events` → Debezium → Kafka topic `collabspace.workspace.workspace_invited`.
 
 ### 1. Postgres `wal_level=logical`
 
@@ -120,9 +120,7 @@ KAFKA_BROKERS=kafka:9092
 KAFKA_TOPIC_WORKSPACE_INVITED=collabspace.workspace.workspace_invited
 ```
 
-RabbitMQ listener **vẫn bật** — idempotency theo `eventId` tránh duplicate khi dual-run.
-
-Restart notification-service sau khi đổi env. Invite workspace → kiểm tra log `via kafka` / `via rmq`.
+Restart notification-service sau khi đổi env. Invite workspace → kiểm tra log `via kafka`.
 
 ## Biến môi trường (tham chiếu)
 

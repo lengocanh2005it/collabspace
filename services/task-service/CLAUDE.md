@@ -1,6 +1,6 @@
 # task-service
 
-NestJS + CQRS + Mongoose (MongoDB) + RabbitMQ publisher.
+NestJS + CQRS + Mongoose (MongoDB) + Kafka outbox/consumer.
 
 ## Event transport (Phase 5M)
 

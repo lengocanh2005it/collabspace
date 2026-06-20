@@ -207,7 +207,7 @@ sudo bash infrastructure/deploy/verify-phase3.sh
 
 ### Thứ tự (tự động trong script)
 
-1. PostgreSQL, MongoDB, Redis, RabbitMQ (Bitnami subcharts + PVC)
+1. PostgreSQL, MongoDB, Redis, Kafka + Debezium Connect (Helm subcharts / `infrastructure/kafka/`)
 2. **Migration** (thứ tự bắt buộc): `auth-service` → `user-service` → `workspace-service`
 3. Rollout 5 app services
 4. Traefik IngressRoute — route `/api/v1/*`

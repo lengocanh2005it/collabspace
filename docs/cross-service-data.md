@@ -56,7 +56,7 @@ Mỗi service **sở hữu schema riêng**. Câu hỏi kiến trúc: khi `task-s
 
 ### 3.2 Đồng bộ bằng event
 
-Khi profile thay đổi, `user-service` publish qua RabbitMQ:
+Khi profile thay đổi, `user-service` ghi **`user_outbox_events`** (cùng transaction) → **Debezium CDC** → Kafka topics `collabspace.user.user_registered` / `collabspace.user.user_profile_updated`:
 
 | Event | Khi nào |
 |-------|---------|
@@ -132,8 +132,8 @@ Sau khi đọc replica, task-service embed **`UserSnapshot`** vào document/even
 
 ```
 1. PATCH /users/me          → user-service cập nhật Postgres
-2. Publish user_profile_updated (occurredAt = T0)
-3. RabbitMQ → task-service + notification-service
+2. Outbox row → Debezium → Kafka topic `collabspace.user.user_profile_updated` (occurredAt = T0)
+3. Kafka → task-service + notification-service (consumer groups)
 4. Upsert user_replicas (fullName, username mới)
 5. GET /notifications       → actor.name từ replica (tên mới)
 6. Comment @username mới    → resolve từ replica local
@@ -190,12 +190,14 @@ flowchart TB
   end
 
   subgraph replica [A - Local replica]
-    RMQ[RabbitMQ]
+    K[(Kafka)]
+    DBZ[Debezium CDC]
     UR1[task-service user_replicas]
     UR2[notification-service user_replicas]
-    US -->|user_registered / user_profile_updated| RMQ
-    RMQ --> UR1
-    RMQ --> UR2
+    US -->|user_outbox_events| DBZ
+    DBZ --> K
+    K -->|user_registered / user_profile_updated| UR1
+    K -->|user_registered / user_profile_updated| UR2
   end
 
   subgraph sync [B - Sync call]

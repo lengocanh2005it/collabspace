@@ -150,7 +150,7 @@ Route protected yêu cầu `Authorization: Bearer …` (auth gRPC). Dev-only `X-
 
 **Comment** (base `/api/v1/tasks/{taskId}/comments`): tạo, list, sửa, xóa — xem service contracts.
 
-**Event publish** (outbox → RabbitMQ): `task_assigned`, `comment_created`, `comment_mentioned`.
+**Event publish** (outbox → Debezium → Kafka): `task_assigned`, `comment_created`, `comment_mentioned` on `collabspace.task.*`.
 
 ---
 

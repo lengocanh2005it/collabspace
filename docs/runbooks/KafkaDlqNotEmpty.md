@@ -5,7 +5,7 @@
 
 ## Ý nghĩa
 
-Sau `KAFKA_CONSUMER_MAX_RETRIES` (mặc định 3), consumer gửi envelope DLQ thay vì block consumer group (thay RabbitMQ DLQ).
+Sau `KAFKA_CONSUMER_MAX_RETRIES` (mặc định 3), consumer gửi envelope DLQ thay vì block consumer group.
 
 Envelope schema: `infrastructure/kafka/schemas/kafka-dlq-envelope.v1.json`
 

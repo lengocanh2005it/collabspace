@@ -5,7 +5,7 @@ The Workspace Service is a core domain microservice for CollabSpace, responsible
 ## Tech Stack
 - **Framework:** NestJS
 - **Database:** PostgreSQL (via TypeORM)
-- **Messaging:** RabbitMQ (via amqplib)
+- **Messaging:** Outbox → Debezium → Kafka (`WORKSPACE_OUTBOX_PUBLISH_MODE=debezium`)
 - **Containerization:** Docker (Alpine Node.js 20)
 
 ## Quick Start
@@ -52,5 +52,4 @@ All API requests require an `X-User-Id` header (usually injected by the API Gate
 - `DATABASE_SCHEMA`: Schema to use (default: `public`)
 - `DATABASE_LOGGING`: Enable TypeORM logging (`true`/`false`)
 - `DATABASE_SYNCHRONIZE`: Auto-sync schema (`true`/`false`)
-- `RABBITMQ_URL`: RabbitMQ connection string
 - `JAEGER_ENDPOINT`: Endpoint for distributed tracing

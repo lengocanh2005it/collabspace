@@ -8,7 +8,7 @@ Hướng dẫn này triển khai toàn bộ stack Compose lên **một Droplet**
 
 - Traefik gateway cổng `80` và `443`
 - Năm service NestJS
-- PostgreSQL, MongoDB, Redis, RabbitMQ
+- PostgreSQL, MongoDB, Redis, Kafka + Debezium Connect
 - Image build bởi GitHub Actions và push lên GitHub Container Registry (GHCR)
 
 **Droplet gợi ý:** Ubuntu 24.04 LTS, 4 vCPU, 8 GiB RAM, 160 GiB disk.
@@ -52,7 +52,6 @@ Script init in ra `VAULT_TOKEN` read-only — ghi vào `infrastructure/deploy/dr
 Tạo file cấu hình:
 
 ```sh
-cp infrastructure/rabbitmq/.env.example infrastructure/rabbitmq/.env
 cp infrastructure/deploy/droplet.env.example infrastructure/deploy/droplet.env
 nano infrastructure/deploy/droplet.env
 cp infrastructure/vault/.env.example infrastructure/vault/.env
@@ -84,7 +83,6 @@ Script deploy chạy `infrastructure/vault/scripts/sync-env-from-vault.sh`, tạ
 - `services/workspace-service/.env`
 - `services/task-service/.env`
 - `services/notification-service/.env`
-- `infrastructure/rabbitmq/.env`
 - `infrastructure/redis/.env`
 - `infrastructure/redis/redis.conf`
 

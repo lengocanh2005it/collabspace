@@ -439,7 +439,7 @@ Debezium Mongo Outbox Event Router on `task_outbox_events` (`infrastructure/kafk
 | `task.comment_mentioned` | `collabspace.task.comment_mentioned` | `notification-service` |
 
 - **Message value**: domain JSON from outbox `payload` field (MongoEventRouter). Mongo CDC may emit `payload` as a **JSON-encoded string** — consumers use `parseKafkaOutboxJsonValue` (parse twice when needed).
-- **Producer path (Phase 5M cutover)**: `TASK_OUTBOX_PUBLISH_MODE=debezium` — task-service outbox processor skips RMQ; CDC only.
+- **Producer path**: `TASK_OUTBOX_PUBLISH_MODE=debezium` — Debezium CDC only (no in-app broker publish).
 - **Transaction**: assign task + outbox, comment + activity + outbox — Mongo `withTransaction` (requires replica set `rs0`).
 - **Consumer env**: `KAFKA_TOPIC_TASK_ASSIGNED`, `KAFKA_TOPIC_COMMENT_CREATED`, `KAFKA_TOPIC_COMMENT_MENTIONED`; group `${KAFKA_GROUP_ID}-task-events`.
 - **Notification types**: `task.comment_created` → `COMMENT_ADDED`; `task.comment_mentioned` → `COMMENT_MENTIONED`; `task.task_assigned` → `TASK_ASSIGNED`.

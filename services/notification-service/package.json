@@ -1,7 +1,7 @@
 {
   "name": "notification-service",
   "version": "1.0.0",
-  "description": "CollabSpace RabbitMQ notification persistence and polling API",
+  "description": "CollabSpace notification persistence and Kafka consumer API",
   "main": "dist/main.js",
   "scripts": {
     "start": "nest start",
@@ -21,7 +21,7 @@
   },
   "keywords": [
     "notification",
-    "rabbitmq",
+    "kafka",
     "polling",
     "nestjs"
   ],
@@ -44,8 +44,6 @@
     "@opentelemetry/resources": "^2.7.1",
     "@opentelemetry/sdk-node": "^0.218.0",
     "@opentelemetry/semantic-conventions": "^1.41.1",
-    "amqp-connection-manager": "^5.0.0",
-    "amqplib": "^1.0.7",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
     "compression": "^1.8.1",

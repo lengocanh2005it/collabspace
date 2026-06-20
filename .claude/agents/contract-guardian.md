@@ -1,6 +1,6 @@
 ---
 name: contract-guardian
-description: Verify HTTP routes, gRPC protos, RabbitMQ events, and auth headers stay consistent across services and docs. Use when changing APIs, protos, events, or Traefik routes.
+description: Verify HTTP routes, gRPC protos, Kafka events, and auth headers stay consistent across services and docs. Use when changing APIs, protos, events, or Traefik routes.
 tools: Read, Grep, Glob, Bash
 disallowedTools: Write, Edit
 model: haiku

@@ -31,7 +31,7 @@ function errorMessage(error: unknown): string {
 
 /**
  * Parse → retry handler → on failure publish DLQ envelope (offset committed by caller).
- * Mirrors former RabbitMQ DLQ semantics without blocking the consumer group.
+ * Mirrors Kafka DLQ semantics without blocking the consumer group.
  */
 export async function processKafkaConsumerMessage(
   options: ProcessKafkaConsumerMessageOptions,

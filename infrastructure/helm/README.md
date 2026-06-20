@@ -11,7 +11,7 @@ infrastructure/helm/
 │   ├── install.sh
 │   └── install.ps1
 └── collabspace/
-    ├── Chart.yaml          # dependencies: postgresql, mongodb, redis, rabbitmq, traefik
+    ├── Chart.yaml          # dependencies: postgresql, mongodb, redis, traefik
     ├── values.yaml         # default (production-like)
     ├── values-local.yaml   # minikube/kind — fewer replicas, NodePort
     └── templates/
@@ -26,7 +26,7 @@ infrastructure/helm/
 - Kubernetes **1.24+**
 - **Helm 3.12+**
 - `kubectl` configured for your cluster
-- Storage class for PVCs (Bitnami PostgreSQL, MongoDB, Redis, RabbitMQ)
+- Storage class for PVCs (Bitnami PostgreSQL, MongoDB, Redis)
 - Container images built and available to the cluster (`collabspace/*:latest`)
 
 ### Install Helm (if missing)
@@ -93,7 +93,6 @@ global:
     postgresPassword: "<strong-password>"
     mongoPassword: "<strong-password>"
     redisPassword: "<strong-password>"
-    rabbitmqPassword: "<strong-password>"
     metricsAuthToken: "<prometheus-scrape-token>"
 
 apps:
@@ -117,25 +116,8 @@ helm upgrade --install collabspace . \
 | PostgreSQL | Bitnami subchart | DBs: `collabspace_auth`, `collabspace_user`, `collabspace_workspace` |
 | MongoDB | Bitnami subchart | DBs: `collabspace_task`, `collabspace_notification` |
 | Redis | Bitnami subchart | Auth sessions + notification cache |
-| RabbitMQ | Bitnami subchart | Vhost `collabspace`; consumer queues use DLX `collabspace_dlx` |
 
-### RabbitMQ consumer queues (DLX)
-
-Microservice consumer queues (`auth-service`, `user-service`, `task-service`, `notification-service`) are declared with:
-
-- `x-dead-letter-exchange`: `collabspace_dlx`
-- `x-dead-letter-routing-key`: `<queue-name>.dlq`
-
-Canonical layout: `infrastructure/rabbitmq/definitions.json`.
-
-**Deploy:** `infrastructure/deploy/helm-rollout.sh` runs `reconcile-rabbitmq-queues.sh` before migrations. If a legacy queue exists without DLX args, the script scales the consumer deployment to 0, deletes the queue, and the app recreates it on startup.
-
-**Manual reconcile on Droplet:**
-
-```bash
-export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
-bash /opt/collabspace/infrastructure/deploy/reconcile-rabbitmq-queues.sh
-```
+Cross-service events use **Kafka + Debezium** (outbox CDC) — not deployed by this chart; see `infrastructure/kafka/README.md` and `docs/kafka-debezium-migration-roadmap.md`.
 
 | Traefik | Official Traefik chart | LoadBalancer / NodePort gateway |
 | Apps | Custom templates | auth, user, workspace (8080), task, notification |
@@ -151,7 +133,6 @@ Subcharts use `fullnameOverride` so application env vars match Docker Compose:
 | PostgreSQL | `postgres` | 5432 |
 | MongoDB | `mongo` | 27017 |
 | Redis | `redis` | 6379 |
-| RabbitMQ | `rabbitmq` | 5672 |
 | workspace-service | `workspace-service` | **8080** |
 
 ## Legacy plain YAML

@@ -12,7 +12,7 @@ These plain YAML files were the original CollabSpace K8s deployment (Agent BRAVO
 
 ## Why Helm now?
 
-- Bitnami subcharts for PostgreSQL, MongoDB, Redis, RabbitMQ (upgrades, persistence, auth)
+- Bitnami subcharts for PostgreSQL, MongoDB, Redis; Kafka + Debezium via `infrastructure/kafka/` (upgrades, persistence, auth)
 - Official Traefik chart for the API gateway
 - Single `values.yaml` for environments (local vs production)
 - Templated microservices with shared secrets and connection strings

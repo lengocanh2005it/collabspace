@@ -88,7 +88,7 @@ Environment examples exist for most services and infrastructure components:
 - `services/workspace-service/.env.example`
 - `services/task-service/.env.example`
 - `services/notification-service/.env.example`
-- `infrastructure/rabbitmq/.env.example`
+- `infrastructure/kafka/.env.example`
 - `infrastructure/redis/.env.example`
 - `infrastructure/load-testing/k6/.env.example`
 - `infrastructure/docker/.env.example` — shared dev secret notes
@@ -106,7 +106,7 @@ Rules:
 
 ## HashiCorp Vault (secrets)
 
-Single source for shared dev secrets (`JWT_SECRET`, `SERVICE_JWT_SECRET`, DB/RabbitMQ/Redis passwords). Apps still read `.env` — Vault does not replace Compose `env_file` at runtime unless you sync first.
+Single source for shared dev secrets (`JWT_SECRET`, `SERVICE_JWT_SECRET`, DB/Redis passwords). Apps still read `.env` — Vault does not replace Compose `env_file` at runtime unless you sync first.
 
 **Khuyến nghị — một lệnh (Vault + `.env.vault` + stack):**
 
@@ -146,7 +146,7 @@ docker compose -f docker-compose.yml -f docker-compose.db.yml -f docker-compose.
 docker compose -f docker-compose.yml -f docker-compose.db.yml -f docker-compose.override.yml up -d
 ```
 
-**Kafka + Debezium (Phase 0 migration, optional overlay — does not replace RabbitMQ):**
+**Kafka + Debezium (event bus overlay):**
 
 ```sh
 docker compose -f docker-compose.yml -f docker-compose.db.yml -f docker-compose.kafka.yml up -d kafka debezium-connect
@@ -176,7 +176,7 @@ Chi tiết: `infrastructure/mongo/README.md`.
 .\scripts\kafka-phase5-e2e.ps1 # task mention + assign + comment → notifications
 ```
 
-Yêu cầu env cutover: `WORKSPACE_OUTBOX_PUBLISH_MODE=debezium`, `USER_OUTBOX_PUBLISH_MODE=debezium`, `TASK_OUTBOX_PUBLISH_MODE=debezium`, `KAFKA_CONSUMERS_ENABLED=true`, `RABBITMQ_ENABLED=false` trên task/notification consumers. Xem `docs/kafka-debezium-migration-roadmap.md`.
+Yêu cầu env: `WORKSPACE_OUTBOX_PUBLISH_MODE=debezium`, `USER_OUTBOX_PUBLISH_MODE=debezium`, `TASK_OUTBOX_PUBLISH_MODE=debezium`, `KAFKA_CONSUMERS_ENABLED=true`. Xem `docs/kafka-debezium-migration-roadmap.md`.
 
 Add Traefik:
 
@@ -212,7 +212,6 @@ Important local URLs:
 - Kibana: `http://localhost:5601` (chỉ khi bật profile ELK — `docker-compose.logging.yml`; prod K8s dùng Loki)
 - Jaeger: `http://localhost:16686`
 - Traefik dashboard: `http://localhost:8080`
-- RabbitMQ dashboard: `http://localhost:15672`
 - Debezium Connect REST: `http://localhost:8083`
 - Kafka (host client): `localhost:29092`
 - Kafka UI (profile `kafka-ui`): `http://localhost:8088`
@@ -328,12 +327,12 @@ All services compile seed to **`dist/seed/seed.js`**; images copy `scripts/load-
 What gets seeded:
 
 - **auth-service** — roles, permissions, **20** verified demo users
-- **user-service** — profiles, preferences, status (source of truth; no RabbitMQ)
+- **user-service** — profiles, preferences, status (source of truth)
 - **workspace-service** — **4 workspaces**, **9 projects**, members (owner/manager/member mix), **1 pending invitation**
 - **task-service** — **`user_replicas`** (all demo users) + **87 tasks** + event store + **13 comments**
 - **notification-service** — **`user_replicas`** (all demo users) + **32** sample notifications (UNREAD / READ / ARCHIVED)
 
-**k3s full reset:** `bash infrastructure/deploy/run-k8s-full-reset.sh` — stops apps, wipes Postgres/Mongo/Redis, **deletes RabbitMQ PVC** and restarts empty volume, migrate, seed (above), restore apps. RabbitMQ queues are created when apps start, not during seed.
+**k3s full reset:** `bash infrastructure/deploy/run-k8s-full-reset.sh` — stops apps, wipes Postgres/Mongo/Redis, migrate, seed (above), restore apps.
 
 Demo accounts after seed:
 

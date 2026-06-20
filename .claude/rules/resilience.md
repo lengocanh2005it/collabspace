@@ -5,7 +5,7 @@ paths:
   - "services/**/outbox/**"
   - "services/**/messaging/**"
   - "api-gateway/**"
-  - "infrastructure/rabbitmq/**"
+  - "infrastructure/kafka/**"
 ---
 
 # Resilience rules (auto-loaded for integration paths)

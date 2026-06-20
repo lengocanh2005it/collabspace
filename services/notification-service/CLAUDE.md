@@ -1,6 +1,6 @@
 # notification-service
 
-NestJS + CQRS + Mongoose (MongoDB) + RabbitMQ consumer. Event-driven; HTTP is list + health.
+NestJS + CQRS + Mongoose (MongoDB) + Kafka consumer. Event-driven; HTTP is list + health.
 
 ## Pattern
 

@@ -1,6 +1,8 @@
 # Lộ trình migrate RabbitMQ → Kafka + CDC + Debezium
 
-Tài liệu mô tả **từng phase nhỏ** để chuyển CollabSpace từ message bus **RabbitMQ** sang kiến trúc:
+> **Trạng thái (2026-06-20):** Migration **hoàn tất** local (Phase 0–7). Runtime hiện tại: **transactional outbox → Debezium CDC → Kafka**; RabbitMQ đã gỡ (Phase 6). Các section dưới ghi **lịch sử từng phase** và rollback notes.
+
+Tài liệu mô tả **từng phase nhỏ** đã dùng để chuyển CollabSpace sang kiến trúc:
 
 ```text
 Service (cùng transaction)
@@ -16,13 +18,12 @@ Service (cùng transaction)
 - Học **Kafka** (topic, consumer group, retention, replay).
 - Học **CDC** với **Debezium** (Postgres logical replication + Mongo change streams).
 - Giữ **transactional outbox** — app không publish trực tiếp lên broker sau commit.
-- **Không big-bang**: RabbitMQ vẫn là đường chính cho đến phase cuối; mỗi phase có rollback.
 
 **Tài liệu liên quan:**
 
 | Chủ đề | File |
 |--------|------|
-| Event contract hiện tại (RMQ) | [`.claude/docs/service-contracts.md`](../.claude/docs/service-contracts.md) → Event Contracts |
+| Event contract (Kafka topics) | [`.claude/docs/service-contracts.md`](../.claude/docs/service-contracts.md) → Event Contracts |
 | Read model / replica | [cross-service-data.md](./cross-service-data.md), [`.claude/docs/read-models.md`](../.claude/docs/read-models.md) |
 | Outbox trade-off | [trade-offs.md](./trade-offs.md) §5 |
 | Resilience / idempotency | [`.claude/docs/resilience.md`](../.claude/docs/resilience.md) |
@@ -33,43 +34,7 @@ Service (cùng transaction)
 
 ## 1. Hiện trạng vs mục tiêu
 
-### 1.1 Kiến trúc hiện tại (RabbitMQ)
-
-```mermaid
-flowchart LR
-  subgraph producers
-    WS[workspace-service<br/>outbox + processor]
-    TS[task-service<br/>outbox / direct emit]
-    US[user-service<br/>direct emit broadcast]
-  end
-
-  RMQ[(RabbitMQ<br/>collabspace_exchange)]
-
-  subgraph consumers
-    NS[notification-service]
-    TS2[task-service]
-  end
-
-  WS --> RMQ
-  TS --> RMQ
-  US --> RMQ
-  RMQ --> NS
-  RMQ --> TS2
-```
-
-| Event (routing key) | Producer | Consumer |
-|---------------------|----------|----------|
-| `workspace_invited` | workspace-service (outbox → processor) | notification-service |
-| `workspace_deleted` | workspace-service (outbox → processor) | notification-service, task-service |
-| `task_assigned` | task-service (outbox → Debezium → Kafka khi `TASK_OUTBOX_PUBLISH_MODE=debezium`) | notification-service (Kafka) |
-| `comment_created` | task-service (outbox → Debezium → Kafka) | notification-service (Kafka) |
-| `comment_mentioned` | task-service (outbox → Debezium → Kafka) | notification-service (Kafka) |
-| `user_registered` | user-service (broadcast 2 queue) | task-service, notification-service |
-| `user_profile_updated` | user-service (broadcast 2 queue) | task-service, notification-service |
-
-**auth-service:** có `auth_outbox_events` cho **email** (SMTP), không phải event bus microservice — **ngoài phạm vi** migrate này. Auth-service **không** dùng RabbitMQ nên Phase 6 (gỡ RMQ) không ảnh hưởng auth-service; outbox email + processor SMTP giữ nguyên.
-
-### 1.2 Kiến trúc mục tiêu
+### 1.1 Kiến trúc hiện tại (Kafka + Debezium CDC) — **Done**
 
 ```mermaid
 flowchart TB
@@ -102,12 +67,50 @@ flowchart TB
   K --> TS2
 ```
 
+| Event | Kafka topic (ví dụ) | Outbox / producer | Consumer |
+|-------|---------------------|-------------------|----------|
+| `workspace_invited` | `collabspace.workspace.workspace_invited` | workspace-service Postgres outbox | notification-service |
+| `workspace_deleted` | `collabspace.workspace.workspace_deleted` | workspace-service Postgres outbox | notification-service, task-service |
+| `task_assigned` | `collabspace.task.task_assigned` | task-service Mongo outbox | notification-service |
+| `comment_created` | `collabspace.task.comment_created` | task-service Mongo outbox | notification-service |
+| `comment_mentioned` | `collabspace.task.comment_mentioned` | task-service Mongo outbox | notification-service |
+| `user_registered` | `collabspace.user.user_registered` | user-service Postgres outbox | task-service, notification-service |
+| `user_profile_updated` | `collabspace.user.user_profile_updated` | user-service Postgres outbox | task-service, notification-service |
+
 **Nguyên tắc:**
 
-1. **Chỉ CDC bảng/collection outbox** — không stream toàn bộ `user_profiles` / `tasks` nếu mục tiêu là domain event (tránh nhầm với “CDC sync read model thô”).
+1. **Chỉ CDC bảng/collection outbox** — không stream toàn bộ `user_profiles` / `tasks` nếu mục tiêu là domain event.
 2. **Outbox Event Router** (Debezium SMT) map `event_type` → Kafka topic.
-3. Consumer giữ **idempotency** theo `eventId` (đã có ở notification-service).
+3. Consumer giữ **idempotency** theo `eventId`; lỗi lặp → retry + DLQ topic `collabspace.dlq.events` (Phase 7).
 4. Payload domain **không đổi** — chỉ đổi transport và envelope wire format.
+
+**auth-service:** `auth_outbox_events` cho **email** (SMTP/Brevo) — **ngoài** Kafka event bus microservice.
+
+### 1.2 Legacy (RabbitMQ — trước Phase 6)
+
+```mermaid
+flowchart LR
+  subgraph producers
+    WS[workspace-service<br/>outbox processor]
+    TS[task-service]
+    US[user-service]
+  end
+
+  RMQ[(RabbitMQ<br/>collabspace_exchange)]
+
+  subgraph consumers
+    NS[notification-service]
+    TS2[task-service]
+  end
+
+  WS --> RMQ
+  TS --> RMQ
+  US --> RMQ
+  RMQ --> NS
+  RMQ --> TS2
+```
+
+Đã gỡ Phase 6. Giữ sơ đồ để tham khảo rollback / lịch sử migration.
 
 ---
 
@@ -397,9 +400,9 @@ Bật lại processor RMQ; tắt Kafka consumer workspace.
 
 ### Hiện trạng (sau 4a + 4b code)
 
-`user-service` có **`user_outbox_events`** + `UserOutboxService`; use case ghi outbox cùng TX với profile. Local Kafka cutover: `USER_OUTBOX_PUBLISH_MODE=debezium` (skip RMQ sau commit). `RabbitMqEventsService` vẫn trong code cho dual-run / prod rollback (`rabbitmq` mode).
+`user-service` có **`user_outbox_events`** + `UserOutboxService`; use case ghi outbox cùng TX với profile. Local: `USER_OUTBOX_PUBLISH_MODE=debezium` — Debezium CDC only (Phase 6 đã xóa RMQ client).
 
-File: `services/user-service/src/infrastructure/outbox/`, `services/user-service/src/infrastructure/messaging/rabbitmq/rabbitmq-events.service.ts`
+File: `services/user-service/src/infrastructure/outbox/`
 
 ### Lưu ý transaction — TypeORM queryRunner (bắt buộc đọc trước 4a)
 
@@ -445,7 +448,7 @@ Cần thêm (đã có trong repo):
 |---|------|
 | 4b.1 | `CreatePendingUserProfileUseCase`: TX + INSERT outbox `user_registered` (cùng pattern 4a) | ✅ |
 | 4b.2 | Consumers dual-run cho `user_registered` | ✅ |
-| 4b.3 | Tắt `RabbitMqEventsService` / xóa RMQ client factory sau khi dual-run ổn định | ⏳ local `debezium` mode; xóa RMQ module ở Phase 6 |
+| 4b.3 | Xóa RMQ client / module user-service | ✅ Phase 6 |
 | 4b.4 | Verify fallback hydrate HTTP khi replica race (`.claude/docs/read-models.md`) | ✅ E2E đợi replica trước invite (Phase 3 script) |
 
 ### DoD (cả 4a + 4b)
@@ -674,7 +677,7 @@ Ví dụ `notification-service`: `notification-service-user-events`, `notificati
 ### Feature flags migrate
 
 ```env
-WORKSPACE_OUTBOX_PUBLISH_MODE=debezium   # debizium | rabbitmq | dual
+WORKSPACE_OUTBOX_PUBLISH_MODE=debezium   # debezium (default prod/local)
 TASK_OUTBOX_PUBLISH_MODE=debezium
 KAFKA_DUAL_CONSUME=true                  # Phase 2–4 dual-run
 ```

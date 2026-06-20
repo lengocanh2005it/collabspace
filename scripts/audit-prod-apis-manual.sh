@@ -174,23 +174,9 @@ check "GET /users/me no token" 401 -X GET "$BASE_URL/users/me" >/dev/null || tru
 check "POST /auth/login wrong pwd" 401 -X POST "$BASE_URL/auth/login" -H "Content-Type: application/json" \
   -d "{\"email\":\"$EMAIL\",\"password\":\"wrongpass123\"}" >/dev/null || true
 
-echo "=== RABBITMQ ===" | tee -a "$RESULTS_FILE"
-while read -r q msgs cons; do
-  [[ -z "${q:-}" ]] && continue
-  cons_int="${cons:-0}"; cons_int="${cons_int%%.*}"
-  msgs_int="${msgs:-0}"; msgs_int="${msgs_int%%.*}"
-  if [[ "$cons_int" -gt 0 ]]; then
-    echo "[OK]   queue $q — messages=$msgs_int consumers=$cons_int" | tee -a "$RESULTS_FILE" >&2
-  elif [[ "$msgs_int" -gt 0 ]]; then
-    WARN=$((WARN+1))
-    echo "[WARN] queue $q — messages=$msgs_int consumers=0" | tee -a "$RESULTS_FILE" >&2
-  else
-    echo "[audit] queue $q — idle" | tee -a "$RESULTS_FILE" >&2
-  fi
-done < <(kubectl exec -n collabspace rabbitmq-0 -- rabbitmqctl list_queues name messages consumers -p collabspace -q 2>/dev/null || true)
-
+echo "=== KAFKA / NOTIFICATION CONSUMER ===" | tee -a "$RESULTS_FILE"
 echo "--- notification-service event logs (last 15) ---" | tee -a "$RESULTS_FILE"
-kubectl logs -n collabspace deploy/notification-service --tail=50 2>/dev/null | grep -iE 'RABBITMQ|task_assigned|comment|workspace_invited|error' | tail -15 | tee -a "$RESULTS_FILE" || true
+kubectl logs -n collabspace deploy/notification-service --tail=50 2>/dev/null | grep -iE 'via kafka|task_assigned|comment|workspace_invited|error' | tail -15 | tee -a "$RESULTS_FILE" || true
 
 echo "" | tee -a "$RESULTS_FILE"
 echo "========================================" | tee -a "$RESULTS_FILE"

@@ -98,7 +98,7 @@ Invoke explicitly: *"Use the nest-reviewer agent to review my changes."*
 - **Package manager**: `pnpm` — từ root (`pnpm run build|test`) hoặc từng `services/*`; workspace: `pnpm-workspace.yaml` + `packages/shared`.
 - **Tests**: Thêm/cập nhật test khi behavior user-visible thay đổi.
 - **Docs & skills**: Khi sửa code ảnh hưởng contract/MVP/vận hành → cập nhật doc + skill liên quan **cùng PR** (không chỉ `service-contracts.md`).
-- **Resilience**: Đọc `.claude/docs/resilience.md` trước khi sửa gRPC, health, outbox, RabbitMQ, hoặc hành vi khi dependency down.
+- **Resilience**: Đọc `.claude/docs/resilience.md` trước khi sửa gRPC, health, outbox, Kafka consumers, hoặc hành vi khi dependency down.
 
 ## Docs & skills sync khi sửa code
 
@@ -106,7 +106,7 @@ Invoke explicitly: *"Use the nest-reviewer agent to review my changes."*
 
 ### Bắt buộc cập nhật khi
 
-- Route HTTP, gRPC, event RabbitMQ, header auth/S2S
+- Route HTTP, gRPC, Kafka event topics, header auth/S2S
 - Biến môi trường, port, gateway Traefik
 - Trạng thái tính năng (Done / Planned / gap backlog)
 - Health, degradation, outbox, idempotency behavior

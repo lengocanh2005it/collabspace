@@ -6,7 +6,7 @@ The Auth Service is the foundational identity and access management microservice
 - **Framework:** NestJS
 - **Database:** PostgreSQL (`collabspace_auth`) via TypeORM
 - **Authentication:** JWT (JSON Web Tokens)
-- **Messaging:** RabbitMQ (via amqplib)
+- **Messaging:** Outbox email (SMTP via Brevo) — no cross-service event bus
 - **Containerization:** Docker (Alpine Node.js 20)
 
 ## Quick Start
@@ -77,4 +77,3 @@ All endpoints are prefixed with `/api/v1/auth`.
 - `JWT_SECRET`: Secret key for JWT signing
 - `JWT_EXPIRES_IN`: Access token expiration (e.g., `1h`)
 - `JWT_REFRESH_EXPIRES_IN`: Refresh token expiration (e.g., `7d`)
-- `RABBITMQ_URL`: RabbitMQ connection string

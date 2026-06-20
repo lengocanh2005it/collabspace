@@ -114,7 +114,7 @@ Chi tiết infra: [phan-phu-tho-infrastructure-backlog.md](./phan-phu-tho-infras
 - [x] **auth user repository spec** — `services/auth-service/src/infrastructure/repositories/typeorm-user.repository.spec.ts` + `auth-use-cases.integration.spec.ts`
 - [x] **E2E** — `register → login → me` flow trong `auth-service/test/app.e2e-spec.ts`; user e2e ổn định in-memory (`delete DATABASE_URL` trong test); internal replicas e2e
 - [x] **Internal replica API** — `internal-users.controller.spec.ts` + e2e `POST /api/v1/users/internal/replicas`
-- [x] **RabbitMQ user replica events** — `user_registered` / `user_profile_updated`; legacy `auth-events` consumer removed after auth outbox cleanup
+- [x] **Kafka user replica events** — `user_registered` / `user_profile_updated` via outbox + Debezium CDC; legacy `auth-events` consumer removed after auth outbox cleanup
 
 #### P2 — OpenAPI & polish
 
@@ -212,15 +212,16 @@ Chi tiết infra: [phan-phu-tho-infrastructure-backlog.md](./phan-phu-tho-infras
 
 #### P2 — Tech debt & OpenAPI
 
-- [x] **Xóa Kafka dead code** — runtime chỉ RabbitMQ:
-  - `services/notification-service/package.json` (`kafka-node`)
-  - `src/domain/events/kafka-event-wrapper.ts`, `kafka-event-payloads.ts`
+- [x] **Kafka event bus migration** — transactional outbox → Debezium CDC → Kafka; RabbitMQ removed (Phase 6); DLQ + lag observability (Phase 7):
+  - `services/*/infrastructure/messaging/kafka/`
+  - `infrastructure/kafka/`, `docker-compose.kafka.yml`
+  - `@collabspace/shared` — `processKafkaConsumerMessage`, DLQ envelope
 - [x] **Xóa / sửa `getAzureStorageConfig()`** không dùng trong `notification-service` và `task-service` `configuration.service.ts`
 - [x] **Swagger notification-service** — `/swagger` + `@ApiTags` + `@ApiOkResponse` trên `notifications.controller.ts`
 - [x] **Swagger task** — `/swagger` + `@ApiTags` task/comment/health; `@ApiProperty` request DTOs; `@ApiOkResponse` trên task controller
 - [x] Thay runtime `console.log` bằng `Logger`:
-  - `task-service/src/main.ts`, RMQ listeners
-  - `notification-service` comment listener
+  - `task-service/src/main.ts`, Kafka consumers
+  - `notification-service` Kafka consumers
 - [x] **Attachment Azure** — document rõ mock vs prod trong `task-service/CLAUDE.md` / `.env.example`
 
 #### Out of scope MVP

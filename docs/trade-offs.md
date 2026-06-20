@@ -42,7 +42,7 @@ Chi tiết: [cross-service-data.md](./cross-service-data.md)
 
 ## 3. Local replica + event vs gọi sync mỗi request
 
-| | Replica + RabbitMQ | HTTP/gRPC mỗi lần đọc |
+| | Replica + Kafka (Debezium CDC) | HTTP/gRPC mỗi lần đọc |
 |---|-------------------|------------------------|
 | **Chọn (user data)** | ✅ `user_replicas` + fallback | |
 | **Chọn (membership)** | | ✅ HTTP workspace mỗi mutation |
@@ -73,7 +73,7 @@ Chi tiết: [cross-service-data.md](./cross-service-data.md)
 | **Chọn** | ✅ auth email, workspace invite, task assign events | |
 | **Gain** | Không mất event nếu broker down lúc commit; retry có kiểm soát | |
 | **Cost** | Bảng outbox; processor; lag delivery; code phức tạp hơn | |
-| **Khi đổi** | Event không critical, mất một message chấp nhận được — publish trực tiếp (user-service warn-only publish profile event) | |
+| **Khi đổi** | Event không critical, mất một message chấp nhận được — không áp dụng cho domain events hiện tại (đều qua outbox + CDC) | |
 
 ---
 
@@ -81,10 +81,10 @@ Chi tiết: [cross-service-data.md](./cross-service-data.md)
 
 | | At-least-once + dedupe (CollabSpace) | Exactly-once end-to-end |
 |---|--------------------------------------|-------------------------|
-| **Chọn** | ✅ RabbitMQ + `eventId` dedupe; `Idempotency-Key` HTTP | |
-| **Gain** | Đơn giản với RabbitMQ; phù hợp demo | |
+| **Chọn** | ✅ Kafka + `eventId` dedupe + DLQ topic; `Idempotency-Key` HTTP | |
+| **Gain** | At-least-once phù hợp outbox + CDC; replay consumer offset; lag observability | |
 | **Cost** | Consumer phải idempotent; duplicate window; storage dedupe | |
-| **Khi đổi** | Kafka transactions / DB outbox + inbox pattern nếu cần exactly-once nghiêm | |
+| **Khi đổi** | Kafka transactions / inbox pattern nếu cần exactly-once nghiêm ngặt hơn | |
 
 ---
 
