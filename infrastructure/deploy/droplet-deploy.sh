@@ -49,7 +49,6 @@ required_files=(
   "services/workspace-service/.env"
   "services/task-service/.env"
   "services/notification-service/.env"
-  "infrastructure/rabbitmq/.env"
 )
 
 missing=()
@@ -75,8 +74,7 @@ COMPOSE_FILES=(
 )
 
 docker compose "${COMPOSE_FILES[@]}" pull auth-service user-service workspace-service task-service notification-service
-docker compose "${COMPOSE_FILES[@]}" build rabbitmq
-docker compose "${COMPOSE_FILES[@]}" up -d --no-build postgres mongo redis rabbitmq
+docker compose "${COMPOSE_FILES[@]}" up -d --no-build postgres mongo redis
 
 if [[ "${RUN_MIGRATIONS:-true}" == "true" ]]; then
   echo "Running database migrations..."

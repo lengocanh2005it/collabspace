@@ -15,7 +15,7 @@ paths:
 - Use cases inject ports via `@Inject(SYMBOL)` and `import { type Interface, SYMBOL }`.
 - Input DTOs in `application/dto/`; use cases in `application/use-cases/<area>/`.
 - ORM entities: `*.orm-entity.ts`, snake_case columns; transactions handled inside adapters.
-- Events: constants in `domain/events/`; publish via `collabspace_exchange` + documented routing key; include `eventId` + `occurredAt`.
+- Events: constants in `domain/events/`; Kafka topics per `service-contracts.md`; outbox row includes `eventId` + `occurredAt`; `WORKSPACE_OUTBOX_PUBLISH_MODE=debezium`.
 - Tests: `*.use-case.spec.ts` next to use case; mock via `{ provide: SYMBOL, useValue: mockObj }`.
 - Do **not** inject `@InjectRepository(OrmEntity)` in use cases — all DB access goes through port adapters.
 - Deep guide: `.claude/docs/service-architecture.md` (workspace section).

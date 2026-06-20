@@ -1,7 +1,7 @@
 {
   "name": "notification-service",
   "version": "1.0.0",
-  "description": "CollabSpace RabbitMQ notification persistence and polling API",
+  "description": "CollabSpace notification persistence and Kafka consumer API",
   "main": "dist/main.js",
   "scripts": {
     "start": "nest start",
@@ -10,7 +10,7 @@
     "start:prod": "node dist/main",
     "seed": "node -r ts-node/register src/seed.ts",
     "seed:prod": "node dist/seed/seed.js",
-    "build": "nest build && tsc -p tsconfig.seed.json",
+    "build": "node -e \"for (const f of ['tsconfig.tsbuildinfo','tsconfig.build.tsbuildinfo']) { try { require('fs').unlinkSync(f); } catch {} }\" && nest build && tsc -p tsconfig.seed.json",
     "format": "pnpm -w exec biome format --write src test",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix --format json --max-warnings 0",
     "test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js",
@@ -21,7 +21,7 @@
   },
   "keywords": [
     "notification",
-    "rabbitmq",
+    "kafka",
     "polling",
     "nestjs"
   ],
@@ -44,14 +44,13 @@
     "@opentelemetry/resources": "^2.7.1",
     "@opentelemetry/sdk-node": "^0.218.0",
     "@opentelemetry/semantic-conventions": "^1.41.1",
-    "amqp-connection-manager": "^5.0.0",
-    "amqplib": "^1.0.7",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
     "compression": "^1.8.1",
     "dotenv": "^17.4.2",
     "ioredis": "^5.11.1",
     "mongoose": "^9.6.1",
+    "kafkajs": "^2.2.4",
     "prom-client": "^15.1.3",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",

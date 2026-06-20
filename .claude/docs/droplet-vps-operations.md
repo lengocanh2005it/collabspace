@@ -129,7 +129,7 @@ bash infrastructure/deploy/helm-rollout.sh
 
 Vault/ESO (khi đổi secret keys): `infrastructure/vault/scripts/seed-vault-k3s-from-phase0.sh`, apply `external-secrets.prod.yaml`, force ESO sync — xem `infrastructure/vault/README.md`.
 
-**Reset data + migrate + seed (verbose):** `bash infrastructure/deploy/run-k8s-full-reset.sh` — **scale apps về 0** → wipe PG/Mongo/Redis + **xóa PVC RabbitMQ** (restart volume trống) → migrate (Postgres only) → **seed DB** (gồm `user_replicas` task/notification; không dùng RabbitMQ) → restore apps → **`reconcile-rabbitmq-queues.sh`** (binding `collabspace_exchange` → `notification-service` / `task-service`). Fail giữ apps ở 0. `SKIP_WIPE=true` = chỉ migrate+seed. Helper: `vps-full-reset-now.sh`.
+**Reset data + migrate + seed (verbose):** `bash infrastructure/deploy/run-k8s-full-reset.sh` — **scale apps về 0** → wipe PG/Mongo/Redis → migrate (Postgres only) → **seed DB** (gồm `user_replicas` task/notification) → restore apps. Fail giữ apps ở 0. `SKIP_WIPE=true` = chỉ migrate+seed. Helper: `vps-full-reset-now.sh`.
 
 **Migration trong helm-rollout (tùy chọn):** `RUN_K8S_MIGRATIONS=true bash infrastructure/deploy/helm-rollout.sh` — scale down auth/user/workspace, chạy Jobs, restore replicas. Mặc định `false` (CI và deploy tay thường ngày).
 
@@ -152,8 +152,8 @@ docker run --rm -e SERVICE_JWT_SECRET=test -e MONGO_URI=mongodb://localhost:2701
 
 - `maxUnavailable: 0` + 1 node → rollout chậm; pod cũ có thể kẹt `Terminating`
 - `helm-rollout.sh` có `prune_stuck_terminating_pods` — vẫn có thể timeout nếu pod mới crash loop
-- Notification consumer + RabbitMQ: rollout **sau** các service khác (script đã làm vậy)
-- `reconcile-rabbitmq-queues.sh` chạy trong rollout: đảm bảo `collabspace_exchange`, `collabspace_dlx`, các service DLQ, binding `notification-service` cho `task_assigned`, `workspace_invited`, `workspace_deleted`, `comment_created`, `comment_mentioned`, `user_registered`, `user_profile_updated`, và binding `task-service` cho `workspace_deleted`, `user_registered`, `user_profile_updated`. Script gọi RabbitMQ Management API từ trong pod và lấy credential từ env pod; không in secret ra log.
+- Notification-service + task-service Kafka consumers: cần `KAFKA_CONSUMERS_ENABLED=true` và broker reachable trước khi verify event flows
+- Debezium Connect + connectors: đăng ký sau khi Postgres/Mongo stack healthy — xem `infrastructure/kafka/README.md`
 
 ## Liên quan
 

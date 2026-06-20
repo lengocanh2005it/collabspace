@@ -21,8 +21,6 @@ global:
     mongoUsername: admin
     mongoPassword: password
     redisPassword: collabspace123
-    rabbitmqUsername: guest
-    rabbitmqPassword: guest
     metricsAuthToken: ""
     brevoApiKey: ""
     # Optional — task attachments + user avatars (mock mode when empty)
@@ -30,15 +28,12 @@ global:
   azureStorage:
     containerName: task-attachments
     maxFileSize: "5242880"
-  rabbitmq:
-    dlxExchange: collabspace_dlx
 
 infra:
   hosts:
     postgresql: postgres
     mongodb: mongo
     redis: redis-master
-    rabbitmq: rabbitmq
 
 # --- Bitnami PostgreSQL (auth, user, workspace databases) ---
 postgresql:
@@ -68,6 +63,10 @@ postgresql:
       limits:
         memory: 512Mi
         cpu: 500m
+    extendedConfiguration: |
+      wal_level = logical
+      max_replication_slots = 4
+      max_wal_senders = 4
     initdb:
       scripts:
         init-databases.sql: |
@@ -87,7 +86,9 @@ mongodb:
   metrics:
     image:
       repository: bitnamilegacy/mongodb-exporter
-  architecture: standalone
+  architecture: replicaset
+  replicaSetName: rs0
+  replicaCount: 1
   auth:
     enabled: true
     rootUser: admin
@@ -140,34 +141,59 @@ redis:
         memory: 512Mi
         cpu: 250m
 
-# --- Bitnami RabbitMQ (integration events) ---
-rabbitmq:
+# --- Kafka + Debezium Connect (event bus CDC) ---
+kafka:
   enabled: true
-  fullnameOverride: rabbitmq
   image:
-    repository: bitnamilegacy/rabbitmq
-  volumePermissions:
-    image:
-      repository: bitnamilegacy/os-shell
-  auth:
-    username: guest
-    password: guest
-    erlangCookie: collabspace-erlang-cookie
+    repository: apache/kafka
+    tag: "3.8.0"
+    pullPolicy: IfNotPresent
   persistence:
     enabled: true
-    size: 2Gi
-  extraConfiguration: |-
-    default_vhost = collabspace
-  plugins: "rabbitmq_management rabbitmq_prometheus"
+    size: 5Gi
   resources:
     requests:
-      memory: 256Mi
+      memory: 512Mi
       cpu: 250m
     limits:
-      memory: 512Mi
-      cpu: 500m
-  metrics:
+      memory: 768Mi
+      cpu: 750m
+  exporter:
     enabled: true
+    image:
+      repository: danielqsj/kafka-exporter
+      tag: latest
+      pullPolicy: IfNotPresent
+    kafkaServer: kafka:9092
+    resources:
+      requests:
+        memory: 32Mi
+        cpu: 25m
+      limits:
+        memory: 64Mi
+        cpu: 100m
+
+debeziumConnect:
+  enabled: true
+  image:
+    repository: quay.io/debezium/connect
+    tag: 2.7.3.Final
+    pullPolicy: IfNotPresent
+  bootstrapServers: kafka:9092
+  groupId: collabspace-connect
+  configStorageTopic: collabspace_connect_configs
+  offsetStorageTopic: collabspace_connect_offsets
+  statusStorageTopic: collabspace_connect_statuses
+  resources:
+    requests:
+      memory: 512Mi
+      cpu: 250m
+    limits:
+      memory: 768Mi
+      cpu: 750m
+  connectors:
+    enabled: true
+    registerOnUpgrade: false
 
 # --- Traefik ingress controller (API gateway) ---
 traefik:
@@ -457,8 +483,6 @@ apps:
     extraEnv:
       GRPC_ENABLED: "true"
       GRPC_URL: "0.0.0.0:50051"
-      RABBITMQ_ENABLED: "true"
-      RABBITMQ_QUEUE: auth-service
       USER_SERVICE_GRPC_URL: user-service:50052
       USER_SERVICE_GRPC_TIMEOUT_MS: "10000"
       REDIS_HOST: redis-master
@@ -506,8 +530,7 @@ apps:
       AUTH_SERVICE_GRPC_URL: auth-service:50051
       AUTH_SERVICE_HTTP_URL: http://auth-service:3000
       AUTH_SERVICE_HTTP_TIMEOUT_MS: "3000"
-      RABBITMQ_ENABLED: "true"
-      RABBITMQ_QUEUE: user-service
+      USER_OUTBOX_PUBLISH_MODE: "debezium"
       REDIS_HOST: redis-master
       USER_PROFILE_CACHE_TTL_SECONDS: "300"
       USER_PREFS_CACHE_TTL_SECONDS: "600"
@@ -540,6 +563,7 @@ apps:
       AUTH_SERVICE_URL: http://auth-service:3000
       AUTH_SERVICE_TIMEOUT_MS: "3000"
       WORKSPACE_OUTBOX_ENABLED: "true"
+      WORKSPACE_OUTBOX_PUBLISH_MODE: "debezium"
       DATABASE_SYNCHRONIZE: "false"
       WORKSPACE_OUTBOX_POLL_INTERVAL_MS: "2000"
       WORKSPACE_OUTBOX_BATCH_SIZE: "25"
@@ -566,8 +590,11 @@ apps:
         memory: 256Mi
         cpu: 250m
     extraEnv:
-      RABBITMQ_ENABLED: "true"
-      RABBITMQ_QUEUE: task-service
+      KAFKA_CONSUMERS_ENABLED: "true"
+      KAFKA_BROKERS: "kafka:9092"
+      KAFKA_CLIENT_ID: "task-service"
+      KAFKA_GROUP_ID: "task-service"
+      TASK_OUTBOX_PUBLISH_MODE: "debezium"
       WORKSPACE_CLIENT_MODE: http
       WORKSPACE_SERVICE_URL: http://workspace-service:8080
       WORKSPACE_SERVICE_TIMEOUT_MS: "10000"
@@ -580,6 +607,9 @@ apps:
       USER_SERVICE_URL: http://user-service:3000
       USER_SERVICE_TIMEOUT_MS: "3000"
       USER_REPLICA_FALLBACK_ENABLED: "true"
+      KAFKA_DLQ_TOPIC: "collabspace.dlq.events"
+      KAFKA_CONSUMER_MAX_RETRIES: "3"
+      KAFKA_CONSUMER_RETRY_DELAY_MS: "1000"
 
   notification-service:
     enabled: true
@@ -603,11 +633,15 @@ apps:
         memory: 256Mi
         cpu: 250m
     extraEnv:
-      RABBITMQ_ENABLED: "true"
-      RABBITMQ_QUEUE: notification-service
-      RABBITMQ_PREFETCH_COUNT: "50"
+      KAFKA_CONSUMERS_ENABLED: "true"
+      KAFKA_BROKERS: "kafka:9092"
+      KAFKA_CLIENT_ID: "notification-service"
+      KAFKA_GROUP_ID: "notification-service"
       REDIS_HOST: redis-master
       NOTIFICATION_UNREAD_CACHE_TTL_SECONDS: "30"
       WS_ENABLED: "false"
       WS_PATH: /notifications/ws
       USER_SERVICE_URL: http://user-service:3000
+      KAFKA_DLQ_TOPIC: "collabspace.dlq.events"
+      KAFKA_CONSUMER_MAX_RETRIES: "3"
+      KAFKA_CONSUMER_RETRY_DELAY_MS: "1000"

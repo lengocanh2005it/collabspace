@@ -29,8 +29,6 @@ pg_pass=$(echo "$response" | jq -r '.data.data.postgres_password')
 mongo_user=$(echo "$response" | jq -r '.data.data.mongo_username')
 mongo_pass=$(echo "$response" | jq -r '.data.data.mongo_password')
 redis_pass=$(echo "$response" | jq -r '.data.data.redis_password')
-rmq_user=$(echo "$response" | jq -r '.data.data.rabbitmq_username')
-rmq_pass=$(echo "$response" | jq -r '.data.data.rabbitmq_password')
 metrics=$(echo "$response" | jq -r '.data.data.metrics_auth_token // ""')
 azure=$(echo "$response" | jq -r '.data.data.azure_storage_connection_string // ""')
 
@@ -57,11 +55,10 @@ USER_ENV="$REPO_ROOT/services/user-service/.env"
 WS_ENV="$REPO_ROOT/services/workspace-service/.env"
 TASK_ENV="$REPO_ROOT/services/task-service/.env"
 NOTIF_ENV="$REPO_ROOT/services/notification-service/.env"
-RABBITMQ_ENV="$REPO_ROOT/infrastructure/rabbitmq/.env"
 REDIS_ENV="$REPO_ROOT/infrastructure/redis/.env"
 REDIS_CONF="$REPO_ROOT/infrastructure/redis/redis.conf"
 
-for f in "$AUTH_ENV" "$USER_ENV" "$WS_ENV" "$TASK_ENV" "$NOTIF_ENV" "$RABBITMQ_ENV" "$REDIS_ENV"; do
+for f in "$AUTH_ENV" "$USER_ENV" "$WS_ENV" "$TASK_ENV" "$NOTIF_ENV" "$REDIS_ENV"; do
   ensure_env "$f"
 done
 
@@ -91,8 +88,6 @@ pg_user_enc=$(url_encode "postgres")
 pg_pass_enc=$(url_encode "$pg_pass")
 mongo_user_enc=$(url_encode "$mongo_user")
 mongo_pass_enc=$(url_encode "$mongo_pass")
-rmq_user_enc=$(url_encode "$rmq_user")
-rmq_pass_enc=$(url_encode "$rmq_pass")
 
 for f in "$AUTH_ENV" "$USER_ENV" "$WS_ENV"; do
   [[ -f "$f" ]] || continue
@@ -104,18 +99,9 @@ for f in "$TASK_ENV" "$NOTIF_ENV"; do
   sed -i.bak -E "s|(mongodb://)[^@]+@|\1${mongo_user_enc}:${mongo_pass_enc}@|" "$f" && rm -f "${f}.bak"
 done
 
-for f in "$AUTH_ENV" "$USER_ENV" "$WS_ENV" "$TASK_ENV" "$NOTIF_ENV"; do
-  [[ -f "$f" ]] || continue
-  sed -i.bak -E "s|(amqp://)[^@]+@|\1${rmq_user_enc}:${rmq_pass_enc}@|" "$f" && rm -f "${f}.bak"
-done
-
 set_env_key "$AUTH_ENV" "REDIS_PASSWORD" "$redis_pass"
 set_env_key "$NOTIF_ENV" "REDIS_PASSWORD" "$redis_pass"
 set_env_key "$REDIS_ENV" "REDIS_PASSWORD" "$redis_pass"
-
-set_env_key "$RABBITMQ_ENV" "RABBITMQ_DEFAULT_USER" "$rmq_user"
-set_env_key "$RABBITMQ_ENV" "RABBITMQ_DEFAULT_PASS" "$rmq_pass"
-set_env_key "$RABBITMQ_ENV" "RABBITMQ_DEFAULT_VHOST" "collabspace"
 
 if [[ -f "$REDIS_CONF" ]]; then
   sed -i.bak -E "s|^requirepass .*$|requirepass ${redis_pass}|" "$REDIS_CONF" && rm -f "${REDIS_CONF}.bak"

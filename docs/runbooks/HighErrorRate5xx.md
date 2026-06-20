@@ -18,6 +18,6 @@
 ## Khắc phục
 
 1. Rollback deployment cuối nếu lỗi bắt đầu sau release.
-2. Khôi phục dependency (xem runbook PostgresDown, MongoDown, RabbitMQ).
+2. Khôi phục dependency (xem runbook PostgresDown, MongoDown, DebeziumConnectDown, KafkaConsumerLagHigh).
 3. Scale replica nếu nghi ngờ quá tải (K8s HPA hoặc tăng replica thủ công).
 4. Xác nhận tỷ lệ lỗi về bình thường trên Grafana/Prometheus trong 10 phút.

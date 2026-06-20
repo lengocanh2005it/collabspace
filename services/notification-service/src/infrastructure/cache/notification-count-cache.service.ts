@@ -1,7 +1,7 @@
 import { Inject, Injectable, Logger, Optional } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import type { Redis } from "ioredis";
-import { REDIS_CLIENT } from "./redis-client.token";
+import { REDIS_CLIENT } from "./redis.module";
 
 @Injectable()
 export class NotificationCountCacheService {

@@ -5,14 +5,17 @@ export type MongoConfig = {
   uri: string;
 };
 
-// 1. Thêm định nghĩa Type cho RabbitMQ
-export type RabbitMqConfig = {
+export type KafkaConfig = {
   enabled: boolean;
-  url: string;
-  queue: string;
-  queueDurable: boolean;
-  prefetchCount: number;
-  noAck: boolean;
+  brokers: string[];
+  clientId: string;
+  groupId: string;
+  dlqTopic: string;
+  maxRetries: number;
+  retryDelayMs: number;
+  workspaceDeletedTopic: string;
+  userProfileUpdatedTopic: string;
+  userRegisteredTopic: string;
 };
 
 @Injectable()
@@ -29,28 +32,38 @@ export class ConfigurationService {
     return { uri };
   }
 
-  // 2. Thêm hàm lấy cấu hình RabbitMQ
-  getRabbitMqConfig(): RabbitMqConfig {
-    const url = this.configService.get<string>("RABBITMQ_URL");
-
-    if (!url) {
-      throw new Error("RABBITMQ_URL is missing in environment variables!");
-    }
+  getKafkaConfig(): KafkaConfig {
+    const brokersRaw =
+      this.configService.get<string>("KAFKA_BROKERS") ??
+      this.configService.get<string>("KAFKA_BROKERS_HOST") ??
+      "kafka:9092";
 
     return {
-      enabled: this.configService.get<string>("RABBITMQ_ENABLED") !== "false",
-
-      url,
-
-      queue: this.configService.get<string>("RABBITMQ_QUEUE") ?? "task-service",
-
-      // Mặc định là true, trừ khi cố tình ghi 'false'
-      queueDurable: this.configService.get<string>("RABBITMQ_QUEUE_DURABLE") !== "false",
-
-      // Ép kiểu từ String sang Number
-      prefetchCount: Number(this.configService.get<number>("RABBITMQ_PREFETCH_COUNT")) || 10,
-
-      noAck: this.configService.get<string>("RABBITMQ_NO_ACK") === "true",
+      enabled: this.configService.get<string>("KAFKA_CONSUMERS_ENABLED") === "true",
+      brokers: brokersRaw
+        .split(",")
+        .map((broker) => broker.trim())
+        .filter((broker) => broker.length > 0),
+      clientId: this.configService.get<string>("KAFKA_CLIENT_ID") ?? "task-service",
+      groupId: this.configService.get<string>("KAFKA_GROUP_ID") ?? "task-service",
+      dlqTopic: this.configService.get<string>("KAFKA_DLQ_TOPIC") ?? "collabspace.dlq.events",
+      maxRetries: Number.parseInt(
+        this.configService.get<string>("KAFKA_CONSUMER_MAX_RETRIES") ?? "3",
+        10,
+      ),
+      retryDelayMs: Number.parseInt(
+        this.configService.get<string>("KAFKA_CONSUMER_RETRY_DELAY_MS") ?? "1000",
+        10,
+      ),
+      workspaceDeletedTopic:
+        this.configService.get<string>("KAFKA_TOPIC_WORKSPACE_DELETED") ??
+        "collabspace.workspace.workspace_deleted",
+      userProfileUpdatedTopic:
+        this.configService.get<string>("KAFKA_TOPIC_USER_PROFILE_UPDATED") ??
+        "collabspace.user.profile_updated",
+      userRegisteredTopic:
+        this.configService.get<string>("KAFKA_TOPIC_USER_REGISTERED") ??
+        "collabspace.user.registered",
     };
   }
 }

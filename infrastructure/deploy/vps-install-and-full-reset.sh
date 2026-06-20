@@ -11,7 +11,7 @@ for f in run-k8s-full-reset.sh run-k8s-seed.sh run-k8s-migrations.sh wipe-prod-d
   chmod +x "$APP_DIR/infrastructure/deploy/$f"
 done
 
-for f in scale-app-services.sh wipe-rabbitmq-volume.sh; do
+for f in scale-app-services.sh; do
   tr -d '\r' < "$SYNC/deploy/lib/$f" > "$APP_DIR/infrastructure/deploy/lib/$f"
   chmod +x "$APP_DIR/infrastructure/deploy/lib/$f"
 done

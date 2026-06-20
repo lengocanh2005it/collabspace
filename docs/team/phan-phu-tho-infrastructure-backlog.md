@@ -38,6 +38,7 @@ Tài liệu này liệt kê **công việc hạ tầng / DevOps / observability 
 - [infrastructure/k8s/README.md](../../infrastructure/k8s/README.md)
 - [infrastructure/vault/README.md](../../infrastructure/vault/README.md) — **HashiCorp Vault** (local dev + ESO)
 - [infrastructure/docker/.env.example](../../infrastructure/docker/.env.example) — shared dev secrets (Compose / align Vault seed)
+- [kafka-debezium-migration-roadmap.md](../kafka-debezium-migration-roadmap.md) — **Done** local: Kafka + Debezium CDC (Phase 0–7); §1.1 = kiến trúc hiện tại
 - Per-service contract: `services/*/.env.example` (gitignored `.env` thật)
 
 ---
@@ -93,8 +94,8 @@ P3  Chaos quarterly (staging)       →  chứng minh recovery
 | Loại | Ví dụ | Lưu ở đâu (staging/prod) | Trong Git? |
 |------|-------|---------------------------|------------|
 | **Secret** | `JWT_SECRET`, `SERVICE_JWT_SECRET`, `POSTGRES_PASSWORD`, `BREVO_API_KEY`, `METRICS_AUTH_TOKEN`, `AZURE_STORAGE_CONNECTION_STRING` | Vault KV → ESO → K8s `Secret` | ✅ |
-| **Config** | `PORT`, `GRPC_URL`, `RABBITMQ_QUEUE`, timeout ms, feature flags | Helm `ConfigMap` / `values.yaml` | ✅ |
-| **Connection string lẫn secret** | `DATABASE_URL`, `MONGO_URI`, `RABBITMQ_URL`, `REDIS_URL` | Build từ template + password từ Secret (Helm helper hiện có) | URL template ✅; password ❌ |
+| **Config** | `PORT`, `GRPC_URL`, `KAFKA_BROKERS`, `KAFKA_*_GROUP_ID`, timeout ms, feature flags | Helm `ConfigMap` / `values.yaml` | ✅ |
+| **Connection string lẫn secret** | `DATABASE_URL`, `MONGO_URI`, `REDIS_URL` | Build từ template + password từ Secret (Helm helper hiện có) | URL template ✅; password ❌ |
 
 **Shared secrets — phải cùng giá trị mọi service trong một môi trường**
 
@@ -104,7 +105,7 @@ P3  Chaos quarterly (staging)       →  chứng minh recovery
 | `SERVICE_JWT_SECRET` | user, workspace (inbound), task, notification (outbound S2S) | **Cùng một chuỗi** — xem [docker/.env.example](../../infrastructure/docker/.env.example) |
 | `POSTGRES_PASSWORD` | auth, user, workspace + Bitnami postgres subchart | Khớp `global.secrets.postgresPassword` |
 | `mongoPassword` | task, notification + Bitnami mongo | Khớp `global.secrets.mongoPassword` |
-| `rabbitmqPassword` | tất cả publisher/consumer + Bitnami rabbitmq | Khớp `global.secrets.rabbitmqPassword` |
+| `KAFKA_BROKERS` | user, workspace, task, notification (consumers + outbox debezium mode) | ConfigMap / env — xem `infrastructure/kafka/README.md` |
 | `redisPassword` | auth, notification + Bitnami redis | Khớp `global.secrets.redisPassword` |
 | `METRICS_AUTH_TOKEN` | 5 app services + Prometheus scrape | Cùng token |
 
@@ -148,18 +149,18 @@ Dùng bảng này khi seed Vault KV (`secret/collabspace/staging`, …).
 
 | Service | Secret (đưa vào SM) | Config (Helm ConfigMap / values) |
 |---------|---------------------|----------------------------------|
-| **auth-service** | `JWT_SECRET`, `POSTGRES_PASSWORD`, `REDIS_PASSWORD`, `RABBITMQ_PASSWORD`, `BREVO_API_KEY`, `METRICS_AUTH_TOKEN`, `SERVICE_JWT_SECRET` (inbound S2S verify từ workspace-service) | `PORT`, `GRPC_*`, `BREVO_SENDER_*`, `RABBITMQ_QUEUE`, OTP TTL, outbox tuning, `TRACING_*` |
-| **user-service** | `POSTGRES_PASSWORD`, `RABBITMQ_PASSWORD`, `SERVICE_JWT_SECRET`, `METRICS_AUTH_TOKEN`, `AZURE_STORAGE_CONNECTION_STRING` (avatar upload; optional local) | `AUTH_SERVICE_GRPC_URL`, `GRPC_URL`, `DATABASE_SCHEMA` |
-| **workspace-service** | `POSTGRES_PASSWORD`, `RABBITMQ_PASSWORD`, `SERVICE_JWT_SECRET`, `METRICS_AUTH_TOKEN` | `PORT=8080`, `AUTH_SERVICE_GRPC_URL`, `ALLOW_DEV_IDENTITY_HEADERS=false` |
-| **task-service** | `MONGO_URI` (hoặc password riêng + template URI), `RABBITMQ_PASSWORD`, `SERVICE_JWT_SECRET`, `AZURE_STORAGE_CONNECTION_STRING`, `METRICS_AUTH_TOKEN` | `WORKSPACE_SERVICE_URL`, `USER_SERVICE_URL`, `AZURE_STORAGE_CONTAINER_NAME`, `AZURE_STORAGE_MAX_FILE_SIZE`, outbox, `ALLOW_DEV_IDENTITY_HEADERS=false` |
-| **notification-service** | `JWT_SECRET` (nếu service đọc — hiện verify gRPC), `MONGO_URI`, `REDIS_PASSWORD`, `RABBITMQ_PASSWORD`, `SERVICE_JWT_SECRET`, `METRICS_AUTH_TOKEN` | `USER_SERVICE_URL`, `RABBITMQ_QUEUE` |
-| **rabbitmq** (infra) | `RABBITMQ_DEFAULT_USER`, `RABBITMQ_DEFAULT_PASS` | vhost `collabspace` |
-| **Compose / Helm datastores** | Bitnami `postgresPassword`, `mongoPassword`, `redisPassword`, `rabbitmqPassword` | hostnames: `postgres`, `mongo`, `redis`, `rabbitmq` |
+| **auth-service** | `JWT_SECRET`, `POSTGRES_PASSWORD`, `REDIS_PASSWORD`, `BREVO_API_KEY`, `METRICS_AUTH_TOKEN`, `SERVICE_JWT_SECRET` (inbound S2S verify từ workspace-service) | `PORT`, `GRPC_*`, `BREVO_SENDER_*`, OTP TTL, outbox tuning, `TRACING_*` |
+| **user-service** | `POSTGRES_PASSWORD`, `SERVICE_JWT_SECRET`, `METRICS_AUTH_TOKEN`, `AZURE_STORAGE_CONNECTION_STRING` (avatar upload; optional local) | `AUTH_SERVICE_GRPC_URL`, `GRPC_URL`, `DATABASE_SCHEMA`, `USER_OUTBOX_PUBLISH_MODE=debezium`, `KAFKA_*` |
+| **workspace-service** | `POSTGRES_PASSWORD`, `SERVICE_JWT_SECRET`, `METRICS_AUTH_TOKEN` | `PORT=8080`, `AUTH_SERVICE_GRPC_URL`, `ALLOW_DEV_IDENTITY_HEADERS=false`, `WORKSPACE_OUTBOX_PUBLISH_MODE=debezium` |
+| **task-service** | `MONGO_URI` (hoặc password riêng + template URI), `SERVICE_JWT_SECRET`, `AZURE_STORAGE_CONNECTION_STRING`, `METRICS_AUTH_TOKEN` | `WORKSPACE_SERVICE_URL`, `USER_SERVICE_URL`, `AZURE_*`, outbox, `TASK_OUTBOX_PUBLISH_MODE=debezium`, `KAFKA_*`, `ALLOW_DEV_IDENTITY_HEADERS=false` |
+| **notification-service** | `JWT_SECRET` (nếu service đọc — hiện verify gRPC), `MONGO_URI`, `REDIS_PASSWORD`, `SERVICE_JWT_SECRET`, `METRICS_AUTH_TOKEN` | `USER_SERVICE_URL`, `KAFKA_*` |
+| **kafka** (infra) | — | `KAFKA_BROKERS`, Connect REST; xem `infrastructure/kafka/` |
+| **Compose / Helm datastores** | Bitnami `postgresPassword`, `mongoPassword`, `redisPassword` | hostnames: `postgres`, `mongo`, `redis`, `kafka` |
 
 #### 2.2 Công việc triển khai HashiCorp Vault + ESO
 
 - [x] **Chốt provider:** HashiCorp Vault + External Secrets Operator — [vault/README.md](../../infrastructure/vault/README.md).
-- [x] **Naming convention KV v2:** `secret/collabspace/<env>` — keys: `jwt_secret`, `service_jwt_secret`, `postgres_password`, `mongo_*`, `redis_password`, `rabbitmq_*`, `metrics_auth_token`, `azure_storage_connection_string`.
+- [x] **Naming convention KV v2:** `secret/collabspace/<env>` — keys: `jwt_secret`, `service_jwt_secret`, `postgres_password`, `mongo_*`, `redis_password`, `metrics_auth_token`, `azure_storage_connection_string`.
 - [x] Scaffold local: `docker-compose.vault.yml`, `seed-dev-secrets`, `sync-env-from-vault`.
 - [x] Manifest ESO: `infrastructure/vault/k8s/external-secrets.yaml` → per-app `{app}-secrets`.
 - [x] Helm: `global.externalSecrets.enabled`, `global.secrets.serviceJwtSecret` trong [secret.yaml](../../infrastructure/helm/collabspace/templates/apps/secret.yaml).
@@ -198,7 +199,7 @@ Dùng bảng này khi seed Vault KV (`secret/collabspace/staging`, …).
 | Postgres | URL trong `.env` | `postgresPassword` | `postgres_password` |
 | Mongo | `MONGO_URI` | `mongoPassword` | `mongo_username`, `mongo_password` |
 | Redis | `REDIS_PASSWORD` | `redisPassword` | `redis_password` |
-| RabbitMQ | URL trong `.env` | `rabbitmqPassword` | `rabbitmq_username`, `rabbitmq_password` |
+| Kafka | `KAFKA_BROKERS` ConfigMap | — | (config, không secret) |
 | Metrics | `METRICS_AUTH_TOKEN` | `metricsAuthToken` | `metrics_auth_token` |
 | Email | `BREVO_*` auth | Vault + ESO | `configure-prod-brevo.sh` |
 
@@ -335,10 +336,10 @@ Dùng bảng này khi seed Vault KV (`secret/collabspace/staging`, …).
 - [x] Scripts: `restore-postgres.sh`, `restore-mongo.sh` + hướng dẫn trong `drills/README.md`
 - [~] Drill log có template; lần chạy thật **Skipped** (Docker offline 2026-06-10) — re-run khi có stack
 
-### 16. RabbitMQ & Redis vận hành
+### 16. Kafka & Redis vận hành
 
-- [x] RabbitMQ: monitor queue depth + DLQ (`RabbitMQHighQueueDepth`, `RabbitMQDLQNotEmpty` alerts).
-- [x] Document replay DLQ procedure (không mất message quan trọng).
+- [x] Kafka: consumer lag + DLQ topic (`KafkaConsumerLagHigh`, `KafkaDlqNotEmpty` alerts) — xem `docs/runbooks/KafkaConsumerLagHigh.md`, `KafkaDlqNotEmpty.md`.
+- [x] Document replay DLQ procedure — `scripts/kafka-replay-dlq.ps1` / `.sh`.
 - [x] Redis: persistence policy rõ — OTP/session có thể mất; không backup bắt buộc theo policy.
 
 **Definition of Done:** backup chạy tự động hàng ngày; ít nhất 1 restore drill thành công có log.

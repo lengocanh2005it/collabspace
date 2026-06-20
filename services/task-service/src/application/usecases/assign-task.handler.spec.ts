@@ -3,7 +3,8 @@ import { AssignTaskCommand } from "../commands/assign-task.command";
 import type { ITaskRepository } from "../ports/ITaskRepository";
 import { createMockTaskRepository } from "../../test-utils/mock-task-repository";
 import type { IUserReplicaRepository } from "../ports/IUserReplicaRepository";
-import type { RabbitMqEventsService } from "../../infrastructure/messaging/rabbitmq/rabbitmq-events.service";
+import type { TaskOutboxService } from "../../infrastructure/outbox/task-outbox.service";
+import type { IMongoUnitOfWork } from "../../domain/ports/mongo-unit-of-work.port";
 import { Task } from "../../domain/entities/Task";
 import { TaskId } from "../../domain/value-objects/TaskId";
 import { UserSnapshot } from "../../domain/value-objects/UserSnapshot";
@@ -15,7 +16,8 @@ describe("AssignTaskHandler", () => {
   let handler: AssignTaskHandler;
   let mockTaskRepo: jest.Mocked<ITaskRepository>;
   let mockUserReplicaRepo: jest.Mocked<Pick<IUserReplicaRepository, "findByIdAsync">>;
-  let mockRabbitMqEvents: jest.Mocked<Pick<RabbitMqEventsService, "publishTaskAssigned">>;
+  let mockUnitOfWork: jest.Mocked<IMongoUnitOfWork>;
+  let mockTaskOutboxService: jest.Mocked<Pick<TaskOutboxService, "enqueueTaskAssigned">>;
 
   beforeEach(() => {
     mockTaskRepo = createMockTaskRepository();
@@ -24,14 +26,19 @@ describe("AssignTaskHandler", () => {
       findByIdAsync: jest.fn(),
     };
 
-    mockRabbitMqEvents = {
-      publishTaskAssigned: jest.fn().mockResolvedValue(undefined),
+    mockUnitOfWork = {
+      run: jest.fn(async (work) => work({} as never)),
+    };
+
+    mockTaskOutboxService = {
+      enqueueTaskAssigned: jest.fn().mockResolvedValue(undefined),
     };
 
     handler = new AssignTaskHandler(
       mockTaskRepo,
       mockUserReplicaRepo as IUserReplicaRepository,
-      mockRabbitMqEvents as RabbitMqEventsService,
+      mockUnitOfWork,
+      mockTaskOutboxService as TaskOutboxService,
     );
   });
 
@@ -62,7 +69,7 @@ describe("AssignTaskHandler", () => {
     lastSyncedAt: new Date(),
   });
 
-  it("should assign a task and emit RabbitMQ event", async () => {
+  it("should assign a task and enqueue task_assigned outbox event", async () => {
     const task = createMockTask();
     const command = new AssignTaskCommand(
       "123e4567-e89b-12d3-a456-426614174000",
@@ -80,9 +87,13 @@ describe("AssignTaskHandler", () => {
     await handler.execute(command);
 
     expect(task.getAssigneeId()).toBe("assignee-1");
-    expect(mockTaskRepo.saveAsync).toHaveBeenCalledWith(task);
-    expect(mockRabbitMqEvents.publishTaskAssigned).toHaveBeenCalledTimes(1);
-    expect(mockRabbitMqEvents.publishTaskAssigned).toHaveBeenCalledWith(
+    expect(mockUnitOfWork.run).toHaveBeenCalledTimes(1);
+    expect(mockTaskRepo.saveAsync).toHaveBeenCalledWith(
+      task,
+      expect.objectContaining({ session: expect.anything() }),
+    );
+    expect(mockTaskOutboxService.enqueueTaskAssigned).toHaveBeenCalledTimes(1);
+    expect(mockTaskOutboxService.enqueueTaskAssigned).toHaveBeenCalledWith(
       expect.objectContaining({
         eventId: expect.any(String),
         occurredAt: expect.any(String),
@@ -92,6 +103,7 @@ describe("AssignTaskHandler", () => {
         assignedAt: expect.any(String),
         workspaceId: "workspace-1",
       }),
+      expect.anything(),
     );
   });
 
@@ -110,8 +122,11 @@ describe("AssignTaskHandler", () => {
     await handler.execute(command);
 
     expect(task.getAssigneeId()).toBeNull();
-    expect(mockTaskRepo.saveAsync).toHaveBeenCalledWith(task);
-    expect(mockRabbitMqEvents.publishTaskAssigned).not.toHaveBeenCalled();
+    expect(mockTaskRepo.saveAsync).toHaveBeenCalledWith(
+      task,
+      expect.objectContaining({ session: expect.anything() }),
+    );
+    expect(mockTaskOutboxService.enqueueTaskAssigned).not.toHaveBeenCalled();
   });
 
   it("should throw EntityNotFoundException if task does not exist", async () => {

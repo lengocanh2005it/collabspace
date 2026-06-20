@@ -93,7 +93,7 @@ Mỗi endpoint có **request/response schema** (`@ApiOkResponse`, `@ApiCreatedRe
 | Loki | `http://loki:3100` | Log aggregation |
 | Alertmanager | cluster DNS | Chưa route public |
 | Vault + ESO | cluster | Secrets prod — xem [`infrastructure/vault/README.md`](../infrastructure/vault/README.md) |
-| RabbitMQ management | cluster | Không public |
+| Kafka + Debezium Connect | cluster | Event bus — xem [`infrastructure/kafka/README.md`](../infrastructure/kafka/README.md) |
 | Jaeger | — | `observability.jaeger.enabled: false` (tắt mặc định) |
 
 ### Load test (k6)

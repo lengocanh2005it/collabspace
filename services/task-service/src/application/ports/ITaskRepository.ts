@@ -2,12 +2,13 @@
 import type { Task } from "../../domain/entities/Task";
 import type { TaskId } from "../../domain/value-objects/TaskId";
 import type { TaskListFilter, TaskListOptions } from "./task-list-filter";
+import type { MongoSessionOptions } from "./mongo-session-options";
 
 export const ITaskRepository = Symbol("ITaskRepository"); // Token cho Dependency Injection
 
 export interface ITaskRepository {
   /** Persist uncommitted domain events and refresh the read projection. */
-  saveAsync(task: Task): Promise<void>;
+  saveAsync(task: Task, options?: MongoSessionOptions): Promise<void>;
   /** Read model lookup (Mongo projection). */
   findByIdAsync(id: TaskId): Promise<Task | null>;
   /** Command-side aggregate load (event replay with legacy projection fallback). */

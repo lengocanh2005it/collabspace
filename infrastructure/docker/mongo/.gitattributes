@@ -1,0 +1,2 @@
+infrastructure/docker/mongo/*.sh text eol=lf
+scripts/init-mongo-rs.sh text eol=lf

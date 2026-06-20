@@ -7,6 +7,7 @@ import type {
   StoredTaskDomainEvent,
   UncommittedTaskDomainEvent,
 } from "../../domain/events/task-domain.events";
+import type { MongoSessionOptions } from "../../application/ports/mongo-session-options";
 import { ConcurrencyException } from "../../domain/exceptions/ConcurrencyException";
 import { TaskEventPersistence } from "../persistence/task-event.schema";
 
@@ -23,13 +24,18 @@ export class MongoTaskEventStore implements ITaskEventStore {
     return docs.map((doc) => this.toStoredEvent(doc));
   }
 
-  async getStreamVersion(streamId: string): Promise<number> {
-    const latest = await this.eventModel
+  async getStreamVersion(streamId: string, options?: MongoSessionOptions): Promise<number> {
+    const query = this.eventModel
       .findOne({ streamId })
       .sort({ version: -1 })
       .select({ version: 1 })
-      .lean()
-      .exec();
+      .lean();
+
+    if (options?.session) {
+      query.session(options.session);
+    }
+
+    const latest = await query.exec();
 
     return latest?.version ?? 0;
   }
@@ -38,12 +44,13 @@ export class MongoTaskEventStore implements ITaskEventStore {
     streamId: string,
     expectedVersion: number,
     events: UncommittedTaskDomainEvent[],
+    options?: MongoSessionOptions,
   ): Promise<StoredTaskDomainEvent[]> {
     if (events.length === 0) {
       return [];
     }
 
-    const currentVersion = await this.getStreamVersion(streamId);
+    const currentVersion = await this.getStreamVersion(streamId, options);
     if (currentVersion !== expectedVersion) {
       throw new ConcurrencyException(
         `Task stream ${streamId} version mismatch: expected ${expectedVersion}, found ${currentVersion}`,
@@ -57,16 +64,30 @@ export class MongoTaskEventStore implements ITaskEventStore {
     }));
 
     try {
-      await this.eventModel.insertMany(
-        storedEvents.map((event) => ({
-          streamId: event.streamId,
-          version: event.version,
-          eventId: event.eventId,
-          eventType: event.eventType,
-          occurredAt: new Date(event.occurredAt),
-          payload: event.payload as unknown as Record<string, unknown>,
-        })),
-      );
+      if (options?.session) {
+        await this.eventModel.insertMany(
+          storedEvents.map((event) => ({
+            streamId: event.streamId,
+            version: event.version,
+            eventId: event.eventId,
+            eventType: event.eventType,
+            occurredAt: new Date(event.occurredAt),
+            payload: event.payload as unknown as Record<string, unknown>,
+          })),
+          { session: options.session },
+        );
+      } else {
+        await this.eventModel.insertMany(
+          storedEvents.map((event) => ({
+            streamId: event.streamId,
+            version: event.version,
+            eventId: event.eventId,
+            eventType: event.eventType,
+            occurredAt: new Date(event.occurredAt),
+            payload: event.payload as unknown as Record<string, unknown>,
+          })),
+        );
+      }
     } catch (error) {
       const mongoError = error as { code?: number };
       if (mongoError.code === 11000) {

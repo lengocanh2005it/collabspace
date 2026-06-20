@@ -65,7 +65,7 @@ Env (auth-service):
 | Item | Status |
 |------|--------|
 | Task outbox batch claim (`find` + `bulkWrite`, `TASK_OUTBOX_BATCH_SIZE`) | Done |
-| Notification RMQ consumer retry → DLQ (`RABBITMQ_MAX_RETRIES`, `collabspace_dlx`) | Done |
+| Notification Kafka consumer retry → DLQ (`KAFKA_CONSUMER_MAX_RETRIES`, `collabspace.dlq.events`) | Done |
 
 ## Phase 7 — Cache & scale ✅
 

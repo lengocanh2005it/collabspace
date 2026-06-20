@@ -31,8 +31,6 @@ global:
     mongoUsername: admin
     mongoPassword: "REPLACE_ME"
     redisPassword: "REPLACE_ME"
-    rabbitmqUsername: collabspace
-    rabbitmqPassword: "REPLACE_ME"
     metricsAuthToken: "REPLACE_ME"
     azureStorageConnectionString: "REPLACE_ME_AZURE"
   azureStorage:
@@ -46,6 +44,10 @@ postgresql:
   primary:
     persistence:
       size: 8Gi
+    extendedConfiguration: |
+      wal_level = logical
+      max_replication_slots = 4
+      max_wal_senders = 4
     resources:
       requests:
         memory: 256Mi
@@ -55,6 +57,9 @@ postgresql:
         cpu: 500m
 
 mongodb:
+  architecture: replicaset
+  replicaSetName: rs0
+  replicaCount: 1
   auth:
     rootUser: admin
     rootPassword: "REPLACE_ME"
@@ -82,20 +87,33 @@ redis:
         memory: 384Mi
         cpu: 250m
 
-rabbitmq:
-  auth:
-    username: collabspace
-    password: "REPLACE_ME"
-    erlangCookie: "REPLACE_ME_ERLANG_COOKIE"
+# Kafka + Debezium Connect (event bus — required for cross-service events)
+kafka:
+  enabled: true
   persistence:
-    size: 4Gi
+    size: 8Gi
   resources:
     requests:
-      memory: 256Mi
+      memory: 384Mi
       cpu: 200m
     limits:
-      memory: 512Mi
-      cpu: 500m
+      memory: 768Mi
+      cpu: 750m
+  exporter:
+    enabled: true
+
+debeziumConnect:
+  enabled: true
+  connectors:
+    enabled: true
+    registerOnUpgrade: false
+  resources:
+    requests:
+      memory: 384Mi
+      cpu: 200m
+    limits:
+      memory: 768Mi
+      cpu: 750m
 
 traefik:
   deployment:
@@ -201,8 +219,6 @@ apps:
     extraEnv:
       GRPC_ENABLED: "true"
       GRPC_URL: "0.0.0.0:50051"
-      RABBITMQ_ENABLED: "true"
-      RABBITMQ_QUEUE: auth-service
       USER_SERVICE_GRPC_URL: user-service:50052
       REDIS_HOST: redis-master
       OUTBOX_ENABLED: "true"
@@ -225,8 +241,7 @@ apps:
       AUTH_SERVICE_GRPC_URL: auth-service:50051
       AUTH_SERVICE_HTTP_URL: http://auth-service:3000
       AUTH_SERVICE_HTTP_TIMEOUT_MS: "3000"
-      RABBITMQ_ENABLED: "true"
-      RABBITMQ_QUEUE: user-service
+      USER_OUTBOX_PUBLISH_MODE: "debezium"
 
   workspace-service:
     replicas: 1
@@ -236,6 +251,7 @@ apps:
     extraEnv:
       AUTH_SERVICE_GRPC_URL: auth-service:50051
       WORKSPACE_OUTBOX_ENABLED: "true"
+      WORKSPACE_OUTBOX_PUBLISH_MODE: "debezium"
       DATABASE_SYNCHRONIZE: "false"
       ALLOW_DEV_IDENTITY_HEADERS: "false"
 
@@ -245,8 +261,11 @@ apps:
       repository: ghcr.io/REPLACE_ME_GHCR_OWNER/collabspace-task-service
       tag: REPLACE_ME_IMAGE_TAG
     extraEnv:
-      RABBITMQ_ENABLED: "true"
-      RABBITMQ_QUEUE: task-service
+      KAFKA_CONSUMERS_ENABLED: "true"
+      KAFKA_BROKERS: "kafka:9092"
+      KAFKA_CLIENT_ID: "task-service"
+      KAFKA_GROUP_ID: "task-service"
+      TASK_OUTBOX_PUBLISH_MODE: "debezium"
       WORKSPACE_CLIENT_MODE: http
       WORKSPACE_SERVICE_URL: http://workspace-service:8080
       WORKSPACE_SERVICE_TIMEOUT_MS: "10000"
@@ -262,8 +281,10 @@ apps:
       preStopSleep: 5
       terminationGracePeriodSeconds: 20
     extraEnv:
-      RABBITMQ_ENABLED: "true"
-      RABBITMQ_QUEUE: notification-service
+      KAFKA_CONSUMERS_ENABLED: "true"
+      KAFKA_BROKERS: "kafka:9092"
+      KAFKA_CLIENT_ID: "notification-service"
+      KAFKA_GROUP_ID: "notification-service"
       REDIS_HOST: redis-master
       WS_ENABLED: "false"
       WS_PATH: /notifications/ws

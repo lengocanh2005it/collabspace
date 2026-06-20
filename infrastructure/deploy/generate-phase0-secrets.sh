@@ -36,10 +36,26 @@ SERVICE_JWT_SECRET=$(rand_b64)
 POSTGRES_PASSWORD=$(rand_b64)
 MONGO_PASSWORD=$(rand_b64)
 REDIS_PASSWORD=$(rand_b64)
-RABBITMQ_PASSWORD=$(rand_b64)
-RABBITMQ_USERNAME=collabspace
 METRICS_AUTH_TOKEN=$(rand_b64)
-RABBITMQ_ERLANG_COOKIE=$(rand_hex)
+
+# --- Brevo (auth-service) ---
+BREVO_API_KEY=
+BREVO_SENDER_EMAIL=
+BREVO_SENDER_NAME="CollabSpace Platform"
+
+# --- Azure Blob ---
+AZURE_STORAGE_CONNECTION_STRING=
+AZURE_STORAGE_CONTAINER_NAME=task-attachments
+AZURE_STORAGE_MAX_FILE_SIZE=5242880
+
+# --- DigitalOcean Spaces (backup CronJob) ---
+DO_SPACES_KEY=
+DO_SPACES_SECRET=
+
+# --- Slack alerts ---
+SLACK_ALERT_WEBHOOK_URL=
+
+# Kafka migration extraEnv: see phase0.env.example (values-prod.yaml, not Vault)
 EOF
 
 chmod 600 "$OUT_FILE"

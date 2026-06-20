@@ -81,8 +81,8 @@ if ($resolved.Tag -ne $phase0ImageTag) {
 
 $required = @(
   "GHCR_OWNER", "IMAGE_TAG", "JWT_SECRET", "SERVICE_JWT_SECRET",
-  "POSTGRES_PASSWORD", "MONGO_PASSWORD", "REDIS_PASSWORD", "RABBITMQ_PASSWORD",
-  "RABBITMQ_USERNAME", "METRICS_AUTH_TOKEN", "RABBITMQ_ERLANG_COOKIE", "PROD_DOMAIN",
+  "POSTGRES_PASSWORD", "MONGO_PASSWORD", "REDIS_PASSWORD",
+  "METRICS_AUTH_TOKEN", "PROD_DOMAIN",
   "AZURE_STORAGE_CONNECTION_STRING"
 )
 $missing = $required | Where-Object { -not $vars.ContainsKey($_) -or [string]::IsNullOrWhiteSpace($vars[$_]) }
@@ -100,21 +100,15 @@ $c = $c.Replace('serviceJwtSecret: "REPLACE_ME"', "serviceJwtSecret: `"$($vars['
 $c = $c.Replace('postgresPassword: "REPLACE_ME"', "postgresPassword: `"$($vars['POSTGRES_PASSWORD'])`"")
 $c = $c.Replace('mongoPassword: "REPLACE_ME"', "mongoPassword: `"$($vars['MONGO_PASSWORD'])`"")
 $c = $c.Replace('redisPassword: "REPLACE_ME"', "redisPassword: `"$($vars['REDIS_PASSWORD'])`"")
-$c = $c.Replace('rabbitmqPassword: "REPLACE_ME"', "rabbitmqPassword: `"$($vars['RABBITMQ_PASSWORD'])`"")
 $c = $c.Replace('metricsAuthToken: "REPLACE_ME"', "metricsAuthToken: `"$($vars['METRICS_AUTH_TOKEN'])`"")
 $c = $c.Replace('azureStorageConnectionString: "REPLACE_ME_AZURE"', "azureStorageConnectionString: `"$($vars['AZURE_STORAGE_CONNECTION_STRING'])`"")
 $c = $c.Replace('rootPassword: "REPLACE_ME"', "rootPassword: `"$($vars['MONGO_PASSWORD'])`"")
-$c = $c.Replace('erlangCookie: "REPLACE_ME_ERLANG_COOKIE"', "erlangCookie: `"$($vars['RABBITMQ_ERLANG_COOKIE'])`"")
-$c = $c.Replace("rabbitmqUsername: collabspace", "rabbitmqUsername: $($vars['RABBITMQ_USERNAME'])")
-$c = $c.Replace("username: collabspace", "username: $($vars['RABBITMQ_USERNAME'])")
 
-# Bitnami password fields còn lại (thứ tự: postgres → redis → rabbitmq)
+# Bitnami password fields còn lại (thứ tự: postgres → redis)
 $idx = $c.IndexOf('password: "REPLACE_ME"')
 if ($idx -ge 0) { $c = $c.Remove($idx, 22).Insert($idx, "password: `"$($vars['POSTGRES_PASSWORD'])`"") }
 $idx = $c.IndexOf('password: "REPLACE_ME"')
 if ($idx -ge 0) { $c = $c.Remove($idx, 22).Insert($idx, "password: `"$($vars['REDIS_PASSWORD'])`"") }
-$idx = $c.IndexOf('password: "REPLACE_ME"')
-if ($idx -ge 0) { $c = $c.Remove($idx, 22).Insert($idx, "password: `"$($vars['RABBITMQ_PASSWORD'])`"") }
 
 Set-Content -Path $Output -Value $c -NoNewline
 Write-Host "Wrote $Output"

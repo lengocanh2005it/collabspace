@@ -96,15 +96,15 @@ resolve_seed_image() {
 }
 
 build_seed_env_block() {
-  local block="          env:
-            - name: RABBITMQ_ENABLED
-              value: \"false\""
-  if [[ "$USE_HOST_SEED_DATA" == "true" ]]; then
-    block="${block}
-            - name: DEMO_SEED_DATA_PATH
-              value: /seed/demo-seed-data.json"
+  if [[ "$USE_HOST_SEED_DATA" != "true" ]]; then
+    printf ''
+    return
   fi
-  printf '%s' "$block"
+  cat <<EOF
+          env:
+            - name: DEMO_SEED_DATA_PATH
+              value: /seed/demo-seed-data.json
+EOF
 }
 
 apply_seed_job() {

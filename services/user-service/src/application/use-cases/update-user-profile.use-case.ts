@@ -1,44 +1,52 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import type { EntityManager } from 'typeorm';
 import {
   type UpdateUserProfileInput,
   USER_PROFILE_REPOSITORY,
 } from '../../domain/repositories/user-profile.repository';
 import type { UserProfileRepository } from '../../domain/repositories/user-profile.repository';
+import { type IUnitOfWork, UNIT_OF_WORK } from '../../domain/ports/unit-of-work.port';
 import {
   type UserProfileResponseDto,
   toUserProfileResponseDto,
 } from '../dto/user-profile-response.dto';
-import { RabbitMqEventsService } from '../../infrastructure/messaging/rabbitmq/rabbitmq-events.service';
+import { UserOutboxService } from '../../infrastructure/outbox/user-outbox.service';
 
 @Injectable()
 export class UpdateUserProfileUseCase {
-  private readonly logger = new Logger(UpdateUserProfileUseCase.name);
-
   constructor(
     @Inject(USER_PROFILE_REPOSITORY)
     private readonly userProfileRepository: UserProfileRepository,
-    private readonly rabbitMqEvents: RabbitMqEventsService,
+    @Inject(UNIT_OF_WORK)
+    private readonly unitOfWork: IUnitOfWork,
+    private readonly userOutboxService: UserOutboxService,
   ) {}
 
   async execute(userId: string, input: UpdateUserProfileInput): Promise<UserProfileResponseDto> {
-    const updatedProfile = await this.userProfileRepository.updateProfile(userId, input);
+    const occurredAt = new Date().toISOString();
 
-    try {
-      await this.rabbitMqEvents.publishUserProfileUpdated({
+    const updatedProfile = await this.unitOfWork.run(async (context) => {
+      const profile = await this.userProfileRepository.updateProfileInTransaction(
+        context,
         userId,
-        fullName: updatedProfile.fullName,
-        displayName: updatedProfile.displayName,
-        avatarUrl: updatedProfile.avatarUrl,
-        username: updatedProfile.username,
-        isActive: updatedProfile.deletedAt === null,
-        occurredAt: new Date().toISOString(),
-      });
-    } catch (error) {
-      this.logger.warn(
-        `Failed to publish profile updated event for ${userId}`,
-        error instanceof Error ? error.stack : undefined,
+        input,
       );
-    }
+
+      await this.userOutboxService.enqueueProfileUpdated(
+        {
+          userId,
+          fullName: profile.fullName,
+          displayName: profile.displayName,
+          avatarUrl: profile.avatarUrl,
+          username: profile.username,
+          isActive: profile.deletedAt === null,
+          occurredAt,
+        },
+        context.manager as EntityManager,
+      );
+
+      return profile;
+    });
 
     return toUserProfileResponseDto(updatedProfile);
   }

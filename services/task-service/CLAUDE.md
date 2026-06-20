@@ -1,6 +1,10 @@
 # task-service
 
-NestJS + CQRS + Mongoose (MongoDB) + RabbitMQ publisher.
+NestJS + CQRS + Mongoose (MongoDB) + Kafka outbox/consumer.
+
+## Event transport (Phase 5M)
+
+Task domain events (`task_assigned`, `comment_created`, `comment_mentioned`) use **Mongo outbox** + Debezium CDC → Kafka when `TASK_OUTBOX_PUBLISH_MODE=debezium`. Assign/comment handlers use `MongoUnitOfWork` (`withTransaction`). notification-service consumes via `TaskEventsKafkaConsumer`.
 
 ## Pattern
 

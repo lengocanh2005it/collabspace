@@ -16,7 +16,7 @@ Khi sửa code mà **ảnh hưởng hành vi, contract, hoặc cách vận hành
 |----------------|-------------------|
 | HTTP route, DTO, status/error code | `.claude/docs/service-contracts.md`, `docs/api-routes.md` |
 | gRPC proto / message | `service-contracts.md`, proto comments, consumer service docs |
-| RabbitMQ event payload / tên event | `service-contracts.md`, `docs/cross-service-data.md` nếu replica/read model |
+| Kafka event payload / topic | `service-contracts.md`, `docs/cross-service-data.md` nếu replica/read model |
 | Env var mới / đổi tên / bắt buộc | `services/*/.env.example`, `infrastructure/docker/.env.example`, `infrastructure/vault/.env.example`, Helm nếu deploy |
 | Vault / ESO / shared secret keys | `infrastructure/vault/README.md`, `infrastructure/vault/k8s/`, `docs/production-hardening.md`, seed/sync scripts |
 | Auth, trust boundary, internal API | `docs/production-hardening.md`, `service-contracts.md`, `docs/trade-offs.md` nếu quyết định mới |

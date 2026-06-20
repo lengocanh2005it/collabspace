@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import type { HydratedDocument } from "mongoose";
 
+export const TASK_OUTBOX_AGGREGATE_TYPE = "Task";
 export const TASK_OUTBOX_EVENT_TASK_ASSIGNED = "task.task_assigned";
 export const TASK_OUTBOX_EVENT_TASK_COMMENTED = "task.comment_created";
 export const TASK_OUTBOX_EVENT_COMMENT_MENTIONED = "task.comment_mentioned";
@@ -17,6 +18,12 @@ export class TaskOutboxEvent {
 
   @Prop({ type: Date, default: null })
   claimedAt!: Date | null;
+
+  @Prop({ required: true, type: String, default: TASK_OUTBOX_AGGREGATE_TYPE })
+  aggregateType!: string;
+
+  @Prop({ required: true, type: String })
+  aggregateId!: string;
 
   @Prop({ required: true, type: String })
   eventType!: string;

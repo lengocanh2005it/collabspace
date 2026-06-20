@@ -13,7 +13,7 @@ DigitalOcean Droplet 4 vCPU / 8 GiB RAM / 160 GiB SSD
   -> Helm chart CollabSpace
   -> Vault + External Secrets Operator
   -> Traefik ingress
-  -> PostgreSQL / MongoDB / Redis / RabbitMQ trong cluster
+  -> PostgreSQL / MongoDB / Redis / Kafka + Debezium Connect trong cluster
 ```
 
 Đây là môi trường production trên DigitalOcean cho giai đoạn MVP/demo/staging-public. Phương án này rẻ hơn DOKS 3 node, vẫn dùng được Kubernetes workflow thật, nhưng chưa phải mô hình HA production đầy đủ.
@@ -53,7 +53,7 @@ Droplet
       -> workspace-service
       -> task-service
       -> notification-service
-      -> postgres / mongo / redis / rabbitmq
+      -> postgres / mongo / redis / kafka / debezium-connect
       -> traefik
       -> vault
 ```
@@ -196,7 +196,7 @@ flowchart TD
       Postgres["PostgreSQL"]
       Mongo["MongoDB"]
       Redis["Redis"]
-      RabbitMQ["RabbitMQ"]
+      Kafka["Kafka + Debezium"]
     end
   end
 
@@ -285,7 +285,7 @@ Giai đoạn đầu có thể chạy trong cluster:
 - PostgreSQL cho auth/user/workspace.
 - MongoDB cho task/notification.
 - Redis cho auth session/cache/notification.
-- RabbitMQ cho integration events.
+- Kafka + Debezium Connect cho integration events (transactional outbox → CDC).
 
 Cần bật PVC và backup. Khi có user thật, nên ưu tiên tách PostgreSQL/MongoDB sang managed database trước khi nâng cấp DOKS.
 
@@ -338,7 +338,7 @@ Firewall:
 | 443 | Internet | HTTPS API |
 | 6443 | Không public nếu không cần | Kubernetes API; ưu tiên chỉ dùng local/SSH tunnel |
 | 8200 | Không public | Vault chỉ nội bộ |
-| DB ports | Không public | PostgreSQL/MongoDB/Redis/RabbitMQ nội bộ |
+| DB ports | Không public | PostgreSQL/MongoDB/Redis/Kafka nội bộ |
 
 Backup:
 
@@ -388,7 +388,7 @@ Chi tiết đầy đủ (Definition of Done, GitHub Secrets, CI/CD, timeline): *
 
 ### Phase 4: Data stores
 
-1. Deploy PostgreSQL/MongoDB/Redis/RabbitMQ qua Helm subcharts.
+1. Deploy PostgreSQL/MongoDB/Redis qua Helm subcharts; Kafka + Debezium Connect (`infrastructure/kafka/`).
 2. Đảm bảo password trong chart khớp với Vault.
 3. Tạo database cần thiết.
 4. Chạy migrations.

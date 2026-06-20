@@ -1,6 +1,6 @@
 # notification-service
 
-NestJS + CQRS + Mongoose (MongoDB) + RabbitMQ consumer. Event-driven; HTTP is list + health.
+NestJS + CQRS + Mongoose (MongoDB) + Kafka consumer. Event-driven; HTTP is list + health.
 
 ## Pattern
 
@@ -41,9 +41,10 @@ pnpm run test
 - Protected HTTP (`GET /`, `PATCH .../read`): `@UseGuards(AuthGuard)` — JWT via auth gRPC **`VerifyAccessTokenLite`**, not `X-User-Id`
 - Env: `AUTH_SERVICE_GRPC_URL`, `ALLOW_DEV_IDENTITY_HEADERS`, `SERVICE_JWT_SECRET` (user replica fallback HTTP)
 - Idempotency: `ProcessedEvent` + `tryClaim(eventId)` before create
+- **Kafka (Phase 6):** `KAFKA_CONSUMERS_ENABLED=true` — workspace + user + task events via `TaskEventsKafkaConsumer`
 - Listeners pass `eventId` into `CreateNotificationCommand`
 - Repository tokens: `NOTIFICATION_REPOSITORY_TOKEN`, `PROCESSED_EVENT_REPOSITORY_TOKEN`
-- Readiness: Mongo required; RabbitMQ required when consumer enabled
+- Readiness: Mongo required; Kafka consumers when `KAFKA_CONSUMERS_ENABLED=true`
 
 ## Where to add code
 

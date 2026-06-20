@@ -18,9 +18,9 @@ Traefik API Gateway
   +--> user-service          NestJS, PostgreSQL
   +--> workspace-service     NestJS, PostgreSQL, port 8080
   +--> task-service          NestJS + CQRS, MongoDB
-  +--> notification-service  NestJS + CQRS, MongoDB, RabbitMQ consumer
+  +--> notification-service  NestJS + CQRS, MongoDB, Kafka consumer
 
-RabbitMQ sits beside services as the async event bus.
+Kafka + Debezium Connect sit beside services as the async event bus (transactional outbox → CDC → topics).
 Observability: **K8s/Helm** — Prometheus, Grafana (`/grafana`), Loki + Promtail, k6 scenarios; **Docker** — optional profiles (monitoring, ELK, Jaeger). Guide: [docs/observability.md](../../docs/observability.md).
 ```
 
@@ -119,7 +119,7 @@ Technology:
 - NestJS
 - TypeORM
 - PostgreSQL
-- RabbitMQ (outbox publish through `collabspace_exchange`)
+- Kafka outbox via Debezium CDC (`WORKSPACE_OUTBOX_PUBLISH_MODE=debezium`)
 
 Architecture: Clean Architecture — use cases inject domain repository ports; TypeORM adapters in `infrastructure/repositories/`. See `.claude/docs/service-architecture.md`.
 
@@ -157,7 +157,7 @@ Technology:
 - NestJS
 - CQRS (`@nestjs/cqrs`)
 - Mongoose / MongoDB
-- RabbitMQ direct-queue event publisher and consumer
+- Kafka outbox (Debezium CDC) + Kafka consumers (`workspace_deleted`, user replica sync)
 
 Architecture: clean + CQRS. See `.claude/docs/service-architecture.md`.
 
@@ -192,7 +192,7 @@ Technology:
 - NestJS
 - CQRS
 - Mongoose / MongoDB
-- RabbitMQ consumer
+- Kafka consumer (workspace, user, task events)
 
 Architecture: clean + CQRS, event-first. See `.claude/docs/service-architecture.md`.
 
@@ -205,7 +205,7 @@ Responsibilities:
 Important source paths:
 
 - `src/application/usecases/create-notification/`, `get-notifications/`
-- `src/presentation/controllers/internal/*-event-listener.controller.ts`
+- `src/infrastructure/messaging/kafka/` — Kafka consumers + DLQ publisher
 - `src/infrastructure/database/schemas/`
 
 Current status:
@@ -259,7 +259,8 @@ Path: `infrastructure/docker`
 
 Base app stack:
 
-- `docker-compose.yml`: application services and RabbitMQ.
+- `docker-compose.yml`: application services.
+- `docker-compose.kafka.yml`: Kafka broker, Debezium Connect, kafka-exporter (optional Schema Registry).
 - `docker-compose.db.yml`: PostgreSQL, MongoDB, Redis.
 - `docker-compose.override.yml`: local host port mappings and source mounts.
 
@@ -291,25 +292,22 @@ Redis:
 - Auth email verification OTP and refresh/session supporting state.
 - Notification caching/realtime support.
 
-### Messaging
+### Messaging (Kafka + Debezium CDC)
 
-RabbitMQ is the async event bus.
+Cross-service events use **transactional outbox → Debezium → Kafka**. App services do **not** publish directly to the broker after commit.
 
-Canonical exchange for workspace outbox events:
+| Layer | Role |
+|-------|------|
+| Outbox tables | `workspace_outbox_events`, `user_outbox_events`, `task_outbox_events` (Mongo) |
+| Debezium Connect | CDC from Postgres WAL / Mongo change streams; Outbox Event Router SMT |
+| Kafka topics | `collabspace.workspace.*`, `collabspace.user.*`, `collabspace.task.*` |
+| Consumers | `notification-service`, `task-service` (kafkajs); DLQ topic `collabspace.dlq.events` |
 
-- `collabspace_exchange`, topic type.
+Canonical topic mapping: `.claude/docs/service-contracts.md` → Event Contracts. Ops: `infrastructure/kafka/README.md`, `docs/kafka-debezium-migration-roadmap.md`.
 
-Canonical routing keys:
+**auth-service** email outbox is separate (SMTP/Brevo) — not on the Kafka event bus.
 
-- `task_assigned`
-- `workspace_invited`
-- `workspace_deleted`
-- `comment_created`
-- `comment_mentioned`
-- `user_registered`
-- `user_profile_updated`
-
-Existing or intended event names:
+Existing event names (topic suffix / contract):
 
 - `TASK_ASSIGNED`
 - `WORKSPACE_INVITED`
@@ -319,7 +317,7 @@ Existing or intended event names:
 - `USER_REGISTERED`
 - `USER_PROFILE_UPDATED`
 
-When implementing new events, keep event name, routing key, queue name, payload schema, producer, consumer, retry/dead-letter behavior, and docs aligned. See `.claude/docs/resilience.md` for idempotency, timeouts, and degradation policies.
+When implementing new events, keep event name, Kafka topic, payload schema, producer (outbox + CDC), consumer, retry/DLQ behavior, and docs aligned. See `.claude/docs/resilience.md` for idempotency, timeouts, and degradation policies.
 
 ## Current Completion Snapshot
 

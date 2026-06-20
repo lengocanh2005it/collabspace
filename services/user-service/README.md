@@ -5,7 +5,7 @@ The User Service manages user profiles, preferences, and presence for CollabSpac
 ## Tech Stack
 - **Framework:** NestJS
 - **Database:** PostgreSQL (`collabspace_user`) via TypeORM
-- **Messaging:** RabbitMQ (via amqplib)
+- **Messaging:** Outbox → Debezium → Kafka (`USER_OUTBOX_PUBLISH_MODE=debezium`)
 - **Containerization:** Docker (Alpine Node.js 20)
 
 ## Quick Start
@@ -51,11 +51,10 @@ All endpoints are prefixed with `/api/v1/users`.
 
 ## Internal Contracts
 - **gRPC Server:** Exposes `UserProfilesService.CreatePendingProfile`, `GetProfile`, and `GetProfiles` for inter-service communication (primarily consumed by `auth-service`).
-- **RabbitMQ Publisher:** Emits `user_registered` and `user_profile_updated` to keep downstream user replicas fresh.
+- **Kafka outbox (Debezium):** Emits `user_registered` and `user_profile_updated` via CDC.
 
 ## Environment Variables
 
 - `NODE_ENV`: Application environment (e.g., `production`, `development`)
 - `PORT`: Service port (default: 3000)
 - `DATABASE_URL`: PostgreSQL connection string
-- `RABBITMQ_URL`: RabbitMQ connection string

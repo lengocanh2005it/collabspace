@@ -2,9 +2,21 @@ import { Column, CreateDateColumn, Entity, PrimaryColumn, UpdateDateColumn } fro
 
 export const WORKSPACE_OUTBOX_EVENT_WORKSPACE_INVITED = 'workspace.workspace_invited';
 export const WORKSPACE_OUTBOX_EVENT_WORKSPACE_DELETED = 'workspace.workspace_deleted';
+export const WORKSPACE_OUTBOX_AGGREGATE_TYPE = 'Workspace';
 
 @Entity({ name: 'workspace_outbox_events' })
 export class WorkspaceOutboxEventEntity {
+  @Column({ name: 'aggregate_id', type: 'uuid' })
+  aggregateId!: string;
+
+  @Column({
+    name: 'aggregate_type',
+    default: WORKSPACE_OUTBOX_AGGREGATE_TYPE,
+    length: 64,
+    type: 'varchar',
+  })
+  aggregateType!: string;
+
   @Column({ name: 'attempt_count', default: 0, type: 'integer' })
   attemptCount!: number;
 

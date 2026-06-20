@@ -134,7 +134,7 @@ Layer rules:
 - `domain/repositories/`: port interfaces + Symbol tokens used by use cases.
 - `infrastructure/database/entities/`: `*.orm-entity.ts` with snake_case columns.
 - `infrastructure/repositories/`: TypeORM adapters; keep ORM access here.
-- `domain/events/`: routing keys and event payload types for RabbitMQ.
+- `domain/events/`: event types and payload contracts (Kafka topic mapping in `service-contracts.md`).
 
 Rules:
 
@@ -159,7 +159,7 @@ Layer rules:
 - `application/usecases/`: `@CommandHandler` / `@QueryHandler` implementations.
 - `domain/entities/`: rich entities with factories and business methods.
 - `infrastructure/persistence/`: Mongoose schemas; `infrastructure/mappers/` for mapping.
-- `presentation/controllers/internal/`: RabbitMQ `@EventPattern` listeners.
+- `infrastructure/messaging/kafka/`: Kafka consumers (kafkajs) + DLQ publisher.
 
 Rules:
 
@@ -189,7 +189,7 @@ Layer rules:
 Rules:
 
 - Pass `eventId` into `CreateNotificationCommand`; handler must dedupe via `ProcessedEventRepository`.
-- Ack RabbitMQ messages only after successful handler execution.
+- Commit Kafka consumer offset only after successful handler execution (or DLQ publish).
 - Global prefix `api/v1`; controller `notifications`.
 - Protected list/read routes: `@UseGuards(AuthGuard)`; recipient from `request.user.id`.
 - Full folder guide: `.claude/docs/service-architecture.md`.
@@ -261,22 +261,23 @@ Auth/user package names:
 - Auth package: `auth`
 - User package: `user`
 
-## RabbitMQ/Event Conventions
+## Kafka / Event Conventions
 
-- Publish events only after successful persistence.
+- Publish domain events only via **transactional outbox** (same DB transaction as business write); Debezium CDC publishes to Kafka — do not publish directly from app after commit.
 - Include idempotency key `eventId`.
 - Include `occurredAt`.
 - Include `eventType`.
-- Prefer routing keys already documented:
-  - `task_assigned`
-  - `workspace_invited`
-  - `workspace_deleted`
-  - `comment_created`
-  - `comment_mentioned`
-  - `user_registered`
-  - `user_profile_updated`
-- Consumers should dedupe repeated events.
+- Prefer event types / topics already documented in `.claude/docs/service-contracts.md`:
+  - `task_assigned` → `collabspace.task.task_assigned`
+  - `workspace_invited` → `collabspace.workspace.workspace_invited`
+  - `workspace_deleted` → `collabspace.workspace.workspace_deleted`
+  - `comment_created` → `collabspace.task.comment_created`
+  - `comment_mentioned` → `collabspace.task.comment_mentioned`
+  - `user_registered` → `collabspace.user.user_registered`
+  - `user_profile_updated` → `collabspace.user.user_profile_updated`
+- Consumers should dedupe repeated events (`eventId`).
 - Consumers should tolerate unknown event fields.
+- Failed messages: retry with backoff → DLQ topic `collabspace.dlq.events` (see `infrastructure/kafka/README.md`).
 
 ## Health Check Conventions
 

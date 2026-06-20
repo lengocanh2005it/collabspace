@@ -138,12 +138,11 @@ src/
 │   ├── database/entities/*.orm-entity.ts
 │   ├── repositories/              # TypeORM + in-memory implementations
 │   ├── services/azure-blob.service.ts  # Avatar upload (mock when unconfigured)
-│   └── messaging/rabbitmq/
-├── integrations/auth/             # auth-service gRPC client
+│   └── outbox/                    # UserOutboxService (CDC → Kafka)
+├── integrations/auth/
 └── presentation/
-    ├── http/                      # REST + request DTOs (class-validator)
-    ├── grpc/
-    └── rabbitmq/
+    ├── http/
+    └── grpc/
 ```
 
 ### Where to add code
@@ -159,7 +158,7 @@ src/
 | TypeORM entity      | `infrastructure/database/entities/*.orm-entity.ts` |
 | Repository impl     | `infrastructure/repositories/`                     |
 | External client     | `integrations/`                                    |
-| Event consumer      | `presentation/rabbitmq/`                           |
+| Outbox event        | `infrastructure/outbox/`                           |
 
 Register use cases in `app.module.ts`. Repository binding uses factory: TypeORM when `DATABASE_URL` is set, else in-memory.
 
@@ -178,7 +177,7 @@ Register use cases in `app.module.ts`. Repository binding uses factory: TypeORM 
 ## workspace-service
 
 **Path:** `services/workspace-service`  
-**Stack:** NestJS, TypeORM, PostgreSQL, RabbitMQ (outbox via `WorkspaceOutboxService`)  
+**Stack:** NestJS, TypeORM, PostgreSQL, Kafka outbox (Debezium CDC via `WorkspaceOutboxService`)  
 **Local context:** `services/workspace-service/CLAUDE.md`
 
 ### Pattern: Clean Architecture
@@ -204,13 +203,12 @@ src/
 ├── domain/
 │   ├── entities/                         # Workspace, Project, WorkspaceMember, Invitation (plain TS, no ORM decorators)
 │   ├── repositories/                     # Port interfaces + Symbol tokens (IWorkspaceRepository, etc.)
-│   └── events/                           # RabbitMQ routing keys + payload types
+│   └── events/                           # Domain event payload types
 ├── health/
 ├── infrastructure/
 │   ├── database/entities/*.orm-entity.ts # TypeORM entities (snake_case columns)
-│   ├── repositories/typeorm-*.repository.ts  # Port implementations; @InjectRepository only here
-│   ├── outbox/                           # WorkspaceOutboxService (transactional event enqueue)
-│   └── messaging/rabbitmq.module.ts
+│   ├── repositories/typeorm-*.repository.ts
+│   └── outbox/                           # WorkspaceOutboxService (transactional event enqueue)
 └── presentation/http/
     ├── workspace.controller.ts
     ├── project.controller.ts
@@ -247,7 +245,7 @@ Register adapters + Symbol bindings in `app.module.ts`.
 - Use cases inject ports: `@Inject(WORKSPACE_REPOSITORY)` + `import { type IWorkspaceRepository, WORKSPACE_REPOSITORY }`
 - Transactions live **inside adapters** (`DataSource.transaction()`), not in use cases
 - ORM entities: snake_case columns; domain entities: plain TS classes, camelCase fields
-- Events: exchange `collabspace_exchange`, routing keys from `domain/events/`; include `eventId` + `occurredAt`
+- Events: Kafka topics from `domain/events/` + `service-contracts.md`; outbox row includes `eventId` + `occurredAt`; `*_OUTBOX_PUBLISH_MODE=debezium`
 - Tests: `*.use-case.spec.ts` next to use case; provide mocks as `{ provide: SYMBOL, useValue: mockObj }`
 
 ### Do not
@@ -262,7 +260,7 @@ Register adapters + Symbol bindings in `app.module.ts`.
 ## task-service
 
 **Path:** `services/task-service`  
-**Stack:** NestJS, CQRS, Mongoose, RabbitMQ publisher, Azure Blob (attachments)  
+**Stack:** NestJS, CQRS, Mongoose, Kafka outbox/consumers, Azure Blob (attachments)  
 **Local context:** `services/task-service/CLAUDE.md`
 
 ### Pattern: clean architecture + CQRS
@@ -290,7 +288,7 @@ src/
 │   ├── persistence/*.schema.ts    # Mongoose schemas
 │   ├── repositories/
 │   ├── mappers/
-│   ├── messaging/rabbitmq/
+│   ├── messaging/kafka/               # Kafka consumers + DLQ publisher
 │   └── services/                  # Azure blob, workspace mock, etc.
 └── presentation/
     ├── controllers/               # HTTP + internal/ event listeners
@@ -311,8 +309,8 @@ src/
 | Repository interface | `application/ports/` or `domain/repositories/`               |
 | Mongo schema         | `infrastructure/persistence/*.schema.ts`                     |
 | Persistence          | `infrastructure/repositories/` + mapper                      |
-| Publish event        | handler after successful save; payload in `domain/events/`   |
-| RMQ consumer         | `presentation/controllers/internal/`                         |
+| Publish event        | Mongo/Postgres outbox → Debezium → Kafka; payload in `domain/events/` |
+| Kafka consumer       | `infrastructure/messaging/kafka/`                         |
 
 Add new handlers to the `Handlers` array in `app.module.ts`.
 
@@ -340,15 +338,15 @@ Add new handlers to the `Handlers` array in `app.module.ts`.
 ## notification-service
 
 **Path:** `services/notification-service`  
-**Stack:** NestJS, CQRS, Mongoose, RabbitMQ consumer  
+**Stack:** NestJS, CQRS, Mongoose, Kafka consumer  
 **Local context:** `services/notification-service/CLAUDE.md`
 
 ### Pattern: clean + CQRS, event-first
 
-Primary entry is RabbitMQ listeners; HTTP is list + health.
+Primary entry is Kafka consumers; HTTP is list + health.
 
 ```text
-Event listener → CommandBus → CreateNotificationHandler → Domain → Mongo
+Kafka consumer → CommandBus → CreateNotificationHandler → Domain → Mongo
 ```
 
 ### Folder map
@@ -373,14 +371,14 @@ src/
 │   └── repositories/
 └── presentation/controllers/
     ├── notifications.controller.ts
-    └── internal/*-event-listener.controller.ts
+    └── (Kafka consumers in infrastructure/messaging/kafka/)
 ```
 
 ### Where to add code
 
 | Task                     | Location                                                                   |
 | ------------------------ | -------------------------------------------------------------------------- |
-| New event type           | `domain/events/` + `presentation/controllers/internal/*listener*`          |
+| New event type           | `infrastructure/messaging/kafka/*-kafka.consumer.ts` + handler |
 | Create notification flow | extend `CreateNotificationCommand` / handler or new use-case folder        |
 | List/read API            | `get-notifications/` or new query handler                                  |
 | Domain entity rules      | `domain/entities/`                                                         |
@@ -398,13 +396,13 @@ Bind repositories with tokens in `app.module.ts` (`NOTIFICATION_REPOSITORY_TOKEN
 - One folder per use case under `application/usecases/<name>/`
 - Listeners: `@EventPattern`, build `CreateNotificationCommand` with `eventId`
 - Handler claims `eventId` before insert (duplicate → no-op success)
-- Readiness checks Mongo + RabbitMQ when consumer enabled
-- Tests: `*.handler.spec.ts`, listener `*.spec.ts`
+- Readiness checks Mongo + Kafka when `KAFKA_CONSUMERS_ENABLED=true`
+- Tests: `*.handler.spec.ts`, kafka consumer integration as needed
 
 ### Do not
 
 - Create notifications without `eventId` from producers (derive fallback only for legacy messages)
-- Ack RabbitMQ message before handler succeeds
+- Skip DLQ path on repeated consumer failures (use `processKafkaConsumerMessage`)
 
 ---
 
@@ -438,8 +436,8 @@ head -30 services/<service>/src/app.module.ts
 | ----------------- | ----------------- | ----------------------------------------------- |
 | auth-service      | user-service      | gRPC `CreatePendingProfile`, `GetProfile`       |
 | user-service      | auth-service      | gRPC `VerifyAccessToken`                        |
-| workspace-service | notification      | RabbitMQ `workspace_invited`                    |
-| task-service      | notification      | RabbitMQ `task_assigned`, `comment_created`     |
+| workspace-service | notification      | Kafka `collabspace.workspace.workspace_invited` |
+| task-service      | notification      | Kafka `collabspace.task.task_assigned`, `comment_created` |
 | API gateway       | all HTTP services | Traefik routes + forward-auth to auth `/verify` |
 
 ---

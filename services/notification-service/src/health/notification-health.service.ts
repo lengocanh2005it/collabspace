@@ -1,7 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { InjectConnection } from "@nestjs/mongoose";
 import type { Connection } from "mongoose";
-import * as amqp from "amqplib";
 import { ConfigurationService } from "../configuration/configuration.service";
 
 type CheckStatus = "up" | "down" | "disabled";
@@ -47,7 +46,7 @@ export class NotificationHealthService {
   }
 
   async getReadiness(): Promise<ReadinessReport> {
-    const rmqConfig = this.configurationService.getRabbitMqConfig();
+    const kafkaConfig = this.configurationService.getKafkaConfig();
     const checks: Record<string, HealthCheckResult> = {
       database: await this.runCheck(true, async () => {
         if (this.mongoConnection.readyState !== 1) {
@@ -56,13 +55,14 @@ export class NotificationHealthService {
 
         await this.mongoConnection.db?.admin().command({ ping: 1 });
       }),
-      rabbitmq: rmqConfig.enabled
-        ? await this.runCheck(true, async () => {
-            const connection = await amqp.connect(rmqConfig.url);
-            await connection.close();
-          })
+      kafka: kafkaConfig.enabled
+        ? {
+            detail: `Kafka consumers enabled (${kafkaConfig.brokers.join(",")})`,
+            required: false,
+            status: "up",
+          }
         : {
-            detail: "RabbitMQ consumer is disabled",
+            detail: "Kafka consumers disabled (KAFKA_CONSUMERS_ENABLED=false)",
             required: false,
             status: "disabled",
           },

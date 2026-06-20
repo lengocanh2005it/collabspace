@@ -4,7 +4,7 @@ Tài liệu chi tiết (tiếng Anh, dùng cho dev/agent): [`.claude/docs/resili
 
 ## Vì sao cần?
 
-Microservices CollabSpace phụ thuộc lẫn nhau (gRPC, RabbitMQ, DB). **Design for failure** nghĩa là thiết kế sẵn cho tình huống từng phần hỏng, thay vì giả định mọi thứ luôn chạy.
+Microservices CollabSpace phụ thuộc lẫn nhau (gRPC, Kafka, Debezium Connect, DB). **Design for failure** nghĩa là thiết kế sẵn cho tình huống từng phần hỏng, thay vì giả định mọi thứ luôn chạy.
 
 ## Nguyên tắc cốt lõi
 
@@ -58,7 +58,7 @@ Chi tiết: `infrastructure/resilience/drills/README.md`.
 | user-service | Không orphan user → `503` | User API `503` | — |
 | Redis (OTP) | `503` `REDIS_UNAVAILABLE` | Resend OTP `503` | — |
 | auth-service | — | `503` | `503` nếu cần verify |
-| RabbitMQ | Register OK (OTP qua outbox) | OK | Event retry/DLQ |
+| Kafka | Register OK (OTP qua outbox) | OK | Event retry/DLQ topic |
 | Postgres/Mongo | `503` | `503` | `503` |
 
 Chi tiết từng endpoint: xem bảng đầy đủ trong `.claude/docs/resilience.md` mục 4.

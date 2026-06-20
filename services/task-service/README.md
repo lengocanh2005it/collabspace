@@ -5,7 +5,7 @@ The Task Service manages the core collaboration entities in CollabSpace: tasks, 
 ## Tech Stack
 - **Framework:** NestJS
 - **Database:** MongoDB (`collabspace_task`) via Mongoose
-- **Messaging:** RabbitMQ (via amqplib)
+- **Messaging:** Kafka (Debezium CDC outbox + kafkajs consumers)
 - **Containerization:** Docker (Alpine Node.js 20)
 
 ## Quick Start
@@ -28,7 +28,7 @@ pnpm test
 2. **Comments:** Attach rich-text comments to tasks.
 3. **Workspace Validation:** Validates workspace membership via `WorkspaceHttpClient` when `WORKSPACE_CLIENT_MODE=http` (required in production). Mock mode is development-only.
 4. **Attachments:** Azure Blob when `AZURE_STORAGE_CONNECTION_STRING` is set; mock URLs in local dev only (production fails startup without storage).
-5. **Event Publisher:** Publishes critical workflow events to the `notification-service` RabbitMQ queue to trigger notifications.
+5. **Event outbox:** Publishes workflow events via Mongo outbox → Debezium → Kafka (`TASK_OUTBOX_PUBLISH_MODE=debezium`).
 
 ## API Endpoints
 
@@ -44,18 +44,14 @@ All endpoints are prefixed with `/api/v1/tasks`. Requests require an `X-User-Id`
 | `/api/v1/tasks/:id/comments` | POST | Add a comment to a task |
 
 ## Internal Contracts
-- **RabbitMQ Publisher:** 
-  - Publishes `task_assigned` when a user is assigned to a task.
-  - Publishes `comment_created` when a comment is added to a task assignee.
-  - Publishes `comment_mentioned` when a user is mentioned in a comment.
-- **RabbitMQ Consumer:**
-  - Consumes `workspace_deleted` to clean task projections for deleted workspaces.
+- **Kafka outbox (Debezium):** `task_assigned`, `comment_created`, `comment_mentioned` topics.
+- **Kafka consumer:** `workspace_deleted`, `user_registered`, `user_profile_updated` (replica sync + cleanup).
 
 ## Environment Variables
 
 - `NODE_ENV`: Application environment (e.g., `production`, `development`)
 - `PORT`: Service port (default: 3000)
-- `MONGO_URI`: MongoDB connection string (e.g., `mongodb://localhost:27017/collabspace_task?authSource=admin`)
+- `MONGO_URI`: MongoDB connection string (e.g. `mongodb://admin:password@localhost:27017/collabspace_task?authSource=admin&replicaSet=rs0`)
 - `WORKSPACE_CLIENT_MODE`: `http` (production) or `mock` (local dev only)
 - `WORKSPACE_SERVICE_URL`: Base URL for workspace internal HTTP API
 - `SERVICE_JWT_SECRET`: Shared secret for service-to-service JWT (required in production)

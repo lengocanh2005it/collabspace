@@ -23,13 +23,11 @@ data:
   MONGO_HOST: "mongo"
   MONGO_PORT: "27017"
   MONGO_DB: "collabspace_task"
-  RABBITMQ_URL: "amqp://guest:guest@rabbitmq:5672/collabspace"
-  RABBITMQ_ENABLED: "true"
-  RABBITMQ_QUEUE: "task-service"
-  RABBITMQ_HOST: "rabbitmq"
-  RABBITMQ_PORT: "5672"
-  RABBITMQ_VHOST: "collabspace"
-  RABBITMQ_EXCHANGE: "collabspace_exchange"
+  KAFKA_CONSUMERS_ENABLED: "true"
+  KAFKA_BROKERS: "kafka:9092"
+  KAFKA_CLIENT_ID: "task-service"
+  KAFKA_GROUP_ID: "task-service"
+  TASK_OUTBOX_PUBLISH_MODE: "debezium"
   AUTH_SERVICE_URL: "http://auth-service:3000"
   USER_SERVICE_URL: "http://user-service:3000"
   WORKSPACE_SERVICE_URL: "http://workspace-service:8080"
@@ -51,8 +49,6 @@ stringData:
   MONGO_USER: ""  # Optional: Add if MongoDB auth enabled
   MONGO_PASSWORD: ""  # Optional: Add if MongoDB auth enabled
   JWT_SECRET: "change-me-in-production"  # CHANGE IN PRODUCTION
-  RABBITMQ_USER: "guest"  # CHANGE IN PRODUCTION
-  RABBITMQ_PASSWORD: "guest"  # CHANGE IN PRODUCTION
 
 ---
 apiVersion: apps/v1

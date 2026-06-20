@@ -72,6 +72,7 @@ describe("EventSourcedMongoTaskRepository", () => {
       expect.arrayContaining([
         expect.objectContaining({ eventType: TaskDomainEventType.TaskCreated }),
       ]),
+      undefined,
     );
   });
 
@@ -92,9 +93,12 @@ describe("EventSourcedMongoTaskRepository", () => {
     await repository.saveAsync(task);
 
     expect(mockEventStore.loadStream).not.toHaveBeenCalled();
-    expect(mockTaskModel.deleteOne).toHaveBeenCalledWith({
-      _id: taskId.getValue(),
-    });
+    expect(mockTaskModel.deleteOne).toHaveBeenCalledWith(
+      {
+        _id: taskId.getValue(),
+      },
+      undefined,
+    );
     expect(mockTaskModel.findByIdAndUpdate).not.toHaveBeenCalled();
     expect(uncommitted[0].eventType).toBe(TaskDomainEventType.TaskDeleted);
   });

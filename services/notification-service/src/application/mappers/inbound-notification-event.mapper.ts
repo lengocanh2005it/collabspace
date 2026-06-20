@@ -11,7 +11,7 @@ import type {
 } from "../../domain/events/workspace-events";
 
 /**
- * Factory / Mapper: inbound RabbitMQ event payloads → CreateNotificationCommand.
+ * Factory / Mapper: inbound Kafka event payloads → CreateNotificationCommand.
  */
 export const InboundNotificationEventMapper = {
   toTaskAssignedCommand(data: TaskAssignedEventPayload): CreateNotificationCommand {

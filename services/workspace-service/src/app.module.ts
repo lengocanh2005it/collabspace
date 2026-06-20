@@ -5,7 +5,6 @@ import { RedisModule } from './infrastructure/cache/redis.module';
 import { WorkspaceCacheService } from './infrastructure/cache/workspace-cache.service';
 import { IdempotencyService } from './infrastructure/idempotency/idempotency.service';
 import { OutboxModule } from './infrastructure/outbox/outbox.module';
-import { RabbitMqModule } from './infrastructure/messaging/rabbitmq.module';
 import { WorkspaceController } from './presentation/http/workspace.controller';
 import { HealthController } from './presentation/http/health.controller';
 import { ProjectController } from './presentation/http/project.controller';
@@ -55,7 +54,6 @@ import { platformAdminAuthProviders } from './presentation/http/platform-admin-a
     DatabaseModule,
     MetricsModule,
     OutboxModule,
-    RabbitMqModule,
     AuthModule,
     RedisModule,
   ],

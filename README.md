@@ -30,7 +30,7 @@
          │    Redis :6379 (auth OTP/session)
          │                │
          └────────────────┘
-                  ↕ (RabbitMQ :5672 / :15672)
+                  ↕ (Kafka + Debezium CDC)
              Events: TASK_ASSIGNED, WORKSPACE_INVITED, COMMENT_CREATED
 ```
 
@@ -51,10 +51,10 @@
 | Component | Image | Port(s) | Purpose |
 |-----------|-------|---------|---------|
 | Traefik | traefik:v2.10 | 80, 443, 8080 | API Gateway, routing (TLS Enforced) |
-| RabbitMQ | rabbitmq:3-management | 5672, 15672 | Async event bus |
+| Kafka + Debezium Connect | apache/kafka + debezium/connect | 9092, 8083 | Async event bus (CDC outbox) |
 | Redis | redis:7 | 6379 | Caching, notifications |
 | PostgreSQL | postgres:15 | 5432 | Auth, User, Workspace DBs (Native CronJob Backups) |
-| MongoDB | mongo:6 | 27017 | Task service (Native CronJob Backups) |
+| MongoDB | mongo:6 (**replica set `rs0`**) | 27017 | task + notification — [infrastructure/mongo/README.md](infrastructure/mongo/README.md) |
 | Prometheus | prom/prometheus | 9090 | Metrics collection |
 | Grafana | grafana/grafana | 3005 | Dashboards (local Compose) |
 | Loki + Promtail | Helm subcharts (K8s) | 3100 | **Log aggregation (production path)** |
@@ -112,17 +112,16 @@ docker-compose -f docker-compose.yml -f docker-compose.db.yml -f docker-compose.
    cd collabspace
    ```
 
-2. **Set up environment files**
+2. **Set up environment + start Docker**
    ```powershell
-   # Khuyến nghị — HashiCorp Vault dev (cùng luồng secret với K8s prod)
-   cd infrastructure/docker
-   docker compose -f docker-compose.vault.yml up -d
-   cd ../..
-   .\infrastructure\vault\scripts\seed-dev-secrets.ps1
-   .\infrastructure\vault\scripts\sync-env-from-vault.ps1
+   # Khuyến nghị — Vault + built images (Dockerfile.service, có cache)
+   .\scripts\docker-local-up.ps1 -Kafka
 
-   # Hoặc — copy templates thủ công (nhanh, không qua Vault)
-   # ./scripts/env-setup.sh
+   # Rebuild sau khi đổi code:
+   .\scripts\docker-local-up.ps1 -Kafka -Build
+
+   # Hot-reload khi dev code (chậm hơn lúc start — pnpm install mỗi container):
+   .\scripts\docker-local-up.ps1 -Dev
    ```
    See [infrastructure/vault/README.md](infrastructure/vault/README.md). **K8s prod:** Vault + External Secrets Operator (Phase 2).
 
@@ -291,7 +290,7 @@ Hướng dẫn đầy đủ: **[docs/observability.md](docs/observability.md)**.
 | Prometheus | http://localhost:9090 | Metrics queries |
 | Jaeger | http://localhost:16686 | Trace analysis (tracing profile) |
 | Traefik | http://localhost:8080 | API Gateway dashboard |
-| RabbitMQ | http://localhost:15672 | Message queue management |
+| Kafka UI | http://localhost:8088 | Topic inspection (profile `kafka-ui`) |
 | Kibana | http://localhost:5601 | Logs — **chỉ khi bật profile ELK** (`docker-compose.logging.yml`) |
 
 Log trên Compose: container `stdout` + tùy chọn profile ELK. **Không** dùng ELK trên K8s prod.
@@ -320,7 +319,6 @@ Xem [infrastructure/load-testing/README.md](infrastructure/load-testing/README.m
 |---------|----------|----------|---------|
 | Grafana (Docker local) | admin | collabspace-grafana | `docker-compose.monitoring.yml` |
 | Grafana (K8s prod) | admin | từ PVC/Helm | Có thể khác chart default — [observability.md](docs/observability.md) |
-| RabbitMQ | guest | guest | |
 | Redis | - | collabspace123 |
 
 > **WARNING**: Change all credentials for production deployments!
@@ -404,7 +402,7 @@ collabspace/
 │   ├── backup/              # Backup/restore scripts
 │   ├── load-testing/        # k6 scenarios (smoke, demo-flow)
 │   ├── tracing/             # Jaeger / OTLP configs (optional Compose profile)
-│   ├── rabbitmq/            # RabbitMQ setup
+│   ├── kafka/               # Kafka + Debezium connectors, schemas
 │   ├── redis/               # Redis setup
 │   ├── resilience/          # Readiness drills, degradation helpers
 │   ├── chaos/               # Chaos / stop-service drills
@@ -416,27 +414,16 @@ collabspace/
 
 ## Event-Driven Architecture
 
-Services communicate asynchronously via RabbitMQ:
+Cross-service events use **transactional outbox + Debezium CDC → Kafka** (no in-app broker publish after commit):
 
+```text
+Service (same DB transaction)
+  → INSERT business row + INSERT outbox
+  → Debezium CDC → Kafka topic (collabspace.<domain>.<event>)
+  → notification-service / task-service Kafka consumers
 ```
-┌─────────────────┐      ┌─────────────────────────┐      ┌───────────────────┐
-│  Task Service   │ ──── │   collabspace_exchange  │ ──── │ Notification Svc  │
-│                 │      │      (direct type)       │      │                   │
-│  Publishes:     │      │                         │      │  Consumes:        │
-│  - TASK_ASSIGNED│      │  Routing Keys:          │      │  - task_assigned  │
-│  - COMMENT_     │      │  - task_assigned        │      │  - workspace_     │
-│    CREATED      │      │  - workspace_invited    │      │    invited        │
-└─────────────────┘      │  - comment_created      │      │  - comment_created│
-                         └─────────────────────────┘      └───────────────────┘
-                                     ▲
-                                     │
-                         ┌───────────┴───────────┐
-                         │  Workspace Service    │
-                         │                       │
-                         │  Publishes:           │
-                         │  - WORKSPACE_INVITED  │
-                         └───────────────────────┘
-```
+
+See [docs/kafka-debezium-migration-roadmap.md](docs/kafka-debezium-migration-roadmap.md) and [infrastructure/kafka/README.md](infrastructure/kafka/README.md).
 
 ## License
 

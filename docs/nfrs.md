@@ -55,7 +55,7 @@ Chi tiết kỹ thuật:
 | NFR | Mục tiêu | CollabSpace |
 |-----|----------|-------------|
 | Local read model | Giảm gọi chéo service khi đọc nhiều | ✅ `user_replicas` + `UserReplicaLookupService` |
-| Async event bus | Tách luồng ghi chính khỏi notification | ✅ RabbitMQ + outbox |
+| Async event bus | Tách luồng ghi chính khỏi notification | ✅ Kafka + Debezium outbox |
 | Horizontal scale stateless apps | Nhiều replica app | ⚠️ K8s HPA templates có; k6 scenarios `smoke`/`demo-flow` có — chưa baseline doc |
 | Connection pool / resource limits | Tránh OOM dưới tải | ⚠️ K8s requests/limits có; chưa tune theo benchmark |
 | SLO / p99 latency | Cam kết ms cụ thể | ❌ Chưa định nghĩa SLO; có metric histogram HTTP |
@@ -111,7 +111,7 @@ Chi tiết kỹ thuật:
 | Backup scripts | Postgres + Mongo dump | ✅ `infrastructure/backup/scripts/` |
 | Automated backup schedule | Cron prod | ❌ Chưa — checklist prod |
 | Restore drill | Kiểm chứng khôi phục | 📋 Quarterly — manual |
-| DLQ | Message hỏng không mất | ✅ RabbitMQ DLQ definitions |
+| DLQ | Message hỏng không mất | ✅ Kafka DLQ topic `collabspace.dlq.events` |
 
 ---
 

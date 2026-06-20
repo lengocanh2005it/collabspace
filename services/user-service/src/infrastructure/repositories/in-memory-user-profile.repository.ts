@@ -170,6 +170,13 @@ export class InMemoryUserProfileRepository implements UserProfileRepository {
     };
   }
 
+  async upsertPendingInTransaction(
+    _context: import('../../domain/ports/unit-of-work.port').TransactionContext,
+    input: CreatePendingUserProfileInput,
+  ): Promise<UserProfile> {
+    return this.upsertPending(input);
+  }
+
   async upsertPending(input: CreatePendingUserProfileInput): Promise<UserProfile> {
     const existingProfile = await this.findByUserId(input.userId);
     const now = new Date();
@@ -195,6 +202,14 @@ export class InMemoryUserProfileRepository implements UserProfileRepository {
 
     this.profiles.push(profile);
     return profile;
+  }
+
+  async updateProfileInTransaction(
+    _context: import('../../domain/ports/unit-of-work.port').TransactionContext,
+    userId: string,
+    input: UpdateUserProfileInput,
+  ): Promise<UserProfile> {
+    return this.updateProfile(userId, input);
   }
 
   async updateProfile(userId: string, input: UpdateUserProfileInput): Promise<UserProfile> {

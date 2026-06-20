@@ -1,0 +1,50 @@
+{{- if and .Values.kafka.enabled .Values.kafka.exporter.enabled }}
+{{- $ns := include "collabspace.namespace" . }}
+{{- $exp := .Values.kafka.exporter }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka-exporter
+  namespace: {{ $ns }}
+  labels:
+    app: kafka-exporter
+spec:
+  selector:
+    app: kafka-exporter
+  ports:
+    - port: 9308
+      targetPort: 9308
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafka-exporter
+  namespace: {{ $ns }}
+  labels:
+    app: kafka-exporter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kafka-exporter
+  template:
+    metadata:
+      labels:
+        app: kafka-exporter
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9308"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+        - name: kafka-exporter
+          image: {{ printf "%s:%s" $exp.image.repository $exp.image.tag }}
+          imagePullPolicy: {{ $exp.image.pullPolicy | default "IfNotPresent" }}
+          args:
+            - --kafka.server={{ $exp.kafkaServer | default "kafka:9092" }}
+          ports:
+            - containerPort: 9308
+          resources:
+            {{- toYaml $exp.resources | nindent 12 }}
+{{- end }}

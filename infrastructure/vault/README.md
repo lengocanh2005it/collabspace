@@ -4,7 +4,7 @@ CollabSpace NestJS services read secrets from **environment variables**. Vault i
 
 | Environment | Integration |
 |-------------|-------------|
-| **Local Docker** | Vault dev container (`docker-compose.vault.yml`) + `sync-env-from-vault` → `services/*/.env` |
+| **Local Docker** | **Khuyến nghị:** Vault dev (`docker-compose.vault.yml`) + `seed-dev-secrets` + `sync-env-from-vault` → `services/*/.env`. Hoặc điền tay dev credentials khớp `vault/.env.example`. |
 | **Single Droplet** | Persistent single-node Vault container + `sync-env-from-vault` → `services/*/.env` |
 | **Kubernetes** | Vault + [External Secrets Operator](https://external-secrets.io/) → `Secret` → `envFrom` (Helm) |
 
@@ -25,7 +25,6 @@ Keys in each path:
 | `postgres_password` | `POSTGRES_PASSWORD`, `DATABASE_URL` | auth, user, workspace |
 | `mongo_username` / `mongo_password` | `MONGO_URI` | task, notification |
 | `redis_password` | `REDIS_PASSWORD` | auth, notification |
-| `rabbitmq_username` / `rabbitmq_password` | `RABBITMQ_*`, `RABBITMQ_URL` | all publishers/consumers |
 | `metrics_auth_token` | `METRICS_AUTH_TOKEN` | all five apps |
 | `azure_storage_connection_string` | `AZURE_STORAGE_CONNECTION_STRING` | user-service (avatar), task-service (attachments) |
 | `do_spaces_key` / `do_spaces_secret` | — (inject vào `backup-spaces-secret` qua ESO) | CronJob backup-postgres, backup-mongo |
@@ -69,13 +68,21 @@ chmod +x infrastructure/vault/scripts/*.sh
 
 Override defaults via `infrastructure/vault/.env` (copy from `.env.example`).
 
-### 3. Sync into service `.env` (optional)
+### 3. Sync Vault → `.env.vault` (secrets) — **không** ghi vào `.env`
 
 ```powershell
-.\infrastructure\vault\scripts\sync-env-from-vault.ps1
+.\infrastructure\vault\scripts\strip-vault-secrets-from-env.ps1   # .env: secret fields empty
+.\infrastructure\vault\scripts\sync-env-from-vault.ps1            # .env.vault: secrets from Vault
 ```
 
-Creates `.env` from `.env.example` if missing, then updates secret fields only.
+Hoặc một lệnh (seed từ `phase0.env` + strip + sync):
+
+```powershell
+.\infrastructure\vault\scripts\reset-local-env-from-vault.ps1
+```
+
+- `services/*/.env` — **chỉ config** (Kafka, outbox, ports…); field Vault-managed **để trống** hoặc `VAULT_SYNC` trong URL.
+- `services/*/.env.vault` — gitignored; Docker Compose load sau `.env`.
 
 ### 4. Start the stack as usual
 

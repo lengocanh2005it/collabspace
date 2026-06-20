@@ -49,6 +49,17 @@ function Get-Field ([object]$obj, [string]$path) {
   if ($null -eq $val -or $val -eq '') { $null } else { "$val" }
 }
 
+function Get-DevOtp {
+  param([string]$Email)
+  $escaped = $Email.Replace("'", "''")
+  $sql = "SELECT payload->>'otp' FROM auth_outbox_events WHERE payload->>'email' = '$escaped' ORDER BY created_at DESC LIMIT 1;"
+  $otp = (docker exec postgres psql -U postgres -d collabspace_auth -tAc $sql 2>$null).Trim()
+  if ($otp) { return $otp }
+  $dev = Invoke-Api -Method GET -Url "$BASE/auth/dev/otp?email=$([uri]::EscapeDataString($Email))"
+  if ($dev.Code -eq 200 -and $dev.Body.otp) { return "$($dev.Body.otp)" }
+  return $null
+}
+
 # ---------- preflight --------------------------------------------------------
 
 Log "Checking gateway health..."
@@ -69,16 +80,15 @@ $FULL_B   = "Demo Bob $TS"
 Log "Step 1: Register User A ($EMAIL_A)..."
 $r = Invoke-Api -Method POST -Url "$BASE/auth/register" -Body @{ email=$EMAIL_A; password=$PASS; fullName=$FULL_A }
 Assert2xx $r "register User A"
+$USER_A_ID = Get-Field $r.Body 'userId' ?? Get-Field $r.Body 'data.userId'
+if (-not $USER_A_ID) { Fail "No userId in register response." }
 
-$OTP_A = $r.Body.otp
-if (-not $OTP_A) {
-  $dev = Invoke-Api -Method GET -Url "$BASE/auth/dev/otp?email=$EMAIL_A"
-  $OTP_A = $dev.Body.otp
-}
-if (-not $OTP_A) { Fail "Cannot obtain OTP for User A. Check auth-service logs." }
+Log "  Fetching OTP for User A (auth outbox / dev endpoint)..."
+$OTP_A = Get-DevOtp $EMAIL_A
+if (-not $OTP_A) { Fail "Cannot obtain OTP for User A. Check auth-service logs or auth_outbox_events." }
 
 Log "  Verifying email for User A (OTP: $OTP_A)..."
-$r = Invoke-Api -Method POST -Url "$BASE/auth/verify-email" -Body @{ otp=$OTP_A }
+$r = Invoke-Api -Method POST -Url "$BASE/auth/verify-email" -Body @{ otp=$OTP_A; userId=$USER_A_ID }
 Assert2xx $r "verify-email User A"
 
 Log "  Logging in as User A..."
@@ -87,6 +97,18 @@ Assert2xx $r "login User A"
 $TOKEN_A = $r.Body.accessToken ?? $r.Body.data.accessToken
 if (-not $TOKEN_A) { Fail "No accessToken in login response." }
 Log "  User A logged in. Token: $($TOKEN_A.Substring(0,[Math]::Min(20,$TOKEN_A.Length)))..."
+
+Log "  Registering User B early ($EMAIL_B) for user replica sync..."
+$r = Invoke-Api -Method POST -Url "$BASE/auth/register" -Body @{ email=$EMAIL_B; password=$PASS; fullName=$FULL_B }
+Assert2xx $r "register User B"
+$USER_B_ID = Get-Field $r.Body 'userId' ?? Get-Field $r.Body 'data.userId'
+if (-not $USER_B_ID) { Fail "No userId in register response for User B." }
+$OTP_B = Get-DevOtp $EMAIL_B
+if (-not $OTP_B) { Fail "Cannot obtain OTP for User B." }
+$r = Invoke-Api -Method POST -Url "$BASE/auth/verify-email" -Body @{ otp=$OTP_B; userId=$USER_B_ID }
+Assert2xx $r "verify-email User B"
+Log "  User B registered and verified; waiting 15s for task-service user replica..."
+Start-Sleep -Seconds 15
 
 # ---------- Step 2: Create workspace + invite User B -------------------------
 
@@ -108,24 +130,9 @@ $INVITATION_ID = $r.Body.id ?? $r.Body.invitationId ?? $r.Body.data.id
 if (-not $INVITATION_ID) { Fail "No invitation id in response." }
 Log "  Invitation created: $INVITATION_ID"
 
-# ---------- Step 3: Register + verify + login User B + accept invite ---------
+# ---------- Step 3: Login User B + accept invite --------------------------------
 
-Log "Step 3: Register User B ($EMAIL_B)..."
-$r = Invoke-Api -Method POST -Url "$BASE/auth/register" -Body @{ email=$EMAIL_B; password=$PASS; fullName=$FULL_B }
-Assert2xx $r "register User B"
-
-$OTP_B = $r.Body.otp
-if (-not $OTP_B) {
-  $dev = Invoke-Api -Method GET -Url "$BASE/auth/dev/otp?email=$EMAIL_B"
-  $OTP_B = $dev.Body.otp
-}
-if (-not $OTP_B) { Fail "Cannot obtain OTP for User B." }
-
-Log "  Verifying email for User B..."
-$r = Invoke-Api -Method POST -Url "$BASE/auth/verify-email" -Body @{ otp=$OTP_B }
-Assert2xx $r "verify-email User B"
-
-Log "  Logging in as User B..."
+Log "Step 3: Logging in as User B ($EMAIL_B)..."
 $r = Invoke-Api -Method POST -Url "$BASE/auth/login" -Body @{ email=$EMAIL_B; password=$PASS }
 Assert2xx $r "login User B"
 $TOKEN_B = $r.Body.accessToken ?? $r.Body.data.accessToken
@@ -137,6 +144,9 @@ $r = Invoke-Api -Method POST -Url "$BASE/invitations/$INVITATION_ID/accept" `
   -Headers @{ Authorization="Bearer $TOKEN_B" } -Body @{}
 Assert2xx $r "accept invitation"
 Log "  Invitation accepted."
+
+Log "  Waiting for user profile replica sync in task-service (5s)..."
+Start-Sleep -Seconds 5
 
 # ---------- Step 4: Create project + task + assign to User B -----------------
 
@@ -158,18 +168,22 @@ $TASK_ID = $r.Body.id ?? $r.Body.data.id
 if (-not $TASK_ID) { Fail "No task id in response." }
 Log "  Task created: $TASK_ID"
 
-Log "  Getting User B's user ID..."
-$r = Invoke-Api -Method GET -Url "$BASE/users/me" -Headers @{ Authorization="Bearer $TOKEN_B" }
-Assert2xx $r "get User B profile"
-$USER_B_ID = $r.Body.userId ?? $r.Body.data.userId ?? $r.Body.id ?? $r.Body.data.id
-if (-not $USER_B_ID) { Fail "No user id in /users/me response." }
-Log "  User B ID: $USER_B_ID"
-
-Log "  Assigning task to User B..."
-$r = Invoke-Api -Method PATCH -Url "$BASE/tasks/$TASK_ID/assignee" `
-  -Headers @{ Authorization="Bearer $TOKEN_A" } `
-  -Body @{ assigneeId=$USER_B_ID }
-Assert2xx $r "assign task"
+Log "  Assigning task to User B (retry while user replica syncs)..."
+$assignOk = $false
+for ($attempt = 1; $attempt -le 6; $attempt++) {
+  $r = Invoke-Api -Method PATCH -Url "$BASE/tasks/$TASK_ID/assignee" `
+    -Headers @{ Authorization="Bearer $TOKEN_A" } `
+    -Body @{ assigneeId=$USER_B_ID }
+  if ($r.Code -ge 200 -and $r.Code -lt 300) {
+    $assignOk = $true
+    break
+  }
+  Dbg "assign attempt $attempt → HTTP $($r.Code)"
+  Start-Sleep -Seconds 3
+}
+if (-not $assignOk) {
+  Fail "assign task — HTTP $($r.Code): $($r.Body | ConvertTo-Json -Compress)"
+}
 Log "  Task assigned."
 
 # ---------- Step 5: User B changes status to DOING ---------------------------
@@ -200,8 +214,8 @@ Log "  Comment created: $COMMENT_ID"
 
 # ---------- Step 7: User B checks notifications ------------------------------
 
-Log "Step 7: Waiting 2s for event propagation then checking notifications..."
-Start-Sleep -Seconds 2
+Log "Step 7: Waiting for Kafka event propagation then checking notifications..."
+Start-Sleep -Seconds 10
 
 $r = Invoke-Api -Method GET -Url "$BASE/notifications" -Headers @{ Authorization="Bearer $TOKEN_B" }
 Assert2xx $r "list notifications"
@@ -215,7 +229,7 @@ $NOTIF_COUNT = $items.Count
 Log "  User B has $NOTIF_COUNT notification(s)."
 
 if ($NOTIF_COUNT -eq 0) {
-  Log "  WARNING: notifications may not have propagated yet (RabbitMQ async). Check manually."
+  Fail "User B has no notifications after assign + comment (expected Kafka path). Check notification-service logs."
 }
 
 # ---------- Summary ----------------------------------------------------------

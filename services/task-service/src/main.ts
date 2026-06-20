@@ -6,13 +6,11 @@ import { NestFactory } from "@nestjs/core";
 import { Logger, ValidationPipe } from "@nestjs/common";
 import { AppModule } from "./app.module";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
-import { type MicroserviceOptions, Transport } from "@nestjs/microservices";
-import { buildConsumerQueueOptions, deserializeCollabspaceRmqMessage } from "@collabspace/shared";
-import { ConfigurationService } from "./configuration/configuration.service";
 import { MetricsService } from "./metrics/metrics.service";
 import { registerRequestIdMiddleware } from "./common/http/register-request-id.middleware";
 import { registerMetricsMiddleware } from "./metrics/register-metrics.middleware";
 import compression from "compression";
+
 async function bootstrap() {
   const logger = new Logger("Bootstrap");
   assertRequiredInProduction("SERVICE_JWT_SECRET", process.env.SERVICE_JWT_SECRET);
@@ -20,41 +18,6 @@ async function bootstrap() {
 
   const app = await NestFactory.create(AppModule);
   app.use(compression());
-
-  // --- PHẦN MỚI: CẤU HÌNH MICROSERVICE ---
-  const configService = app.get(ConfigurationService);
-  const rmqConfig = configService.getRabbitMqConfig();
-
-  if (rmqConfig.enabled) {
-    const dlxExchange = process.env.RABBITMQ_DLX_EXCHANGE ?? "collabspace_dlx";
-    const dlxRoutingKey = process.env.RABBITMQ_DLX_ROUTING_KEY ?? `${rmqConfig.queue}.dlq`;
-
-    app.connectMicroservice<MicroserviceOptions>({
-      transport: Transport.RMQ,
-      options: {
-        urls: [rmqConfig.url],
-        queue: rmqConfig.queue,
-        queueOptions: buildConsumerQueueOptions({
-          durable: rmqConfig.queueDurable,
-          deadLetterExchange: dlxExchange,
-          deadLetterRoutingKey: dlxRoutingKey,
-        }),
-        noAck: rmqConfig.noAck,
-        prefetchCount: rmqConfig.prefetchCount,
-        deserializer: {
-          deserialize: (value, options) =>
-            deserializeCollabspaceRmqMessage(
-              value,
-              typeof options?.routingKey === "string" ? options.routingKey : null,
-            ),
-        },
-      },
-    });
-    // Bắt đầu lắng nghe các event từ RabbitMQ
-    await app.startAllMicroservices();
-    logger.log("RabbitMQ microservice is connected and listening");
-  }
-  // ----------------------------
 
   app.useGlobalPipes(
     new ValidationPipe({

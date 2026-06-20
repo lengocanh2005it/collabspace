@@ -15,9 +15,6 @@ services:
   redis:
     ports: !reset []
 
-  rabbitmq:
-    ports: !reset []
-
   traefik:
     image: traefik:v2.10
     container_name: traefik

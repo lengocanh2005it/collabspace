@@ -14,7 +14,7 @@ Tài liệu kỹ thuật agent (tiếng Anh): [`.claude/docs/service-architectur
 | **API Gateway** | Traefik route `/api/v1/*`, Swagger `/swagger/<service>` | `api-gateway/` |
 | **Hexagonal / Clean Architecture** | `presentation → application → domain ← infrastructure` | auth, user, workspace |
 | **CQRS** | Tách Command/Query + Handler | task, notification |
-| **Event-Driven** | RabbitMQ `collabspace_exchange` + routing keys | workspace, task, notification |
+| **Event-Driven** | Kafka + Debezium CDC (transactional outbox → topics) | workspace, user, task, notification |
 | **Transactional Outbox** | Ghi event cùng transaction DB, poll publish sau | auth, workspace, task |
 | **Event Sourcing** (một phần) | Task aggregate append `task_events`, projection `tasks` | task-service |
 | **Saga / Choreography** | Luồng đăng ký auth → user profile; invite → notification | cross-service |
@@ -34,9 +34,10 @@ flowchart LR
     Task -->|HTTP internal| WS
   end
   subgraph async [Bất đồng bộ]
-    WS -->|outbox| RMQ[RabbitMQ]
-    Task -->|outbox| RMQ
-    RMQ --> Notif
+    WS -->|outbox| DBZ[Debezium]
+    Task -->|outbox| DBZ
+    DBZ --> K[(Kafka)]
+    K --> Notif
   end
 ```
 
@@ -135,7 +136,7 @@ Cấu hình:
 | Factory | Vai trò | File |
 |---------|---------|------|
 | Domain entity factories | `Task.create()`, `Comment.create()` | `task-service/domain/entities/` |
-| Notification command factory | Build `CreateNotificationCommand` từ RMQ payload | `notification-service/.../inbound-notification-event.mapper.ts` |
+| Notification command factory | Build `CreateNotificationCommand` từ Kafka payload | `notification-service/.../inbound-notification-event.mapper.ts` |
 | JWT / session | `SessionIssuerService` | auth-service |
 
 ---
@@ -145,12 +146,12 @@ Cấu hình:
 | Vị trí | Skeleton cố định | Bước biến đổi |
 |--------|------------------|---------------|
 | Outbox poll | `runOutboxPollCycle` | `publish`, `claimPendingBatch`, … |
-| RMQ consumer | `consumeNotificationEvent` | `CreateNotificationCommand` từ mapper |
+| Kafka consumer | `consumeNotificationEvent` | `CreateNotificationCommand` từ mapper |
 | CQRS handler | `execute(command)` | logic từng use case |
 
-RMQ helper:
+Kafka consumer helper:
 
-- `services/notification-service/src/presentation/helpers/rmq-notification-consumer.helper.ts`
+- `services/notification-service/src/presentation/helpers/kafka-notification-consumer.helper.ts`
 
 ---
 
@@ -274,10 +275,10 @@ Legacy task `version = 0` vẫn load từ projection cho đến lệnh ghi tiế
 
 ### 2.18 Observer / Event Listener
 
-RabbitMQ `@EventPattern` controllers:
+Kafka consumers (`@collabspace/shared` `processKafkaConsumerMessage`):
 
-- `notification-service/src/presentation/controllers/internal/*-event-listener.controller.ts`
-- `task-service/src/presentation/controllers/internal/` — user replica sync
+- `notification-service/src/infrastructure/messaging/kafka/*-kafka.consumer.ts`
+- `task-service/src/infrastructure/messaging/kafka/*-kafka.consumer.ts` — user replica sync, workspace cleanup
 
 Sau refactor: listener mỏng → mapper + `consumeNotificationEvent`.
 
@@ -355,10 +356,9 @@ POST /api/v1/tasks/:id/comments
   → CreateCommentHandler
   → CommentNotificationPolicy (ai nhận noti?)
   → TaskCommentNotificationPublisher (Facade)
-  → TaskOutboxService.enqueue*
-  → TaskOutboxProcessor (Template Method poll)
-  → RabbitMQ task_commented / comment_mentioned
-  → CommentEventListenerController
+  → TaskOutboxService.enqueue* (cùng transaction Mongo)
+  → Debezium CDC → Kafka collabspace.task.*
+  → notification-service Kafka consumer
   → InboundNotificationEventMapper (Factory)
   → consumeNotificationEvent (Template Method)
   → CreateNotificationHandler (idempotent)
@@ -368,8 +368,8 @@ POST /api/v1/tasks/:id/comments
 
 ```text
 POST invite → use case → transaction(outbox row)
-  → WorkspaceOutboxProcessor → RabbitMQ workspace_invited
-  → WorkspaceInviteEventListenerController → notification persisted
+  → Debezium CDC → Kafka collabspace.workspace.workspace_invited
+  → notification-service Kafka consumer → notification persisted
 ```
 
 ### 4.3 Auth email OTP
@@ -387,7 +387,7 @@ Register use case → AuthOutboxService (transaction)
 | Tình huống | Pattern nên dùng |
 |------------|------------------|
 | Thêm outbox event type (auth) | Đăng ký handler trong `AuthOutboxPublishRegistry` |
-| Thêm RMQ → notification | Thêm method trong `InboundNotificationEventMapper` + listener mỏng |
+| Thêm Kafka event → notification | Thêm method trong `InboundNotificationEventMapper` + consumer mỏng |
 | Query Mongo lặp lại | Thêm spec trong `CommentSpecs` (hoặc file spec mới theo aggregate) |
 | Rule “ai được notify” | Policy class trong `domain/policies/` |
 | Invariant entity (invite, task status) | Method trên domain entity + domain exception |
@@ -397,7 +397,7 @@ Register use case → AuthOutboxService (transaction)
 **Tránh:**
 
 - Business rule trong controller hoặc ORM entity
-- Ack RMQ trước khi handler thành công
+- Commit Kafka offset chỉ sau khi handler thành công (hoặc publish DLQ)
 - Notification không có `eventId`
 - Copy-paste poll loop outbox thay vì dùng shared cycle
 
@@ -411,7 +411,7 @@ Register use case → AuthOutboxService (transaction)
 | Auth Strategy registry | `auth-outbox-publish.registry.ts` |
 | Task Policy + Facade + VO + Spec | `domain/policies/`, `CommentPreview`, `task-comment-notification.publisher.ts`, `comment.specifications.ts` |
 | Invitation rich domain | `invitation.entity.ts`, `invitation.exceptions.ts` |
-| Notification Factory + RMQ Template | `inbound-notification-event.mapper.ts`, `rmq-notification-consumer.helper.ts` |
+| Notification Factory + Kafka consumer helper | `inbound-notification-event.mapper.ts`, `kafka-notification-consumer.helper.ts` |
 
 ---
 

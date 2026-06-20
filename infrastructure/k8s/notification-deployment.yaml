@@ -5,7 +5,7 @@
 # Port: 3000 (Node.js)
 # Health: /notifications/health
 # Storage: Redis (primary) + MongoDB (optional persistence)
-# Consumes: RabbitMQ events (task_assigned, workspace_invited, workspace_deleted, comment_created, comment_mentioned, user_* replica events)
+# Consumes: Kafka events (task_assigned, workspace_invited, workspace_deleted, comment_created, comment_mentioned, user_* replica events)
 
 apiVersion: v1
 kind: ConfigMap
@@ -24,16 +24,10 @@ data:
   REDIS_HOST: "redis"
   REDIS_PORT: "6379"
   REDIS_DB: "0"
-  # RabbitMQ configuration
-  RABBITMQ_URL: "amqp://guest:guest@rabbitmq:5672/collabspace"
-  RABBITMQ_ENABLED: "true"
-  RABBITMQ_QUEUE: "notification-service"
-  RABBITMQ_HOST: "rabbitmq"
-  RABBITMQ_PORT: "5672"
-  RABBITMQ_VHOST: "collabspace"
-  RABBITMQ_EXCHANGE: "collabspace_exchange"
-  # Queues to consume
-  RABBITMQ_QUEUES: "notification-service"
+  KAFKA_CONSUMERS_ENABLED: "true"
+  KAFKA_BROKERS: "kafka:9092"
+  KAFKA_CLIENT_ID: "notification-service"
+  KAFKA_GROUP_ID: "notification-service"
   # Service discovery
   AUTH_SERVICE_URL: "http://auth-service:3000"
   USER_SERVICE_URL: "http://user-service:3000"
@@ -57,8 +51,6 @@ type: Opaque
 stringData:
   REDIS_PASSWORD: "collabspace123"  # CHANGE IN PRODUCTION
   JWT_SECRET: "change-me-in-production"  # CHANGE IN PRODUCTION
-  RABBITMQ_USER: "guest"  # CHANGE IN PRODUCTION
-  RABBITMQ_PASSWORD: "guest"  # CHANGE IN PRODUCTION
 
 ---
 apiVersion: apps/v1

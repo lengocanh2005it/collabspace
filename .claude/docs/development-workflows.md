@@ -88,7 +88,7 @@ Environment examples exist for most services and infrastructure components:
 - `services/workspace-service/.env.example`
 - `services/task-service/.env.example`
 - `services/notification-service/.env.example`
-- `infrastructure/rabbitmq/.env.example`
+- `infrastructure/kafka/.env.example`
 - `infrastructure/redis/.env.example`
 - `infrastructure/load-testing/k6/.env.example`
 - `infrastructure/docker/.env.example` — shared dev secret notes
@@ -99,34 +99,84 @@ Rules:
 - Do not commit real secrets.
 - When adding required env vars, update the matching `.env.example`, config service, Docker Compose file, and README/doc references.
 - **Shared secrets (local Docker):** use the same `SERVICE_JWT_SECRET` in `user-service`, `workspace-service`, `task-service`, and `notification-service` `.env` files; align `JWT_SECRET` between `auth-service` and `notification-service`. See `infrastructure/docker/.env.example`.
-- **Vault (local dev):** `docker compose -f docker-compose.vault.yml up -d` → `infrastructure/vault/scripts/seed-dev-secrets.ps1` → `sync-env-from-vault.ps1`. See `infrastructure/vault/README.md`.
+- **Vault (local dev):** khuyến nghị `.\scripts\docker-local-up.ps1` (Vault bootstrap + stack). Thủ công: `reset-local-env-from-vault.ps1` rồi `docker compose … override.yml up -d`. See `infrastructure/vault/README.md`.
 - **K8s + Vault:** External Secrets Operator manifests in `infrastructure/vault/k8s/`; Helm `global.externalSecrets.enabled: true` skips chart `Secret` templates.
 - **Trust boundaries:** `ALLOW_DEV_IDENTITY_HEADERS=true` only in local `.env` for workspace/task/notification direct-port testing; production and gateway traffic require `Authorization: Bearer …`.
 - In NestJS services, prefer a configuration wrapper over scattered `process.env` reads when the service already has one. `auth-service` uses `ConfigurationService`; `user-service` currently reads more directly in `main.ts` and module factories.
 
 ## HashiCorp Vault (secrets)
 
-Single source for shared dev secrets (`JWT_SECRET`, `SERVICE_JWT_SECRET`, DB/RabbitMQ/Redis passwords). Apps still read `.env` — Vault does not replace Compose `env_file` at runtime unless you sync first.
+Single source for shared dev secrets (`JWT_SECRET`, `SERVICE_JWT_SECRET`, DB/Redis passwords). Apps still read `.env` — Vault does not replace Compose `env_file` at runtime unless you sync first.
+
+**Khuyến nghị — một lệnh (Vault + `.env.vault` + stack):**
 
 ```powershell
-cd infrastructure/docker
-docker compose -f docker-compose.vault.yml up -d
-cd ../..
-.\infrastructure\vault\scripts\seed-dev-secrets.ps1
-.\infrastructure\vault\scripts\sync-env-from-vault.ps1
+.\scripts\docker-local-up.ps1              # built images (Dockerfile.service) — mặc định
+.\scripts\docker-local-up.ps1 -Kafka       # + Kafka/Debezium
+.\scripts\docker-local-up.ps1 -Build       # rebuild image (dùng cache layer pnpm)
+.\scripts\docker-local-up.ps1 -Dev         # hot-reload: override.yml (pnpm install mỗi lần start)
 ```
 
-Linux/macOS: `infrastructure/vault/scripts/seed-dev-secrets.sh` and `sync-env-from-vault.sh`.
+Hoặc `infrastructure\dev\dev.bat` / `dev-mode.ps1` (cùng luồng Vault). Thủ công:
+
+```powershell
+.\infrastructure\vault\scripts\reset-local-env-from-vault.ps1
+cd infrastructure/docker
+docker compose -f docker-compose.yml -f docker-compose.db.yml -f docker-compose.local.yml up -d
+```
+
+Linux/macOS: `./scripts/docker-local-up.sh` (hoặc `seed-dev-secrets.sh` + `sync-env-from-vault.ps1` nếu không có `pwsh`).
 
 K8s staging/prod: Vault + External Secrets Operator — `infrastructure/vault/README.md`; Helm `global.externalSecrets.enabled: true`.
 
 ## Docker Compose
 
-Run core local stack from `infrastructure/docker` (includes hot-reload **and** Prometheus + Grafana via `docker-compose.override.yml` → `include` exporters + monitoring):
+Run core local stack from `infrastructure/docker`. **Prefer** `scripts/docker-local-up.ps1` (Vault first).
+
+| Mode | Compose | Khi nào dùng |
+|------|---------|--------------|
+| **Built (default)** | `docker-compose.local.yml` | Full stack nhanh — image từ `Dockerfile.service`, pnpm cache trong build |
+| **Dev hot-reload** | `docker-compose.override.yml` + `-Dev` | Sửa code liên tục — `pnpm install` + `start:dev` mỗi lần start container |
 
 ```sh
-docker-compose -f docker-compose.yml -f docker-compose.db.yml -f docker-compose.override.yml up -d
+# Built images (khuyến nghị demo / full stack)
+docker compose -f docker-compose.yml -f docker-compose.db.yml -f docker-compose.local.yml up -d
+
+# Hot-reload (chậm hơn lúc start)
+docker compose -f docker-compose.yml -f docker-compose.db.yml -f docker-compose.override.yml up -d
 ```
+
+**Kafka + Debezium (event bus overlay):**
+
+```sh
+docker compose -f docker-compose.yml -f docker-compose.db.yml -f docker-compose.kafka.yml up -d kafka debezium-connect
+# Smoke: ../../scripts/kafka-phase0-smoke.sh (or .ps1 on Windows)
+```
+
+See `infrastructure/kafka/README.md` and `docs/kafka-debezium-migration-roadmap.md`.
+
+**Mongo replica set (Phase 0M — bắt buộc trước Phase 5M):**
+
+Full stack: `.\scripts\docker-local-up.ps1 -Kafka`. Verify Phase 0M:
+
+```powershell
+.\scripts\mongo-phase0m-smoke.ps1   # rs0 + withTransaction + task/notification ready
+```
+
+Chi tiết: `infrastructure/mongo/README.md`.
+
+**Kafka migration E2E (Phase 3 + 4 + 5M — sau `docker-local-up.ps1 -Kafka`):**
+
+```powershell
+.\scripts\register-workspace-outbox-connector.ps1
+.\scripts\register-user-outbox-connector.ps1
+.\scripts\register-task-outbox-connector.ps1
+.\scripts\kafka-phase3-e2e.ps1   # workspace invite + delete → task cleanup
+.\scripts\kafka-phase4-e2e.ps1   # user_registered + profile_updated → replicas
+.\scripts\kafka-phase5-e2e.ps1 # task mention + assign + comment → notifications
+```
+
+Yêu cầu env: `WORKSPACE_OUTBOX_PUBLISH_MODE=debezium`, `USER_OUTBOX_PUBLISH_MODE=debezium`, `TASK_OUTBOX_PUBLISH_MODE=debezium`, `KAFKA_CONSUMERS_ENABLED=true`. Xem `docs/kafka-debezium-migration-roadmap.md`.
 
 Add Traefik:
 
@@ -162,7 +212,9 @@ Important local URLs:
 - Kibana: `http://localhost:5601` (chỉ khi bật profile ELK — `docker-compose.logging.yml`; prod K8s dùng Loki)
 - Jaeger: `http://localhost:16686`
 - Traefik dashboard: `http://localhost:8080`
-- RabbitMQ dashboard: `http://localhost:15672`
+- Debezium Connect REST: `http://localhost:8083`
+- Kafka (host client): `localhost:29092`
+- Kafka UI (profile `kafka-ui`): `http://localhost:8088`
 
 ## Auth Service Workflow
 
@@ -275,12 +327,12 @@ All services compile seed to **`dist/seed/seed.js`**; images copy `scripts/load-
 What gets seeded:
 
 - **auth-service** — roles, permissions, **20** verified demo users
-- **user-service** — profiles, preferences, status (source of truth; no RabbitMQ)
+- **user-service** — profiles, preferences, status (source of truth)
 - **workspace-service** — **4 workspaces**, **9 projects**, members (owner/manager/member mix), **1 pending invitation**
 - **task-service** — **`user_replicas`** (all demo users) + **87 tasks** + event store + **13 comments**
 - **notification-service** — **`user_replicas`** (all demo users) + **32** sample notifications (UNREAD / READ / ARCHIVED)
 
-**k3s full reset:** `bash infrastructure/deploy/run-k8s-full-reset.sh` — stops apps, wipes Postgres/Mongo/Redis, **deletes RabbitMQ PVC** and restarts empty volume, migrate, seed (above), restore apps. RabbitMQ queues are created when apps start, not during seed.
+**k3s full reset:** `bash infrastructure/deploy/run-k8s-full-reset.sh` — stops apps, wipes Postgres/Mongo/Redis, migrate, seed (above), restore apps.
 
 Demo accounts after seed:
 

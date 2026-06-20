@@ -96,24 +96,24 @@ groups:
           summary: "MongoDB is down"
           description: "MongoDB exporter scrape target is unreachable."
 
-      # RabbitMQ
-      - alert: RabbitMQHighQueueDepth
-        expr: rabbitmq_queue_messages > 1000
+      # Kafka consumer lag (Phase 7 — kafka-exporter)
+      - alert: KafkaConsumerLagHigh
+        expr: sum by (consumergroup) (kafka_consumergroup_lag) > 100
         for: 5m
         labels:
           severity: warning
         annotations:
-          summary: "RabbitMQ queue {{ $labels.queue }} has high message backlog"
-          description: "Queue {{ $labels.queue }} has {{ $value }} messages waiting."
+          summary: "Kafka consumer group {{ $labels.consumergroup }} lag is high"
+          description: "Consumer group {{ $labels.consumergroup }} has lag {{ $value }} messages (threshold 100)."
 
-      - alert: RabbitMQDLQNotEmpty
-        expr: rabbitmq_queue_messages{queue=~".*\\.dlq"} > 0
-        for: 1m
+      - alert: KafkaDlqNotEmpty
+        expr: increase(kafka_topic_partition_current_offset{topic="collabspace.dlq.events"}[10m]) > 0
+        for: 0m
         labels:
           severity: warning
         annotations:
-          summary: "Dead letter queue {{ $labels.queue }} has messages"
-          description: "DLQ {{ $labels.queue }} has {{ $value }} failed messages."
+          summary: "Kafka DLQ topic has messages"
+          description: "collabspace.dlq.events has unreplayed failed messages — inspect and replay per runbook."
 
       # PostgreSQL connection pool
       - alert: PostgresHighConnections

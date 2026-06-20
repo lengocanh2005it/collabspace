@@ -9,6 +9,7 @@
 # NestJS / Prisma
 **/prisma/migrations/
 **/.env
+**/.env.vault
 
 # Java / Spring Boot
 **/target/
@@ -22,6 +23,7 @@
 **/*.py[cod]
 **/venv/
 **/.env
+**/.env.vault
 **/.pytest_cache/
 
 # Docker
@@ -53,9 +55,6 @@ CLAUDE.local.md
 # Logs
 **/*.log
 logs/
-
-# RabbitMQ Data
-/infrastructure/rabbitmq/data
 
 # ELK Data
 /infrastructure/logging/esdata

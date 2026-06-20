@@ -31,9 +31,6 @@ data:
   POSTGRES_HOST: "postgres"
   POSTGRES_PORT: "5432"
   POSTGRES_DB: "collabspace_auth"
-  RABBITMQ_HOST: "rabbitmq"
-  RABBITMQ_PORT: "5672"
-  RABBITMQ_VHOST: "collabspace"
   JAEGER_AGENT_HOST: "jaeger"
   JAEGER_AGENT_PORT: "6831"
   LOG_LEVEL: "info"
@@ -51,8 +48,6 @@ stringData:
   POSTGRES_USER: "postgres"
   POSTGRES_PASSWORD: "postgres"  # CHANGE IN PRODUCTION
   JWT_SECRET: "change-me-in-production"  # CHANGE IN PRODUCTION
-  RABBITMQ_USER: "guest"  # CHANGE IN PRODUCTION
-  RABBITMQ_PASSWORD: "guest"  # CHANGE IN PRODUCTION
 
 ---
 apiVersion: apps/v1

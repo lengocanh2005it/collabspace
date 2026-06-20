@@ -32,11 +32,13 @@ services:
     container_name: mongodb-exporter
     restart: unless-stopped
     command:
-      - --mongodb.uri=mongodb://admin:password@mongo:27017
+      - --mongodb.uri=mongodb://admin:password@mongo:27017/admin?authSource=admin&replicaSet=rs0
     ports:
       - "9216:9216"
     depends_on:
       mongo:
         condition: service_healthy
+      mongo-rs-init:
+        condition: service_completed_successfully
     networks:
       - collabspace-network

@@ -61,7 +61,7 @@ Dùng trước khi expose CollabSpace ra ngoài môi trường local/demo.
 | `SERVICE_JWT_SECRET` | user, workspace (inbound verify); task, notification (outbound sign); task → workspace/user internal HTTP | Vault → ESO; Helm `global.secrets.serviceJwtSecret` khi tắt ESO |
 | `POSTGRES_PASSWORD` | auth, user, workspace + Bitnami postgres | Managed DB hoặc secret |
 | `REDIS_PASSWORD` | auth, notification | Secret manager |
-| `RABBITMQ_PASSWORD` | publisher/consumer | Secret manager |
+| `KAFKA_BROKERS` | Kafka consumers (task, notification, user outbox mode) | ConfigMap / env |
 | `METRICS_AUTH_TOKEN` | Prometheus scrape, `/metrics` app | Secret manager |
 | Email (Brevo API) | auth outbox | Vault `brevo_api_key` → ESO |
 

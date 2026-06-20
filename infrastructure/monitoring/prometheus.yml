@@ -41,6 +41,8 @@ scrape_configs:
     metrics_path: '/api/v1/auth/metrics'
     scrape_interval: 10s
     scrape_timeout: 5s
+    authorization:
+      credentials_file: /etc/prometheus/secrets/metrics_auth_token
 
   # User Service (Node.js - port 3000)
   - job_name: 'user-service'
@@ -49,6 +51,8 @@ scrape_configs:
     metrics_path: '/api/v1/users/metrics'
     scrape_interval: 10s
     scrape_timeout: 5s
+    authorization:
+      credentials_file: /etc/prometheus/secrets/metrics_auth_token
 
   # Workspace Service (NestJS - port 8080 CRITICAL)
   - job_name: 'workspace-service'
@@ -57,6 +61,8 @@ scrape_configs:
     metrics_path: '/api/v1/workspaces/metrics'
     scrape_interval: 10s
     scrape_timeout: 5s
+    authorization:
+      credentials_file: /etc/prometheus/secrets/metrics_auth_token
 
   # Task Service (Node.js - port 3000)
   - job_name: 'task-service'
@@ -65,6 +71,8 @@ scrape_configs:
     metrics_path: '/api/v1/tasks/metrics'
     scrape_interval: 10s
     scrape_timeout: 5s
+    authorization:
+      credentials_file: /etc/prometheus/secrets/metrics_auth_token
 
   # Notification Service (Node.js - port 3000)
   - job_name: 'notification-service'
@@ -73,12 +81,8 @@ scrape_configs:
     metrics_path: '/api/v1/notifications/metrics'
     scrape_interval: 10s
     scrape_timeout: 5s
-
-  # RabbitMQ metrics (via management plugin)
-  - job_name: 'rabbitmq'
-    static_configs:
-      - targets: ['rabbitmq:15692']
-    metrics_path: '/metrics'
+    authorization:
+      credentials_file: /etc/prometheus/secrets/metrics_auth_token
 
   # Redis metrics (requires redis_exporter sidecar)
   - job_name: 'redis'
@@ -94,3 +98,9 @@ scrape_configs:
   - job_name: 'mongodb'
     static_configs:
       - targets: ['mongodb-exporter:9216']
+
+  # Kafka consumer lag (Phase 7 — requires kafka-exporter from docker-compose.kafka.yml)
+  - job_name: 'kafka'
+    static_configs:
+      - targets: ['kafka-exporter:9308']
+    scrape_interval: 15s

@@ -1,5 +1,6 @@
 // src/domain/repositories/comment.repository.interface.ts
 import type { Comment } from "../entities/comment.entity";
+import type { MongoSessionOptions } from "../../application/ports/mongo-session-options";
 
 /**
  * Comment Repository Interface (Port)
@@ -12,7 +13,7 @@ export interface ICommentRepository {
    * @param comment Comment entity từ domain layer
    * @returns ID của comment được tạo
    */
-  createAsync(comment: Comment): Promise<string>;
+  createAsync(comment: Comment, options?: MongoSessionOptions): Promise<string>;
 
   /**
    * Tìm comment theo ID

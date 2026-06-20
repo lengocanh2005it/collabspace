@@ -1,9 +1,10 @@
-export {
-  TASK_COMMENTED_EVENT,
-  COMMENT_MENTIONED_EVENT,
-  type EventEnvelopeFields,
-  type TaskCommentedEventPayload,
-  type CommentMentionedEventPayload,
+import { COMMENT_MENTIONED_EVENT, TASK_COMMENTED_EVENT } from "@collabspace/shared";
+
+export { COMMENT_MENTIONED_EVENT, TASK_COMMENTED_EVENT };
+export type {
+  CommentMentionedEventPayload,
+  EventEnvelopeFields,
+  TaskCommentedEventPayload,
 } from "@collabspace/shared";
 
 // Alias kept for backward compatibility with existing imports

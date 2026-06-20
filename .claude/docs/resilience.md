@@ -14,7 +14,7 @@ Tài liệu này quy định cách CollabSpace **chịu lỗi**: timeout bắt b
 
 CollabSpace assumes failures are normal:
 
-- PostgreSQL, MongoDB, Redis, or RabbitMQ slow or unavailable
+- PostgreSQL, MongoDB, Redis, or Kafka slow or unavailable
 - gRPC peers timeout or restart
 - Duplicate message delivery on the event bus
 - Partial outages during deploys or local Docker startup order
@@ -45,7 +45,7 @@ Design goals:
 - `services/auth-service/src/integrations/user-profiles/user-profiles-grpc.service.ts`
 - `services/user-service/src/integrations/auth/auth-grpc.service.ts`
 
-### 2.2 Asynchronous events (RabbitMQ)
+### 2.2 Asynchronous events (Kafka)
 
 | Rule | Requirement |
 |------|-------------|
@@ -53,7 +53,7 @@ Design goals:
 | Publish timing | Publish **after** local persistence succeeds (prefer transactional outbox). |
 | Delivery | Assume **at-least-once** delivery. |
 | Consumer | Handlers MUST be **idempotent** (dedupe on `eventId` before side effects). |
-| Failure | After max retries → **DLQ** (`infrastructure/rabbitmq/definitions.json`). |
+| Failure | After max retries → **DLQ topic** `collabspace.dlq.events` (see `docs/runbooks/KafkaDlqNotEmpty.md`). |
 | Unknown fields | Consumers MUST ignore unknown JSON fields. |
 
 Canonical routing keys / queues: see `service-contracts.md` → Event Contracts.
@@ -116,11 +116,11 @@ Do **not** map dependency failures to generic `500` if the cause is known.
 | Traefik retry | `api-gateway/dynamic/middlewares.yml` → `retry-policy` | 3 attempts, 100ms initial interval |
 | Traefik circuit breaker | `circuit-breaker` | `NetworkErrorRatio() > 0.3` |
 | Forward auth | `strip-identity-headers` → `forward-auth` → `/api/v1/auth/verify` | Gateway strips spoofed identity headers, then validates JWT |
-| RabbitMQ DLQ | `infrastructure/rabbitmq/definitions.json` | `collabspace_dlx`, per-queue `*.dlq` |
+| Kafka DLQ | `collabspace.dlq.events` + `@collabspace/shared` consumer retry | Failed consumer messages |
 | Auth email outbox | `services/auth-service/src/infrastructure/outbox/*` | DB-backed queue, retries, degraded thresholds |
 | K8s PDB | `infrastructure/k8s/pdb.yaml` | minAvailable per service |
 | Prometheus alerts | `infrastructure/monitoring/alert-rules.yml` + Alertmanager | ServiceDown, 5xx rate, … |
-| Infra exporters | `docker-compose.exporters.yml`, `k8s/exporters-deployment.yaml` | Postgres/Redis/Mongo/RabbitMQ metrics |
+| Infra exporters | `docker-compose.exporters.yml`, `k8s/exporters-deployment.yaml` | Postgres/Redis/Mongo/Kafka metrics |
 
 **DONE:** All five services expose Prometheus `/metrics` (see each service health or root controller). Optional lockdown via `METRICS_AUTH_TOKEN` (Bearer or `X-Metrics-Token`). Alert rules in `infrastructure/monitoring/alert-rules.yml` fire when scrape targets are up.
 
@@ -149,7 +149,7 @@ Legend: **Current** = observed or likely today; **Target** = required after resi
 | Protected HTTP routes | auth gRPC | `503` `AUTH_SERVICE_GRPC_UNAVAILABLE` | Keep |
 | `GET /users/health/ready` | auth gRPC | `503` | Keep |
 | `CreatePendingProfile` (gRPC) | Postgres | gRPC error to caller | Fail to auth register saga |
-| `publishUserRegistered` (RMQ) | RabbitMQ | Log warn; HTTP/gRPC still succeeds | Keep (side effect) |
+| `publishUserRegistered` (outbox) | Kafka CDC lag | Log warn; HTTP/gRPC still succeeds | Keep (side effect) |
 
 ### 4.3 workspace-service
 
@@ -157,7 +157,7 @@ Legend: **Current** = observed or likely today; **Target** = required after resi
 |------------|-----------------|---------|--------|
 | Protected routes | auth | JWT via `AuthGuard` + auth gRPC; dev-only `ALLOW_DEV_IDENTITY_HEADERS` | Keep **(DONE — Phase B1)** |
 | Internal membership API | task-service | Service JWT; not on Traefik | Keep **(DONE — Phase B3–B4, B3.1)** |
-| `POST .../invite` | RabbitMQ | Transactional outbox; HTTP succeeds if DB write succeeds | Keep **(DONE — Phase 2)** |
+| `POST .../invite` | Kafka CDC | Transactional outbox; HTTP succeeds if DB write succeeds | Keep **(DONE)** |
 | `GET .../health/ready` | Postgres | `ready` checks DB ping | Keep **(DONE — Phase 1)** |
 
 ### 4.4 task-service
@@ -166,7 +166,7 @@ Legend: **Current** = observed or likely today; **Target** = required after resi
 |------------|-----------------|---------|--------|
 | Protected routes | auth gRPC | `AuthGuard` on task/comment controllers | Keep **(DONE — Phase B1)** |
 | Task mutations | workspace membership | Internal HTTP + Service JWT when `WORKSPACE_CLIENT_MODE=http` | Keep **(DONE — Phase B3, B3.1)** |
-| `TASK_ASSIGNED` publish | RabbitMQ | Mongo outbox + processor retries | Keep **(DONE — Phase 2)** |
+| `TASK_ASSIGNED` publish | Kafka CDC | Mongo outbox + Debezium | Keep **(DONE)** |
 | Reads | MongoDB | Fail | `503` |
 
 ### 4.5 notification-service
@@ -177,7 +177,7 @@ Legend: **Current** = observed or likely today; **Target** = required after resi
 | Event consumers | duplicate `eventId` | `processed_events` collection dedupes by `eventId` | Keep **(DONE — Phase 1)** |
 | Protected `GET/PATCH /notifications` | auth gRPC | `AuthGuard`; not raw `X-User-Id` | Keep **(DONE — Phase B1)** |
 | `GET /notifications` | MongoDB | — | `503`; empty list only when truly empty |
-| RabbitMQ consumer | broker down | `ready: false` when broker unreachable | Keep **(DONE — Phase 1)** |
+| Kafka consumer | broker down | `ready: false` when broker unreachable | Keep **(DONE)** |
 
 ### 4.6 API gateway (Traefik)
 
@@ -212,7 +212,7 @@ Legend: **Current** = observed or likely today; **Target** = required after resi
 | `USER_SERVICE_GRPC_TIMEOUT_MS` | auth | `3000` | Profile gRPC |
 | `AUTH_SERVICE_GRPC_URL` | user | `auth-service:50051` | Token verify |
 | `AUTH_SERVICE_GRPC_TIMEOUT_MS` | user | `3000` | Token verify |
-| `RABBITMQ_ENABLED` | auth, user, … | varies | Consumer/publisher |
+| `KAFKA_CONSUMERS_ENABLED` | task, notification | `false` | Enable Kafka consumers |
 | `OUTBOX_*` | auth | see `env.config.ts` | Email outbox tuning |
 | `METRICS_AUTH_TOKEN` | all app services | empty (open) | When set, `/metrics` requires Bearer or `X-Metrics-Token` |
 

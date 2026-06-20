@@ -3,6 +3,14 @@ services:
     image: postgres:15
     container_name: postgres
     restart: unless-stopped
+    command:
+      - postgres
+      - -c
+      - wal_level=logical
+      - -c
+      - max_replication_slots=4
+      - -c
+      - max_wal_senders=4
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -21,7 +29,10 @@ services:
       - collabspace-network
 
   mongo:
-    image: mongo:6
+    build:
+      context: ./mongo
+      dockerfile: Dockerfile
+    image: collabspace-mongo-rs:6
     container_name: mongo
     restart: unless-stopped
     environment:
@@ -32,11 +43,52 @@ services:
     volumes:
       - mongodata:/data/db
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      test:
+        [
+          "CMD",
+          "mongosh",
+          "-u",
+          "admin",
+          "-p",
+          "password",
+          "--authenticationDatabase",
+          "admin",
+          "--eval",
+          "db.adminCommand('ping')",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 30s
+    networks:
+      - collabspace-network
+
+  # One-shot: rs.initiate(rs0) after mongod is up (required for transactions + Debezium Phase 5M).
+  mongo-rs-init:
+    image: mongo:6
+    container_name: mongo-rs-init
+    restart: "no"
+    depends_on:
+      mongo:
+        condition: service_healthy
+    volumes:
+      - ./mongo/init-replica-set.js:/scripts/init-replica-set.js:ro
+    entrypoint:
+      [
+        "mongosh",
+        "--host",
+        "mongo",
+        "--port",
+        "27017",
+        "-u",
+        "admin",
+        "-p",
+        "password",
+        "--authenticationDatabase",
+        "admin",
+        "--file",
+        "/scripts/init-replica-set.js",
+      ]
     networks:
       - collabspace-network
 

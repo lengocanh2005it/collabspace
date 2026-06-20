@@ -6,7 +6,8 @@ App code không biết Vault tồn tại — tất cả service chỉ đọc `pr
 Vault là nguồn sự thật duy nhất cho secrets; `.env` files (local) và K8s Secrets (prod) chỉ là bản sao được sync từ Vault.
 
 ```
-Local:       Vault dev  →  sync script  →  services/*/.env  →  Docker Compose  →  process.env
+Local:       Vault dev  →  sync script  →  services/*/.env.vault  →  Docker Compose (.env + .env.vault)  →  process.env
+             phase0.env →  seed-vault-from-phase0 (optional) — secrets không nằm trong .env
 Production:  Vault pod  →  ESO (1h)     →  K8s Secret       →  Pod envFrom     →  process.env
 ```
 
@@ -21,7 +22,7 @@ Production:  Vault pod  →  ESO (1h)     →  K8s Secret       →  Pod envFrom
 | `postgres_password` | trong `DATABASE_URL` | auth, user, workspace |
 | `mongo_username` / `mongo_password` | trong `MONGO_URI` | task, notification |
 | `redis_password` | `REDIS_PASSWORD` | auth, notification |
-| `rabbitmq_username` / `rabbitmq_password` | trong `RABBITMQ_URL` | tất cả |
+| `kafka_bootstrap_servers` | `KAFKA_BROKERS` | user, workspace, task, notification |
 | `metrics_auth_token` | `METRICS_AUTH_TOKEN` | tất cả |
 
 Config không phải secret (PORT, host, grpc url...) vẫn nằm trong `.env` / ConfigMap — **Vault không quản lý**.
@@ -51,14 +52,17 @@ docker compose -f docker-compose.vault.yml up -d
 
 Tạo path `secret/collabspace/dev` với tất cả keys mặc định.
 
-**3. Sync Vault → `.env` files:**
+**3. Chuẩn bị `.env` + `.env.vault`:**
 
 ```powershell
-.\infrastructure\vault\scripts\sync-env-from-vault.ps1
+# Từ phase0.env → Vault; .env chỉ config; secrets → .env.vault
+.\infrastructure\vault\scripts\reset-local-env-from-vault.ps1
 ```
 
-Script đọc Vault rồi điền đè secret values vào `services/*/.env`.  
-Các key non-secret (PORT, DATABASE_HOST...) không bị đụng đến.
+Hoặc từng bước: `seed-dev-secrets.ps1` hoặc `seed-vault-from-phase0.ps1` → `strip-vault-secrets-from-env.ps1` → `sync-env-from-vault.ps1`.
+
+`services/*/.env` — **không** chứa giá trị secret (để trống / `VAULT_SYNC`).  
+`services/*/.env.vault` — gitignored, Docker Compose load cùng `.env`.
 
 **4. Chạy stack bình thường:**
 
@@ -104,7 +108,7 @@ Vault pod (vault-0, namespace: vault)
         ├── postgres_password
         ├── mongo_username / mongo_password
         ├── redis_password
-        ├── rabbitmq_username / rabbitmq_password
+        ├── kafka_bootstrap_servers (optional — often ConfigMap)
         └── metrics_auth_token
 
 External Secrets Operator (namespace: external-secrets)

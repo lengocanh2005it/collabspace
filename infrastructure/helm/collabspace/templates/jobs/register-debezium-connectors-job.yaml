@@ -1,0 +1,80 @@
+{{- if and .Values.debeziumConnect.enabled .Values.debeziumConnect.connectors.registerOnUpgrade }}
+{{- $ns := include "collabspace.namespace" . }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: register-debezium-connectors
+  namespace: {{ $ns }}
+  labels:
+    app: debezium-connect
+  annotations:
+    helm.sh/hook: post-upgrade,post-install
+    helm.sh/hook-weight: "5"
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: 6
+  template:
+    metadata:
+      labels:
+        app: register-debezium-connectors
+    spec:
+      restartPolicy: OnFailure
+      initContainers:
+        - name: wait-connect
+          image: curlimages/curl:8.5.0
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -eu
+              url="${DEBEZIUM_CONNECT_URL:-http://debezium-connect:8083}"
+              for i in $(seq 1 60); do
+                if curl -sf "$url/connectors" >/dev/null; then
+                  echo "Connect ready"
+                  exit 0
+                fi
+                echo "Waiting for Debezium Connect ($i/60)..."
+                sleep 5
+              done
+              echo "Connect not ready"
+              exit 1
+          env:
+            - name: DEBEZIUM_CONNECT_URL
+              value: http://debezium-connect:8083
+      containers:
+        - name: register
+          image: alpine:3.20
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              apk add --no-cache jq curl >/dev/null
+              exec /scripts/register-connectors.sh
+          env:
+            - name: DEBEZIUM_CONNECT_URL
+              value: http://debezium-connect:8083
+          volumeMounts:
+            - name: connectors
+              mountPath: /connectors
+            - name: scripts
+              mountPath: /scripts
+      volumes:
+        - name: connectors
+          configMap:
+            name: debezium-connectors
+            items:
+              - key: workspace-outbox.json
+                path: workspace-outbox.json
+              - key: user-outbox.json
+                path: user-outbox.json
+              - key: task-outbox.json
+                path: task-outbox.json
+        - name: scripts
+          configMap:
+            name: debezium-connectors
+            defaultMode: 0755
+            items:
+              - key: register-connectors.sh
+                path: register-connectors.sh
+{{- end }}

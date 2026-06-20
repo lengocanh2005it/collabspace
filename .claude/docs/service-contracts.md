@@ -398,16 +398,70 @@ Implementation in `@collabspace/shared` (`packages/shared/src/auth/`):
 
 ## Event Contracts
 
-### RabbitMQ wire format
+Domain events flow **Kafka only** (Debezium CDC from transactional outbox). Outbox `event_type` / `eventType` values map to topics via Debezium Outbox Event Router SMTs.
 
-- **Routing keys** (topic exchange `collabspace_exchange`): snake_case — `workspace_invited`, `workspace_deleted`, `task_assigned`, `comment_created`, `comment_mentioned`, `user_registered`, `user_profile_updated`. Do **not** use dotted keys such as `workspace.invited`.
-- **Outbox DB event types** (`workspace-service`): `workspace.workspace_invited`, `workspace.workspace_deleted` — mapped to routing keys above before publish.
-- **Message body**: NestJS emit envelope `{ "pattern": "<routing_key>", "data": { ...payload }, "id": "uuid" }`. `workspace-service` outbox publishes this shape; consumers also accept legacy raw JSON (routing key = pattern) during rollout.
-- **Bindings**: `infrastructure/deploy/reconcile-rabbitmq-queues.sh` (also end of `run-k8s-full-reset.sh`) binds `collabspace_exchange` → `notification-service` / `task-service` queues. `task-service` / `user-service` may also `emit` directly to consumer queues without exchange.
+### Kafka topics (workspace events)
+
+Debezium Outbox Event Router on `workspace_outbox_events` (`infrastructure/kafka/connectors/workspace-outbox-connector.json`):
+
+| Outbox `event_type` | Kafka topic | Consumers |
+|---------------------|-------------|-----------|
+| `workspace.workspace_invited` | `collabspace.workspace.workspace_invited` | `notification-service` |
+| `workspace.workspace_deleted` | `collabspace.workspace.workspace_deleted` | `notification-service`, `task-service` |
+
+- **Message value**: expanded domain JSON from outbox `payload` column (`transforms.outbox.table.expand.json.payload=true`).
+- **Producer path**: `WORKSPACE_OUTBOX_PUBLISH_MODE=debezium` (default) — CDC only; no in-app broker publish.
+- **Consumer env**: `KAFKA_CONSUMERS_ENABLED=true`, `KAFKA_BROKERS`, `KAFKA_GROUP_ID` (base), topic overrides `KAFKA_TOPIC_WORKSPACE_*`.
+- **Consumer groups**: `${KAFKA_GROUP_ID}-workspace-events` (workspace topics), `${KAFKA_GROUP_ID}-user-events` (user topics), `${KAFKA_GROUP_ID}-task-events` (task topics) — **never share one group** across multiple `kafkajs` consumers in the same service.
+- **Local E2E**: `scripts/kafka-phase3-e2e.ps1` — invite notification + workspace delete → task cleanup.
+
+### Kafka topics (user events — Phase 4a–4b)
+
+Debezium Outbox Event Router on `user_outbox_events` (`infrastructure/kafka/connectors/user-outbox-connector.json`):
+
+| Outbox `event_type` | Kafka topic | Consumers |
+|---------------------|-------------|-----------|
+| `user.profile_updated` | `collabspace.user.profile_updated` | `task-service`, `notification-service` |
+| `user.registered` | `collabspace.user.registered` | `task-service`, `notification-service` |
+
+- **Producer path**: `USER_OUTBOX_PUBLISH_MODE=debezium` (default) — CDC only.
+- **Consumer env**: `KAFKA_TOPIC_USER_PROFILE_UPDATED`, `KAFKA_TOPIC_USER_REGISTERED`; groups `${KAFKA_GROUP_ID}-user-events` / `-workspace-events` (see workspace section).
+- **Local E2E**: `scripts/kafka-phase4-e2e.ps1` — `user_registered` + `user_profile_updated` → `user_replicas` in task-service Mongo.
+
+### Kafka topics (task events — Phase 5M)
+
+Debezium Mongo Outbox Event Router on `task_outbox_events` (`infrastructure/kafka/connectors/task-outbox-connector.json`):
+
+| Outbox `eventType` | Kafka topic | Consumers |
+|--------------------|-------------|-----------|
+| `task.task_assigned` | `collabspace.task.task_assigned` | `notification-service` |
+| `task.comment_created` | `collabspace.task.comment_created` | `notification-service` |
+| `task.comment_mentioned` | `collabspace.task.comment_mentioned` | `notification-service` |
+
+- **Message value**: domain JSON from outbox `payload` field (MongoEventRouter). Mongo CDC may emit `payload` as a **JSON-encoded string** — consumers use `parseKafkaOutboxJsonValue` (parse twice when needed).
+- **Producer path**: `TASK_OUTBOX_PUBLISH_MODE=debezium` — Debezium CDC only (no in-app broker publish).
+- **Transaction**: assign task + outbox, comment + activity + outbox — Mongo `withTransaction` (requires replica set `rs0`).
+- **Consumer env**: `KAFKA_TOPIC_TASK_ASSIGNED`, `KAFKA_TOPIC_COMMENT_CREATED`, `KAFKA_TOPIC_COMMENT_MENTIONED`; group `${KAFKA_GROUP_ID}-task-events`.
+- **Notification types**: `task.comment_created` → `COMMENT_ADDED`; `task.comment_mentioned` → `COMMENT_MENTIONED`; `task.task_assigned` → `TASK_ASSIGNED`.
+- **Local E2E**: `scripts/kafka-phase5-e2e.ps1` — mention (unassigned task) → assign → assignee comment → notifications.
+
+### Kafka DLQ + consumer resilience (Phase 7)
+
+| Item | Value |
+|------|-------|
+| DLQ topic | `collabspace.dlq.events` (`KAFKA_DLQ_TOPIC`) |
+| Retry | `KAFKA_CONSUMER_MAX_RETRIES` (default `3`), `KAFKA_CONSUMER_RETRY_DELAY_MS` (default `1000`) |
+| Helper | `@collabspace/shared` → `processKafkaConsumerMessage` |
+| Envelope schema | `infrastructure/kafka/schemas/kafka-dlq-envelope.v1.json` |
+| Replay | `scripts/kafka-replay-dlq.ps1` / `.sh` — see `infrastructure/kafka/REPLAY.md` |
+| Offset reset (dev) | `scripts/kafka-reset-consumer-offset.ps1` |
+| Lag metrics | `kafka-exporter` (:9308) → alert `KafkaConsumerLagHigh` |
+
+Optional JSON Schema reference files (Schema Registry profile `schema-registry`): `infrastructure/kafka/schemas/`.
 
 ### User directory replicas (`user_registered`, `user_profile_updated`)
 
-Producer: `user-service` (broadcast to `task-service` and `notification-service` queues).
+Producer: `user-service` (outbox → Debezium → Kafka when `USER_OUTBOX_PUBLISH_MODE=debezium`).
 
 Consumers: `task-service`, `notification-service` → Mongo collection `user_replicas`.
 

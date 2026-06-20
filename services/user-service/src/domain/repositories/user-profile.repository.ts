@@ -1,3 +1,4 @@
+import type { TransactionContext } from '../ports/unit-of-work.port';
 import type { UserProfile } from '../entities/user-profile.entity';
 import type { UserPreferences } from '../entities/user-preferences.entity';
 import type { UserStatus } from '../entities/user-status.entity';
@@ -63,6 +64,15 @@ export interface UserProfileRepository {
   anonymize(userId: string): Promise<void>;
   updatePreferences(userId: string, input: UpdateUserPreferencesInput): Promise<UserPreferences>;
   updateProfile(userId: string, input: UpdateUserProfileInput): Promise<UserProfile>;
+  updateProfileInTransaction(
+    context: TransactionContext,
+    userId: string,
+    input: UpdateUserProfileInput,
+  ): Promise<UserProfile>;
   updateStatus(userId: string, input: UpdateUserStatusInput): Promise<UserStatus>;
   upsertPending(input: CreatePendingUserProfileInput): Promise<UserProfile>;
+  upsertPendingInTransaction(
+    context: TransactionContext,
+    input: CreatePendingUserProfileInput,
+  ): Promise<UserProfile>;
 }

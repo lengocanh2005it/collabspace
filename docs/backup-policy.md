@@ -9,7 +9,7 @@ Baseline demo/staging cho PostgreSQL (auth, user, workspace) và MongoDB (task, 
 | PostgreSQL | auth, user, workspace | 24h (backup hàng ngày) | 4h | Logical dump (`pg_dump`) |
 | MongoDB | task, notification | 24h (backup hàng ngày) | 4h | Archive `mongodump` |
 | Redis | auth, notification | Không bắt buộc | Tạo lại rỗng | Chỉ OTP/cache; không backup |
-| RabbitMQ | mọi publisher | Không bắt buộc | Khai báo lại từ `definitions.json` | Message tạm; outbox replay |
+| Kafka | mọi outbox publisher | Không bắt buộc | Replay từ WAL/oplog + outbox | Message tạm trên broker; outbox là source of truth |
 
 Production nên siết RPO xuống **1 giờ** (dump hàng giờ + WAL archiving cho Postgres) khi traffic đủ lớn.
 
@@ -17,7 +17,7 @@ Production nên siết RPO xuống **1 giờ** (dump hàng giờ + WAL archiving
 
 - **PostgreSQL:** `collabspace_auth`, `collabspace_user`, `collabspace_workspace`
 - **MongoDB:** `collabspace_task`, `collabspace_notification` (tên từ `.env.example` service)
-- **Không backup:** container app, cấu hình Traefik (có trong Git), hàng đợi RabbitMQ (tái tạo từ outbox + event)
+- **Không backup:** container app, cấu hình Traefik (có trong Git), Kafka topic retention (tái tạo từ outbox + CDC)
 
 ## Local / Docker Compose
 

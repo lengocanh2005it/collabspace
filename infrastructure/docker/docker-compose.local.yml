@@ -1,0 +1,27 @@
+# Local full stack: host ports + monitoring (built images from Dockerfile.service).
+# Does NOT hot-reload — use docker-compose.override.yml with -Dev for pnpm start:dev.
+include:
+  - path: docker-compose.exporters.yml
+  - path: docker-compose.monitoring.yml
+
+services:
+  auth-service:
+    ports:
+      - "3000:3000"
+
+  user-service:
+    ports:
+      - "3001:3000"
+      - "50052:50052"
+
+  workspace-service:
+    ports:
+      - "3002:8080"
+
+  task-service:
+    ports:
+      - "3003:3000"
+
+  notification-service:
+    ports:
+      - "3004:3000"

@@ -19,6 +19,10 @@ import { ITaskActivityRepository as ITaskActivityRepositoryToken } from "../../.
 import type { ITaskActivityRepository } from "../../../ports/ITaskActivityRepository";
 import { parseMentionUsernames } from "../../../../domain/utils/mention-parser";
 import { v4 as uuid } from "uuid";
+import {
+  MONGO_UNIT_OF_WORK,
+  type IMongoUnitOfWork,
+} from "../../../../domain/ports/mongo-unit-of-work.port";
 
 export interface CreateCommentResponse {
   commentId: string;
@@ -43,6 +47,9 @@ export class CreateCommentHandler
 
     @Inject(ITaskActivityRepositoryToken)
     private readonly taskActivityRepository: ITaskActivityRepository,
+
+    @Inject(MONGO_UNIT_OF_WORK)
+    private readonly unitOfWork: IMongoUnitOfWork,
   ) {}
 
   async execute(command: CreateCommentCommand): Promise<CreateCommentResponse> {
@@ -88,36 +95,44 @@ export class CreateCommentHandler
       }
     }
 
-    const savedCommentId = await this.commentRepository.createAsync(comment);
+    const savedCommentId = await this.unitOfWork.run(async (session) => {
+      const commentId = await this.commentRepository.createAsync(comment, { session });
 
-    await this.taskActivityRepository.appendFromCommentAsync(
-      Comment.restore(
-        savedCommentId,
-        comment.getTaskId(),
-        comment.getAuthorId(),
-        comment.getAuthorName(),
-        comment.getAuthorAvatarUrl(),
-        comment.getContent(),
-        comment.getParentId(),
-        comment.getMentions(),
-        comment.getIsEdited(),
-        comment.getDeletedAt(),
-        comment.getReactionCount(),
-        comment.getCreatedAt(),
-        comment.getUpdatedAt(),
-      ),
-    );
+      await this.taskActivityRepository.appendFromCommentAsync(
+        Comment.restore(
+          commentId,
+          comment.getTaskId(),
+          comment.getAuthorId(),
+          comment.getAuthorName(),
+          comment.getAuthorAvatarUrl(),
+          comment.getContent(),
+          comment.getParentId(),
+          comment.getMentions(),
+          comment.getIsEdited(),
+          comment.getDeletedAt(),
+          comment.getReactionCount(),
+          comment.getCreatedAt(),
+          comment.getUpdatedAt(),
+        ),
+        { session },
+      );
 
-    await this.commentNotificationPublisher.publishForNewComment({
-      taskId: command.taskId,
-      taskTitle: task.getTitle(),
-      assigneeId: task.getAssigneeId(),
-      authorId: authorRecord.userId,
-      authorName: authorRecord.fullName,
-      authorAvatarUrl: authorRecord.avatarUrl || "",
-      commentId: savedCommentId,
-      content: command.content,
-      mentionedUserIds,
+      await this.commentNotificationPublisher.publishForNewComment(
+        {
+          taskId: command.taskId,
+          taskTitle: task.getTitle(),
+          assigneeId: task.getAssigneeId(),
+          authorId: authorRecord.userId,
+          authorName: authorRecord.fullName,
+          authorAvatarUrl: authorRecord.avatarUrl || "",
+          commentId,
+          content: command.content,
+          mentionedUserIds,
+        },
+        session,
+      );
+
+      return commentId;
     });
 
     return {

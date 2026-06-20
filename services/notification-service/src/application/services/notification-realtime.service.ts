@@ -7,7 +7,7 @@ import {
   type OnModuleInit,
 } from "@nestjs/common";
 import type Redis from "ioredis";
-import { REDIS_CLIENT } from "../../infrastructure/cache/redis-client.token";
+import { REDIS_CLIENT } from "../../infrastructure/cache/redis.module";
 import { NotificationCountCacheService } from "../../infrastructure/cache/notification-count-cache.service";
 import {
   NOTIFICATION_REPOSITORY_TOKEN,

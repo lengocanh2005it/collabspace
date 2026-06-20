@@ -7,16 +7,12 @@ import { ConfigurationModule } from "./configuration/configuartion.module";
 import { RedisModule } from "./infrastructure/cache/redis.module";
 import { NotificationCountCacheService } from "./infrastructure/cache/notification-count-cache.service";
 import { ConfigurationService } from "./configuration/configuration.service";
-import { TaskEventController } from "./presentation/controllers/internal/task-assign-event-listener.controller";
-import { CommentEventListenerController } from "./presentation/controllers/internal/task-comment-event-listener.controller";
-import { WorkspaceInviteEventListenerController } from "./presentation/controllers/internal/workspace-invite-event-listener.controller";
 import { NotificationsController } from "./presentation/controllers/notifications.controller";
 import { NotificationHealthService } from "./health/notification-health.service";
 import { MetricsModule } from "./metrics/metrics.module";
 import { AuthModule } from "./integrations/auth/auth.module";
 import { AuthGuard } from "./presentation/guards/auth.guard";
 
-// Handlers & Persistence (Giữ nguyên các import của bạn)
 import {
   Notification,
   NotificationSchema,
@@ -34,9 +30,6 @@ import { GetNotificationsHandler } from "./application/usecases/get-notification
 import { MarkNotificationReadHandler } from "./application/usecases/mark-notification-read/mark-notification-read.handler";
 import { MarkNotificationArchiveHandler } from "./application/usecases/mark-notification-archive/mark-notification-archive.handler";
 import { MarkAllNotificationsReadHandler } from "./application/usecases/mark-all-notifications-read/mark-all-notifications-read.handler";
-import { CommentMentionEventListenerController } from "./presentation/controllers/internal/comment-mention-event-listener.controller";
-import { UserEventListenerController } from "./presentation/controllers/internal/user-event-listener.controller";
-import { WorkspaceDeleteEventListenerController } from "./presentation/controllers/internal/workspace-delete-event-listener.controller";
 import { CreateUserReplicaHandler } from "./application/usecases/sync-user-replica/create-user-replica.handler";
 import { SyncUserReplicaHandler } from "./application/usecases/sync-user-replica/sync-user-replica.handler";
 import {
@@ -58,6 +51,12 @@ import { BroadcastJobService } from "./application/services/broadcast-job.servic
 import { NotificationRealtimeService } from "./application/services/notification-realtime.service";
 import { NotificationAdminController } from "./presentation/controllers/notification-admin.controller";
 import { platformAdminAuthProviders } from "./integrations/auth/platform-admin-auth.providers";
+import { WorkspaceInviteNotificationService } from "./application/services/workspace-invite-notification.service";
+import { WorkspaceDeletedNotificationService } from "./application/services/workspace-deleted-notification.service";
+import { WorkspaceEventsKafkaConsumer } from "./infrastructure/messaging/kafka/workspace-events-kafka.consumer";
+import { UserEventsKafkaConsumer } from "./infrastructure/messaging/kafka/user-events-kafka.consumer";
+import { TaskEventsKafkaConsumer } from "./infrastructure/messaging/kafka/task-events-kafka.consumer";
+import { KafkaDlqPublisher } from "./infrastructure/messaging/kafka/kafka-dlq.publisher";
 
 const Handlers = [
   CreateNotificationHandler,
@@ -90,16 +89,7 @@ const Handlers = [
       { name: BroadcastJob.name, schema: BroadcastJobSchema },
     ]),
   ],
-  controllers: [
-    NotificationsController,
-    NotificationAdminController,
-    TaskEventController,
-    CommentEventListenerController,
-    CommentMentionEventListenerController,
-    WorkspaceInviteEventListenerController,
-    WorkspaceDeleteEventListenerController,
-    UserEventListenerController,
-  ],
+  controllers: [NotificationsController, NotificationAdminController],
   providers: [
     ...Handlers,
     NotificationHealthService,
@@ -109,6 +99,12 @@ const Handlers = [
     UserProfileHttpClient,
     UserReplicaLookupService,
     BroadcastJobService,
+    WorkspaceInviteNotificationService,
+    WorkspaceDeletedNotificationService,
+    WorkspaceEventsKafkaConsumer,
+    UserEventsKafkaConsumer,
+    TaskEventsKafkaConsumer,
+    KafkaDlqPublisher,
     ...platformAdminAuthProviders,
     {
       provide: NOTIFICATION_REPOSITORY_TOKEN,
