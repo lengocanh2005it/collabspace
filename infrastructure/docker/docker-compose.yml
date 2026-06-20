@@ -154,6 +154,7 @@ services:
       - PORT=3000
     env_file:
       - ../../services/dlq-service/.env
+      - ../../services/dlq-service/.env.vault
     depends_on:
       mongo:
         condition: service_healthy
