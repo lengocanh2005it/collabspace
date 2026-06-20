@@ -30,10 +30,21 @@ fi
 GHCR_OWNER="${GHCR_OWNER:-}"
 IMAGE_TAG="${IMAGE_TAG:-}"
 
+# Parse per-service image tags (SERVICE_IMAGE_TAGS="svc:tag,svc:tag,...") from CI.
+declare -A SVC_TAG_MAP=()
+if [[ -n "${SERVICE_IMAGE_TAGS:-}" ]]; then
+  local_IFS="$IFS"; IFS=,
+  for pair in $SERVICE_IMAGE_TAGS; do
+    svc="${pair%%:*}"; tag="${pair#*:}"
+    [[ -n "$svc" && -n "$tag" ]] && SVC_TAG_MAP["$svc"]="$tag"
+  done
+  IFS="$local_IFS"
+fi
+
 if [[ -f "$VALUES_PROD" ]]; then
   if grep -q 'ghcr.io/' "$VALUES_PROD"; then
     GHCR_OWNER="${GHCR_OWNER:-$(grep -m1 'repository: ghcr.io/' "$VALUES_PROD" | sed -E 's|.*/ghcr.io/([^/]+)/.*|\1|')}"
-    if [[ -z "$IMAGE_TAG" ]]; then
+    if [[ -z "$IMAGE_TAG" && ${#SVC_TAG_MAP[@]} -eq 0 ]]; then
       IMAGE_TAG="$(grep -m1 'tag:' "$VALUES_PROD" | awk '{print $2}')"
     fi
   fi
@@ -61,7 +72,8 @@ wait_postgres() {
 
 apply_migration_job() {
   local deployment="$1"
-  local image="ghcr.io/${GHCR_OWNER}/collabspace-${deployment}:$IMAGE_TAG"
+  local effective_tag="${SVC_TAG_MAP[$deployment]:-$IMAGE_TAG}"
+  local image="ghcr.io/${GHCR_OWNER}/collabspace-${deployment}:${effective_tag}"
   local cmd="${MIGRATE_CMD[$deployment]}"
   local job_name="migrate-${deployment}-$(date +%s)"
   local pull_secret_block=""

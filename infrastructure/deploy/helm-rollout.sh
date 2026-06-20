@@ -321,7 +321,7 @@ if [[ "${RUN_K8S_MIGRATIONS:-false}" == "true" ]]; then
 
   echo "==> Running database migrations..."
   migration_failed=0
-  if ! PHASE0_ENV="$PHASE0_ENV" VALUES_PROD="$VALUES_PROD" APP_NS="$APP_NS" IMAGE_TAG="${IMAGE_TAG:-}" \
+  if ! PHASE0_ENV="$PHASE0_ENV" VALUES_PROD="$VALUES_PROD" APP_NS="$APP_NS" IMAGE_TAG="${IMAGE_TAG:-}" SERVICE_IMAGE_TAGS="${SERVICE_IMAGE_TAGS:-}" \
     bash "$SCRIPT_DIR/run-k8s-migrations.sh"; then
     migration_failed=1
     echo "ERROR: database migrations failed — restoring replicas before exit."
