@@ -27,7 +27,7 @@ Service (cùng transaction)
 | Outbox trade-off | [trade-offs.md](./trade-offs.md) §5 |
 | Resilience / idempotency | [`.claude/docs/resilience.md`](../.claude/docs/resilience.md) |
 | Infra backlog | [team/phan-phu-tho-infrastructure-backlog.md](./team/phan-phu-tho-infrastructure-backlog.md) |
-| Runbook RMQ (sẽ thay dần) | [runbooks/RabbitMQDLQNotEmpty.md](./runbooks/RabbitMQDLQNotEmpty.md) |
+| Runbook Kafka DLQ / lag | [runbooks/KafkaDlqNotEmpty.md](./runbooks/KafkaDlqNotEmpty.md) |
 
 ---
 
@@ -124,7 +124,7 @@ flowchart TB
 | **4b** | CDC `user_registered` + tắt RMQ user | 1 ngày | Có |
 | **5M.0–5M.5** | Task Mongo outbox + Debezium Mongo | 3–5 ngày | Có (task events) |
 | **6** | Gỡ RabbitMQ + dọn infra | 1–2 ngày | Có |
-| **7** | Tùy chọn: Schema Registry, DLQ topic, replay | Sau 6 | Tùy |
+| **7** | DLQ topic, replay, lag metrics, Schema Registry (optional) | Sau 6 | ✅ Done (local) |
 
 ```text
 Phase 0 ──► Phase 1 ──► Phase 2 ──► Phase 3
@@ -565,14 +565,26 @@ Giữ outbox email + processor SMTP — **không** bắt buộc Kafka.
 
 ## 11. Phase 7 — Tùy chọn (sau khi ổn định)
 
-| Hạng mục | Lợi ích |
-|----------|---------|
-| **Schema Registry** (Avro/JSON Schema) | Contract versioned cho event |
-| **Dead-letter topic** + retry consumer | Thay DLQ queue RMQ |
-| **Replay** từ Kafka offset | Test consumer mới, debug |
-| **CDC read model thô** (không outbox) | Học thêm: Debezium `user_profiles` → topic riêng (so sánh với outbox) |
-| **Kafka Connect sink** | Export sang analytics |
-| **Prod HA** | Kafka multi-broker, Connect distributed, Postgres replication slot monitoring |
+| Hạng mục | Lợi ích | Trạng thái |
+|----------|---------|------------|
+| **Dead-letter topic** + retry consumer | Thay DLQ queue RMQ | ✅ Done (local) |
+| **Replay** từ Kafka offset / DLQ | Test consumer mới, debug | ✅ Scripts + REPLAY.md |
+| **Consumer lag** (kafka-exporter + alerts) | Thay RabbitMQ queue depth | ✅ Done (local monitoring) |
+| **Schema Registry** (Avro/JSON Schema) | Contract versioned cho event | ✅ Profile `schema-registry` + JSON schemas tham chiếu |
+| **CDC read model thô** (không outbox) | Học thêm: Debezium `user_profiles` → topic riêng | Tùy chọn |
+| **Kafka Connect sink** | Export sang analytics | Tùy chọn |
+| **Prod HA** | Kafka multi-broker, Connect distributed, Postgres replication slot monitoring | Backlog infra |
+
+### Phase 7 DoD (local)
+
+- [x] `@collabspace/shared` — `processKafkaConsumerMessage`, retry + DLQ envelope
+- [x] `notification-service` + `task-service` consumers dùng DLQ publisher
+- [x] Topic `collabspace.dlq.events`, env `KAFKA_DLQ_TOPIC`, `KAFKA_CONSUMER_MAX_RETRIES`
+- [x] `kafka-exporter` + Prometheus scrape + alerts `KafkaConsumerLagHigh`, `KafkaDlqNotEmpty`
+- [x] Runbooks: `KafkaConsumerLagHigh`, `KafkaDlqNotEmpty`, `DebeziumConnectDown`
+- [x] Scripts: `kafka-replay-dlq`, `kafka-reset-consumer-offset`, `kafka-phase7-smoke`
+- [x] JSON schemas: `infrastructure/kafka/schemas/`
+- [ ] Prod HA Kafka / distributed Connect (backlog Phan Phú Thọ)
 
 ---
 

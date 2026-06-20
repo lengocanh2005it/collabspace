@@ -11,8 +11,9 @@ Sổ tay xử lý sự cố cho cảnh báo Prometheus trong `infrastructure/mon
 | PostgresDown | critical | [PostgresDown.md](./PostgresDown.md) |
 | RedisDown | critical | [RedisDown.md](./RedisDown.md) |
 | MongoDown | critical | [MongoDown.md](./MongoDown.md) |
-| RabbitMQHighQueueDepth | warning | [RabbitMQHighQueueDepth.md](./RabbitMQHighQueueDepth.md) |
-| RabbitMQDLQNotEmpty | warning | [RabbitMQDLQNotEmpty.md](./RabbitMQDLQNotEmpty.md) |
+| KafkaConsumerLagHigh | warning | [KafkaConsumerLagHigh.md](./KafkaConsumerLagHigh.md) |
+| KafkaDlqNotEmpty | warning | [KafkaDlqNotEmpty.md](./KafkaDlqNotEmpty.md) |
+| DebeziumConnectDown | ops | [DebeziumConnectDown.md](./DebeziumConnectDown.md) |
 | SecretRotation | ops | [SecretRotation.md](./SecretRotation.md) |
 
 ## Kiểm tra nhanh

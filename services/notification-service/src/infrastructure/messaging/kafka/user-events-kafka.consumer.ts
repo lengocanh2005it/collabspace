@@ -3,6 +3,7 @@ import { CommandBus } from "@nestjs/cqrs";
 import { Kafka, type Consumer } from "kafkajs";
 import { CreateUserReplicaCommand } from "../../../application/commands/create-user-replica.command";
 import { SyncUserReplicaCommand } from "../../../application/commands/sync-user-replica.command";
+import { processKafkaConsumerMessage } from "@collabspace/shared";
 import { ConfigurationService } from "../../../configuration/configuration.service";
 import { MetricsService } from "../../../metrics/metrics.service";
 import {
@@ -10,6 +11,7 @@ import {
   toUserProfileUpdatedEventPayload,
   toUserRegisteredEventPayload,
 } from "./kafka-outbox-message";
+import { KafkaDlqPublisher } from "./kafka-dlq.publisher";
 
 @Injectable()
 export class UserEventsKafkaConsumer implements OnModuleInit, OnModuleDestroy {
@@ -21,6 +23,7 @@ export class UserEventsKafkaConsumer implements OnModuleInit, OnModuleDestroy {
     private readonly configurationService: ConfigurationService,
     private readonly commandBus: CommandBus,
     private readonly metricsService: MetricsService,
+    private readonly kafkaDlqPublisher: KafkaDlqPublisher,
   ) {}
 
   async onModuleInit(): Promise<void> {
@@ -35,7 +38,9 @@ export class UserEventsKafkaConsumer implements OnModuleInit, OnModuleDestroy {
       brokers: kafkaConfig.brokers,
     });
 
-    this.consumer = kafka.consumer({ groupId: `${kafkaConfig.groupId}-user-events` });
+    const consumerGroup = `${kafkaConfig.groupId}-user-events`;
+
+    this.consumer = kafka.consumer({ groupId: consumerGroup });
     await this.consumer.connect();
     await this.consumer.subscribe({
       topics: [kafkaConfig.userProfileUpdatedTopic, kafkaConfig.userRegisteredTopic],
@@ -43,37 +48,40 @@ export class UserEventsKafkaConsumer implements OnModuleInit, OnModuleDestroy {
     });
 
     this.runPromise = this.consumer.run({
-      eachMessage: async ({ topic, message }) => {
-        const record = parseKafkaOutboxJsonValue(message.value);
-        if (!record) {
-          this.logger.warn(`Skipping Kafka ${topic} message with empty or invalid JSON`);
-          return;
-        }
+      eachMessage: async ({ topic, partition, message }) => {
+        await processKafkaConsumerMessage({
+          context: {
+            topic,
+            partition,
+            offset: message.offset,
+            key: message.key,
+            value: message.value,
+          },
+          consumerGroup,
+          maxRetries: kafkaConfig.maxRetries,
+          retryDelayMs: kafkaConfig.retryDelayMs,
+          publishToDlq: (envelope) => this.kafkaDlqPublisher.publish(envelope),
+          log: this.logger,
+          parseValue: parseKafkaOutboxJsonValue,
+          handler: async (record, messageTopic) => {
+            if (messageTopic === kafkaConfig.userRegisteredTopic) {
+              await this.handleUserRegistered(record);
+              return;
+            }
 
-        try {
-          if (topic === kafkaConfig.userRegisteredTopic) {
-            await this.handleUserRegistered(record);
-            return;
-          }
+            if (messageTopic === kafkaConfig.userProfileUpdatedTopic) {
+              await this.handleUserProfileUpdated(record);
+              return;
+            }
 
-          if (topic === kafkaConfig.userProfileUpdatedTopic) {
-            await this.handleUserProfileUpdated(record);
-            return;
-          }
-
-          this.logger.warn(`Skipping Kafka message from unhandled topic=${topic}`);
-        } catch (error) {
-          this.logger.error(
-            `Failed to process Kafka message topic=${topic}`,
-            error instanceof Error ? error.stack : undefined,
-          );
-          throw error;
-        }
+            this.logger.warn(`Skipping Kafka message from unhandled topic=${messageTopic}`);
+          },
+        });
       },
     });
 
     this.logger.log(
-      `Kafka consumer listening topics=${kafkaConfig.userProfileUpdatedTopic},${kafkaConfig.userRegisteredTopic} group=${kafkaConfig.groupId}-user-events`,
+      `Kafka consumer listening topics=${kafkaConfig.userProfileUpdatedTopic},${kafkaConfig.userRegisteredTopic} group=${consumerGroup}`,
     );
   }
 

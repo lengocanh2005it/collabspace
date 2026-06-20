@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://collabspace.local/schemas/kafka-dlq-envelope.v1.json",
+  "title": "KafkaDlqEnvelope",
+  "description": "Dead-letter envelope when a CollabSpace Kafka consumer exhausts retries (Phase 7).",
+  "type": "object",
+  "required": [
+    "version",
+    "sourceTopic",
+    "partition",
+    "offset",
+    "payload",
+    "errorMessage",
+    "failedAt"
+  ],
+  "properties": {
+    "version": { "const": 1 },
+    "sourceTopic": { "type": "string" },
+    "partition": { "type": "integer", "minimum": 0 },
+    "offset": { "type": "string" },
+    "key": { "type": "string" },
+    "payload": {},
+    "errorMessage": { "type": "string" },
+    "failedAt": { "type": "string", "format": "date-time" },
+    "consumerGroup": { "type": "string" }
+  },
+  "additionalProperties": false
+}

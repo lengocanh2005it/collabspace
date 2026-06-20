@@ -445,9 +445,23 @@ Debezium Mongo Outbox Event Router on `task_outbox_events` (`infrastructure/kafk
 - **Notification types**: `task.comment_created` → `COMMENT_ADDED`; `task.comment_mentioned` → `COMMENT_MENTIONED`; `task.task_assigned` → `TASK_ASSIGNED`.
 - **Local E2E**: `scripts/kafka-phase5-e2e.ps1` — mention (unassigned task) → assign → assignee comment → notifications.
 
+### Kafka DLQ + consumer resilience (Phase 7)
+
+| Item | Value |
+|------|-------|
+| DLQ topic | `collabspace.dlq.events` (`KAFKA_DLQ_TOPIC`) |
+| Retry | `KAFKA_CONSUMER_MAX_RETRIES` (default `3`), `KAFKA_CONSUMER_RETRY_DELAY_MS` (default `1000`) |
+| Helper | `@collabspace/shared` → `processKafkaConsumerMessage` |
+| Envelope schema | `infrastructure/kafka/schemas/kafka-dlq-envelope.v1.json` |
+| Replay | `scripts/kafka-replay-dlq.ps1` / `.sh` — see `infrastructure/kafka/REPLAY.md` |
+| Offset reset (dev) | `scripts/kafka-reset-consumer-offset.ps1` |
+| Lag metrics | `kafka-exporter` (:9308) → alert `KafkaConsumerLagHigh` |
+
+Optional JSON Schema reference files (Schema Registry profile `schema-registry`): `infrastructure/kafka/schemas/`.
+
 ### User directory replicas (`user_registered`, `user_profile_updated`)
 
-Producer: `user-service` (outbox → Debezium → Kafka when `USER_OUTBOX_PUBLISH_MODE=debezium`; legacy RMQ broadcast when `rabbitmq`).
+Producer: `user-service` (outbox → Debezium → Kafka when `USER_OUTBOX_PUBLISH_MODE=debezium`).
 
 Consumers: `task-service`, `notification-service` → Mongo collection `user_replicas`.
 

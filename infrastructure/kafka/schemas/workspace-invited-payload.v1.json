@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://collabspace.local/schemas/workspace-invited-payload.v1.json",
+  "title": "WorkspaceInvitedPayload",
+  "description": "Outbox payload for workspace.workspace_invited (reference schema — Phase 7 Schema Registry optional).",
+  "type": "object",
+  "required": ["workspaceId", "invitedById", "inviteeEmail"],
+  "properties": {
+    "eventId": { "type": "string", "format": "uuid" },
+    "occurredAt": { "type": "string", "format": "date-time" },
+    "workspaceId": { "type": "string", "format": "uuid" },
+    "invitedById": { "type": "string", "format": "uuid" },
+    "inviteeEmail": { "type": "string", "format": "email" },
+    "inviteeUserId": { "type": "string", "format": "uuid" },
+    "role": { "type": "string" }
+  },
+  "additionalProperties": true
+}

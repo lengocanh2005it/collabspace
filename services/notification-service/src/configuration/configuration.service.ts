@@ -10,6 +10,9 @@ export type KafkaConfig = {
   brokers: string[];
   clientId: string;
   groupId: string;
+  dlqTopic: string;
+  maxRetries: number;
+  retryDelayMs: number;
   workspaceInvitedTopic: string;
   workspaceDeletedTopic: string;
   userProfileUpdatedTopic: string;
@@ -47,6 +50,15 @@ export class ConfigurationService {
         .filter((broker) => broker.length > 0),
       clientId: this.configService.get<string>("KAFKA_CLIENT_ID") ?? "notification-service",
       groupId: this.configService.get<string>("KAFKA_GROUP_ID") ?? "notification-service",
+      dlqTopic: this.configService.get<string>("KAFKA_DLQ_TOPIC") ?? "collabspace.dlq.events",
+      maxRetries: Number.parseInt(
+        this.configService.get<string>("KAFKA_CONSUMER_MAX_RETRIES") ?? "3",
+        10,
+      ),
+      retryDelayMs: Number.parseInt(
+        this.configService.get<string>("KAFKA_CONSUMER_RETRY_DELAY_MS") ?? "1000",
+        10,
+      ),
       workspaceInvitedTopic:
         this.configService.get<string>("KAFKA_TOPIC_WORKSPACE_INVITED") ??
         "collabspace.workspace.workspace_invited",

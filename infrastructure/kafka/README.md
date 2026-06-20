@@ -11,6 +11,8 @@ Nền tảng **Phase 0** của lộ trình migrate RabbitMQ → Kafka + CDC + De
 | `kafka` | `apache/kafka:3.8.0` (KRaft) | `9092`, `29092` | Broker (in-docker: `kafka:9092`, host: `localhost:29092`) |
 | `debezium-connect` | `quay.io/debezium/connect:2.7.3.Final` | `8083` | Kafka Connect REST — đăng ký connector Phase 1+ |
 | `kafka-ui` | `provectuslabs/kafka-ui` (profile `kafka-ui`) | `8088` | Xem topic / message (tùy chọn) |
+| `kafka-exporter` | `danielqsj/kafka-exporter` | `9308` | Consumer lag metrics (Phase 7) |
+| `schema-registry` | Confluent (profile `schema-registry`) | `8081` | JSON Schema registry (tùy chọn) |
 
 RabbitMQ và app services **không đổi** ở Phase 0.
 
@@ -142,7 +144,30 @@ DEBEZIUM_CONNECT_URL_HOST=http://localhost:8083
 | **4** | User outbox + CDC — **Done** (local E2E) |
 | **5M** | Task Mongo outbox + Debezium — **Done** (local E2E script) |
 | **6** | Gỡ RabbitMQ — **Done** (local) |
-| **7** | Tùy chọn: Schema Registry, DLQ topic, replay |
+| **7** | DLQ topic, replay, lag metrics, Schema Registry (optional) — **Done** (local) |
+
+## Phase 7 — DLQ, replay, observability
+
+### DLQ + retry
+
+Consumers (`notification-service`, `task-service`) dùng `processKafkaConsumerMessage` từ `@collabspace/shared`:
+
+- Retry linear backoff (`KAFKA_CONSUMER_MAX_RETRIES`, `KAFKA_CONSUMER_RETRY_DELAY_MS`)
+- Sau hết retry → publish envelope lên `collabspace.dlq.events`
+
+### kafka-exporter + Schema Registry
+
+```powershell
+# Lag metrics (Prometheus :9308)
+docker compose -f docker-compose.yml -f docker-compose.db.yml -f docker-compose.kafka.yml up -d kafka kafka-exporter
+
+# Optional Schema Registry
+docker compose -f docker-compose.yml -f docker-compose.db.yml -f docker-compose.kafka.yml --profile schema-registry up -d schema-registry
+```
+
+Smoke: `.\scripts\kafka-phase7-smoke.ps1`
+
+Replay DLQ: `infrastructure/kafka/REPLAY.md`
 
 ## E2E verify (Phase 3 + 4 + 5M)
 

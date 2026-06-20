@@ -96,10 +96,24 @@ groups:
           summary: "MongoDB is down"
           description: "MongoDB exporter scrape target is unreachable."
 
-      # Kafka consumer lag (placeholder — wire when kafka-exporter or burrow is deployed)
-      # - alert: KafkaConsumerLagHigh
-      #   expr: kafka_consumergroup_lag > 1000
-      #   for: 5m
+      # Kafka consumer lag (Phase 7 — kafka-exporter)
+      - alert: KafkaConsumerLagHigh
+        expr: sum by (consumergroup) (kafka_consumergroup_lag) > 100
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Kafka consumer group {{ $labels.consumergroup }} lag is high"
+          description: "Consumer group {{ $labels.consumergroup }} has lag {{ $value }} messages (threshold 100)."
+
+      - alert: KafkaDlqNotEmpty
+        expr: increase(kafka_topic_partition_current_offset{topic="collabspace.dlq.events"}[10m]) > 0
+        for: 0m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Kafka DLQ topic has messages"
+          description: "collabspace.dlq.events has unreplayed failed messages — inspect and replay per runbook."
 
       # PostgreSQL connection pool
       - alert: PostgresHighConnections

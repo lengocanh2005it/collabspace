@@ -56,6 +56,7 @@ import { WorkspaceDeletedNotificationService } from "./application/services/work
 import { WorkspaceEventsKafkaConsumer } from "./infrastructure/messaging/kafka/workspace-events-kafka.consumer";
 import { UserEventsKafkaConsumer } from "./infrastructure/messaging/kafka/user-events-kafka.consumer";
 import { TaskEventsKafkaConsumer } from "./infrastructure/messaging/kafka/task-events-kafka.consumer";
+import { KafkaDlqPublisher } from "./infrastructure/messaging/kafka/kafka-dlq.publisher";
 
 const Handlers = [
   CreateNotificationHandler,
@@ -103,6 +104,7 @@ const Handlers = [
     WorkspaceEventsKafkaConsumer,
     UserEventsKafkaConsumer,
     TaskEventsKafkaConsumer,
+    KafkaDlqPublisher,
     ...platformAdminAuthProviders,
     {
       provide: NOTIFICATION_REPOSITORY_TOKEN,

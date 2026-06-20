@@ -1,5 +1,6 @@
 import { Injectable, Logger, type OnModuleDestroy, type OnModuleInit } from "@nestjs/common";
 import { Kafka, type Consumer } from "kafkajs";
+import { processKafkaConsumerMessage } from "@collabspace/shared";
 import { ConfigurationService } from "../../../configuration/configuration.service";
 import { WorkspaceInviteNotificationService } from "../../../application/services/workspace-invite-notification.service";
 import { WorkspaceDeletedNotificationService } from "../../../application/services/workspace-deleted-notification.service";
@@ -8,6 +9,7 @@ import {
   toWorkspaceDeletedEventPayload,
   toWorkspaceInvitedEventPayload,
 } from "./kafka-outbox-message";
+import { KafkaDlqPublisher } from "./kafka-dlq.publisher";
 
 @Injectable()
 export class WorkspaceEventsKafkaConsumer implements OnModuleInit, OnModuleDestroy {
@@ -19,6 +21,7 @@ export class WorkspaceEventsKafkaConsumer implements OnModuleInit, OnModuleDestr
     private readonly configurationService: ConfigurationService,
     private readonly workspaceInviteNotification: WorkspaceInviteNotificationService,
     private readonly workspaceDeletedNotification: WorkspaceDeletedNotificationService,
+    private readonly kafkaDlqPublisher: KafkaDlqPublisher,
   ) {}
 
   async onModuleInit(): Promise<void> {
@@ -33,7 +36,9 @@ export class WorkspaceEventsKafkaConsumer implements OnModuleInit, OnModuleDestr
       brokers: kafkaConfig.brokers,
     });
 
-    this.consumer = kafka.consumer({ groupId: `${kafkaConfig.groupId}-workspace-events` });
+    const consumerGroup = `${kafkaConfig.groupId}-workspace-events`;
+
+    this.consumer = kafka.consumer({ groupId: consumerGroup });
     await this.consumer.connect();
     await this.consumer.subscribe({
       topics: [kafkaConfig.workspaceInvitedTopic, kafkaConfig.workspaceDeletedTopic],
@@ -41,37 +46,40 @@ export class WorkspaceEventsKafkaConsumer implements OnModuleInit, OnModuleDestr
     });
 
     this.runPromise = this.consumer.run({
-      eachMessage: async ({ topic, message }) => {
-        const record = parseKafkaOutboxJsonValue(message.value);
-        if (!record) {
-          this.logger.warn(`Skipping Kafka ${topic} message with empty or invalid JSON`);
-          return;
-        }
+      eachMessage: async ({ topic, partition, message }) => {
+        await processKafkaConsumerMessage({
+          context: {
+            topic,
+            partition,
+            offset: message.offset,
+            key: message.key,
+            value: message.value,
+          },
+          consumerGroup,
+          maxRetries: kafkaConfig.maxRetries,
+          retryDelayMs: kafkaConfig.retryDelayMs,
+          publishToDlq: (envelope) => this.kafkaDlqPublisher.publish(envelope),
+          log: this.logger,
+          parseValue: parseKafkaOutboxJsonValue,
+          handler: async (record, messageTopic) => {
+            if (messageTopic === kafkaConfig.workspaceInvitedTopic) {
+              await this.handleWorkspaceInvited(record);
+              return;
+            }
 
-        try {
-          if (topic === kafkaConfig.workspaceInvitedTopic) {
-            await this.handleWorkspaceInvited(record);
-            return;
-          }
+            if (messageTopic === kafkaConfig.workspaceDeletedTopic) {
+              await this.handleWorkspaceDeleted(record);
+              return;
+            }
 
-          if (topic === kafkaConfig.workspaceDeletedTopic) {
-            await this.handleWorkspaceDeleted(record);
-            return;
-          }
-
-          this.logger.warn(`Skipping Kafka message from unhandled topic=${topic}`);
-        } catch (error) {
-          this.logger.error(
-            `Failed to process Kafka message topic=${topic}`,
-            error instanceof Error ? error.stack : undefined,
-          );
-          throw error;
-        }
+            this.logger.warn(`Skipping Kafka message from unhandled topic=${messageTopic}`);
+          },
+        });
       },
     });
 
     this.logger.log(
-      `Kafka consumer listening topics=${kafkaConfig.workspaceInvitedTopic},${kafkaConfig.workspaceDeletedTopic} group=${kafkaConfig.groupId}-workspace-events`,
+      `Kafka consumer listening topics=${kafkaConfig.workspaceInvitedTopic},${kafkaConfig.workspaceDeletedTopic} group=${consumerGroup}`,
     );
   }
 

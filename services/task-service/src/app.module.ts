@@ -44,6 +44,7 @@ import { TaskCommentNotificationPublisher } from "./application/services/task-co
 import { WorkspaceDeletionService } from "./application/services/workspace-deletion.service";
 import { WorkspaceDeletedKafkaConsumer } from "./infrastructure/messaging/kafka/workspace-deleted-kafka.consumer";
 import { UserEventsKafkaConsumer } from "./infrastructure/messaging/kafka/user-events-kafka.consumer";
+import { KafkaDlqPublisher } from "./infrastructure/messaging/kafka/kafka-dlq.publisher";
 import { TaskOutboxService } from "./infrastructure/outbox/task-outbox.service";
 import { TaskOutboxEvent, TaskOutboxEventSchema } from "./infrastructure/outbox/task-outbox.schema";
 import { MongoUnitOfWork } from "./infrastructure/database/mongo-unit-of-work";
@@ -156,6 +157,7 @@ const Handlers = [
     WorkspaceDeletionService,
     WorkspaceDeletedKafkaConsumer,
     UserEventsKafkaConsumer,
+    KafkaDlqPublisher,
     IdempotencyService,
     AuthGuard,
     WorkspaceValidationGuard,

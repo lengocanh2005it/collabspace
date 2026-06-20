@@ -1,6 +1,7 @@
 import { Injectable, Logger, type OnModuleDestroy, type OnModuleInit } from "@nestjs/common";
 import { CommandBus } from "@nestjs/cqrs";
 import { Kafka, type Consumer } from "kafkajs";
+import { processKafkaConsumerMessage } from "@collabspace/shared";
 import { InboundNotificationEventMapper } from "../../../application/mappers/inbound-notification-event.mapper";
 import { ConfigurationService } from "../../../configuration/configuration.service";
 import {
@@ -13,6 +14,7 @@ import {
   resolveCommandTimeoutMs,
   withCommandTimeout,
 } from "../../../presentation/helpers/notification-command.helper";
+import { KafkaDlqPublisher } from "./kafka-dlq.publisher";
 
 @Injectable()
 export class TaskEventsKafkaConsumer implements OnModuleInit, OnModuleDestroy {
@@ -23,6 +25,7 @@ export class TaskEventsKafkaConsumer implements OnModuleInit, OnModuleDestroy {
   constructor(
     private readonly configurationService: ConfigurationService,
     private readonly commandBus: CommandBus,
+    private readonly kafkaDlqPublisher: KafkaDlqPublisher,
   ) {}
 
   async onModuleInit(): Promise<void> {
@@ -37,7 +40,9 @@ export class TaskEventsKafkaConsumer implements OnModuleInit, OnModuleDestroy {
       brokers: kafkaConfig.brokers,
     });
 
-    this.consumer = kafka.consumer({ groupId: `${kafkaConfig.groupId}-task-events` });
+    const consumerGroup = `${kafkaConfig.groupId}-task-events`;
+
+    this.consumer = kafka.consumer({ groupId: consumerGroup });
     await this.consumer.connect();
     await this.consumer.subscribe({
       topics: [
@@ -49,42 +54,45 @@ export class TaskEventsKafkaConsumer implements OnModuleInit, OnModuleDestroy {
     });
 
     this.runPromise = this.consumer.run({
-      eachMessage: async ({ topic, message }) => {
-        const record = parseKafkaOutboxJsonValue(message.value);
-        if (!record) {
-          this.logger.warn(`Skipping Kafka ${topic} message with empty or invalid JSON`);
-          return;
-        }
+      eachMessage: async ({ topic, partition, message }) => {
+        await processKafkaConsumerMessage({
+          context: {
+            topic,
+            partition,
+            offset: message.offset,
+            key: message.key,
+            value: message.value,
+          },
+          consumerGroup,
+          maxRetries: kafkaConfig.maxRetries,
+          retryDelayMs: kafkaConfig.retryDelayMs,
+          publishToDlq: (envelope) => this.kafkaDlqPublisher.publish(envelope),
+          log: this.logger,
+          parseValue: parseKafkaOutboxJsonValue,
+          handler: async (record, messageTopic) => {
+            if (messageTopic === kafkaConfig.taskAssignedTopic) {
+              await this.handleTaskAssigned(record);
+              return;
+            }
 
-        try {
-          if (topic === kafkaConfig.taskAssignedTopic) {
-            await this.handleTaskAssigned(record);
-            return;
-          }
+            if (messageTopic === kafkaConfig.taskCommentCreatedTopic) {
+              await this.handleTaskCommented(record);
+              return;
+            }
 
-          if (topic === kafkaConfig.taskCommentCreatedTopic) {
-            await this.handleTaskCommented(record);
-            return;
-          }
+            if (messageTopic === kafkaConfig.taskCommentMentionedTopic) {
+              await this.handleCommentMentioned(record);
+              return;
+            }
 
-          if (topic === kafkaConfig.taskCommentMentionedTopic) {
-            await this.handleCommentMentioned(record);
-            return;
-          }
-
-          this.logger.warn(`Skipping Kafka message from unhandled topic=${topic}`);
-        } catch (error) {
-          this.logger.error(
-            `Failed to process Kafka message topic=${topic}`,
-            error instanceof Error ? error.stack : undefined,
-          );
-          throw error;
-        }
+            this.logger.warn(`Skipping Kafka message from unhandled topic=${messageTopic}`);
+          },
+        });
       },
     });
 
     this.logger.log(
-      `Kafka consumer listening topics=${kafkaConfig.taskAssignedTopic},${kafkaConfig.taskCommentCreatedTopic},${kafkaConfig.taskCommentMentionedTopic} group=${kafkaConfig.groupId}-task-events`,
+      `Kafka consumer listening topics=${kafkaConfig.taskAssignedTopic},${kafkaConfig.taskCommentCreatedTopic},${kafkaConfig.taskCommentMentionedTopic} group=${consumerGroup}`,
     );
   }
 
