@@ -121,7 +121,7 @@ Chi tiết: [infrastructure/load-testing/README.md](../infrastructure/load-testi
 
 ## Còn lại (backlog)
 
-- Alertmanager → Slack/email
+- Alertmanager -> Slack đã test trên Droplet 2026-06-20; email receiver chưa cấu hình riêng
 - Sync `alert-rules.yml` vào Prometheus K8s
 - Sửa postgres/redis exporter scrape
 - Ghi **capacity baseline** sau k6 (P3)

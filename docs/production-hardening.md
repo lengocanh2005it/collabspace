@@ -41,7 +41,7 @@ Dùng trước khi expose CollabSpace ra ngoài môi trường local/demo.
 - [x] Grafana datasource UID `prometheus` / `loki` khớp dashboard JSON.
 - [x] Prometheus scrape app + Traefik; `metricsAuthToken` + SA `prometheus`.
 - [ ] Sync `alert-rules.yml` vào Prometheus ConfigMap trên cluster đích (nếu chưa).
-- [ ] Alertmanager receiver (Slack/email) test trên staging.
+- [x] Alertmanager receiver Slack test trên Droplet 2026-06-20 (Vault -> ESO `alertmanager-slack-secret` -> Alertmanager). Email receiver chưa cấu hình riêng.
 - [x] Runbook liên kết từ alert (`docs/runbooks/`).
 - [ ] Drill readiness định kỳ — chạy `infrastructure/resilience/drills/verify-readiness.sh` sau deploy.
 - [ ] `TRACING_ENABLED=true` chỉ khi Jaeger/OTLP collector reachable.

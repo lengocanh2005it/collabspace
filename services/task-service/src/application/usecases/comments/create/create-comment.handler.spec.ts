@@ -50,7 +50,7 @@ describe("CreateCommentHandler", () => {
     };
 
     const mockUnitOfWork = {
-      run: jest.fn(async (work) => work({} as never)),
+      run: jest.fn(async (work) => work({})),
     };
 
     handler = new CreateCommentHandler(

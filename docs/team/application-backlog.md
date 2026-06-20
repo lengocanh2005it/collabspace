@@ -2,7 +2,7 @@
 
 > **Rà soát 2026-06-19:** đồng bộ checkbox với code/CI. MVP backend + E2E per service
 > **Done**; gap thực tế: contract test, FE Playwright E2E, backup offsite/restore drill,
-> Alertmanager receiver thật. **CI `demo-e2e`:** gate tự động sau mỗi deploy `main` (2026-06-19).
+> Alertmanager Slack receiver thật đã test trên Droplet. **CI `demo-e2e`:** gate tự động sau mỗi deploy `main` (2026-06-19).
 
 Tài liệu này liệt kê **việc còn lại về logic code / API / test / demo** (cập nhật 2026-06-19).  
 **Nguồn chính trạng thái tính năng:** [features.md](../features.md). **Infra/DevOps:** [phan-phu-tho-infrastructure-backlog.md](./phan-phu-tho-infrastructure-backlog.md) (Phan Phú Thọ). **Admin Platform API (owner Võ Trung Tín, deadline sáng CN 14/06/2026):** [admin-backlog.md](./admin-backlog.md).
@@ -93,7 +93,7 @@ Contract: [service-contracts.md § Service JWT](../../.claude/docs/service-contr
 
 - [x] Gắn `scripts/demo-e2e` vào CI smoke — `run-demo-e2e-prod.sh` sau Helm deploy; tự động trên push `main`
 - [~] Backup/snapshot Droplet + restore drill — CronJob Helm dump `/tmp` (chưa offsite S3); chưa có `restore-*.sh` / drill log — [backup-policy.md](../backup-policy.md)
-- [~] Alertmanager routing (Slack/email) — Alertmanager deploy trên K8s; Helm receiver `null` (chưa webhook Slack/email thật)
+- [x] Alertmanager routing (Slack) — Alertmanager deploy trên K8s; Vault `slack_alert_webhook_url` -> ESO `alertmanager-slack-secret` -> channel `#nouveau-canal`; test alert lại trên Droplet 2026-06-20. Email receiver chưa cấu hình riêng.
 
 Chi tiết infra: [phan-phu-tho-infrastructure-backlog.md](./phan-phu-tho-infrastructure-backlog.md).
 

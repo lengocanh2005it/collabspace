@@ -205,7 +205,7 @@ export class TaskOutboxService {
       eventType,
       failedAt: null,
       lastError: null,
-      payload: payload as unknown as Record<string, unknown>,
+      payload: payload,
       processedAt: null,
     };
   }

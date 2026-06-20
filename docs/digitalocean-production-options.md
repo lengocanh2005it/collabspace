@@ -353,7 +353,7 @@ Monitoring tối thiểu:
 - Kubernetes pod health/readiness.
 - Helm observability stack: Prometheus + Grafana (`/grafana`) + Loki + Promtail — [observability.md](./observability.md).
 - k6 smoke/demo-flow từ máy dev hoặc CI (`infrastructure/load-testing/`).
-- Alert tối thiểu: disk usage, memory, pod restart, DB down; Alertmanager → Slack/email ⬜.
+- Alert tối thiểu: disk usage, memory, pod restart, DB down; Alertmanager -> Slack đã test trên Droplet 2026-06-20; email receiver chưa cấu hình riêng.
 
 ## Thứ Tự Triển Khai Để Tránh Vỡ Trận
 
