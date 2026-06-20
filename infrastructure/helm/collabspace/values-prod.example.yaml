@@ -44,6 +44,10 @@ postgresql:
   primary:
     persistence:
       size: 8Gi
+    extendedConfiguration: |
+      wal_level = logical
+      max_replication_slots = 4
+      max_wal_senders = 4
     resources:
       requests:
         memory: 256Mi
@@ -53,6 +57,9 @@ postgresql:
         cpu: 500m
 
 mongodb:
+  architecture: replicaset
+  replicaSetName: rs0
+  replicaCount: 1
   auth:
     rootUser: admin
     rootPassword: "REPLACE_ME"
@@ -79,6 +86,34 @@ redis:
       limits:
         memory: 384Mi
         cpu: 250m
+
+# Kafka + Debezium Connect (event bus — required for cross-service events)
+kafka:
+  enabled: true
+  persistence:
+    size: 8Gi
+  resources:
+    requests:
+      memory: 384Mi
+      cpu: 200m
+    limits:
+      memory: 768Mi
+      cpu: 750m
+  exporter:
+    enabled: true
+
+debeziumConnect:
+  enabled: true
+  connectors:
+    enabled: true
+    registerOnUpgrade: false
+  resources:
+    requests:
+      memory: 384Mi
+      cpu: 200m
+    limits:
+      memory: 768Mi
+      cpu: 750m
 
 traefik:
   deployment:

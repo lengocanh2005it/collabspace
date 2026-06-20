@@ -134,6 +134,11 @@ data:
         static_configs:
           - targets: ['mongodb-exporter:9216']
       {{- end }}
+      {{- if and .Values.kafka.enabled .Values.kafka.exporter.enabled }}
+      - job_name: kafka-exporter
+        static_configs:
+          - targets: ['kafka-exporter:9308']
+      {{- end }}
       {{- if .Values.observability.alertmanager.enabled }}
     alerting:
       alertmanagers:

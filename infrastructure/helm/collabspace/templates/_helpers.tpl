@@ -86,7 +86,26 @@ app.kubernetes.io/version: {{ .root.Chart.AppVersion | quote }}
 {{- $user := $r.Values.global.secrets.mongoUsername | default "admin" | urlquery -}}
 {{- $pass := $r.Values.global.secrets.mongoPassword | default $r.Values.mongodb.auth.rootPassword | urlquery -}}
 {{- $db := .database | default "collabspace_task" -}}
-{{- printf "mongodb://%s:%s@%s:27017/%s?authSource=admin" $user $pass (include "collabspace.mongodb.host" (dict "root" $r)) $db }}
+{{- $host := include "collabspace.mongodb.host" (dict "root" $r) -}}
+{{- $rs := "" -}}
+{{- if eq ($r.Values.mongodb.architecture | default "standalone") "replicaset" -}}
+{{- $rsName := $r.Values.mongodb.replicaSetName | default "rs0" -}}
+{{- $rs = printf "&replicaSet=%s" $rsName -}}
+{{- end -}}
+{{- printf "mongodb://%s:%s@%s:27017/%s?authSource=admin%s" $user $pass $host $db $rs }}
+{{- end }}
+
+{{- define "collabspace.mongoConnectionString" -}}
+{{- $r := .root | default . -}}
+{{- $user := $r.Values.global.secrets.mongoUsername | default "admin" | urlquery -}}
+{{- $pass := $r.Values.global.secrets.mongoPassword | default $r.Values.mongodb.auth.rootPassword | urlquery -}}
+{{- $host := include "collabspace.mongodb.host" (dict "root" $r) -}}
+{{- $rs := "" -}}
+{{- if eq ($r.Values.mongodb.architecture | default "standalone") "replicaset" -}}
+{{- $rsName := $r.Values.mongodb.replicaSetName | default "rs0" -}}
+{{- $rs = printf "&replicaSet=%s" $rsName -}}
+{{- end -}}
+{{- printf "mongodb://%s:%s@%s:27017/?authSource=admin%s" $user $pass $host $rs }}
 {{- end }}
 
 {{- define "collabspace.postgresUrl" -}}

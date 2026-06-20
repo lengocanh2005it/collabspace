@@ -63,6 +63,10 @@ postgresql:
       limits:
         memory: 512Mi
         cpu: 500m
+    extendedConfiguration: |
+      wal_level = logical
+      max_replication_slots = 4
+      max_wal_senders = 4
     initdb:
       scripts:
         init-databases.sql: |
@@ -82,7 +86,9 @@ mongodb:
   metrics:
     image:
       repository: bitnamilegacy/mongodb-exporter
-  architecture: standalone
+  architecture: replicaset
+  replicaSetName: rs0
+  replicaCount: 1
   auth:
     enabled: true
     rootUser: admin
@@ -134,6 +140,60 @@ redis:
       limits:
         memory: 512Mi
         cpu: 250m
+
+# --- Kafka + Debezium Connect (event bus CDC) ---
+kafka:
+  enabled: true
+  image:
+    repository: apache/kafka
+    tag: "3.8.0"
+    pullPolicy: IfNotPresent
+  persistence:
+    enabled: true
+    size: 5Gi
+  resources:
+    requests:
+      memory: 512Mi
+      cpu: 250m
+    limits:
+      memory: 768Mi
+      cpu: 750m
+  exporter:
+    enabled: true
+    image:
+      repository: danielqsj/kafka-exporter
+      tag: latest
+      pullPolicy: IfNotPresent
+    kafkaServer: kafka:9092
+    resources:
+      requests:
+        memory: 32Mi
+        cpu: 25m
+      limits:
+        memory: 64Mi
+        cpu: 100m
+
+debeziumConnect:
+  enabled: true
+  image:
+    repository: quay.io/debezium/connect
+    tag: 2.7.3.Final
+    pullPolicy: IfNotPresent
+  bootstrapServers: kafka:9092
+  groupId: collabspace-connect
+  configStorageTopic: collabspace_connect_configs
+  offsetStorageTopic: collabspace_connect_offsets
+  statusStorageTopic: collabspace_connect_statuses
+  resources:
+    requests:
+      memory: 512Mi
+      cpu: 250m
+    limits:
+      memory: 768Mi
+      cpu: 750m
+  connectors:
+    enabled: true
+    registerOnUpgrade: false
 
 # --- Traefik ingress controller (API gateway) ---
 traefik:
@@ -547,6 +607,9 @@ apps:
       USER_SERVICE_URL: http://user-service:3000
       USER_SERVICE_TIMEOUT_MS: "3000"
       USER_REPLICA_FALLBACK_ENABLED: "true"
+      KAFKA_DLQ_TOPIC: "collabspace.dlq.events"
+      KAFKA_CONSUMER_MAX_RETRIES: "3"
+      KAFKA_CONSUMER_RETRY_DELAY_MS: "1000"
 
   notification-service:
     enabled: true
@@ -579,3 +642,6 @@ apps:
       WS_ENABLED: "false"
       WS_PATH: /notifications/ws
       USER_SERVICE_URL: http://user-service:3000
+      KAFKA_DLQ_TOPIC: "collabspace.dlq.events"
+      KAFKA_CONSUMER_MAX_RETRIES: "3"
+      KAFKA_CONSUMER_RETRY_DELAY_MS: "1000"

@@ -117,7 +117,7 @@ helm upgrade --install collabspace . \
 | MongoDB | Bitnami subchart | DBs: `collabspace_task`, `collabspace_notification` |
 | Redis | Bitnami subchart | Auth sessions + notification cache |
 
-Cross-service events use **Kafka + Debezium** (outbox CDC) — not deployed by this chart; see `infrastructure/kafka/README.md` and `docs/kafka-debezium-migration-roadmap.md`.
+Cross-service events use **Kafka + Debezium** (outbox CDC). Enable `kafka.enabled` and `debeziumConnect.enabled` in values — see `templates/kafka/` and `infrastructure/kafka/README.md`.
 
 | Traefik | Official Traefik chart | LoadBalancer / NodePort gateway |
 | Apps | Custom templates | auth, user, workspace (8080), task, notification |

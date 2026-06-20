@@ -1,0 +1,93 @@
+{{- if .Values.debeziumConnect.enabled }}
+{{- $ns := include "collabspace.namespace" . }}
+{{- $dc := .Values.debeziumConnect }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: debezium-connect
+  namespace: {{ $ns }}
+  labels:
+    app: debezium-connect
+    app.kubernetes.io/component: debezium-connect
+    app.kubernetes.io/part-of: collabspace
+spec:
+  selector:
+    app: debezium-connect
+  ports:
+    - name: rest
+      port: 8083
+      targetPort: 8083
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: debezium-connect
+  namespace: {{ $ns }}
+  labels:
+    app: debezium-connect
+    app.kubernetes.io/component: debezium-connect
+    app.kubernetes.io/part-of: collabspace
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: debezium-connect
+  template:
+    metadata:
+      labels:
+        app: debezium-connect
+        app.kubernetes.io/component: debezium-connect
+        app.kubernetes.io/part-of: collabspace
+    spec:
+      containers:
+        - name: connect
+          image: {{ printf "%s:%s" $dc.image.repository $dc.image.tag }}
+          imagePullPolicy: {{ $dc.image.pullPolicy | default "IfNotPresent" }}
+          ports:
+            - containerPort: 8083
+              name: rest
+          env:
+            - name: BOOTSTRAP_SERVERS
+              value: {{ $dc.bootstrapServers | default "kafka:9092" | quote }}
+            - name: GROUP_ID
+              value: {{ $dc.groupId | default "collabspace-connect" | quote }}
+            - name: CONFIG_STORAGE_TOPIC
+              value: {{ $dc.configStorageTopic | default "collabspace_connect_configs" | quote }}
+            - name: OFFSET_STORAGE_TOPIC
+              value: {{ $dc.offsetStorageTopic | default "collabspace_connect_offsets" | quote }}
+            - name: STATUS_STORAGE_TOPIC
+              value: {{ $dc.statusStorageTopic | default "collabspace_connect_statuses" | quote }}
+            - name: CONFIG_STORAGE_REPLICATION_FACTOR
+              value: "1"
+            - name: OFFSET_STORAGE_REPLICATION_FACTOR
+              value: "1"
+            - name: STATUS_STORAGE_REPLICATION_FACTOR
+              value: "1"
+            - name: KEY_CONVERTER
+              value: org.apache.kafka.connect.json.JsonConverter
+            - name: VALUE_CONVERTER
+              value: org.apache.kafka.connect.json.JsonConverter
+            - name: KEY_CONVERTER_SCHEMAS_ENABLE
+              value: "false"
+            - name: VALUE_CONVERTER_SCHEMAS_ENABLE
+              value: "false"
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8083
+            initialDelaySeconds: 45
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 12
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8083
+            initialDelaySeconds: 90
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 6
+          resources:
+            {{- toYaml $dc.resources | nindent 12 }}
+{{- end }}
