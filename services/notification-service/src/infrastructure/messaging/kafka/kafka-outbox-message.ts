@@ -4,9 +4,16 @@ import type {
 } from "../../../domain/events/workspace-events";
 import type { UserProfileUpdatedEventPayload } from "../../../domain/events/user-profile-update.event";
 import type { UserRegisteredEventPayload } from "../../../domain/events/user-create.event";
+import type { TaskAssignedEventPayload } from "../../../domain/events/task-events";
+import type {
+  CommentMentionedNotificationPayload,
+  TaskCommentedEventPayload,
+} from "../../../domain/events/comment-events";
 
 /**
- * Debezium Outbox Event Router with expand.json.payload emits the domain JSON as the value.
+ * Debezium Outbox Event Router value parser.
+ * Postgres (expand.json.payload): domain object JSON.
+ * Mongo MongoEventRouter: payload may arrive as a JSON-encoded string — parse twice.
  */
 export function parseKafkaOutboxJsonValue(
   value: Buffer | string | null | undefined,
@@ -21,7 +28,13 @@ export function parseKafkaOutboxJsonValue(
   }
 
   try {
-    const parsed: unknown = JSON.parse(raw);
+    let parsed: unknown = JSON.parse(raw);
+    if (typeof parsed === "string") {
+      const inner = parsed.trim();
+      if (inner.startsWith("{") || inner.startsWith("[")) {
+        parsed = JSON.parse(inner);
+      }
+    }
     if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
       return parsed as Record<string, unknown>;
     }
@@ -93,4 +106,65 @@ export function toUserRegisteredEventPayload(
   }
 
   return record as unknown as UserRegisteredEventPayload;
+}
+
+export function toTaskAssignedEventPayload(
+  record: Record<string, unknown>,
+): TaskAssignedEventPayload | null {
+  const taskId = record.taskId;
+  const recipientId = record.recipientId;
+
+  if (typeof taskId !== "string" || taskId.length === 0) {
+    return null;
+  }
+
+  if (typeof recipientId !== "string" || recipientId.length === 0) {
+    return null;
+  }
+
+  return record as unknown as TaskAssignedEventPayload;
+}
+
+export function toTaskCommentedEventPayload(
+  record: Record<string, unknown>,
+): TaskCommentedEventPayload | null {
+  const taskId = record.taskId;
+  const commentId = record.commentId;
+  const recipientId = record.recipientId;
+
+  if (typeof taskId !== "string" || taskId.length === 0) {
+    return null;
+  }
+
+  if (typeof commentId !== "string" || commentId.length === 0) {
+    return null;
+  }
+
+  if (typeof recipientId !== "string" || recipientId.length === 0) {
+    return null;
+  }
+
+  return record as unknown as TaskCommentedEventPayload;
+}
+
+export function toCommentMentionedEventPayload(
+  record: Record<string, unknown>,
+): CommentMentionedNotificationPayload | null {
+  const taskId = record.taskId;
+  const commentId = record.commentId;
+  const recipientId = record.recipientId;
+
+  if (typeof taskId !== "string" || taskId.length === 0) {
+    return null;
+  }
+
+  if (typeof commentId !== "string" || commentId.length === 0) {
+    return null;
+  }
+
+  if (typeof recipientId !== "string" || recipientId.length === 0) {
+    return null;
+  }
+
+  return record as unknown as CommentMentionedNotificationPayload;
 }

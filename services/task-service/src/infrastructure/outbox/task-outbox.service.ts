@@ -1,12 +1,13 @@
 import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import type { Model } from "mongoose";
+import type { ClientSession, Model } from "mongoose";
 import type { TaskAssignedEventPayload } from "../../domain/events/task.events";
 import type {
   CommentMentionedEventPayload,
   TaskCommentedEventPayload,
 } from "../../domain/events/comment.events";
 import {
+  TASK_OUTBOX_AGGREGATE_TYPE,
   TASK_OUTBOX_EVENT_COMMENT_MENTIONED,
   TASK_OUTBOX_EVENT_TASK_ASSIGNED,
   TASK_OUTBOX_EVENT_TASK_COMMENTED,
@@ -17,6 +18,11 @@ import {
 const MAX_ATTEMPTS = Number(process.env.TASK_OUTBOX_MAX_ATTEMPTS ?? 8);
 const DEFAULT_BATCH_SIZE = Number(process.env.TASK_OUTBOX_BATCH_SIZE ?? 25);
 
+type OutboxPayload =
+  | TaskAssignedEventPayload
+  | TaskCommentedEventPayload
+  | CommentMentionedEventPayload;
+
 @Injectable()
 export class TaskOutboxService {
   constructor(
@@ -24,53 +30,50 @@ export class TaskOutboxService {
     private readonly outboxModel: Model<TaskOutboxEventDocument>,
   ) {}
 
-  async enqueueTaskAssigned(payload: TaskAssignedEventPayload): Promise<void> {
-    await this.outboxModel.create({
-      attemptCount: 0,
-      availableAt: new Date(),
-      claimedAt: null,
-      eventType: TASK_OUTBOX_EVENT_TASK_ASSIGNED,
-      failedAt: null,
-      lastError: null,
-      payload: payload,
-      processedAt: null,
-    });
+  async enqueueTaskAssigned(
+    payload: TaskAssignedEventPayload,
+    session?: ClientSession,
+  ): Promise<void> {
+    await this.enqueueEvent(TASK_OUTBOX_EVENT_TASK_ASSIGNED, payload.taskId, payload, session);
   }
 
-  async enqueueCommentMentioned(payload: CommentMentionedEventPayload): Promise<void> {
-    await this.enqueueCommentMentionedBatch([payload]);
+  async enqueueCommentMentioned(
+    payload: CommentMentionedEventPayload,
+    session?: ClientSession,
+  ): Promise<void> {
+    await this.enqueueCommentMentionedBatch([payload], session);
   }
 
-  async enqueueCommentMentionedBatch(payloads: CommentMentionedEventPayload[]): Promise<void> {
+  async enqueueCommentMentionedBatch(
+    payloads: CommentMentionedEventPayload[],
+    session?: ClientSession,
+  ): Promise<void> {
     if (payloads.length === 0) {
       return;
     }
 
+    if (session) {
+      await this.outboxModel.insertMany(
+        payloads.map((payload) =>
+          this.buildOutboxDocument(TASK_OUTBOX_EVENT_COMMENT_MENTIONED, payload.taskId, payload),
+        ),
+        { session },
+      );
+      return;
+    }
+
     await this.outboxModel.insertMany(
-      payloads.map((payload) => ({
-        attemptCount: 0,
-        availableAt: new Date(),
-        claimedAt: null,
-        eventType: TASK_OUTBOX_EVENT_COMMENT_MENTIONED,
-        failedAt: null,
-        lastError: null,
-        payload: payload as unknown as Record<string, unknown>,
-        processedAt: null,
-      })),
+      payloads.map((payload) =>
+        this.buildOutboxDocument(TASK_OUTBOX_EVENT_COMMENT_MENTIONED, payload.taskId, payload),
+      ),
     );
   }
 
-  async enqueueTaskCommented(payload: TaskCommentedEventPayload): Promise<void> {
-    await this.outboxModel.create({
-      attemptCount: 0,
-      availableAt: new Date(),
-      claimedAt: null,
-      eventType: TASK_OUTBOX_EVENT_TASK_COMMENTED,
-      failedAt: null,
-      lastError: null,
-      payload: payload as unknown as Record<string, unknown>,
-      processedAt: null,
-    });
+  async enqueueTaskCommented(
+    payload: TaskCommentedEventPayload,
+    session?: ClientSession,
+  ): Promise<void> {
+    await this.enqueueEvent(TASK_OUTBOX_EVENT_TASK_COMMENTED, payload.taskId, payload, session);
   }
 
   async claimPendingBatch(limit = DEFAULT_BATCH_SIZE): Promise<TaskOutboxEventDocument[]> {
@@ -170,6 +173,41 @@ export class TaskOutboxService {
     );
 
     return result.modifiedCount;
+  }
+
+  private async enqueueEvent(
+    eventType: string,
+    aggregateId: string,
+    payload: OutboxPayload,
+    session?: ClientSession,
+  ): Promise<void> {
+    const document = this.buildOutboxDocument(eventType, aggregateId, payload);
+
+    if (session) {
+      await this.outboxModel.create([document], { session });
+      return;
+    }
+
+    await this.outboxModel.create(document);
+  }
+
+  private buildOutboxDocument(
+    eventType: string,
+    aggregateId: string,
+    payload: OutboxPayload,
+  ): Record<string, unknown> {
+    return {
+      attemptCount: 0,
+      availableAt: new Date(),
+      claimedAt: null,
+      aggregateType: TASK_OUTBOX_AGGREGATE_TYPE,
+      aggregateId,
+      eventType,
+      failedAt: null,
+      lastError: null,
+      payload: payload as unknown as Record<string, unknown>,
+      processedAt: null,
+    };
   }
 
   private getRetryDelayMs(attemptCount: number): number {

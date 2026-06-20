@@ -6,6 +6,7 @@ import type { ICommentRepository } from "../../domain/repositories/comment.repos
 import type { Comment } from "../../domain/entities/comment.entity";
 import { TaskComment, type TaskCommentDocument } from "../persistence/task-comment.schema";
 import { CommentMapper } from "../mappers/comment.mapper";
+import type { MongoSessionOptions } from "../../application/ports/mongo-session-options";
 
 /**
  * Comment Repository - Infrastructure Layer Adapter
@@ -22,8 +23,16 @@ export class CommentRepository implements ICommentRepository {
   /**
    * Tạo comment mới trong database
    */
-  async createAsync(comment: Comment): Promise<string> {
+  async createAsync(comment: Comment, options?: MongoSessionOptions): Promise<string> {
     const commentDocument = CommentMapper.toPersistence(comment);
+
+    if (options?.session) {
+      const [createdComment] = await this.commentModel.create([commentDocument], {
+        session: options.session,
+      });
+      return createdComment._id.toString();
+    }
+
     const createdComment = await this.commentModel.create(commentDocument);
     return createdComment._id.toString();
   }

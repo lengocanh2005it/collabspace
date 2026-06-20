@@ -7,6 +7,7 @@ import type {
 } from "../../domain/events/comment.events";
 import { RabbitMqEventsService } from "../messaging/rabbitmq/rabbitmq-events.service";
 import { TaskOutboxService } from "./task-outbox.service";
+import { getTaskOutboxPublishMode } from "./task-outbox.config";
 import {
   TASK_OUTBOX_EVENT_COMMENT_MENTIONED,
   TASK_OUTBOX_EVENT_TASK_ASSIGNED,
@@ -29,6 +30,13 @@ export class TaskOutboxProcessor implements OnModuleInit, OnModuleDestroy {
 
     if (!enabled) {
       this.logger.log("Task outbox processor is disabled.");
+      return;
+    }
+
+    if (getTaskOutboxPublishMode() === "debezium") {
+      this.logger.log(
+        "Task outbox RMQ processor disabled (TASK_OUTBOX_PUBLISH_MODE=debezium; CDC → Kafka).",
+      );
       return;
     }
 

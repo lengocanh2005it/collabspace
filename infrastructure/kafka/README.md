@@ -140,9 +140,10 @@ DEBEZIUM_CONNECT_URL_HOST=http://localhost:8083
 | **2** | Kafka consumer pilot `workspace_invited` (dual-run RMQ) — **Done** |
 | **3** | Cutover workspace events (chỉ Kafka) — **Done** (local E2E) |
 | **4** | User outbox + CDC — **Done** (local E2E) |
-| **5M** | Task Mongo outbox + Debezium — **Next** |
+| **5M** | Task Mongo outbox + Debezium — **Done** (local E2E script) |
+| **6** | Gỡ RabbitMQ — **Next** |
 
-## E2E verify (Phase 3 + 4)
+## E2E verify (Phase 3 + 4 + 5M)
 
 Full stack (built images + Kafka):
 
@@ -150,14 +151,17 @@ Full stack (built images + Kafka):
 .\scripts\docker-local-up.ps1 -Kafka
 .\scripts\register-workspace-outbox-connector.ps1
 .\scripts\register-user-outbox-connector.ps1
+.\scripts\register-task-outbox-connector.ps1
 .\scripts\kafka-phase3-e2e.ps1
 .\scripts\kafka-phase4-e2e.ps1
+.\scripts\kafka-phase5-e2e.ps1
 ```
 
 Phase 3: register 2 user → invite → `WORKSPACE_INVITED` notification → delete workspace → task gone.  
-Phase 4: register → `user_replicas` → PATCH profile → replica `displayName` updated.
+Phase 4: register → `user_replicas` → PATCH profile → replica `displayName` updated.  
+Phase 5M: @mention trên task chưa assign → `COMMENT_MENTIONED`; assign → `TASK_ASSIGNED`; comment follow-up (assignee) → `COMMENT_ADDED` (`task.comment_created` topic).
 
-**Consumer groups:** code dùng `${KAFKA_GROUP_ID}-user-events` và `-workspace-events` — không gộp một group.
+**Consumer groups:** code dùng `${KAFKA_GROUP_ID}-user-events`, `-workspace-events`, `-task-events` — không gộp một group.
 
 ## Rollback
 
@@ -177,3 +181,4 @@ App CollabSpace vẫn chạy bình thường chỉ với RabbitMQ.
 | Client host không kết nối `localhost:9092` | Dùng **`localhost:29092`** (`PLAINTEXT_HOST` listener) |
 | Network not found | Chạy `docker-compose.db.yml` hoặc `docker-compose.yml` trước để tạo `collabspace-network` |
 | Connect 8083 connection refused | `docker compose ps debezium-connect` — đợi `healthy` |
+| Task Kafka consumer skip message (invalid JSON) | MongoEventRouter có thể emit `payload` dạng JSON string — consumer parse 2 lần (`kafka-outbox-message.ts`) |

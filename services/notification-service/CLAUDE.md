@@ -41,7 +41,7 @@ pnpm run test
 - Protected HTTP (`GET /`, `PATCH .../read`): `@UseGuards(AuthGuard)` — JWT via auth gRPC **`VerifyAccessTokenLite`**, not `X-User-Id`
 - Env: `AUTH_SERVICE_GRPC_URL`, `ALLOW_DEV_IDENTITY_HEADERS`, `SERVICE_JWT_SECRET` (user replica fallback HTTP)
 - Idempotency: `ProcessedEvent` + `tryClaim(eventId)` before create
-- **Kafka (Phase 3):** `KAFKA_CONSUMERS_ENABLED=true` — `collabspace.workspace.workspace_invited` + `workspace_deleted`; RMQ listeners kept for prod rollback
+- **Kafka (Phase 3):** `KAFKA_CONSUMERS_ENABLED=true` — workspace + user + **task** events; RMQ listeners kept for prod rollback
 - Listeners pass `eventId` into `CreateNotificationCommand`
 - Repository tokens: `NOTIFICATION_REPOSITORY_TOKEN`, `PROCESSED_EVENT_REPOSITORY_TOKEN`
 - Readiness: Mongo required; RabbitMQ required when consumer enabled

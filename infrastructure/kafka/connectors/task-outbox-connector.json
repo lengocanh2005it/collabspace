@@ -1,0 +1,22 @@
+{
+  "name": "collabspace-task-outbox",
+  "config": {
+    "connector.class": "io.debezium.connector.mongodb.MongoDbConnector",
+    "tasks.max": "1",
+    "mongodb.connection.string": "mongodb://admin:password@mongo:27017/?authSource=admin&replicaSet=rs0",
+    "topic.prefix": "collabspace.task.db",
+    "database.include.list": "collabspace_task",
+    "collection.include.list": "collabspace_task.task_outbox_events",
+    "capture.mode": "change_streams_update_full",
+    "transforms": "outbox",
+    "transforms.outbox.type": "io.debezium.connector.mongodb.transforms.outbox.MongoEventRouter",
+    "transforms.outbox.route.by.field": "eventType",
+    "transforms.outbox.route.topic.replacement": "collabspace.${routedByValue}",
+    "transforms.outbox.collection.field.event.key": "aggregateId",
+    "transforms.outbox.collection.field.event.payload": "payload",
+    "key.converter": "org.apache.kafka.connect.json.JsonConverter",
+    "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+    "key.converter.schemas.enable": "false",
+    "value.converter.schemas.enable": "false"
+  }
+}

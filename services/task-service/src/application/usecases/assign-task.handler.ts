@@ -12,7 +12,11 @@ import { TaskId } from "../../domain/value-objects/TaskId";
 import { UserSnapshot } from "../../domain/value-objects/UserSnapshot";
 import { EntityNotFoundException } from "../../domain/exceptions/EntityNotFoundException";
 import { BusinessRuleException } from "../../domain/exceptions/BusinessRuleException";
-import { RabbitMqEventsService } from "../../infrastructure/messaging/rabbitmq/rabbitmq-events.service";
+import { TaskOutboxService } from "../../infrastructure/outbox/task-outbox.service";
+import {
+  MONGO_UNIT_OF_WORK,
+  type IMongoUnitOfWork,
+} from "../../domain/ports/mongo-unit-of-work.port";
 
 @CommandHandler(AssignTaskCommand)
 export class AssignTaskHandler implements ICommandHandler<AssignTaskCommand, void> {
@@ -23,13 +27,15 @@ export class AssignTaskHandler implements ICommandHandler<AssignTaskCommand, voi
     @Inject(USER_REPLICA_REPOSITORY_TOKEN)
     private readonly userReplicaRepo: IUserReplicaRepository,
 
-    private readonly rabbitMqEvents: RabbitMqEventsService,
+    @Inject(MONGO_UNIT_OF_WORK)
+    private readonly unitOfWork: IMongoUnitOfWork,
+
+    private readonly taskOutboxService: TaskOutboxService,
   ) {}
 
   async execute(command: AssignTaskCommand): Promise<void> {
     const taskId = new TaskId(command.taskId);
 
-    // Command-side aggregate loading
     const task = await this.taskRepository.loadAggregateByIdAsync(taskId);
 
     if (!task) {
@@ -72,30 +78,28 @@ export class AssignTaskHandler implements ICommandHandler<AssignTaskCommand, voi
       task.assignTo(command.assigneeId, assigneeSnapshot);
     }
 
-    await this.taskRepository.saveAsync(task);
+    await this.unitOfWork.run(async (session) => {
+      await this.taskRepository.saveAsync(task, { session });
 
-    if (assigneeSnapshot) {
-      try {
+      if (assigneeSnapshot) {
         const occurred = new Date().toISOString();
 
-        await this.rabbitMqEvents.publishTaskAssigned({
-          eventId: randomUUID(),
-          occurredAt: occurred,
-
-          taskId: command.taskId,
-          taskTitle: task.getTitle(),
-          recipientId: assigneeSnapshot.getUserId(),
-
-          actorId: assignerSnapshot.getUserId(),
-          actorName: assignerSnapshot.getDisplayName(),
-          actorAvatarUrl: assignerSnapshot.getAvatarUrl() || undefined,
-
-          assignedAt: occurred,
-          workspaceId: task.getWorkspaceId(),
-        });
-      } catch (error: unknown) {
-        console.error("RabbitMQ Publish Error:", error);
+        await this.taskOutboxService.enqueueTaskAssigned(
+          {
+            eventId: randomUUID(),
+            occurredAt: occurred,
+            taskId: command.taskId,
+            taskTitle: task.getTitle(),
+            recipientId: assigneeSnapshot.getUserId(),
+            actorId: assignerSnapshot.getUserId(),
+            actorName: assignerSnapshot.getDisplayName(),
+            actorAvatarUrl: assignerSnapshot.getAvatarUrl() || undefined,
+            assignedAt: occurred,
+            workspaceId: task.getWorkspaceId(),
+          },
+          session,
+        );
       }
-    }
+    });
   }
 }

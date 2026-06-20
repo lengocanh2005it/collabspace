@@ -81,6 +81,22 @@ describe("kafka-outbox-message", () => {
     }
 
     expect(toUserRegisteredEventPayload(record)).toEqual(payload);
-    expect(toUserRegisteredEventPayload({ userId: "user-1" })).toBeNull();
+    expect(toUserRegisteredEventPayload({ fullName: "x" })).toBeNull();
+  });
+
+  it("parses Mongo Debezium double-encoded JSON string value", () => {
+    const payload = {
+      eventId: "evt-task",
+      taskId: "task-1",
+      recipientId: "user-1",
+      actorId: "user-2",
+      taskTitle: "Demo",
+      assignedAt: "2026-06-20T00:00:00.000Z",
+      workspaceId: "ws-1",
+    };
+
+    const wire = JSON.stringify(JSON.stringify(payload));
+    const record = parseKafkaOutboxJsonValue(Buffer.from(wire));
+    expect(record).toEqual(payload);
   });
 });

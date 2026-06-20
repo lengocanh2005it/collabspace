@@ -61,9 +61,9 @@ flowchart LR
 |---------------------|----------|----------|
 | `workspace_invited` | workspace-service (outbox → processor) | notification-service |
 | `workspace_deleted` | workspace-service (outbox → processor) | notification-service, task-service |
-| `task_assigned` | task-service (**direct** `RabbitMqEventsService`) | notification-service |
-| `comment_created` | task-service (outbox → processor) | notification-service |
-| `comment_mentioned` | task-service (outbox → processor) | notification-service |
+| `task_assigned` | task-service (outbox → Debezium → Kafka khi `TASK_OUTBOX_PUBLISH_MODE=debezium`) | notification-service (Kafka) |
+| `comment_created` | task-service (outbox → Debezium → Kafka) | notification-service (Kafka) |
+| `comment_mentioned` | task-service (outbox → Debezium → Kafka) | notification-service (Kafka) |
 | `user_registered` | user-service (broadcast 2 queue) | task-service, notification-service |
 | `user_profile_updated` | user-service (broadcast 2 queue) | task-service, notification-service |
 
@@ -460,20 +460,21 @@ Cần thêm (đã có trong repo):
 
 ## 9. Phase 5M — Task-service (Mongo outbox + Debezium)
 
-### Hiện trạng cần sửa trước CDC
+### Hiện trạng (sau Phase 5M cutover local)
 
 | Luồng | Outbox? | Ghi chú |
 |-------|---------|---------|
-| Comment / mention | Có (`task_outbox_events`) | Processor → RMQ |
-| Task assign | **Không** — direct RMQ | `assign-task.handler.ts` |
+| Task assign | Có (`task_outbox_events`) | `AssignTaskHandler` + `MongoUnitOfWork` — cùng TX với save task |
+| Comment / mention | Có | `CreateCommentHandler` — comment + activity + outbox cùng TX |
+| Publish path | Debezium CDC | `TASK_OUTBOX_PUBLISH_MODE=debezium` — processor skip RMQ |
 
 Collection: `services/task-service/src/infrastructure/outbox/task-outbox.schema.ts`
 
 ### Phase 5M.0 — Prerequisites
 
 - [x] Phase 0M (Mongo RS) xong — **bắt buộc**, `withTransaction` Mongo không chạy được trên standalone
-- [ ] Phase 0 (Kafka + Connect) xong
-- [ ] Mongo driver >= 4 (kiểm tra `package.json` task-service: `mongoose` ≥ 7 / `mongodb` ≥ 5)
+- [x] Phase 0 (Kafka + Connect) xong
+- [x] Mongo driver >= 4 (mongoose ≥ 7 / `mongodb` ≥ 5)
 
 ### Phase 5M.1 — Đưa `task_assigned` vào outbox
 
@@ -520,9 +521,13 @@ Tài liệu Debezium: [MongoDB connector](https://debezium.io/documentation/refe
 
 ### DoD
 
-- [ ] Toàn bộ task domain events qua Kafka
-- [ ] Không publish RMQ từ task-service
-- [ ] `demo-e2e` pass
+- [x] `AssignTaskHandler` → outbox + Mongo transaction (`MongoUnitOfWork`)
+- [x] `CreateCommentHandler` → comment + activity + outbox cùng transaction
+- [x] Debezium connector `collabspace-task-outbox` + `scripts/register-task-outbox-connector.ps1`
+- [x] notification-service Kafka consumer `task-events-kafka.consumer.ts`
+- [x] `TASK_OUTBOX_PUBLISH_MODE=debezium` skips RMQ processor
+- [x] Dual-run / E2E manual: `scripts/kafka-phase5-e2e.ps1` pass (stack đầy đủ) — 2026-06-20
+- [x] `demo-e2e` pass (Traefik + Kafka cutover local) — 2026-06-20
 
 ---
 
@@ -606,7 +611,7 @@ id | aggregate_type | aggregate_id | event_type | payload | occurred_at
 |---------|-------------------|-----------|
 | workspace-service | `workspace_outbox_events` | ✅ `aggregate_type`, `aggregate_id` (Phase 1) |
 | user-service | `user_outbox_events` | ✅ schema chuẩn (Phase 4a) |
-| task-service | `task_outbox_events` (Mongo) | Align field với MongoEventRouter (Phase 5M.3) |
+| task-service | `task_outbox_events` (Mongo) | ✅ `aggregateType`, `aggregateId` + MongoEventRouter (Phase 5M) |
 
 Làm **một lần** ở Phase 1 (workspace) → copy pattern sang user/task để tránh điều chỉnh connector config sau.
 
@@ -736,7 +741,8 @@ KAFKA_DUAL_CONSUME=true                  # Phase 2–4 dual-run
 | Connector down → event kẹt trong outbox | Outbox row vẫn trong DB; replay khi Connect lên; alert lag |
 | Schema outbox không khớp SMT | Pilot workspace Phase 1 trước |
 | Prod cutover | Blue/green: dual-run ít nhất 1 sprint trên staging |
-| assign task không cùng TX | Phase 5M.1 fix trước Debezium |
+| assign task không cùng TX | Phase 5M.1 fix trước Debezium — ✅ Done |
+| Mongo Debezium payload là JSON string (double-encoded) | Consumer `parseKafkaOutboxJsonValue` parse 2 lần (Phase 5M E2E) |
 
 ---
 
@@ -767,5 +773,8 @@ KAFKA_DUAL_CONSUME=true                  # Phase 2–4 dual-run
 | 2026-06-19 | Phase 0: `docker-compose.kafka.yml`, `infrastructure/kafka/README.md`, smoke scripts |
 | 2026-06-19 | Phase 1: wal_level logical, outbox aggregate columns, Debezium workspace connector |
 | 2026-06-19 | Phase 2: notification-service Kafka consumer `workspace_invited` (dual-run RMQ) |
+| 2026-06-20 | Phase 5M: task outbox aggregate fields, Mongo UoW, Debezium Mongo connector, notification Kafka task consumer, `kafka-phase5-e2e.ps1` |
+| 2026-06-20 | Phase 5M E2E green: `kafka-phase5-e2e.ps1` (mention → assign → `COMMENT_ADDED`); Mongo payload double-parse fix |
+| 2026-06-20 | Gate Phase 6: `demo-e2e.ps1` pass on Kafka stack (Traefik + 3 connectors); script aligned with `.sh` (OTP from outbox, userId verify) |
 | 2026-06-19 | Phase 0M: Mongo replica set `rs0` local (`docker-compose.db.yml`, `mongo-rs-init`, `scripts/init-mongo-rs`) |
 | 2026-06-20 | Phase 3/4 local E2E: `kafka-phase3-e2e`, `kafka-phase4-e2e`; consumer group suffix fix; `docker-local-up.ps1` |

@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { Injectable } from "@nestjs/common";
+import type { ClientSession } from "mongoose";
 import { CommentNotificationPolicy } from "../../domain/policies/comment-notification.policy";
 import { CommentPreview } from "../../domain/value-objects/CommentPreview";
 import { TaskOutboxService } from "../../infrastructure/outbox/task-outbox.service";
@@ -23,25 +24,31 @@ export type PublishCommentNotificationsInput = {
 export class TaskCommentNotificationPublisher {
   constructor(private readonly taskOutboxService: TaskOutboxService) {}
 
-  async publishForNewComment(input: PublishCommentNotificationsInput): Promise<void> {
+  async publishForNewComment(
+    input: PublishCommentNotificationsInput,
+    session?: ClientSession,
+  ): Promise<void> {
     const commentPreview = CommentPreview.fromContent(input.content);
     const now = new Date().toISOString();
 
     const assigneeId = input.assigneeId;
     if (assigneeId && CommentNotificationPolicy.shouldNotifyAssignee(assigneeId, input.authorId)) {
-      await this.taskOutboxService.enqueueTaskCommented({
-        eventId: randomUUID(),
-        occurredAt: now,
-        taskId: input.taskId,
-        taskTitle: input.taskTitle,
-        recipientId: assigneeId,
-        actorId: input.authorId,
-        actorName: input.authorName,
-        actorAvatarUrl: input.authorAvatarUrl,
-        commentId: input.commentId,
-        commentPreview: commentPreview.toString(),
-        createdAt: now,
-      });
+      await this.taskOutboxService.enqueueTaskCommented(
+        {
+          eventId: randomUUID(),
+          occurredAt: now,
+          taskId: input.taskId,
+          taskTitle: input.taskTitle,
+          recipientId: assigneeId,
+          actorId: input.authorId,
+          actorName: input.authorName,
+          actorAvatarUrl: input.authorAvatarUrl,
+          commentId: input.commentId,
+          commentPreview: commentPreview.toString(),
+          createdAt: now,
+        },
+        session,
+      );
     }
 
     const mentionRecipients = CommentNotificationPolicy.mentionRecipients(
@@ -64,6 +71,7 @@ export class TaskCommentNotificationPublisher {
           commentPreview: commentPreview.toString(),
           createdAt: now,
         })),
+        session,
       );
     }
   }

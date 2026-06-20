@@ -27,6 +27,9 @@ export type KafkaConfig = {
   workspaceDeletedTopic: string;
   userProfileUpdatedTopic: string;
   userRegisteredTopic: string;
+  taskAssignedTopic: string;
+  taskCommentCreatedTopic: string;
+  taskCommentMentionedTopic: string;
 };
 
 @Injectable()
@@ -102,6 +105,15 @@ export class ConfigurationService {
       userRegisteredTopic:
         this.configService.get<string>("KAFKA_TOPIC_USER_REGISTERED") ??
         "collabspace.user.registered",
+      taskAssignedTopic:
+        this.configService.get<string>("KAFKA_TOPIC_TASK_ASSIGNED") ??
+        "collabspace.task.task_assigned",
+      taskCommentCreatedTopic:
+        this.configService.get<string>("KAFKA_TOPIC_COMMENT_CREATED") ??
+        "collabspace.task.comment_created",
+      taskCommentMentionedTopic:
+        this.configService.get<string>("KAFKA_TOPIC_COMMENT_MENTIONED") ??
+        "collabspace.task.comment_mentioned",
     };
   }
 

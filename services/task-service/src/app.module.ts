@@ -52,11 +52,13 @@ import { UserEventsKafkaConsumer } from "./infrastructure/messaging/kafka/user-e
 import { TaskOutboxService } from "./infrastructure/outbox/task-outbox.service";
 import { TaskOutboxProcessor } from "./infrastructure/outbox/task-outbox.processor";
 import { TaskOutboxEvent, TaskOutboxEventSchema } from "./infrastructure/outbox/task-outbox.schema";
-import { IdempotencyService } from "./infrastructure/idempotency/idempotency.service";
+import { MongoUnitOfWork } from "./infrastructure/database/mongo-unit-of-work";
+import { MONGO_UNIT_OF_WORK } from "./domain/ports/mongo-unit-of-work.port";
 import {
   IdempotencyKeyRecord,
   IdempotencyKeySchema,
 } from "./infrastructure/idempotency/idempotency-key.schema";
+import { IdempotencyService } from "./infrastructure/idempotency/idempotency.service";
 
 // Guards
 import { WorkspaceValidationGuard } from "./presentation/guards/workspace-validation.guard";
@@ -164,6 +166,11 @@ const Handlers = [
     UserReplicaLookupService,
     TaskOutboxService,
     TaskOutboxProcessor,
+    MongoUnitOfWork,
+    {
+      provide: MONGO_UNIT_OF_WORK,
+      useExisting: MongoUnitOfWork,
+    },
     TaskCommentNotificationPublisher,
     TaskCommentCountService,
     WorkspaceDeletionService,

@@ -3,6 +3,7 @@ import type {
   StoredTaskDomainEvent,
   UncommittedTaskDomainEvent,
 } from "../../domain/events/task-domain.events";
+import type { MongoSessionOptions } from "../../application/ports/mongo-session-options";
 
 export const ITaskEventStore = Symbol("ITaskEventStore");
 
@@ -13,5 +14,6 @@ export interface ITaskEventStore {
     streamId: string,
     expectedVersion: number,
     events: UncommittedTaskDomainEvent[],
+    options?: MongoSessionOptions,
   ): Promise<StoredTaskDomainEvent[]>;
 }

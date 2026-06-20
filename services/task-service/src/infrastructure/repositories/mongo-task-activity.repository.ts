@@ -7,6 +7,7 @@ import { TaskActivityItemMapper } from "../../application/mappers/task-activity-
 import type { Comment } from "../../domain/entities/comment.entity";
 import type { StoredTaskDomainEvent } from "../../domain/events/task-domain.events";
 import type { TaskActivityItemData } from "../../presentation/dtos/task-activity.response";
+import type { MongoSessionOptions } from "../../application/ports/mongo-session-options";
 import {
   TaskActivityPersistence,
   type TaskActivityDocument,
@@ -19,13 +20,21 @@ export class MongoTaskActivityRepository implements ITaskActivityRepository {
     private readonly activityModel: Model<TaskActivityDocument>,
   ) {}
 
-  async appendFromEventsAsync(taskId: string, events: StoredTaskDomainEvent[]): Promise<void> {
+  async appendFromEventsAsync(
+    taskId: string,
+    events: StoredTaskDomainEvent[],
+    options?: MongoSessionOptions,
+  ): Promise<void> {
     const items = TaskActivityItemMapper.fromStoredEvents(events);
-    await this.appendItems(taskId, items);
+    await this.appendItems(taskId, items, options);
   }
 
-  async appendFromCommentAsync(comment: Comment): Promise<void> {
-    await this.appendItems(comment.getTaskId(), [TaskActivityItemMapper.fromComment(comment)]);
+  async appendFromCommentAsync(comment: Comment, options?: MongoSessionOptions): Promise<void> {
+    await this.appendItems(
+      comment.getTaskId(),
+      [TaskActivityItemMapper.fromComment(comment)],
+      options,
+    );
   }
 
   async findByTaskIdAsync(
@@ -47,7 +56,11 @@ export class MongoTaskActivityRepository implements ITaskActivityRepository {
     return this.activityModel.countDocuments({ taskId }).exec();
   }
 
-  private async appendItems(taskId: string, items: TaskActivityItemData[]): Promise<void> {
+  private async appendItems(
+    taskId: string,
+    items: TaskActivityItemData[],
+    options?: MongoSessionOptions,
+  ): Promise<void> {
     if (items.length === 0) {
       return;
     }
@@ -71,7 +84,10 @@ export class MongoTaskActivityRepository implements ITaskActivityRepository {
           upsert: true,
         },
       })),
-      { ordered: false },
+      {
+        ordered: false,
+        ...(options?.session ? { session: options.session } : {}),
+      },
     );
   }
 

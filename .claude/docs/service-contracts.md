@@ -435,6 +435,23 @@ Debezium Outbox Event Router on `user_outbox_events` (`infrastructure/kafka/conn
 - **Consumer env**: `KAFKA_TOPIC_USER_PROFILE_UPDATED`, `KAFKA_TOPIC_USER_REGISTERED`; groups `${KAFKA_GROUP_ID}-user-events` / `-workspace-events` (see workspace section).
 - **Local E2E**: `scripts/kafka-phase4-e2e.ps1` — `user_registered` + `user_profile_updated` → `user_replicas` in task-service Mongo.
 
+### Kafka topics (task events — Phase 5M)
+
+Debezium Mongo Outbox Event Router on `task_outbox_events` (`infrastructure/kafka/connectors/task-outbox-connector.json`):
+
+| Outbox `eventType` | Kafka topic | Consumers |
+|--------------------|-------------|-----------|
+| `task.task_assigned` | `collabspace.task.task_assigned` | `notification-service` |
+| `task.comment_created` | `collabspace.task.comment_created` | `notification-service` |
+| `task.comment_mentioned` | `collabspace.task.comment_mentioned` | `notification-service` |
+
+- **Message value**: domain JSON from outbox `payload` field (MongoEventRouter). Mongo CDC may emit `payload` as a **JSON-encoded string** — consumers use `parseKafkaOutboxJsonValue` (parse twice when needed).
+- **Producer path (Phase 5M cutover)**: `TASK_OUTBOX_PUBLISH_MODE=debezium` — task-service outbox processor skips RMQ; CDC only.
+- **Transaction**: assign task + outbox, comment + activity + outbox — Mongo `withTransaction` (requires replica set `rs0`).
+- **Consumer env**: `KAFKA_TOPIC_TASK_ASSIGNED`, `KAFKA_TOPIC_COMMENT_CREATED`, `KAFKA_TOPIC_COMMENT_MENTIONED`; group `${KAFKA_GROUP_ID}-task-events`.
+- **Notification types**: `task.comment_created` → `COMMENT_ADDED`; `task.comment_mentioned` → `COMMENT_MENTIONED`; `task.task_assigned` → `TASK_ASSIGNED`.
+- **Local E2E**: `scripts/kafka-phase5-e2e.ps1` — mention (unassigned task) → assign → assignee comment → notifications.
+
 ### User directory replicas (`user_registered`, `user_profile_updated`)
 
 Producer: `user-service` (outbox → Debezium → Kafka when `USER_OUTBOX_PUBLISH_MODE=debezium`; legacy RMQ broadcast when `rabbitmq`).

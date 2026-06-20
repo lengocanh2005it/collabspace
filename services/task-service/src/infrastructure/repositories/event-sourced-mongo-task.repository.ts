@@ -4,6 +4,7 @@ import { InjectModel } from "@nestjs/mongoose";
 import type { Model } from "mongoose";
 import type { ITaskRepository } from "../../application/ports/ITaskRepository";
 import type { TaskListFilter, TaskListOptions } from "../../application/ports/task-list-filter";
+import type { MongoSessionOptions } from "../../application/ports/mongo-session-options";
 import { ITaskEventStore as ITaskEventStoreToken } from "../../application/ports/ITaskEventStore";
 import type { ITaskEventStore } from "../../application/ports/ITaskEventStore";
 import { ITaskActivityRepository as ITaskActivityRepositoryToken } from "../../application/ports/ITaskActivityRepository";
@@ -26,19 +27,24 @@ export class EventSourcedMongoTaskRepository implements ITaskRepository {
     private readonly taskActivityRepository: ITaskActivityRepository,
   ) {}
 
-  async saveAsync(domainTask: TaskDomain): Promise<void> {
+  async saveAsync(domainTask: TaskDomain, options?: MongoSessionOptions): Promise<void> {
     const uncommitted = [...domainTask.getUncommittedEvents()];
     if (uncommitted.length === 0) {
       return;
     }
 
     const streamId = domainTask.getId().getValue();
-    const appended = await this.eventStore.append(streamId, domainTask.getVersion(), uncommitted);
+    const appended = await this.eventStore.append(
+      streamId,
+      domainTask.getVersion(),
+      uncommitted,
+      options,
+    );
     domainTask.clearUncommittedEvents();
     domainTask.setVersion(appended[appended.length - 1].version);
 
-    await this.taskActivityRepository.appendFromEventsAsync(streamId, appended);
-    await this.syncProjectionFromAggregate(domainTask);
+    await this.taskActivityRepository.appendFromEventsAsync(streamId, appended, options);
+    await this.syncProjectionFromAggregate(domainTask, options);
   }
 
   async findByIdAsync(id: TaskId): Promise<TaskDomain | null> {
@@ -185,11 +191,16 @@ export class EventSourcedMongoTaskRepository implements ITaskRepository {
     }
   }
 
-  private async syncProjectionFromAggregate(domainTask: TaskDomain): Promise<void> {
+  private async syncProjectionFromAggregate(
+    domainTask: TaskDomain,
+    options?: MongoSessionOptions,
+  ): Promise<void> {
     const streamId = domainTask.getId().getValue();
 
     if (domainTask.isDeleted()) {
-      await this.taskModel.deleteOne({ _id: streamId }).exec();
+      await this.taskModel
+        .deleteOne({ _id: streamId }, options?.session ? { session: options.session } : undefined)
+        .exec();
       return;
     }
 
@@ -198,6 +209,7 @@ export class EventSourcedMongoTaskRepository implements ITaskRepository {
       .findByIdAndUpdate(streamId, persistenceData, {
         upsert: true,
         new: true,
+        session: options?.session,
       })
       .exec();
   }

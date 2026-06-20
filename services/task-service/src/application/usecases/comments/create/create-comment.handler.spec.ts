@@ -49,12 +49,17 @@ describe("CreateCommentHandler", () => {
       countByTaskIdAsync: jest.fn(),
     };
 
+    const mockUnitOfWork = {
+      run: jest.fn(async (work) => work({} as never)),
+    };
+
     handler = new CreateCommentHandler(
       mockCommentRepo,
       mockTaskRepo,
       mockUserReplicaLookup as UserReplicaLookupService,
       mockCommentNotificationPublisher,
       mockTaskActivityRepository,
+      mockUnitOfWork,
     );
   });
 
