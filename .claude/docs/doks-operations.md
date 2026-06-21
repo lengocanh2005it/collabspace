@@ -1,43 +1,53 @@
-# Droplet VPS — vận hành & troubleshooting (agents)
+# DigitalOcean Kubernetes — vận hành & DOKS migration (agents)
 
-Hướng dẫn cho AI agents khi debug/deploy **production k3s trên DigitalOcean Droplet**. URL công khai: `docs/service-urls.md`.
+Hướng dẫn cho AI agents khi debug/deploy production hiện tại trên **Droplet k3s single-node** và khi migration sang **DOKS 3 node**. URL công khai: `docs/service-urls.md`.
 
-## Thông tin cố định
+## Trạng thái môi trường
 
 | Mục | Giá trị |
 |-----|---------|
-| Host | `167.172.77.110` |
-| SSH | `ssh root@167.172.77.110` (key-based; không hỏi password trong agent flow) |
-| Repo trên VPS | `/opt/collabspace` |
-| Kubeconfig | `/etc/rancher/k3s/k3s.yaml` |
+| Production hiện tại | Droplet k3s single-node (`167.172.77.110`) |
+| Migration target | DOKS 3 worker nodes (SGP1), blue/green song song với Droplet |
+| Domain | `collabspace.ngocanh2005it.site` |
 | Namespace app | `collabspace` |
 | Helm release | `collabspace` |
 | Chart | `infrastructure/helm/collabspace` |
 | Prod values (gitignored) | `infrastructure/helm/collabspace/values-prod.yaml` |
-| Phase-0 secrets (gitignored) | `infrastructure/deploy/phase0.env` |
 
-**Không** đọc/commit `phase0.env`, `values-prod.yaml`, hoặc in secret ra log/chat.
+**Không** đọc/commit `values-prod.yaml` hoặc in secret ra log/chat.
+
+## DOKS target model
+
+DOKS là managed Kubernetes: DigitalOcean quản lý control plane. Nếu cần control plane HA, bật tùy chọn **HA control plane** của DOKS; nếu muốn tự quản lý control plane thật thì đó là mô hình kubeadm/k3s multi-node trên Droplet, không phải DOKS.
+
+Migration khuyến nghị là **blue/green**:
+
+1. Giữ Droplet k3s production đang chạy.
+2. Tạo DOKS 3 node và lấy kubeconfig bằng `doctl kubernetes cluster kubeconfig save <cluster-name>`.
+3. Cài Vault + ESO, seed lại `secret/collabspace/prod`.
+4. Deploy Helm release `collabspace` lên DOKS.
+5. Restore Postgres/Mongo nếu cần giữ data thật.
+6. Smoke test qua DOKS LoadBalancer IP.
+7. Đổi DNS sang DOKS LoadBalancer IP; giữ Droplet vài ngày để rollback.
 
 ## CI/CD pipeline (per-service)
 
-**Path filters:** `.github/path-filters.yml` — dùng chung cho `ci.yml` và `docker-deploy.yml`.
+**Path filters:** `.github/paths-filter.yml` — dùng chung cho `ci.yml` và `docker-deploy.yml`.
 
 ### CI (`ci.yml`) — mỗi PR / push `main`
 
-- Chỉ chạy **lint + build + test** cho service có file đổi (hoặc `packages/shared`, `nest-auth`, …).
+- Chỉ chạy **lint + build + test** cho service có file đổi.
 - PR chỉ sửa `docs/` → skip service CI (job `ci-gate` pass).
 - Manual: **Actions → CI → Run workflow** — `services` rỗng = cả 5.
 
 ### CD (`docker-deploy.yml`) — push `main` / dispatch
 
+Hiện tại production Droplet dùng SSH vào server rồi chạy Helm với kubeconfig k3s local. Sau migration sang DOKS, cập nhật workflow để dùng `KUBECONFIG_DOKS` secret và chạy `helm upgrade` trực tiếp vào DOKS thay vì SSH. Xem backlog: `docs/team/phan-phu-tho-infrastructure-backlog.md`.
+
 1. `detect-changes` → danh sách service cần build/deploy.
-2. **Build matrix** — chỉ image của service đổi → GHCR tag **`{service}-{sha7}`** (vd. `auth-service-a1b2c3d`).
-3. SSH Droplet → `git-sync-private-repo.sh` → `helm-deploy-ci.sh` → `helm-rollout.sh` với:
-   - `DEPLOY_SERVICES=auth-service,...`
-   - `SERVICE_IMAGE_TAGS=auth-service:auth-service-a1b2c3d,...`
+2. **Build matrix** — chỉ image của service đổi → GHCR tag **`{service}-{sha7}`**.
+3. `helm upgrade --install collabspace` với image tags mới.
 4. Service **không** đổi giữ nguyên tag trong `values-prod.yaml`.
-5. Push chỉ Helm/infra → deploy chart, **không** build image.
-6. Sau deploy `main` → `run-demo-e2e-prod.sh` (opt-out: dispatch + `run_e2e=false`).
 
 **Manual deploy một service:**
 
@@ -47,24 +57,23 @@ Actions → Build Images And Deploy → Run workflow
   image_tag: (để trống = task-service-<sha7>)
 ```
 
-**Legacy (tay trên Droplet):** `IMAGE_TAG=<sha>` vẫn set cùng tag cho cả 5 app.
+GitHub secrets cho DOKS target: `KUBECONFIG_DOKS`, `GHCR_USERNAME`, `GHCR_TOKEN`.
 
-GitHub secrets: `DROPLET_HOST`, `DROPLET_USER`, `DROPLET_SSH_KEY`, `GHCR_USERNAME`, `GHCR_TOKEN`.
+**Alertmanager → Slack:** `SLACK_ALERT_WEBHOOK_URL` trong Vault `slack_alert_webhook_url` → ESO `alertmanager-slack-secret`. Bật `observability.alertmanager.slack.enabled: true` trong `values-prod.yaml`.
 
-**Alertmanager → Slack:** `SLACK_ALERT_WEBHOOK_URL` trong `phase0.env` → Vault `slack_alert_webhook_url` → ESO `alertmanager-slack-secret`. Bật `observability.alertmanager.slack.enabled: true` trong `values-prod.yaml`. One-shot: `SLACK_ALERT_WEBHOOK_URL=... bash infrastructure/deploy/wire-alertmanager-slack-droplet.sh` (trên Droplet).
-
-**Vault seed:** `phase0.env` phải có `BREVO_API_KEY` (auth-service crash nếu thiếu). `seed-vault-k3s-from-phase0.sh` fail sớm nếu thiếu; `SLACK_ALERT_WEBHOOK_URL` trống thì giữ giá trị Vault cũ.
+**Vault seed:** phải có `BREVO_API_KEY` (auth-service crash nếu thiếu).
 
 ## Dev local ≠ image production (nguyên nhân hay gặp)
 
 | Triệu chứng | Nguyên nhân thường gặp |
 |-------------|------------------------|
 | Pod `CrashLoopBackOff`, log rỗng hoặc exit ngay | Thiếu module runtime trong Docker image (`jsonwebtoken`, `@nestjs/common`) |
-| Liveness/readiness **404** | Global prefix lệch: Helm/Traefik expect `/api/v1/...`, image cũ chỉ có `/api/...` |
+| Liveness/readiness **404** | Global prefix lệch: Helm/Traefik expect `/api/v1/...` |
 | CI build fail ở `pnpm install` | Script `prepare` cần `git` — Dockerfile dùng `--ignore-scripts` |
 | CI build fail ở `nest build` | Dockerfile thiếu copy/build `packages/nest-auth` |
-| `timed out waiting for the condition` | Pod không Ready (crash hoặc probe fail); Helm upgrade ghi đè hotfix tay |
+| `timed out waiting for the condition` | Pod không Ready (crash hoặc probe fail) |
 | Gateway **503** / `no available server` | Không pod Ready; Traefik không có backend |
+| Pod `Pending` | PVC không bind — kiểm tra `storageClass: do-block-storage` |
 
 ### Monorepo Docker — bắt buộc nhớ
 
@@ -72,9 +81,7 @@ Image NestJS dùng workspace packages (`@collabspace/shared`, `@collabspace/nest
 
 1. **Build stage:** copy + build cả `shared` và `nest-auth` trước service.
 2. **Prod deps:** copy `packages/*/node_modules` vào runner (shared deps như `jsonwebtoken`).
-3. **Runtime:** `NODE_PATH=/app/node_modules:/app/services/<service>/node_modules` — trong **Dockerfile ENV** và **Helm ConfigMap** (`NODE_PATH` per service). Peer deps của `nest-auth` (`@nestjs/common`) nằm ở service `node_modules`, không tự resolve từ `packages/nest-auth/dist`.
-
-**Không** patch `kubectl set env` / probe path tay rồi bỏ quên — lần `helm upgrade` sau sẽ ghi đè deployment (trừ khi đã vào chart).
+3. **Runtime:** `NODE_PATH=/app/node_modules:/app/services/<service>/node_modules` — trong **Dockerfile ENV** và **Helm ConfigMap**.
 
 ## Health & probe contract
 
@@ -83,81 +90,97 @@ Image NestJS dùng workspace packages (`@collabspace/shared`, `@collabspace/nest
 - Traefik route: `PathPrefix(/api/v1/<area>)` — path tới pod **không** bị strip
 - Sau đổi `main.ts` prefix hoặc controller path → verify **cả** probe Helm **và** gateway URL
 
-## Lệnh chẩn đoán nhanh (SSH)
+## Lệnh chẩn đoán nhanh
 
 ```bash
-export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+# Pod status
+kubectl get pods -n collabspace
 
 # Pod + image tag
-kubectl get pods -n collabspace -l 'app in (auth-service,user-service,workspace-service,task-service,notification-service)'
 kubectl get deploy -n collabspace -o custom-columns=NAME:.metadata.name,READY:.status.readyReplicas,IMAGE:.spec.template.spec.containers[0].image
 
-# Crash log (pod đang restart)
+# Crash log
 kubectl logs -n collabspace deploy/notification-service --tail=40
 kubectl logs -n collabspace deploy/notification-service --previous --tail=40
 
-# Probe path trên deployment
+# Probe path
 kubectl get deploy notification-service -n collabspace -o jsonpath='{.spec.template.spec.containers[0].livenessProbe.httpGet.path}'
 
 # NODE_PATH trong ConfigMap
 kubectl get configmap notification-service-config -n collabspace -o jsonpath='{.data.NODE_PATH}'
 
-# Rollout events
+# Events
 kubectl describe pod -n collabspace -l app=notification-service | tail -20
+
+# PVC status
+kubectl get pvc -n collabspace
 ```
 
 Từ máy ngoài:
 
 ```bash
 curl -s -o /dev/null -w "%{http_code}\n" http://167.172.77.110/api/v1/notifications/health/live
+# hoặc qua domain
+curl -s -o /dev/null -w "%{http_code}\n" https://collabspace.ngocanh2005it.site/api/v1/notifications/health/live
 ```
 
-## Rollout thủ công trên VPS
+## Rollout thủ công
 
 ```bash
-cd /opt/collabspace
-git pull   # hoặc CI đã sync qua git-sync-private-repo.sh
-export IMAGE_TAG=<commit-sha>
-export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
-export IMAGE_TAG=<commit-sha>
-# Chỉ khi có migration/schema mới:
-# export RUN_K8S_MIGRATIONS=true
-bash infrastructure/deploy/helm-rollout.sh
+# Từ máy local (kubeconfig đã setup)
+cd E:\collabspace   # hoặc đường dẫn repo
+
+helm upgrade --install collabspace infrastructure/helm/collabspace \
+  --namespace collabspace \
+  -f infrastructure/helm/collabspace/values-prod.yaml
+
+# Xem rollout status
+kubectl rollout status deployment/auth-service -n collabspace
 ```
 
-**CI workflow:** chỉ build image + Helm rollout. **Không** migrate, **không** seed từ GitHub Actions. Migration/seed chỉ chạy thủ công trên Droplet: `run-k8s-migrations.sh`, `run-k8s-seed.sh`, `run-k8s-full-reset.sh`.
+Vault/ESO (khi đổi secret keys): apply `external-secrets.prod.yaml`, force ESO sync — xem `infrastructure/vault/README.md`.
 
-Vault/ESO (khi đổi secret keys): `infrastructure/vault/scripts/seed-vault-k3s-from-phase0.sh`, apply `external-secrets.prod.yaml`, force ESO sync — xem `infrastructure/vault/README.md`.
-
-**Reset data + migrate + seed (verbose):** `bash infrastructure/deploy/run-k8s-full-reset.sh` — **scale apps về 0** → wipe PG/Mongo/Redis → migrate (Postgres only) → **seed DB** (gồm `user_replicas` task/notification) → restore apps. Fail giữ apps ở 0. `SKIP_WIPE=true` = chỉ migrate+seed. Helper: `vps-full-reset-now.sh`.
-
-**Migration trong helm-rollout (tùy chọn):** `RUN_K8S_MIGRATIONS=true bash infrastructure/deploy/helm-rollout.sh` — scale down auth/user/workspace, chạy Jobs, restore replicas. Mặc định `false` (CI và deploy tay thường ngày).
-
-## Trước khi push thay đổi ảnh hưởng deploy
-
-1. `pnpm run build` service đích + `packages/shared` / `nest-auth` nếu đụng workspace.
-2. (Khuyến nghị) Build smoke một image local:
+**Reset data + migrate + seed:**
 
 ```bash
-docker build -f infrastructure/docker/Dockerfile.service \
-  --build-arg SERVICE_NAME=notification-service \
-  -t collabspace-notification-service:smoke .
-docker run --rm -e SERVICE_JWT_SECRET=test -e MONGO_URI=mongodb://localhost:27017/test \
-  collabspace-notification-service:smoke node -e "require('@collabspace/shared')"
+# Scale down apps
+kubectl scale deployment --all --replicas=0 -n collabspace
+
+# Sau khi wipe/migrate xong, scale lại
+kubectl scale deployment --all --replicas=1 -n collabspace
 ```
 
-3. Đổi `Dockerfile.service`, Helm probe, hoặc `main.ts` prefix → cập nhật doc này / `development-workflows.md` nếu quy trình đổi.
+## StorageClass
 
-## Single-node k3s — hạn chế
+Droplet k3s hiện dùng `local-path`. DOKS target phải dùng `do-block-storage` cho PVC. Nếu pod `Pending` do PVC:
 
-- `maxUnavailable: 0` + 1 node → rollout chậm; pod cũ có thể kẹt `Terminating`
-- `helm-rollout.sh` có `prune_stuck_terminating_pods` — vẫn có thể timeout nếu pod mới crash loop
-- Notification-service + task-service Kafka consumers: cần `KAFKA_CONSUMERS_ENABLED=true` và broker reachable trước khi verify event flows
-- Debezium Connect + connectors: đăng ký sau khi Postgres/Mongo stack healthy — xem `infrastructure/kafka/README.md`
+```bash
+kubectl describe pvc <pvc-name> -n collabspace
+# Sửa storageClass trong values-prod.yaml rồi helm upgrade lại
+```
+
+## Vault unseal sau restart
+
+Vault standalone cần unseal lại mỗi khi pod restart, cả trên Droplet k3s lẫn DOKS:
+
+```bash
+kubectl exec -n vault vault-0 -- vault operator unseal <unseal-key>
+```
+
+Giữ unseal key trong password manager — không commit vào repo.
+
+## DOKS-specific — lưu ý
+
+- Lấy kubeconfig: `doctl kubernetes cluster kubeconfig save <cluster-name>`
+- Traefik service `LoadBalancer` sẽ tạo DigitalOcean Load Balancer và cấp IP mới; chỉ đổi DNS sau khi smoke test pass.
+- `maxUnavailable: 0` + PDB `minAvailable: 1` — rollout an toàn khi drain node
+- Kafka consumer (notification/task): cần `KAFKA_CONSUMERS_ENABLED=true` và broker reachable
+- Debezium Connect + connectors: đăng ký sau khi Postgres/Mongo stack healthy
+- Nếu PVC không bind trên DOKS, kiểm tra `storageClass: do-block-storage`.
 
 ## Liên quan
 
 - URL & health công khai: `docs/service-urls.md`
-- Phase deploy: `docs/deployment-k3s-phases.md`
 - Helm: `infrastructure/helm/README.md`
 - Resilience / readiness: `.claude/docs/resilience.md`
+- Infra backlog: `docs/team/phan-phu-tho-infrastructure-backlog.md`

@@ -3,7 +3,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
-ENV_FILE="$SCRIPT_DIR/droplet.env"
+ENV_FILE="$SCRIPT_DIR/doks.env"
 
 EXTERNAL_GHCR_USERNAME="${GHCR_USERNAME:-}"
 EXTERNAL_GHCR_TOKEN="${GHCR_TOKEN:-}"

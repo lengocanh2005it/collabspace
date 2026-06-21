@@ -353,7 +353,7 @@ kubectl get pods -n collabspace
 kubectl get svc traefik -n collabspace
 ```
 
-Chart docs: [infrastructure/helm/README.md](infrastructure/helm/README.md). **Production DO (k3s):** [docs/deployment-k3s-phases.md](docs/deployment-k3s-phases.md). So sánh phương án: [docs/digitalocean-production-options.md](docs/digitalocean-production-options.md). Legacy Compose Droplet: [docs/deployment-digitalocean-droplet.md](docs/deployment-digitalocean-droplet.md). Legacy plain YAML: [infrastructure/k8s/README.md](infrastructure/k8s/README.md).
+Chart docs: [infrastructure/helm/README.md](infrastructure/helm/README.md). **Production DO (k3s):** [docs/deployment-k3s-phases.md](docs/deployment-k3s-phases.md). So sánh phương án: [docs/digitalocean-production-options.md](docs/digitalocean-production-options.md). Legacy Compose Droplet: [docs/deployment-digitalocean-doks.md](docs/deployment-digitalocean-doks.md). Legacy plain YAML: [infrastructure/k8s/README.md](infrastructure/k8s/README.md).
 
 ### K8s Resource Summary
 
@@ -381,7 +381,7 @@ GitHub Actions workflows:
 1. `.github/workflows/ci.yml` — `lint` (`pnpm run lint:ci`) then build + test on PRs and `main`.
 2. `.github/workflows/docker-deploy.yml` — build app service images, push GHCR; **Helm deploy on k3s Droplet** via SSH (`infrastructure/deploy/helm-deploy-ci.sh`).
 
-Lộ trình production: [docs/deployment-k3s-phases.md](docs/deployment-k3s-phases.md). URL prod/local: [docs/service-urls.md](docs/service-urls.md). Compose legacy: [docs/deployment-digitalocean-droplet.md](docs/deployment-digitalocean-droplet.md).
+Lộ trình production: [docs/deployment-k3s-phases.md](docs/deployment-k3s-phases.md). URL prod/local: [docs/service-urls.md](docs/service-urls.md). Compose legacy: [docs/deployment-digitalocean-doks.md](docs/deployment-digitalocean-doks.md).
 
 ## Project Structure
 

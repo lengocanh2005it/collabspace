@@ -4,7 +4,7 @@ Tài liệu này mô tả **thứ tự triển khai** CollabSpace lên **một D
 
 **Phương án đã chọn:** xem [digitalocean-production-options.md](./digitalocean-production-options.md).
 
-**Đường deploy legacy (Docker Compose):** chỉ dùng cho demo nhanh — xem [deployment-digitalocean-droplet.md](./deployment-digitalocean-droplet.md).
+**Đường deploy legacy (Docker Compose):** chỉ dùng cho demo nhanh — xem [deployment-digitalocean-doks.md](./deployment-digitalocean-doks.md).
 
 ---
 
@@ -311,15 +311,41 @@ Checklist đầy đủ: [production-hardening.md](./production-hardening.md).
 
 ---
 
-## Phase 6 — Nâng cấp (khi cần)
+## Phase 6 — Migration sang DOKS 3 node (kế hoạch tiếp theo)
 
-Chỉ làm khi có user thật hoặc cần SLA cao hơn:
+Production hiện tại vẫn là **Droplet k3s single-node**. Phase 6 là bước nâng cấp tiếp theo khi cần nhiều node, DigitalOcean Load Balancer managed, và control plane do DigitalOcean quản lý.
+
+> DOKS là managed Kubernetes: DigitalOcean quản lý control plane. Nếu cần control plane HA, bật tùy chọn **HA control plane** của DOKS. Nếu muốn tự quản lý control plane thật thì dùng kubeadm/k3s multi-node trên Droplet, không phải DOKS.
+
+### Target architecture
+
+| Thành phần | Target |
+|---|---|
+| Cluster | DOKS SGP1, 3 worker nodes |
+| Gateway | Traefik `LoadBalancer` → DigitalOcean Load Balancer IP |
+| StorageClass | `do-block-storage` cho PVC |
+| Secrets | Vault + External Secrets Operator, path `secret/collabspace/prod` |
+| Deploy | Helm release `collabspace`, namespace `collabspace` |
+| CI/CD | `KUBECONFIG_DOKS` secret, không SSH vào Droplet |
+
+### Thứ tự migration khuyến nghị
+
+1. Giữ Droplet k3s production chạy ổn định, không cutover sớm.
+2. Tạo DOKS 3 node ở `SGP1`; lấy kubeconfig bằng `doctl kubernetes cluster kubeconfig save <cluster-name>`.
+3. Chuẩn bị `values-prod.yaml` cho DOKS: `traefik.service.type=LoadBalancer`, PVC dùng `do-block-storage`, image GHCR tag đúng, `global.externalSecrets.enabled=true`.
+4. Cài Vault + ESO trên DOKS; init/unseal Vault, seed `secret/collabspace/prod` từ `phase0.env` hoặc từ secret source hiện tại.
+5. Deploy Helm lên DOKS, chạy migration, verify readiness.
+6. Restore dữ liệu Postgres/Mongo từ Droplet nếu cần giữ dữ liệu thật; Redis/Kafka transient có thể bỏ qua cho demo.
+7. Smoke test qua DOKS Load Balancer IP.
+8. Đổi DNS `collabspace.ngocanh2005it.site` sang Load Balancer IP DOKS; giữ Droplet vài ngày để rollback.
+
+### Lộ trình nâng cấp sau DOKS
 
 ```text
-Droplet + k3s
-  → DOKS 3 worker (không HA control plane)
-  → Managed PostgreSQL + MongoDB Atlas
-  → DOKS + HA control plane
+DOKS 3 node
+  → Managed PostgreSQL (DO Managed DB)
+  → MongoDB Atlas
+  → DOKS HA control plane
   → Vault HA / HCP Vault
 ```
 
@@ -331,7 +357,7 @@ Droplet + k3s
 |------------|---------|----------|
 | Local dev | Docker Compose | `infrastructure/docker/` |
 | Production (DO) | k3s + Helm + Vault + ESO | Tài liệu này |
-| Legacy / demo nhanh | Docker Compose trên Droplet | [deployment-digitalocean-droplet.md](./deployment-digitalocean-droplet.md) |
+| Legacy / demo nhanh | Docker Compose trên Droplet | [deployment-digitalocean-doks.md](./deployment-digitalocean-doks.md) |
 | Tham chiếu YAML | `infrastructure/k8s/` | Không dùng cho deploy mới |
 
 ---

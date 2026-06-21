@@ -52,7 +52,7 @@ permissions:
 
 concurrency:
 
-  group: k3s-deploy
+  group: doks-deploy
 
   cancel-in-progress: false
 
@@ -318,97 +318,13 @@ jobs:
 
     steps:
 
-      - name: Checkout (for helm chart hash)
+      - name: Checkout
 
         uses: actions/checkout@v4
 
 
 
-      - name: Compute per-service deploy tags
-
-        id: deploy-vars
-
-        shell: bash
-
-        run: |
-
-          set -euo pipefail
-
-          services='${{ needs.detect-changes.outputs.services }}'
-
-          sha7="${GITHUB_SHA:0:7}"
-
-          override="${{ github.event.inputs.image_tag }}"
-
-          if [[ "$services" == "[]" ]]; then
-
-            echo "deploy_services=" >> "$GITHUB_OUTPUT"
-
-            echo "service_image_tags=" >> "$GITHUB_OUTPUT"
-
-            exit 0
-
-          fi
-
-          deploy_services=""
-
-          service_image_tags=""
-
-          while IFS= read -r svc; do
-
-            [[ -z "$svc" ]] && continue
-
-            if [[ -n "$override" ]]; then
-
-              tag="$override"
-
-            else
-
-              tag="${svc}-${sha7}"
-
-            fi
-
-            deploy_services+="${svc},"
-
-            service_image_tags+="${svc}:${tag},"
-
-          done < <(echo "$services" | jq -r '.[]')
-
-          echo "deploy_services=${deploy_services%,}" >> "$GITHUB_OUTPUT"
-
-          echo "service_image_tags=${service_image_tags%,}" >> "$GITHUB_OUTPUT"
-
-
-
-      - name: Compute Helm chart hash
-
-        id: helm-hash
-
-        run: |
-
-          hash=$(sha256sum infrastructure/helm/collabspace/Chart.yaml | cut -d' ' -f1)
-
-          echo "chart_hash=$hash" >> "$GITHUB_OUTPUT"
-
-
-
-      - name: Cache Helm dependencies
-
-        id: helm-cache
-
-        uses: actions/cache@v4
-
-        with:
-
-          path: infrastructure/helm/collabspace/charts
-
-          key: helm-deps-${{ steps.helm-hash.outputs.chart_hash }}
-
-
-
       - name: Set up Helm
-
-        if: steps.helm-cache.outputs.cache-hit != 'true'
 
         uses: azure/setup-helm@v4
 
@@ -418,9 +334,31 @@ jobs:
 
 
 
-      - name: Package Helm deps for Droplet
+      - name: Set up kubectl
 
-        if: steps.helm-cache.outputs.cache-hit != 'true'
+        uses: azure/setup-kubectl@v4
+
+
+
+      - name: Configure kubeconfig (DOKS)
+
+        run: |
+
+          mkdir -p $HOME/.kube
+
+          echo "${{ secrets.KUBECONFIG_DOKS }}" | base64 -d > $HOME/.kube/config
+
+          chmod 600 $HOME/.kube/config
+
+
+
+      - name: Verify cluster connectivity
+
+        run: kubectl get nodes
+
+
+
+      - name: Add Helm repos & update dependencies
 
         run: |
 
@@ -436,166 +374,106 @@ jobs:
 
 
 
-      - name: Upload Helm charts to Droplet
+      - name: Compute per-service image tag overrides
 
-        uses: appleboy/scp-action@v0.1.7
+        id: deploy-vars
 
-        with:
+        shell: bash
 
-          host: ${{ secrets.DROPLET_HOST }}
+        run: |
 
-          username: ${{ secrets.DROPLET_USER }}
+          set -euo pipefail
 
-          key: ${{ secrets.DROPLET_SSH_KEY }}
+          services='${{ needs.detect-changes.outputs.services }}'
 
-          source: infrastructure/helm/collabspace/charts
+          sha7="${GITHUB_SHA:0:7}"
 
-          target: /opt/collabspace
+          override="${{ github.event.inputs.image_tag }}"
 
+          helm_set_args=""
 
+          if [[ "$services" != "[]" ]]; then
 
-      - name: Sync repo on Droplet
+            while IFS= read -r svc; do
 
-        uses: appleboy/ssh-action@v1.2.0
+              [[ -z "$svc" ]] && continue
 
-        env:
+              if [[ -n "$override" ]]; then
 
-          GHCR_OWNER: ${{ github.repository_owner }}
+                tag="$override"
 
-          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+              else
 
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                tag="${svc}-${sha7}"
 
-        with:
+              fi
 
-          host: ${{ secrets.DROPLET_HOST }}
+              # Convert service name to helm key: auth-service → apps.auth-service.image.tag
 
-          username: ${{ secrets.DROPLET_USER }}
+              helm_set_args+=" --set apps.${svc}.image.tag=${tag}"
 
-          key: ${{ secrets.DROPLET_SSH_KEY }}
+            done < <(echo "$services" | jq -r '.[]')
 
-          command_timeout: 5m
+          fi
 
-          envs: GHCR_OWNER,GHCR_TOKEN,GITHUB_TOKEN
+          echo "helm_set_args=${helm_set_args}" >> "$GITHUB_OUTPUT"
 
-          script: |
 
-            set -euo pipefail
 
-            export APP_DIR=/opt/collabspace
+      - name: Write values-prod.yaml
 
-            export PHASE0_ENV=/opt/collabspace/infrastructure/deploy/phase0.env
+        run: |
 
-            export GITHUB_TOKEN="${GITHUB_TOKEN}"
+          echo "${{ secrets.HELM_VALUES_PROD }}" | base64 -d > /tmp/values-prod.yaml
 
-            start=$SECONDS
 
-            # Discard any generated files (e.g. Chart.lock from helm dependency update)
-            # that would block git checkout before the sync script can pull the fix itself.
-            git -C /opt/collabspace restore . 2>/dev/null || true
 
-            bash /opt/collabspace/infrastructure/deploy/git-sync-private-repo.sh
+      - name: Helm upgrade (DOKS)
 
-            echo "Repo sync finished in $((SECONDS - start))s"
+        run: |
 
+          helm upgrade --install collabspace infrastructure/helm/collabspace \
 
+            --namespace collabspace \
 
-      - name: Deploy Helm on k3s over SSH
+            --create-namespace \
 
-        uses: appleboy/ssh-action@v1.2.0
+            --timeout 20m \
 
-        env:
+            --wait \
 
-          DEPLOY_SERVICES: ${{ steps.deploy-vars.outputs.deploy_services }}
+            -f /tmp/values-prod.yaml \
 
-          SERVICE_IMAGE_TAGS: ${{ steps.deploy-vars.outputs.service_image_tags }}
+            ${{ steps.deploy-vars.outputs.helm_set_args }}
 
-          GHCR_OWNER: ${{ github.repository_owner }}
 
-          GHCR_USERNAME: ${{ secrets.GHCR_USERNAME }}
 
-          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+      - name: Verify rollout
 
-          SKIP_HELM_DEP_UPDATE: "true"
+        run: |
 
-        with:
+          kubectl rollout status deployment/auth-service -n collabspace --timeout=5m
 
-          host: ${{ secrets.DROPLET_HOST }}
+          kubectl rollout status deployment/user-service -n collabspace --timeout=5m
 
-          username: ${{ secrets.DROPLET_USER }}
+          kubectl rollout status deployment/workspace-service -n collabspace --timeout=5m
 
-          key: ${{ secrets.DROPLET_SSH_KEY }}
+          kubectl rollout status deployment/task-service -n collabspace --timeout=5m
 
-          command_timeout: 25m
+          kubectl rollout status deployment/notification-service -n collabspace --timeout=5m
 
-          envs: DEPLOY_SERVICES,SERVICE_IMAGE_TAGS,GHCR_OWNER,GHCR_USERNAME,GHCR_TOKEN,SKIP_HELM_DEP_UPDATE
 
-          script: |
 
-            set -euo pipefail
-
-            export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
-
-            cd /opt/collabspace
-
-            export APP_DIR=/opt/collabspace
-
-            export PHASE0_ENV=/opt/collabspace/infrastructure/deploy/phase0.env
-
-            export RUN_K8S_MIGRATIONS=false
-
-            export DEPLOY_SERVICES
-
-            export SERVICE_IMAGE_TAGS
-
-            export GHCR_OWNER
-
-            export GHCR_USERNAME
-
-            export GHCR_TOKEN
-
-            export SKIP_HELM_DEP_UPDATE
-
-            start=$SECONDS
-
-            bash infrastructure/deploy/helm-deploy-ci.sh
-
-            echo "Helm deploy finished in $((SECONDS - start))s"
-
-
-
-      - name: Run MVP demo E2E smoke over SSH
+      - name: Run MVP demo E2E smoke
 
         if: github.event_name == 'push' || github.event.inputs.run_e2e != 'false'
 
-        uses: appleboy/ssh-action@v1.2.0
+        env:
 
-        with:
+          BASE_URL: https://collabspace.ngocanh2005it.site/api/v1
 
-          host: ${{ secrets.DROPLET_HOST }}
+        run: |
 
-          username: ${{ secrets.DROPLET_USER }}
+          echo "==> MVP demo E2E smoke (via Traefik LB)..."
 
-          key: ${{ secrets.DROPLET_SSH_KEY }}
-
-          command_timeout: 10m
-
-          script: |
-
-            set -euo pipefail
-
-            export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
-
-            cd /opt/collabspace
-
-            echo "==> MVP demo E2E smoke (7 steps via Traefik)..."
-
-            export PHASE0_ENV=/opt/collabspace/infrastructure/deploy/phase0.env
-
-            start=$SECONDS
-
-            bash infrastructure/deploy/run-demo-e2e-prod.sh
-
-            echo "Demo E2E smoke finished in $((SECONDS - start))s"
-
-
+          bash scripts/demo-e2e.sh

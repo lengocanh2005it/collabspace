@@ -1,19 +1,24 @@
 # CollabSpace — Chỉ mục URL (API, Swagger, Infrastructure)
 
-Tài liệu tham chiếu nhanh các URL truy cập **production Droplet**, **local Docker**, và **observability**.  
+Tài liệu tham chiếu nhanh các URL truy cập **production Droplet k3s**, **local Docker**, và **observability**.
 Route chi tiết từng endpoint: [`api-routes.md`](./api-routes.md) · Observability: [`observability.md`](./observability.md)
 
 ---
 
-## Production Droplet (K8s + Traefik)
+## Production hiện tại — Droplet k3s (K8s + Traefik)
 
 | Thông tin | Giá trị |
 |-----------|---------|
-| **Domain** | `collabspace.ngocanh2005it.site` (IP: `167.172.77.110`) |
-| **Protocol** | **HTTPS** (Let's Encrypt, tự renew — cert đến 13/09/2026) |
-| **SSH** | `ssh root@167.172.77.110` |
+| **Cluster** | Droplet k3s single-node — DigitalOcean Droplet |
+| **Domain** | `collabspace.ngocanh2005it.site` |
+| **Public IP** | `167.172.77.110` |
+| **Protocol** | **HTTPS** qua Traefik / Let's Encrypt |
 
-**Agents:** troubleshooting deploy/rollout/probe trên VPS → [`.claude/docs/droplet-vps-operations.md`](../.claude/docs/droplet-vps-operations.md)
+**Agents:** troubleshooting deploy/rollout/probe → [`.claude/docs/doks-operations.md`](../.claude/docs/doks-operations.md)
+
+### DOKS migration target
+
+Phase tiếp theo là migration blue/green sang **DOKS 3 worker nodes**. DOKS LoadBalancer IP chỉ được ghi vào doc này sau khi cluster mới deploy, smoke test pass, và DNS đã cutover.
 
 ---
 
@@ -21,7 +26,7 @@ Route chi tiết từng endpoint: [`api-routes.md`](./api-routes.md) · Observab
 
 Base URL: **`https://collabspace.ngocanh2005it.site/api/v1`**
 
-| Service | Base path | Ví dụ (Droplet) |
+| Service | Base path | Ví dụ |
 |---------|-----------|-----------------|
 | Auth | `/api/v1/auth` | https://collabspace.ngocanh2005it.site/api/v1/auth |
 | User | `/api/v1/users` | https://collabspace.ngocanh2005it.site/api/v1/users |
@@ -184,6 +189,5 @@ Prod mẫu: [`values-prod.example.yaml`](../infrastructure/helm/collabspace/valu
 |----------|----------|
 | [`api-routes.md`](./api-routes.md) | Chỉ mục route HTTP đầy đủ |
 | [`observability.md`](./observability.md) | Grafana, Loki, Prometheus, k6 |
-| [`deployment-droplet-ip-quickstart.md`](./deployment-droplet-ip-quickstart.md) | Deploy Droplet bằng IP |
-| [`deployment-k3s-phases.md`](./deployment-k3s-phases.md) | Lộ trình Phase 0–5 |
+| [`deployment-k3s-phases.md`](./deployment-k3s-phases.md) | Lộ trình deploy Droplet k3s và kế hoạch Phase 6 DOKS |
 | [`infrastructure/helm/README.md`](../infrastructure/helm/README.md) | Helm chart, troubleshooting |

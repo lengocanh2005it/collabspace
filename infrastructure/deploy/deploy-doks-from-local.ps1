@@ -69,7 +69,7 @@ if (-not $SkipPhase1) {
   Write-Host "==> Skipping Phase 1"
 }
 
-& (Join-Path $ScriptDir "upload-prod-config-to-droplet.ps1") -DropletIp $DropletIp -SshUser $SshUser -SshKeyPath $SshKeyPath
+& (Join-Path $ScriptDir "upload-prod-config-to-doks.ps1") -DropletIp $DropletIp -SshUser $SshUser -SshKeyPath $SshKeyPath
 
 Write-Host "==> Phase 2-3: Vault + Helm (15-40 min)..."
 $phase23 = "set -euo pipefail; cd /opt/collabspace && " +

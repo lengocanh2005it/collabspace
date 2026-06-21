@@ -12,7 +12,7 @@ Use this skill to verify code changes and local runtime behavior.
 Read:
 
 - `.claude/docs/development-workflows.md`
-- **Production Droplet / k3s:** `.claude/docs/droplet-vps-operations.md` (when debugging VPS, CI deploy, rollout timeout, probe 404)
+- **DigitalOcean production / migration:** `.claude/docs/doks-operations.md` (Droplet k3s ops today; DOKS migration, CI deploy, rollout timeout, probe 404)
 - Target service `package.json`
 - Relevant Docker Compose files under `infrastructure/docker`
 
@@ -152,13 +152,14 @@ K8s / production observability (after Helm deploy):
 - k6 smoke: `BASE_URL=http://<HOST>/api/v1 ./infrastructure/deploy/run-k6-smoke-prod.sh`
 - Guide: [docs/observability.md](../../docs/observability.md)
 
-**Droplet VPS (`167.172.77.110`) — sau push ảnh hưởng Docker/Helm:**
+**DigitalOcean production — sau push ảnh hưởng Docker/Helm:**
 
-1. Đọc `.claude/docs/droplet-vps-operations.md` trước khi SSH/patch tay.
+1. Đọc `.claude/docs/doks-operations.md` trước khi SSH/patch tay hoặc deploy sang DOKS.
 2. Health nhanh: `curl http://167.172.77.110/api/v1/<service>/health/live` (expect **200**).
 3. CI: `gh run list --workflow=docker-deploy.yml --limit 1` — build fail thường do Dockerfile monorepo; deploy fail thường do pod crash / probe 404 / thiếu `NODE_PATH`.
 4. SSH: `export KUBECONFIG=/etc/rancher/k3s/k3s.yaml`; `kubectl get pods -n collabspace`; `kubectl logs deploy/<service> --tail=40`.
-5. **Không** patch `kubectl` probe/env rồi bỏ quên — fix trong Helm chart / Dockerfile và push; hotfix tay bị `helm upgrade` ghi đè.
+5. DOKS target: dùng `KUBECONFIG_DOKS`, PVC `do-block-storage`, smoke test qua LoadBalancer IP trước khi đổi DNS.
+6. **Không** patch `kubectl` probe/env rồi bỏ quên — fix trong Helm chart / Dockerfile và push; hotfix tay bị `helm upgrade` ghi đè.
 
 Trước push đổi `Dockerfile.service` hoặc workspace packages: chạy `pnpm run build` service + cân nhắc `docker build` smoke (xem droplet doc).
 
@@ -183,4 +184,3 @@ Also report:
 - Pass/fail result.
 - Any skipped verification and reason.
 - Any manual health endpoint or runtime check performed.
-

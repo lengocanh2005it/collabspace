@@ -60,7 +60,7 @@ services/
 | Trust boundaries (auth, gateway, S2S) | `docs/production-hardening.md`, `docs/api-routes.md` |
 | Cross-service reads / replicas | `docs/cross-service-data.md`, `.claude/docs/read-models.md` |
 | Build, test, Docker, seed | `.claude/docs/development-workflows.md` |
-| **Droplet VPS ops, CI deploy, K8s troubleshooting** | `.claude/docs/droplet-vps-operations.md` |
+| **DigitalOcean K8s ops, CI deploy, DOKS migration** | `.claude/docs/doks-operations.md` |
 | Secrets (Vault, ESO, shared env) | `infrastructure/vault/README.md`, `docs/production-hardening.md` |
 | NestJS style, DTOs, tests | `.claude/docs/coding-conventions.md` |
 | Product features & status | `docs/features.md` |

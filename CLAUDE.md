@@ -17,7 +17,7 @@ Read before broad changes:
 - Resilience / design for failure: `.claude/docs/resilience.md`
 - Service contracts: `.claude/docs/service-contracts.md`
 - Workflows: `.claude/docs/development-workflows.md`
-- **Droplet VPS ops:** `.claude/docs/droplet-vps-operations.md`
+- **DigitalOcean K8s ops / DOKS migration:** `.claude/docs/doks-operations.md`
 - Conventions: `.claude/docs/coding-conventions.md`
 - Product features: `docs/features.md`
 - **Roles & permissions:** `docs/roles-and-permissions.md`
@@ -168,4 +168,3 @@ If the user says "continue MVP" without a target, start with `workspace-service`
 - `.claude/settings.json`: team permissions (deny reading `.env`).
 - `.claudeignore`: reduce noise from `node_modules`, `dist`, lockfiles.
 - Per-service `CLAUDE.md` under `services/auth-service` and `services/user-service`.
-

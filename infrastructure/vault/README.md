@@ -128,7 +128,7 @@ Deploy sync should use the read token, not the root token:
 read_token=$(jq -r '.auth.client_token' infrastructure/vault/.vault-prod-read-token.json)
 ```
 
-Set `VAULT_TOKEN=$read_token` and `VAULT_KV_PATH=collabspace/prod` in `infrastructure/deploy/droplet.env`.
+Set `VAULT_TOKEN=$read_token` and `VAULT_KV_PATH=collabspace/prod` in `infrastructure/deploy/doks.env`.
 
 This mode persists secrets in Docker volume `vault_file`, but it is still single-node, not HA.
 

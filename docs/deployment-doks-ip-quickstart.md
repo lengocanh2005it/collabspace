@@ -25,7 +25,7 @@ Lộ trình đầy đủ: [deployment-k3s-phases.md](./deployment-k3s-phases.md)
 cd E:\collabspace
 
 # Thay IP và đường dẫn SSH key
-.\infrastructure\deploy\deploy-droplet-from-local.ps1 `
+.\infrastructure\deploy\deploy-doks-from-local.ps1 `
   -DropletIp 165.xxx.xxx.xxx `
   -SshKeyPath "$env:USERPROFILE\.ssh\id_ed25519"
 ```
@@ -74,7 +74,7 @@ sudo bash infrastructure/deploy/verify-phase1.sh
 ### Upload config — Từ máy local
 
 ```powershell
-.\infrastructure\deploy\upload-prod-config-to-droplet.ps1 `
+.\infrastructure\deploy\upload-prod-config-to-doks.ps1 `
   -DropletIp 165.xxx.xxx.xxx `
   -SshKeyPath "$env:USERPROFILE\.ssh\id_ed25519"
 ```
@@ -84,7 +84,7 @@ sudo bash infrastructure/deploy/verify-phase1.sh
 ```bash
 ssh root@165.xxx.xxx.xxx
 cd /opt/collabspace
-sudo bash infrastructure/deploy/run-phases-2-3-on-droplet.sh
+sudo bash infrastructure/deploy/run-phases-2-3-on-doks.sh
 ```
 
 **Quan trọng:** backup file Vault ngay sau Phase 2:

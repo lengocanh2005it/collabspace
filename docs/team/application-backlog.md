@@ -79,14 +79,14 @@ Contract: [service-contracts.md § Service JWT](../../.claude/docs/service-contr
 **Services:** `services/auth-service`, `services/user-service`  
 **Platform (phối hợp [Phú Thọ](./phan-phu-tho-infrastructure-backlog.md)):** vận hành deploy **DigitalOcean Droplet** — k3s single-node, Helm, Vault+ESO, verify prod sau CI.
 
-**Tài liệu deploy:** [deployment-k3s-phases.md](../deployment-k3s-phases.md) · [deployment-droplet-ip-quickstart.md](../deployment-droplet-ip-quickstart.md) · [service-urls.md](../service-urls.md)
+**Tài liệu deploy:** [deployment-k3s-phases.md](../deployment-k3s-phases.md) · [deployment-doks-ip-quickstart.md](../deployment-doks-ip-quickstart.md) · [service-urls.md](../service-urls.md)
 
 ### Đã xong — Droplet / production
 
 - [x] Droplet prod `167.172.77.110` — k3s + Helm stack (5 app + datastore + observability)
 - [x] CI **Build Images And Deploy** — GHCR build + `helm-deploy-ci.sh` qua SSH
 - [x] API gateway `/api/v1`, Swagger `/swagger/<service>`, Grafana `/grafana/` — [service-urls.md](../service-urls.md)
-- [x] Script local: `infrastructure/deploy/deploy-droplet-from-local.ps1`, `prepare-prod-values.ps1`
+- [x] Script local: `infrastructure/deploy/deploy-doks-from-local.ps1`, `prepare-prod-values.ps1`
 - [x] **Phase 5 — Domain + HTTPS/TLS** — `collabspace.ngocanh2005it.site` trỏ Droplet; Traefik ACME HTTP-01 (Let's Encrypt); cert tự động issue + renew; HTTP→HTTPS redirect 301; CORS mở đầy đủ (`*`, tất cả method + header); `www` SAN cho apex domain
 
 ### Việc còn lại — Droplet (shared với infra backlog Phú Thọ)

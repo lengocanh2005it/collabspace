@@ -29,7 +29,7 @@ After editing `.claude/skills/`, run `bash scripts/sync-agent-docs.sh` (or `pwsh
 | `docs/resilience-overview.md` | Human-facing resilience summary (Vietnamese) |
 | `.claude/docs/service-contracts.md` | HTTP, gRPC, events, auth headers |
 | `.claude/docs/development-workflows.md` | Docker, migrate, seed, test, troubleshoot |
-| `.claude/docs/droplet-vps-operations.md` | **Droplet VPS** — SSH, CI deploy, probe/NODE_PATH, rollout timeout |
+| `.claude/docs/doks-operations.md` | **DigitalOcean K8s** — Droplet k3s ops, CI deploy, probe/NODE_PATH, DOKS migration |
 | `.claude/docs/coding-conventions.md` | NestJS, DTO, TypeORM, test style |
 | `docs/features.md` | Product features and status (canonical) |
 | `docs/roles-and-permissions.md` | **Platform admin vs workspace owner/manager/member** |
@@ -45,7 +45,7 @@ After editing `.claude/skills/`, run `bash scripts/sync-agent-docs.sh` (or `pwsh
 | `docs/team/application-backlog.md` | Application backlog (Lê Ngọc Anh, Ngô Quang Tiến, Võ Trung Tín) |
 | `docs/deployment-k3s-phases.md` | Lộ trình production DO — k3s + Helm + Vault + ESO (theo phase) |
 | `docs/digitalocean-production-options.md` | So sánh phương án triển khai DigitalOcean |
-| `docs/deployment-digitalocean-droplet.md` | Deploy legacy Docker Compose trên Droplet |
+| `docs/deployment-digitalocean-doks.md` | Deploy legacy Docker Compose trên Droplet |
 | `docs/README.md` | Chỉ mục tài liệu `docs/` (tiếng Việt) |
 | `docs/backup-policy.md` | RPO/RTO, backup scripts, restore drill policy |
 | `.claude/docs/mvp-roadmap.md` | MVP build order for agents |

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Chạy trên Droplet (root) sau Phase 1 + đã upload phase0.env + values-prod.yaml.
-#   sudo bash infrastructure/deploy/run-phases-2-3-on-droplet.sh
+#   sudo bash infrastructure/deploy/run-phases-2-3-on-doks.sh
 set -euo pipefail
 
 APP_DIR="${APP_DIR:-/opt/collabspace}"
@@ -18,7 +18,7 @@ VALUES_PROD="$APP_DIR/infrastructure/helm/collabspace/values-prod.yaml"
 
 for f in "$PHASE0" "$VALUES_PROD"; do
   if [[ ! -f "$f" ]]; then
-    echo "Missing $f — upload from laptop first (upload-prod-config-to-droplet.ps1)."
+    echo "Missing $f — upload from laptop first (upload-prod-config-to-doks.ps1)."
     exit 1
   fi
 done

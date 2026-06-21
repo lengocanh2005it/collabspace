@@ -30,13 +30,13 @@ fi
 
 cd "$APP_DIR"
 
-if [[ ! -f infrastructure/deploy/droplet.env ]]; then
-  cp infrastructure/deploy/droplet.env.example infrastructure/deploy/droplet.env
-  echo "Created infrastructure/deploy/droplet.env. Edit it before first deploy."
+if [[ ! -f infrastructure/deploy/doks.env ]]; then
+  cp infrastructure/deploy/doks.env.example infrastructure/deploy/doks.env
+  echo "Created infrastructure/deploy/doks.env. Edit it before first deploy."
 fi
 
 echo "Bootstrap complete."
 echo "Next:"
 echo "  1. Configure Vault or copy service .env files manually."
-echo "  2. Edit infrastructure/deploy/droplet.env."
-echo "  3. Run: ./infrastructure/deploy/droplet-deploy.sh"
+echo "  2. Edit infrastructure/deploy/doks.env."
+echo "  3. Run: ./infrastructure/deploy/doks-deploy.sh"

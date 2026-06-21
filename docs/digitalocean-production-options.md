@@ -1,7 +1,7 @@
 # CollabSpace trên DigitalOcean: phương án triển khai production
 
 > **Lộ trình triển khai theo phase (k3s):** [deployment-k3s-phases.md](./deployment-k3s-phases.md)  
-> **Deploy legacy Compose:** [deployment-digitalocean-droplet.md](./deployment-digitalocean-droplet.md)  
+> **Deploy legacy Compose:** [deployment-digitalocean-doks.md](./deployment-digitalocean-doks.md)  
 > **Chỉ mục tài liệu:** [README.md](./README.md)
 
 Ngày 2026-06-12, phương án được chọn cho CollabSpace là:

@@ -27,7 +27,7 @@ Tài liệu này liệt kê **công việc hạ tầng / DevOps / observability 
 
 - [deployment-k3s-phases.md](../deployment-k3s-phases.md) — **lộ trình production DO (k3s + Helm + Vault + ESO)**
 - [digitalocean-production-options.md](../digitalocean-production-options.md) — so sánh phương án DO
-- [deployment-digitalocean-droplet.md](../deployment-digitalocean-droplet.md) — legacy Compose trên Droplet
+- [deployment-digitalocean-doks.md](../deployment-digitalocean-doks.md) — legacy Compose trên Droplet
 - [production-hardening.md](../production-hardening.md)
 - [nfrs.md](../nfrs.md)
 - [backup-policy.md](../backup-policy.md)

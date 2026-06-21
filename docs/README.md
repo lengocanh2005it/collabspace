@@ -30,8 +30,8 @@ Chỉ mục tài liệu dự án (tiếng Việt có dấu). Tài liệu kỹ th
 |----------|--------|
 | [digitalocean-production-options.md](./digitalocean-production-options.md) | So sánh phương án DigitalOcean |
 | [deployment-k3s-phases.md](./deployment-k3s-phases.md) | **Lộ trình production** — k3s + Helm + Vault + ESO (theo phase) |
-| [deployment-droplet-ip-quickstart.md](./deployment-droplet-ip-quickstart.md) | **Quickstart IP-only** — Phase 0–3 một lần (không domain) |
-| [deployment-digitalocean-droplet.md](./deployment-digitalocean-droplet.md) | Deploy legacy Docker Compose trên Droplet |
+| [deployment-doks-ip-quickstart.md](./deployment-doks-ip-quickstart.md) | **Quickstart IP-only** — Phase 0–3 một lần (không domain) |
+| [deployment-digitalocean-doks.md](./deployment-digitalocean-doks.md) | Deploy legacy Docker Compose trên Droplet |
 | [production-hardening.md](./production-hardening.md) | Checklist cứng hóa production |
 | [backup-policy.md](./backup-policy.md) | Chính sách backup & phục hồi |
 | [tracing-setup.md](./tracing-setup.md) | Cấu hình distributed tracing |

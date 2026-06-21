@@ -26,8 +26,8 @@ ssh root@<ip-droplet>
 Chạy script bootstrap với URL repo Git:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/<owner>/<repo>/main/infrastructure/deploy/droplet-bootstrap.sh -o /tmp/droplet-bootstrap.sh
-bash /tmp/droplet-bootstrap.sh https://github.com/<owner>/<repo>.git
+curl -fsSL https://raw.githubusercontent.com/<owner>/<repo>/main/infrastructure/deploy/doks-bootstrap.sh -o /tmp/doks-bootstrap.sh
+bash /tmp/doks-bootstrap.sh https://github.com/<owner>/<repo>.git
 ```
 
 Script cài Docker, Git, UFW; mở cổng `22`, `80`, `443`; clone repo vào `/opt/collabspace`.
@@ -47,13 +47,13 @@ cd /opt/collabspace
 bash infrastructure/vault/scripts/init-prod-vault.sh
 ```
 
-Script init in ra `VAULT_TOKEN` read-only — ghi vào `infrastructure/deploy/droplet.env`.
+Script init in ra `VAULT_TOKEN` read-only — ghi vào `infrastructure/deploy/doks.env`.
 
 Tạo file cấu hình:
 
 ```sh
-cp infrastructure/deploy/droplet.env.example infrastructure/deploy/droplet.env
-nano infrastructure/deploy/droplet.env
+cp infrastructure/deploy/doks.env.example infrastructure/deploy/doks.env
+nano infrastructure/deploy/doks.env
 cp infrastructure/vault/.env.example infrastructure/vault/.env
 nano infrastructure/vault/.env
 ```
@@ -66,7 +66,7 @@ VAULT_KV_PATH=collabspace/prod \
   bash infrastructure/vault/scripts/seed-dev-secrets.sh
 ```
 
-Giữ trong `infrastructure/deploy/droplet.env`:
+Giữ trong `infrastructure/deploy/doks.env`:
 
 ```sh
 USE_VAULT_SYNC=true
@@ -128,7 +128,7 @@ Deploy thủ công trên Droplet:
 
 ```sh
 cd /opt/collabspace
-bash infrastructure/deploy/droplet-deploy.sh
+bash infrastructure/deploy/doks-deploy.sh
 ```
 
 ---
