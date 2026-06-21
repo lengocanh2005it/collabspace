@@ -35,6 +35,7 @@ Bật `gateway.swagger.expose: true` trong Helm. Mỗi service tại **`/swagger
 | task | `http://<HOST>/swagger/task` |
 | notification | `http://<HOST>/swagger/notification` |
 | dlq | `http://<HOST>/swagger/dlq` |
+| analytics | `http://<HOST>/swagger/analytics` |
 
 Ví dụ Droplet: `http://167.172.77.110/swagger/auth`
 
@@ -48,6 +49,7 @@ Ví dụ Droplet: `http://167.172.77.110/swagger/auth`
 | task | http://localhost:3003/swagger |
 | notification | http://localhost:3004/swagger |
 | dlq | http://localhost:3006/swagger |
+| analytics | http://localhost:3005/swagger |
 
 Dùng **Authorize** với Bearer JWT cho route protected. Route S2S nội bộ: Service JWT — xem service-contracts.
 
@@ -192,6 +194,29 @@ Read routes require platform permission `dlq.read`; write routes require `dlq.ma
 | POST | `/messages/{id}/discard` | Discard, không retry nữa |
 
 **Event consume:** `collabspace.dlq.events`. **Replay publish:** re-publish về `sourceTopic` gốc với DLQ replay headers.
+
+---
+
+## Analytics Service
+
+Base: `/api/v1/analytics` · Cổng **3000** (host **3005**)
+
+Tất cả routes (trừ health/metrics) yêu cầu Bearer JWT với role `platform_admin`.
+
+| Method | Path | Mô tả |
+|--------|------|-------|
+| GET | `/health/live` | Liveness probe (public) |
+| GET | `/health/ready` | Readiness probe (public) |
+| GET | `/metrics` | Prometheus metrics (Bearer `METRICS_AUTH_TOKEN`) |
+| GET | `/overview` | Platform snapshot — users, workspaces, projects, tasks |
+| GET | `/users` | User metrics chi tiết |
+| GET | `/workspaces` | Workspace metrics chi tiết |
+| GET | `/tasks` | Task metrics chi tiết (byStatus breakdown) |
+| GET | `/activity?metric=&from=&to=&interval=day` | Timeseries activity data cho biểu đồ |
+
+**Query params `/activity`:** `metric` (`users_registered` \| `workspaces_created` \| `tasks_created` \| `tasks_completed`), `from` (ISO date, default 30d trước), `to` (ISO date, default hôm nay), `interval` (`day`).
+
+**Kafka consumer groups:** `analytics-service-auth-events`, `analytics-service-workspace-events`, `analytics-service-task-events`.
 
 ---
 

@@ -141,6 +141,34 @@ http:
         - circuit-breaker
 
     # ============================================================
+    # Analytics Service — prefix: /api/v1/analytics (platform admin only)
+    # ============================================================
+    analytics-health-router:
+      rule: "PathPrefix(`/api/v1/analytics/health`)"
+      service: analytics-service
+      priority: 150
+      entryPoints:
+        - web
+      middlewares:
+        - cors-headers
+        - rate-limit
+        - security-headers
+
+    analytics-router:
+      rule: "PathPrefix(`/api/v1/analytics`)"
+      service: analytics-service
+      entryPoints:
+        - web
+      middlewares:
+        - cors-headers
+        - strip-identity-headers
+        - forward-auth
+        - rate-limit
+        - security-headers
+        - retry-policy
+        - circuit-breaker
+
+    # ============================================================
     # DLQ Service — prefix: /api/v1/dlq (platform admin only)
     # ============================================================
     dlq-router:
@@ -208,5 +236,13 @@ http:
           - url: "http://dlq-service:3000"
         healthCheck:
           path: /api/v1/dlq/health/ready
+          interval: 10s
+          timeout: 3s
+    analytics-service:
+      loadBalancer:
+        servers:
+          - url: "http://analytics-service:3000"
+        healthCheck:
+          path: /api/v1/analytics/health/ready
           interval: 10s
           timeout: 3s

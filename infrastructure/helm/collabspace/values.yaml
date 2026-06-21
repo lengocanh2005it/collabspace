@@ -679,7 +679,7 @@ apps:
       DLQ_MAX_RETRIES_UNKNOWN: "1"
 
   analytics-service:
-    enabled: false
+    enabled: true
     replicas: 1
     image:
       repository: collabspace/analytics-service

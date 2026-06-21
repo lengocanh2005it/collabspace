@@ -27,6 +27,7 @@ Tài liệu này là **nguồn chính** mô tả chức năng và mức độ ho
 | Comment & Mention | **Done** | Comment CRUD, `@username` + replica sync, notification mention |
 | Notifications | **Done** | Lưu + list + mark-read/archive; SSE invalidation stream (không WebSocket) |
 | DLQ Ops | **Done** | `dlq-service`: ingest, inspect, replay, resolve/discard DLQ records; admin permissions `dlq.read` / `dlq.manage` |
+| Analytics | **Done** | `analytics-service`: Kafka consumer read-model (users/workspaces/tasks/timeseries); HTTP API `GET /analytics/overview\|users\|workspaces\|tasks\|activity`; `PlatformAdminGuard`; Swagger; Traefik route — [analytics-service.md](./analytics-service.md) |
 | Nền tảng (resilience, observability) | **Done** | Health, outbox, metrics; **K8s:** Grafana/Prometheus/Loki + 3 dashboards + k6 scenarios — [observability.md](./observability.md) |
 
 ---

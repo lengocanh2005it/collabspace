@@ -64,6 +64,15 @@ spec:
       middlewares:
         - name: rate-limit
         - name: cors-headers
+    - match: PathPrefix(`/api/v1/analytics/health`)
+      kind: Rule
+      priority: 150
+      services:
+        - name: analytics-service
+          port: 3000
+      middlewares:
+        - name: rate-limit
+        - name: cors-headers
     - match: Path(`/api/v1/auth/me`)
       kind: Rule
       priority: 100
@@ -137,6 +146,16 @@ spec:
       kind: Rule
       services:
         - name: dlq-service
+          port: 3000
+      middlewares:
+        - name: cors-headers
+        - name: strip-identity-headers
+        - name: forward-auth
+        - name: rate-limit
+    - match: PathPrefix(`/api/v1/analytics`)
+      kind: Rule
+      services:
+        - name: analytics-service
           port: 3000
       middlewares:
         - name: cors-headers

@@ -302,3 +302,21 @@ apps:
       WS_ENABLED: "false"
       WS_PATH: /notifications/ws
       ALLOW_DEV_IDENTITY_HEADERS: "false"
+
+  analytics-service:
+    enabled: true
+    replicas: 1
+    image:
+      repository: ghcr.io/REPLACE_ME_GHCR_OWNER/collabspace-analytics-service
+      tag: REPLACE_ME_IMAGE_TAG
+    extraEnv:
+      KAFKA_CONSUMERS_ENABLED: "true"
+      KAFKA_BROKERS: "kafka:9092"
+      KAFKA_CLIENT_ID: "analytics-service"
+      KAFKA_GROUP_ID: "analytics-service"
+      KAFKA_DLQ_TOPIC: "collabspace.dlq.events"
+      KAFKA_CONSUMER_MAX_RETRIES: "3"
+      KAFKA_CONSUMER_RETRY_DELAY_MS: "1000"
+      AUTH_SERVICE_GRPC_URL: auth-service:50051
+      AUTH_SERVICE_GRPC_TIMEOUT_MS: "3000"
+      ALLOW_DEV_IDENTITY_HEADERS: "false"
