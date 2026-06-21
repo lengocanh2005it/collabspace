@@ -456,21 +456,22 @@ jobs:
 
         # --wait omitted intentionally: app pods may CrashLoopBackOff until migrations run.
         # We wait for datastores and apps separately after migrations complete.
+        # --force intentionally omitted: it deletes all resources before recreating (too destructive).
         run: |
           helm upgrade --install collabspace infrastructure/helm/collabspace \
             --namespace collabspace \
             --timeout 20m \
-            --force \
             --set global.createNamespace=false \
             -f /tmp/values-prod.yaml \
             ${{ steps.deploy-vars.outputs.helm_set_args }}
 
 
 
-      - name: Wait for PostgreSQL to be ready
+      - name: Wait for datastores to be ready
 
         run: |
-          kubectl rollout status statefulset/collabspace-postgresql -n collabspace --timeout=10m
+          kubectl rollout status statefulset/postgres -n collabspace --timeout=10m
+          kubectl rollout status statefulset/mongo -n collabspace --timeout=10m
 
 
 
