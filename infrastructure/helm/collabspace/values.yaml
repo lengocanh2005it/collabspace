@@ -706,3 +706,5 @@ apps:
       KAFKA_DLQ_TOPIC: "collabspace.dlq.events"
       KAFKA_CONSUMER_MAX_RETRIES: "3"
       KAFKA_CONSUMER_RETRY_DELAY_MS: "1000"
+      AUTH_SERVICE_GRPC_URL: auth-service:50051
+      AUTH_SERVICE_GRPC_TIMEOUT_MS: "3000"
