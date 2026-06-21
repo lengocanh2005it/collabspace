@@ -132,16 +132,14 @@ export class MongoDlqRecordRepository implements IDlqRecordRepository {
           status: { $in: ['pending', 'requires_manual_review'] },
           lockedBy: null,
         },
-        [
-          {
-            $set: {
-              lockedFromStatus: '$status',
-              status: 'replaying',
-              lockedAt: now,
-              lockedBy,
-            },
+        {
+          $set: {
+            lockedFromStatus: null,
+            status: 'replaying',
+            lockedAt: now,
+            lockedBy,
           },
-        ],
+        },
         { new: true },
       )
       .lean()
