@@ -120,7 +120,7 @@ helm upgrade --install collabspace . \
 Cross-service events use **Kafka + Debezium** (outbox CDC). Enable `kafka.enabled` and `debeziumConnect.enabled` in values — see `templates/kafka/` and `infrastructure/kafka/README.md`.
 
 | Traefik | Official Traefik chart | LoadBalancer / NodePort gateway |
-| Apps | Custom templates | auth, user, workspace (8080), task, notification |
+| Apps | Custom templates | auth, user, workspace (8080), task, notification, dlq, analytics |
 | Gateway routes | IngressRoute CRDs | Forward-auth via auth-service |
 | Observability | Helm subcharts + templates | Prometheus, Grafana (`/grafana`), Loki, Promtail; dashboards in `dashboards/` |
 
@@ -134,6 +134,7 @@ Subcharts use `fullnameOverride` so application env vars match Docker Compose:
 | MongoDB | `mongo` | 27017 |
 | Redis | `redis` | 6379 |
 | workspace-service | `workspace-service` | **8080** |
+| analytics-service | `analytics-service` | 3000 |
 
 ## Legacy plain YAML
 
@@ -171,6 +172,8 @@ Public URLs (when `gateway.swagger.expose: true`):
 | workspace-service | `http://<HOST>/swagger/workspace` |
 | task-service | `http://<HOST>/swagger/task` |
 | notification-service | `http://<HOST>/swagger/notification` |
+| dlq-service | `http://<HOST>/swagger/dlq` |
+| analytics-service | `http://<HOST>/swagger/analytics` |
 
 Helm sets `SWAGGER_UI_PATH` per app ConfigMap; IngressRoute `collabspace-swagger` forwards without JWT (public docs). OpenAPI includes request/response schemas (`@ApiOkResponse`). Full URL index: [docs/service-urls.md](../../docs/service-urls.md).
 

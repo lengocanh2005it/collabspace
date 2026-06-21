@@ -45,6 +45,7 @@ Subagents: `.claude/agents/` (`nest-reviewer`, `mvp-implementer`, `contract-guar
 - `services/workspace-service`: NestJS + TypeORM workspace/project/invite service (port 8080).
 - `services/task-service`: NestJS + CQRS + MongoDB tasks/comments service.
 - `services/notification-service`: NestJS + CQRS + MongoDB notification consumer/list API.
+- `services/analytics-service`: NestJS + MongoDB admin analytics read-model service (host port 3005).
 - `infrastructure/docker`: Docker Compose stack.
 - `infrastructure/vault`: HashiCorp Vault (dev Compose, seed/sync scripts, ESO manifests).
 - `infrastructure/k8s`: Kubernetes manifests.
@@ -76,6 +77,7 @@ Subagents: `.claude/agents/` (`nest-reviewer`, `mvp-implementer`, `contract-guar
   - `user-service`: presentation → application/use-cases → domain ports → infrastructure.
   - `workspace-service`: presentation → use-cases → domain ports → TypeORM adapters.
   - `task-service` / `notification-service`: CQRS handlers, domain entities, Mongo repositories.
+  - `analytics-service`: layered read-model service; Mongo snapshots/timeseries + Kafka consumers.
 - Service-local cheat sheets: `services/<service>/CLAUDE.md`.
 - Add focused tests for new use cases, service methods, repository behavior, gRPC integrations, and controller behavior when the change has user-visible behavior.
 - **Docs & skills sync:** when code changes routes, events, env, auth, resilience, or MVP status, update related agent docs (`.claude/docs/`, `services/*/CLAUDE.md`, `.claude/rules/`) and skills (`.claude/skills/` → run `scripts/sync-agent-docs.sh` for `.agents/skills/`) in the same change when needed — see `.claude/docs/agent-onboarding.md` and `.claude/rules/docs-and-skills-sync.md`.

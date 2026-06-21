@@ -12,6 +12,23 @@ Tài liệu này mô tả toàn bộ thiết kế, cấu trúc, API, Kafka consu
 
 ---
 
+## 0. Trạng thái hiện tại
+
+`analytics-service` đã có scaffold NestJS, Mongo read model, HTTP routes, Swagger,
+health/metrics, Docker Compose, Helm values, gateway route, và auth guard với
+permission `analytics.read`.
+
+Phần còn thiếu để coi là end-to-end hoàn chỉnh: các Kafka source topics/event
+aggregate mà service đang consume (`collabspace.auth.events`,
+`collabspace.workspace.events`, `collabspace.task.events`) chưa phải topic
+canonical đang được publish bởi các service hiện tại. Event bus hiện có đang dùng
+topic dạng `collabspace.user.registered`, `collabspace.user.profile_updated`,
+`collabspace.workspace.workspace_invited`, `collabspace.workspace.workspace_deleted`,
+`collabspace.task.task_assigned`, `collabspace.task.comment_created`, và
+`collabspace.task.comment_mentioned`. Vì vậy read model live cần một trong hai
+hướng trước production: thêm producer/connector cho aggregate analytics events,
+hoặc đổi consumers để tính toán từ contract Kafka canonical.
+
 ## 1. Mục đích
 
 `analytics-service` là **backend read-model service** cung cấp dữ liệu thống kê tổng hợp cho admin dashboard. Thay vì FE tự gọi nhiều service rồi aggregate ở client, service này:
@@ -215,7 +232,8 @@ Nếu cần chính xác hơn, thêm collection `processed_event_ids` với TTL 7
 
 Base path: `/api/v1/analytics`
 
-Tất cả routes yêu cầu Bearer JWT và quyền `analytics.read` (hoặc role `platform_admin`).
+Tất cả routes yêu cầu Bearer JWT và quyền `analytics.read` (platform `admin` có
+permission này qua auth migration/seed).
 
 ### `GET /api/v1/analytics/overview`
 
@@ -288,10 +306,10 @@ Timeseries data cho biểu đồ đường/cột.
 
 ## 7. Permission & Auth
 
-Dùng cùng pattern `PlatformAdminGuard` từ `auth-service`:
-- Bearer JWT qua gateway forward-auth như các service khác
-- Gateway inject `X-User-Id`, `X-Roles`, `X-Permissions` headers
-- Guard kiểm tra `X-Roles` có chứa `platform_admin` hoặc `X-Permissions` có `analytics.read`
+Dùng cùng pattern `PlatformAdminGuard` trong shared Nest auth package:
+- Bearer JWT được verify qua auth gRPC
+- Guard yêu cầu permission `analytics.read`
+- Platform role `admin` nhận permission này qua auth migration/seed
 
 Permission mới cần seed vào `auth-service`:
 - `analytics.read` — xem số liệu thống kê
@@ -395,9 +413,14 @@ METRICS_AUTH_TOKEN=<secret>
 
 ---
 
-## 10. Dockerfile
+## 10. Docker image
 
-Cùng pattern các service khác:
+Repo hiện dùng Dockerfile chung `infrastructure/docker/Dockerfile.service` với
+build arg `SERVICE_NAME=analytics-service` cho Docker Compose và CI image build.
+Không cần Dockerfile riêng dưới `services/analytics-service/` trừ khi service có
+runtime khác pattern chung.
+
+Pattern image tương đương:
 
 ```dockerfile
 FROM node:22-alpine AS builder
@@ -467,7 +490,7 @@ Thêm vào dashboard **CollabSpace Service Health** (UID `collabspace-service-he
 
 ### PR 1 — Scaffold
 
-- `services/analytics-service/` NestJS app, `package.json`, `tsconfig.json`, `Dockerfile`
+- `services/analytics-service/` NestJS app, `package.json`, `tsconfig.json`
 - Health endpoints `/health/live`, `/health/ready`
 - Config module (Mongo URI, Kafka, JWT)
 - Kết nối Mongo `collabspace_analytics`, tạo indexes

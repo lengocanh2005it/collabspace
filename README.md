@@ -44,6 +44,7 @@
 | **task-service** | NestJS + MongoDB | 3000 | MongoDB (`collabspace_task`) | `/api/v1/tasks/health/ready` |
 | **notification-service** | NestJS + MongoDB | 3000 | MongoDB | `/api/v1/notifications/health/ready` |
 | **dlq-service** | NestJS + MongoDB + Kafka | 3000 | MongoDB (`collabspace_dlq`) | `/api/v1/dlq/health/ready` |
+| **analytics-service** | NestJS + MongoDB + Kafka | 3000 | MongoDB (`collabspace_analytics`) | `/api/v1/analytics/health/ready` |
 
 > **CRITICAL**: `workspace-service` runs on port **8080**, not 3000 like the other NestJS services.
 
@@ -191,6 +192,8 @@ cd ../task-service; pnpm run seed
 cd ../notification-service; pnpm run seed
 ```
 
+Analytics has no regular seed; bootstrap its read model with `scripts/seed-analytics-snapshot.sh` when deploying into an environment with existing data.
+
 Prerequisites: run `./scripts/migrate.sh` first; Postgres + MongoDB must be reachable via each service `.env`.
 
 ### Monorepo build & test (pnpm workspace)
@@ -267,6 +270,7 @@ Request/response contracts and event payloads: [`.claude/docs/service-contracts.
 | task-service | https://collabspace.ngocanh2005it.site/swagger/task |
 | notification-service | https://collabspace.ngocanh2005it.site/swagger/notification |
 | dlq-service | https://collabspace.ngocanh2005it.site/swagger/dlq |
+| analytics-service | https://collabspace.ngocanh2005it.site/swagger/analytics |
 
 **Docker local** (trực tiếp cổng mapped):
 
@@ -278,6 +282,7 @@ Request/response contracts and event payloads: [`.claude/docs/service-contracts.
 | task-service | http://localhost:3003/swagger |
 | notification-service | http://localhost:3004/swagger |
 | dlq-service | http://localhost:3006/swagger |
+| analytics-service | http://localhost:3005/swagger |
 
 Protected routes: **Authorize** → Bearer JWT. Internal S2S routes (user/workspace): Service JWT (`Authorization: Bearer …`).
 
@@ -360,6 +365,7 @@ Chart docs: [infrastructure/helm/README.md](infrastructure/helm/README.md). **Pr
 | task-service | 2 | 128Mi | 256Mi | 100m | 250m |
 | notification-service | 2 | 128Mi | 256Mi | 100m | 250m |
 | dlq-service | 1 | 128Mi | 256Mi | 100m | 250m |
+| analytics-service | 1 | 128Mi | 256Mi | 100m | 250m |
 | traefik | 2 | 64Mi | 128Mi | 100m | 200m |
 | grafana | 1 | 128Mi | 256Mi | 100m | 200m |
 | prometheus | 1 | 256Mi | 512Mi | 100m | 500m |
@@ -396,7 +402,8 @@ collabspace/
 │   ├── workspace-service/   # Workspace, project, invite (NestJS + TypeORM, port 8080)
 │   ├── task-service/        # Tasks, comments, board (NestJS + CQRS + MongoDB)
 │   ├── notification-service/# Notifications (NestJS + CQRS + MongoDB)
-│   └── dlq-service/         # Dead-letter queue ops workflow
+│   ├── dlq-service/         # Dead-letter queue ops workflow
+│   └── analytics-service/   # Admin analytics read model (NestJS + MongoDB + Kafka)
 ├── infrastructure/
 │   ├── docker/              # Docker Compose (app, db, traefik, monitoring, vault, logging profile, …)
 │   ├── deploy/              # Droplet/k3s scripts (Phase 0–3, helm-deploy-ci, seed/migrate prod)
@@ -425,7 +432,7 @@ Cross-service events use **transactional outbox + Debezium CDC → Kafka** (no i
 Service (same DB transaction)
   → INSERT business row + INSERT outbox
   → Debezium CDC → Kafka topic (collabspace.<domain>.<event>)
-  → notification-service / task-service Kafka consumers
+  → notification-service / task-service / analytics-service Kafka consumers
 ```
 
 See [docs/kafka-debezium-migration-roadmap.md](docs/kafka-debezium-migration-roadmap.md) and [infrastructure/kafka/README.md](infrastructure/kafka/README.md).

@@ -105,7 +105,7 @@ Do **not** map dependency failures to generic `500` if the cause is known.
 - `mode: "degraded"` → optional dependencies unhealthy; required deps still up (auth outbox uses this pattern).
 - Required vs optional checks MUST be explicit in each `*-health.service.ts`.
 
-**Implemented:** auth-service, user-service, workspace-service, task-service, notification-service, dlq-service (`/health/live`, `/health/ready` with dependency checks).
+**Implemented:** auth-service, user-service, workspace-service, task-service, notification-service, dlq-service, analytics-service (`/health/live`, `/health/ready` with dependency checks).
 
 ---
 
@@ -179,7 +179,16 @@ Legend: **Current** = observed or likely today; **Target** = required after resi
 | `GET /notifications` | MongoDB | — | `503`; empty list only when truly empty |
 | Kafka consumer | broker down | `ready: false` when broker unreachable | Keep **(DONE)** |
 
-### 4.6 API gateway (Traefik)
+### 4.6 analytics-service
+
+| API / flow | Dependency down | Current | Target |
+|------------|-----------------|---------|--------|
+| Protected analytics routes | auth gRPC | `PlatformAdminGuard` requires `analytics.read` | Keep |
+| Reads | MongoDB | repository queries fail | `503`; empty snapshot only when DB is reachable and no data exists |
+| Kafka consumers | broker down | `ready: false` when consumers enabled and broker unreachable | Keep |
+| Duplicate analytics events | Kafka duplicate delivery | `$inc` is not fully idempotent for duplicate event replay | Add event-id dedupe if exact counters are required |
+
+### 4.7 API gateway (Traefik)
 
 | Scenario | Target |
 |----------|--------|
@@ -212,7 +221,7 @@ Legend: **Current** = observed or likely today; **Target** = required after resi
 | `USER_SERVICE_GRPC_TIMEOUT_MS` | auth | `3000` | Profile gRPC |
 | `AUTH_SERVICE_GRPC_URL` | user | `auth-service:50051` | Token verify |
 | `AUTH_SERVICE_GRPC_TIMEOUT_MS` | user | `3000` | Token verify |
-| `KAFKA_CONSUMERS_ENABLED` | task, notification | `false` | Enable Kafka consumers |
+| `KAFKA_CONSUMERS_ENABLED` | task, notification, analytics | `false` | Enable Kafka consumers |
 | `OUTBOX_*` | auth | see `env.config.ts` | Email outbox tuning |
 | `METRICS_AUTH_TOKEN` | all app services | empty (open) | When set, `/metrics` requires Bearer or `X-Metrics-Token` |
 

@@ -39,7 +39,7 @@ pnpm run test
 - Global prefix `api/v1`; `@Controller('analytics')` → `/api/v1/analytics`
 - Health: `/api/v1/analytics/health/live`, `/api/v1/analytics/health/ready`
 - Metrics: `/api/v1/analytics/metrics` (Bearer `METRICS_AUTH_TOKEN`)
-- Auth: `X-Roles` / `X-Permissions` headers from gateway (PlatformAdminGuard in PR3)
+- Auth: Bearer JWT through auth gRPC; `PlatformAdminGuard` requires `analytics.read`
 - MongoDB db: `collabspace_analytics`
 - Kafka consumer group: `analytics-service`
 - No seed data — read model is built from Kafka events; bootstrap via `scripts/seed-analytics-snapshot.sh` (PR4)

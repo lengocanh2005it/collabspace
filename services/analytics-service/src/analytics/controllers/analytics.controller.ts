@@ -1,6 +1,6 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
-import { PlatformAdminGuard, RequirePlatformAdmin } from '@collabspace/nest-auth';
+import { PlatformAdminGuard, RequirePermission } from '@collabspace/nest-auth';
 import { AnalyticsService } from '../services/analytics.service.js';
 import {
   PlatformOverviewResponseDto,
@@ -12,7 +12,7 @@ import { TimeseriesQueryDto, TimeseriesResponseDto } from '../dto/timeseries-que
 
 @ApiTags('analytics')
 @ApiBearerAuth()
-@RequirePlatformAdmin()
+@RequirePermission('analytics.read')
 @UseGuards(PlatformAdminGuard)
 @Controller('analytics')
 export class AnalyticsController {

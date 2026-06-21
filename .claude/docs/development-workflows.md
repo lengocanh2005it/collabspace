@@ -89,6 +89,7 @@ Environment examples exist for most services and infrastructure components:
 - `services/task-service/.env.example`
 - `services/notification-service/.env.example`
 - `services/dlq-service/.env.example`
+- `services/analytics-service/.env.example`
 - `infrastructure/kafka/.env.example`
 - `infrastructure/redis/.env.example`
 - `infrastructure/load-testing/k6/.env.example`
@@ -207,6 +208,7 @@ Important local URLs:
 - Task readiness: `http://localhost:3003/api/v1/tasks/health/ready`
 - Notification readiness: `http://localhost:3004/api/v1/notifications/health/ready`
 - DLQ readiness: `http://localhost:3006/api/v1/dlq/health/ready`
+- Analytics readiness: `http://localhost:3005/api/v1/analytics/health/ready`
 - App metrics example: `http://localhost:3000/api/v1/auth/metrics`
 - Grafana: `http://localhost:3005`
 - Prometheus: `http://localhost:9090`
@@ -333,6 +335,7 @@ What gets seeded:
 - **workspace-service** — **4 workspaces**, **9 projects**, members (owner/manager/member mix), **1 pending invitation**
 - **task-service** — **`user_replicas`** (all demo users) + **87 tasks** + event store + **13 comments**
 - **notification-service** — **`user_replicas`** (all demo users) + **32** sample notifications (UNREAD / READ / ARCHIVED)
+- **analytics-service** — no regular seed; run `scripts/seed-analytics-snapshot.sh` once when bootstrapping a read model from existing data
 
 **k3s full reset:** `bash infrastructure/deploy/run-k8s-full-reset.sh` — stops apps, wipes Postgres/Mongo/Redis, migrate, seed (above), restore apps.
 

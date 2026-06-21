@@ -35,6 +35,7 @@ Related docs:
 | task-service         | Clean + CQRS                | Mongo / Mongoose   | `api/v1`      | `/api/v1/tasks`         | 3000     |
 | notification-service | Clean + CQRS (event-driven) | Mongo / Mongoose   | `api/v1`      | `/api/v1/notifications` | 3000     |
 | dlq-service          | Layered ops service         | Mongo / Mongoose   | `api/v1`      | `/api/v1/dlq`           | 3000     |
+| analytics-service    | Layered read-model service  | Mongo / Mongoose   | `api/v1`      | `/api/v1/analytics`     | 3000     |
 
 Most services use `app.setGlobalPrefix('api/v1')` and controllers use the resource name directly (e.g. `@Controller('tasks')`, `@Controller('notifications')`) — no `v1/` prefix in controller decorators. Task and notification keep the older `api` global prefix + `v1/...` controller convention.
 
@@ -458,6 +459,52 @@ src/
 
 ---
 
+## analytics-service
+
+**Path:** `services/analytics-service`  
+**Stack:** NestJS, Mongoose, Kafka consumers, auth gRPC  
+**Spec:** `docs/analytics-service.md`
+
+### Pattern: layered read-model service
+
+Analytics owns pre-aggregated admin dashboard data rather than product write
+flows:
+
+```text
+Kafka consumer -> AnalyticsRepository -> Mongo read model
+Admin HTTP controller -> AnalyticsService -> AnalyticsRepository
+```
+
+### Folder map
+
+```text
+src/
+├── analytics/                # controller, DTOs, service, repository
+├── consumers/                # Kafka consumers + DLQ publisher
+├── domain/                   # Mongoose schemas
+├── health/
+├── integrations/auth/        # auth gRPC + PlatformAdminGuard providers
+├── metrics/
+└── config/
+```
+
+### Conventions
+
+- Global prefix `api/v1`; routes under `/analytics`.
+- Protected analytics routes use `PlatformAdminGuard` and permission `analytics.read`.
+- Mongo database is `collabspace_analytics`.
+- Metrics route is `/api/v1/analytics/metrics` and uses `METRICS_AUTH_TOKEN` when set.
+- Kafka consumers should stay aligned with `.claude/docs/service-contracts.md` event topics.
+- Current gap: consumers target aggregate analytics topics/events that need producers/connectors or a consumer rewrite to canonical event topics before live metrics are complete.
+
+### Do not
+
+- Treat analytics as source of truth for product data; it is a derived read model.
+- Add synchronous cross-service reads to normal request paths.
+- Mark analytics complete unless live event ingestion is aligned with the canonical Kafka contract.
+
+---
+
 ## Choosing the right pattern (for agents)
 
 ```mermaid
@@ -467,11 +514,13 @@ flowchart TD
   A --> D{workspace-service}
   A --> E{task / notification}
   A --> F{dlq-service}
+  A --> G{analytics-service}
   B --> B1[Use case + domain port + infra adapter]
   C --> C1[Use case + domain port + infra repo]
   D --> D1[Use case + domain port + TypeORM adapter]
   E --> E1[Command/Query + Handler + domain entity]
   F --> F1[Controller/Scheduler + application service + repository port]
+  G --> G1[Controller/consumer + service + Mongo read-model repository]
 ```
 
 When unsure, run:
@@ -494,6 +543,7 @@ head -30 services/<service>/src/app.module.ts
 | task-service      | notification      | Kafka `collabspace.task.task_assigned`, `comment_created` |
 | task/notification consumers | dlq-service | Kafka DLQ topic `collabspace.dlq.events` |
 | dlq-service | Kafka source topics | Replay producer back to original `sourceTopic` |
+| analytics-service | Kafka source topics | Read-model consumers for admin analytics snapshots/timeseries |
 | API gateway       | all HTTP services | Traefik routes + forward-auth to auth `/verify` |
 
 ---

@@ -98,6 +98,11 @@ Other services:
 - `POST /api/v1/dlq/replay-batch` (`dlq.manage`)
 - `POST /api/v1/dlq/messages/{id}/resolve` (`dlq.manage`)
 - `POST /api/v1/dlq/messages/{id}/discard` (`dlq.manage`)
+- `GET /api/v1/analytics/overview` (`analytics.read`)
+- `GET /api/v1/analytics/users` (`analytics.read`)
+- `GET /api/v1/analytics/workspaces` (`analytics.read`)
+- `GET /api/v1/analytics/tasks` (`analytics.read`)
+- `GET /api/v1/analytics/activity` (`analytics.read`)
 
 Admin status and role changes revoke all refresh tokens for the target user.
 Successful login updates `lastLoginAt`; a timestamp write failure is logged but
@@ -497,6 +502,38 @@ State rules:
 - Ingested `logic` and `schema` records start as `requires_manual_review`.
 - Auto-retry only picks eligible `pending` records, uses bounded backoff, and moves exhausted records to `requires_manual_review`.
 - `resolved` and `discarded` are terminal admin decisions for the current record.
+
+### Analytics Service HTTP Contract
+
+Base prefix: `/api/v1/analytics`.
+
+All analytics data routes require a verified bearer user JWT through auth gRPC
+and permission `analytics.read`; platform `admin` receives this permission from
+auth migration/seed. Health routes are public. Metrics require
+`METRICS_AUTH_TOKEN` when configured.
+
+Routes:
+
+- `GET /api/v1/analytics/health/live`
+- `GET /api/v1/analytics/health/ready`
+- `GET /api/v1/analytics/metrics`
+- `GET /api/v1/analytics/overview`
+- `GET /api/v1/analytics/users`
+- `GET /api/v1/analytics/workspaces`
+- `GET /api/v1/analytics/tasks`
+- `GET /api/v1/analytics/activity?metric=&from=&to=&interval=day`
+
+Activity metrics: `users_registered`, `workspaces_created`, `tasks_created`,
+`tasks_completed`; MVP interval is `day`.
+
+Kafka read model status: `analytics-service` currently has consumers for
+aggregate analytics event topics (`collabspace.auth.events`,
+`collabspace.workspace.events`, `collabspace.task.events`). Those aggregate
+topics are not part of the canonical producer contract above yet. Before
+marking live ingestion complete, either add/declare producers for those topics
+or update analytics consumers to use canonical events such as
+`collabspace.user.registered`, `collabspace.workspace.*`, and
+`collabspace.task.*`.
 
 ### User directory replicas (`user_registered`, `user_profile_updated`)
 

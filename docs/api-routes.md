@@ -201,7 +201,8 @@ Read routes require platform permission `dlq.read`; write routes require `dlq.ma
 
 Base: `/api/v1/analytics` · Cổng **3000** (host **3005**)
 
-Tất cả routes (trừ health/metrics) yêu cầu Bearer JWT với role `platform_admin`.
+Tất cả routes (trừ health/metrics) yêu cầu Bearer JWT với permission `analytics.read`
+(platform `admin` có permission này qua auth seed/migration).
 
 | Method | Path | Mô tả |
 |--------|------|-------|
@@ -217,6 +218,9 @@ Tất cả routes (trừ health/metrics) yêu cầu Bearer JWT với role `platf
 **Query params `/activity`:** `metric` (`users_registered` \| `workspaces_created` \| `tasks_created` \| `tasks_completed`), `from` (ISO date, default 30d trước), `to` (ISO date, default hôm nay), `interval` (`day`).
 
 **Kafka consumer groups:** `analytics-service-auth-events`, `analytics-service-workspace-events`, `analytics-service-task-events`.
+Lưu ý: các consumer này hiện trỏ tới aggregate topics riêng của analytics; cần
+align producer/topic với event contract canonical trước khi live metrics được coi
+là hoàn chỉnh.
 
 ---
 

@@ -20,6 +20,7 @@ Traefik API Gateway
   +--> task-service          NestJS + CQRS, MongoDB
   +--> notification-service  NestJS + CQRS, MongoDB, Kafka consumer
   +--> dlq-service           NestJS, MongoDB, Kafka DLQ consumer/replay API
+  +--> analytics-service     NestJS, MongoDB, Kafka read-model consumer API
 
 Kafka + Debezium Connect sit beside services as the async event bus (transactional outbox → CDC → topics).
 Observability: **K8s/Helm** — Prometheus, Grafana (`/grafana`), Loki + Promtail, k6 scenarios; **Docker** — optional profiles (monitoring, ELK, Jaeger). Guide: [docs/observability.md](../../docs/observability.md).
@@ -244,6 +245,37 @@ Current status:
 
 - DLQ management workflow implemented. Protected HTTP uses `PlatformAdminGuard` and auth gRPC; permissions are `dlq.read` and `dlq.manage`.
 
+### analytics-service
+
+Path: `services/analytics-service`
+
+Technology:
+
+- NestJS
+- Mongoose / MongoDB (`collabspace_analytics`)
+- Kafka consumers with DLQ publishing
+- auth gRPC via `PlatformAdminGuard`
+
+Responsibilities:
+
+- Maintain admin dashboard read models: platform snapshot and daily timeseries.
+- Expose admin analytics HTTP routes under `/api/v1/analytics`.
+- Expose health, metrics, and Swagger like the other HTTP services.
+
+Important source paths:
+
+- `src/analytics/controllers/analytics.controller.ts`
+- `src/analytics/repositories/analytics.repository.ts`
+- `src/consumers/*-events.consumer.ts`
+- `src/domain/platform-snapshot.schema.ts`
+- `src/domain/timeseries-daily.schema.ts`
+
+Current status:
+
+- HTTP API, Mongo repository, health/metrics, Docker Compose, Helm values, and gateway routes are implemented.
+- Protected HTTP requires permission `analytics.read` (platform `admin` receives it via auth migration/seed).
+- Kafka consumers currently target aggregate analytics topics/events; producers/connectors for those aggregate events still need alignment with the canonical event bus before live metrics are complete. See `docs/analytics-service.md`.
+
 ## Infrastructure
 
 ### API Gateway
@@ -317,6 +349,7 @@ MongoDB:
 - `collabspace_task` for task-service.
 - `collabspace_notification` for notification-service.
 - `collabspace_dlq` for dlq-service DLQ records and retry history.
+- `collabspace_analytics` for analytics-service snapshots and timeseries.
 
 Redis:
 
@@ -332,7 +365,7 @@ Cross-service events use **transactional outbox → Debezium → Kafka**. App se
 | Outbox tables | `workspace_outbox_events`, `user_outbox_events`, `task_outbox_events` (Mongo) |
 | Debezium Connect | CDC from Postgres WAL / Mongo change streams; Outbox Event Router SMT |
 | Kafka topics | `collabspace.workspace.*`, `collabspace.user.*`, `collabspace.task.*` |
-| Consumers | `notification-service`, `task-service` (kafkajs); `dlq-service` consumes DLQ topic `collabspace.dlq.events` |
+| Consumers | `notification-service`, `task-service` (kafkajs); `analytics-service` read-model consumers; `dlq-service` consumes DLQ topic `collabspace.dlq.events` |
 
 Canonical topic mapping: `.claude/docs/service-contracts.md` → Event Contracts. Ops: `infrastructure/kafka/README.md`, `docs/kafka-debezium-migration-roadmap.md`.
 
