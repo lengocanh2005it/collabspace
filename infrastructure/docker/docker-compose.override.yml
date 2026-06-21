@@ -15,6 +15,9 @@ services:
       - /monorepo/packages/shared/node_modules
     ports:
       - "3000:3000"
+      - "50051:50051"
+    environment:
+      GRPC_ENABLED: "true"
 
   user-service:
     image: node:20-alpine
@@ -87,5 +90,8 @@ services:
       - /monorepo/node_modules
       - /monorepo/services/analytics-service/node_modules
       - /monorepo/packages/shared/node_modules
+      - /monorepo/packages/nest-auth/node_modules
     ports:
       - "3005:3000"
+    environment:
+      AUTH_SERVICE_GRPC_URL: "auth-service:50051"
