@@ -50,6 +50,9 @@ data:
   MONGO_URI: {{ include "collabspace.mongoUri" (dict "database" "collabspace_dlq" "root" $root) | quote }}
   AUTH_SERVICE_GRPC_URL: "auth-service:50051"
   {{- end }}
+  {{- if eq $name "analytics-service" }}
+  MONGO_URI: {{ include "collabspace.mongoUri" (dict "database" "collabspace_analytics" "root" $root) | quote }}
+  {{- end }}
   {{- range $key, $val := $app.extraEnv }}
   {{ $key }}: {{ $val | quote }}
   {{- end }}
