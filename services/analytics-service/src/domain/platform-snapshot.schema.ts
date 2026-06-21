@@ -5,6 +5,9 @@ export type PlatformSnapshotDocument = HydratedDocument<PlatformSnapshot>;
 
 @Schema({ collection: 'platform_snapshots' })
 export class PlatformSnapshot {
+  @Prop({ type: String })
+  _id!: string;
+
   @Prop({
     type: {
       total: { type: Number, default: 0 },
