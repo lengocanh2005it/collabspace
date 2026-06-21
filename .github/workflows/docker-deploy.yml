@@ -625,6 +625,18 @@ jobs:
 
 
 
+      - name: Force DNS resolution to DOKS LoadBalancer
+        run: |
+          echo "==> Fetching Traefik LoadBalancer IP..."
+          LB_IP=$(kubectl get svc traefik -n collabspace -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+          echo "Traefik IP: $LB_IP"
+          if [[ -n "$LB_IP" ]]; then
+            echo "$LB_IP collabspace.ngocanh2005it.site" | sudo tee -a /etc/hosts
+          else
+            echo "Failed to retrieve LoadBalancer IP!"
+            exit 1
+          fi
+
       - name: Run MVP demo E2E smoke
 
         if: github.event_name == 'push' || github.event.inputs.run_e2e != 'false'
