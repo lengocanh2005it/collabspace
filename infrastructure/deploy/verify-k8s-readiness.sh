@@ -19,7 +19,7 @@ check_readiness_once() {
   local failures=0
   local name url code
 
-  for name in auth user workspace task notification; do
+  for name in auth user workspace task notification dlq analytics; do
     url="${ENDPOINTS[$name]}"
     code="$(curl_prod_api_status "$url")"
     if [[ "$code" == "200" ]]; then
@@ -43,6 +43,8 @@ declare -A ENDPOINTS=(
   [workspace]="${BASE}/workspaces/health/ready"
   [task]="${BASE}/tasks/health/ready"
   [notification]="${BASE}/notifications/health/ready"
+  [dlq]="${BASE}/dlq/health/ready"
+  [analytics]="${BASE}/analytics/health/ready"
 )
 
 attempt=1
