@@ -40,6 +40,16 @@ on:
 
         default: true
 
+      force_full_values:
+
+        description: Apply full values-prod.yaml (use when changing infra config like PostgreSQL replication)
+
+        required: false
+
+        type: boolean
+
+        default: false
+
 
 
 permissions:
@@ -454,20 +464,25 @@ jobs:
 
       - name: Helm upgrade (DOKS)
 
-        # Fresh install: full values-prod.yaml (sets up infra, PVCs, StatefulSets).
         # Existing release: --reuse-values + image tag overrides only — avoids touching
         # StatefulSet/PVC immutable fields that Kubernetes forbids patching.
+        # force_full_values=true: apply full values-prod.yaml (use for infra config changes
+        # like PostgreSQL replication — requires StatefulSets to be deleted manually first).
         shell: bash
         run: |
-          if helm status collabspace -n collabspace > /dev/null 2>&1; then
-            echo "==> Existing release found — upgrading with --reuse-values"
+          RELEASE_EXISTS=0
+          helm status collabspace -n collabspace > /dev/null 2>&1 && RELEASE_EXISTS=1
+          FORCE_FULL="${{ github.event.inputs.force_full_values }}"
+
+          if [[ "$RELEASE_EXISTS" == "1" && "$FORCE_FULL" != "true" ]]; then
+            echo "==> Existing release — upgrading with --reuse-values"
             helm upgrade collabspace infrastructure/helm/collabspace \
               --namespace collabspace \
               --timeout 20m \
               --reuse-values \
               ${{ steps.deploy-vars.outputs.helm_set_args }}
           else
-            echo "==> No release found — fresh install with full values"
+            echo "==> Applying full values-prod.yaml (fresh install or force_full_values=true)"
             helm upgrade --install collabspace infrastructure/helm/collabspace \
               --namespace collabspace \
               --timeout 20m \
