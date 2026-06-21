@@ -358,7 +358,7 @@ jobs:
 
 
 
-      - name: Add Helm repos & update dependencies
+      - name: Add Helm repos (for template rendering only)
 
         run: |
 
@@ -369,8 +369,6 @@ jobs:
           helm repo add traefik https://traefik.github.io/charts
 
           helm repo update
-
-          helm dependency update infrastructure/helm/collabspace
 
 
 

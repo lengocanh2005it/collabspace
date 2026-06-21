@@ -1,2 +1,1 @@
-# Vendored by `helm dependency update` — Chart.lock pins versions.
-*.tgz
+# Charts are vendored — do not ignore .tgz files
