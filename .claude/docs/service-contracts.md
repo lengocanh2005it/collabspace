@@ -493,6 +493,8 @@ Routes:
 - `POST /api/v1/dlq/messages/{id}/resolve`
 - `POST /api/v1/dlq/messages/{id}/discard`
 
+Resolve and discard accept optional body `{ "resolutionNote": string }`; when omitted or blank the record stores `resolutionNote: null`. Non-empty notes are limited to 1000 characters.
+
 List filters:
 
 - `status`: one or many values (`pending`, `replaying`, `requires_manual_review`, `resolved`, `discarded`); CSV query values are accepted.

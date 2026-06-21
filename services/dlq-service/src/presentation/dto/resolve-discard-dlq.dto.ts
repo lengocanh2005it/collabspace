@@ -1,14 +1,13 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsString, MinLength, MaxLength } from 'class-validator';
+import { ApiPropertyOptional } from '@nestjs/swagger';
+import { IsOptional, IsString, MaxLength } from 'class-validator';
 
 export class ResolveDiscardDlqDto {
-  @ApiProperty({
-    description: 'Required note explaining the resolution decision',
-    minLength: 5,
+  @ApiPropertyOptional({
+    description: 'Optional note explaining the resolution decision',
     maxLength: 1000,
   })
+  @IsOptional()
   @IsString()
-  @MinLength(5)
   @MaxLength(1000)
-  resolutionNote!: string;
+  resolutionNote?: string;
 }

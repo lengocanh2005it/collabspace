@@ -208,6 +208,20 @@ describe('DlqReplayService', () => {
       );
       expect(result.status).toBe('resolved');
     });
+
+    it('allows resolving without a note', async () => {
+      const updated = baseRecord({ status: 'resolved', resolutionNote: null });
+      repo.updateStatusByAdmin.mockResolvedValue(updated);
+
+      const result = await service.resolveOne('record-id-001', 'admin-1');
+      expect(repo.updateStatusByAdmin).toHaveBeenCalledWith(
+        'record-id-001',
+        'resolved',
+        'admin-1',
+        undefined,
+      );
+      expect(result.status).toBe('resolved');
+    });
   });
 
   describe('discardOne', () => {
@@ -230,6 +244,22 @@ describe('DlqReplayService', () => {
         'discarded',
         'admin-1',
         'event outdated',
+      );
+      expect(result.status).toBe('discarded');
+    });
+
+    it('allows discarding without a note', async () => {
+      const existing = baseRecord({ status: 'requires_manual_review' });
+      const updated = baseRecord({ status: 'discarded', resolutionNote: null });
+      repo.findById.mockResolvedValue(existing);
+      repo.updateStatusByAdmin.mockResolvedValue(updated);
+
+      const result = await service.discardOne('record-id-001', 'admin-1');
+      expect(repo.updateStatusByAdmin).toHaveBeenCalledWith(
+        'record-id-001',
+        'discarded',
+        'admin-1',
+        undefined,
       );
       expect(result.status).toBe('discarded');
     });

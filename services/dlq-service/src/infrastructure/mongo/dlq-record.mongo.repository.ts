@@ -196,7 +196,7 @@ export class MongoDlqRecordRepository implements IDlqRecordRepository {
     id: string,
     newStatus: 'resolved' | 'discarded',
     adminId: string,
-    note: string,
+    note?: string,
   ): Promise<DlqRecord | null> {
     if (!Types.ObjectId.isValid(id)) return null;
     const historyEntry = {
@@ -208,7 +208,7 @@ export class MongoDlqRecordRepository implements IDlqRecordRepository {
 
     const setFields: Record<string, unknown> = {
       status: newStatus,
-      resolutionNote: note,
+      resolutionNote: note?.trim() || null,
     };
     if (newStatus === 'resolved') {
       setFields.resolvedBy = adminId;

@@ -213,8 +213,8 @@ Kafka OK     Kafka FAIL                                      │
 | `replaying` | `requires_manual_review` | Kafka produce fail | `retryCount >= maxRetries` |
 | `replaying` | `pending` (hoàn thành) | Kafka produce OK | `retryCount++`, `nextRetryAt=null` |
 | `pending` / `requires_manual_review` | `replaying` | Admin POST `/replay` | atomic lock |
-| `requires_manual_review` | `resolved` | Admin POST `/resolve` | cần `resolutionNote` |
-| `pending` / `requires_manual_review` | `discarded` | Admin POST `/discard` | cần `resolutionNote` |
+| `requires_manual_review` | `resolved` | Admin POST `/resolve` | `resolutionNote` optional |
+| `pending` / `requires_manual_review` | `discarded` | Admin POST `/discard` | `resolutionNote` optional |
 
 Không có transition admin mặc định sang `requires_manual_review`. Nếu vận hành thực tế cần đưa một record `pending` vào review thủ công, thêm route riêng `POST /api/v1/dlq/messages/:id/escalate` trong PR sau; route này không nằm trong MVP DLQ vì thường ít dùng và dễ làm rối state machine.
 
@@ -457,7 +457,7 @@ Dùng `ids` hoặc `filter`, không dùng cả hai.
 
 Admin đánh dấu đã xử lý tay xong. Cần `dlq.manage`.
 
-Cho phép từ mọi status trừ `discarded`. Bắt buộc `resolutionNote`.
+Cho phép từ mọi status trừ `discarded`. `resolutionNote` optional, nếu nhập thì tối đa 1000 ký tự.
 
 **Request body:**
 ```json
@@ -471,6 +471,7 @@ Cho phép từ mọi status trừ `discarded`. Bắt buộc `resolutionNote`.
 Admin quyết định không xử lý record này. Cần `dlq.manage`. Không xóa, chỉ set `status = discarded`.
 
 Cho phép từ `pending` và `requires_manual_review`.
+`resolutionNote` optional, nếu nhập thì tối đa 1000 ký tự.
 
 **Request body:**
 ```json

@@ -107,14 +107,14 @@ export class DlqReplayService {
     return outcomes;
   }
 
-  async resolveOne(id: string, adminId: string, note: string): Promise<DlqRecord> {
+  async resolveOne(id: string, adminId: string, note?: string): Promise<DlqRecord> {
     const updated = await this.repo.updateStatusByAdmin(id, 'resolved', adminId, note);
     if (!updated) throw new NotFoundException(`DLQ record not found or already discarded: ${id}`);
     this.logger.log(`DLQ record resolved: id=${id} by=${adminId}`);
     return updated;
   }
 
-  async discardOne(id: string, adminId: string, note: string): Promise<DlqRecord> {
+  async discardOne(id: string, adminId: string, note?: string): Promise<DlqRecord> {
     const existing = await this.repo.findById(id);
     if (!existing) throw new NotFoundException(`DLQ record not found: ${id}`);
 

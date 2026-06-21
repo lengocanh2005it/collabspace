@@ -79,6 +79,6 @@ export interface IDlqRecordRepository {
     id: string,
     newStatus: 'resolved' | 'discarded',
     adminId: string,
-    note: string,
+    note?: string,
   ): Promise<DlqRecord | null>;
 }
