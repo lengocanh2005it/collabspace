@@ -1,6 +1,6 @@
 {{- if .Values.networkPolicies.enabled }}
 {{- $ns := include "collabspace.namespace" . }}
-{{- $appServices := list "auth-service" "user-service" "workspace-service" "task-service" "notification-service" "dlq-service" }}
+{{- $appServices := list "auth-service" "user-service" "workspace-service" "task-service" "notification-service" "dlq-service" "analytics-service" }}
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
