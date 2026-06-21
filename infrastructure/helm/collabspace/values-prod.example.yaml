@@ -44,6 +44,7 @@ postgresql:
   primary:
     persistence:
       size: 8Gi
+      storageClass: do-block-storage
     extendedConfiguration: |
       wal_level = logical
       max_replication_slots = 4
@@ -65,6 +66,7 @@ mongodb:
     rootPassword: "REPLACE_ME"
   persistence:
     size: 8Gi
+    storageClass: do-block-storage
   resources:
     requests:
       memory: 256Mi
@@ -79,6 +81,7 @@ redis:
   master:
     persistence:
       size: 2Gi
+      storageClass: do-block-storage
     resources:
       requests:
         memory: 128Mi
@@ -92,6 +95,7 @@ kafka:
   enabled: true
   persistence:
     size: 8Gi
+    storageClass: do-block-storage
   resources:
     requests:
       memory: 384Mi
@@ -133,6 +137,7 @@ traefik:
   persistence:
     enabled: true
     size: 128Mi
+    storageClass: do-block-storage
 
 gateway:
   publicHost: REPLACE_ME_DOMAIN
