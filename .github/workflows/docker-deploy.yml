@@ -390,6 +390,11 @@ jobs:
 
           helm_set_args=""
 
+          # Migration service tags default to latest (values-prod.yaml default)
+          auth_tag="latest"
+          user_tag="latest"
+          workspace_tag="latest"
+
           if [[ "$services" != "[]" ]]; then
 
             while IFS= read -r svc; do
@@ -407,14 +412,23 @@ jobs:
               fi
 
               # Convert service name to helm key: auth-service → apps.auth-service.image.tag
-
               helm_set_args+=" --set apps.${svc}.image.tag=${tag}"
+
+              # Track tags for the three PostgreSQL-backed services that need migrations
+              case "$svc" in
+                auth-service)      auth_tag="$tag" ;;
+                user-service)      user_tag="$tag" ;;
+                workspace-service) workspace_tag="$tag" ;;
+              esac
 
             done < <(echo "$services" | jq -r '.[]')
 
           fi
 
           echo "helm_set_args=${helm_set_args}" >> "$GITHUB_OUTPUT"
+          echo "auth_tag=${auth_tag}" >> "$GITHUB_OUTPUT"
+          echo "user_tag=${user_tag}" >> "$GITHUB_OUTPUT"
+          echo "workspace_tag=${workspace_tag}" >> "$GITHUB_OUTPUT"
 
 
 
@@ -440,15 +454,131 @@ jobs:
 
       - name: Helm upgrade (DOKS)
 
+        # --wait omitted intentionally: app pods may CrashLoopBackOff until migrations run.
+        # We wait for datastores and apps separately after migrations complete.
         run: |
           helm upgrade --install collabspace infrastructure/helm/collabspace \
             --namespace collabspace \
             --timeout 20m \
-            --wait \
             --force \
             --set global.createNamespace=false \
             -f /tmp/values-prod.yaml \
             ${{ steps.deploy-vars.outputs.helm_set_args }}
+
+
+
+      - name: Wait for PostgreSQL to be ready
+
+        run: |
+          kubectl rollout status statefulset/collabspace-postgresql -n collabspace --timeout=10m
+
+
+
+      - name: Run DB migrations
+
+        shell: bash
+
+        run: |
+          set -euo pipefail
+          OWNER="${GITHUB_REPOSITORY_OWNER,,}"
+          AUTH_TAG="${{ steps.deploy-vars.outputs.auth_tag }}"
+          USER_TAG="${{ steps.deploy-vars.outputs.user_tag }}"
+          WS_TAG="${{ steps.deploy-vars.outputs.workspace_tag }}"
+
+          echo "==> Migration images: auth=${AUTH_TAG} user=${USER_TAG} workspace=${WS_TAG}"
+
+          # Remove any leftover migration jobs from a previous run
+          kubectl delete job migrate-auth migrate-user migrate-workspace \
+            -n collabspace --ignore-not-found
+
+          kubectl apply -f - <<EOF
+          apiVersion: batch/v1
+          kind: Job
+          metadata:
+            name: migrate-auth
+            namespace: collabspace
+          spec:
+            ttlSecondsAfterFinished: 3600
+            backoffLimit: 2
+            template:
+              spec:
+                restartPolicy: Never
+                imagePullSecrets:
+                  - name: ghcr-credentials
+                containers:
+                  - name: migrate
+                    image: ghcr.io/${OWNER}/collabspace-auth-service:${AUTH_TAG}
+                    command: ["node", "dist/src/migrate.js"]
+                    envFrom:
+                      - configMapRef:
+                          name: auth-service-config
+          ---
+          apiVersion: batch/v1
+          kind: Job
+          metadata:
+            name: migrate-user
+            namespace: collabspace
+          spec:
+            ttlSecondsAfterFinished: 3600
+            backoffLimit: 2
+            template:
+              spec:
+                restartPolicy: Never
+                imagePullSecrets:
+                  - name: ghcr-credentials
+                containers:
+                  - name: migrate
+                    image: ghcr.io/${OWNER}/collabspace-user-service:${USER_TAG}
+                    command: ["node", "dist/src/migrate.js"]
+                    envFrom:
+                      - configMapRef:
+                          name: user-service-config
+          ---
+          apiVersion: batch/v1
+          kind: Job
+          metadata:
+            name: migrate-workspace
+            namespace: collabspace
+          spec:
+            ttlSecondsAfterFinished: 3600
+            backoffLimit: 2
+            template:
+              spec:
+                restartPolicy: Never
+                imagePullSecrets:
+                  - name: ghcr-credentials
+                containers:
+                  - name: migrate
+                    image: ghcr.io/${OWNER}/collabspace-workspace-service:${WS_TAG}
+                    command: ["node", "dist/src/migrate.js"]
+                    envFrom:
+                      - configMapRef:
+                          name: workspace-service-config
+          EOF
+
+
+
+      - name: Wait for migrations to complete
+
+        run: |
+          echo "==> Waiting for auth migration..."
+          kubectl wait job/migrate-auth -n collabspace --for=condition=complete --timeout=5m
+          echo "==> Waiting for user migration..."
+          kubectl wait job/migrate-user -n collabspace --for=condition=complete --timeout=5m
+          echo "==> Waiting for workspace migration..."
+          kubectl wait job/migrate-workspace -n collabspace --for=condition=complete --timeout=5m
+          echo "==> All migrations complete."
+
+
+
+      - name: Rollout restart app deployments
+
+        run: |
+          kubectl rollout restart deployment/auth-service -n collabspace
+          kubectl rollout restart deployment/user-service -n collabspace
+          kubectl rollout restart deployment/workspace-service -n collabspace
+          kubectl rollout restart deployment/task-service -n collabspace
+          kubectl rollout restart deployment/notification-service -n collabspace
 
 
 
