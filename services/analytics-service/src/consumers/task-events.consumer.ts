@@ -34,7 +34,15 @@ export class TaskEventsConsumer implements OnModuleInit, OnModuleDestroy {
     const consumerGroup = `${kafkaConfig.groupId}-task-events`;
 
     this.consumer = kafka.consumer({ groupId: consumerGroup });
-    await this.consumer.connect();
+    try {
+      await this.consumer.connect();
+    } catch (error) {
+      this.logger.warn(
+        `Kafka consumer failed to connect (non-fatal): ${error instanceof Error ? error.message : String(error)}`,
+      );
+      this.consumer = null;
+      return;
+    }
     const topics = [
       kafkaConfig.taskCreatedTopic,
       kafkaConfig.taskStatusChangedTopic,
