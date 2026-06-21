@@ -454,16 +454,27 @@ jobs:
 
       - name: Helm upgrade (DOKS)
 
-        # --wait omitted intentionally: app pods may CrashLoopBackOff until migrations run.
-        # We wait for datastores and apps separately after migrations complete.
-        # --force intentionally omitted: it deletes all resources before recreating (too destructive).
+        # Fresh install: full values-prod.yaml (sets up infra, PVCs, StatefulSets).
+        # Existing release: --reuse-values + image tag overrides only — avoids touching
+        # StatefulSet/PVC immutable fields that Kubernetes forbids patching.
+        shell: bash
         run: |
-          helm upgrade --install collabspace infrastructure/helm/collabspace \
-            --namespace collabspace \
-            --timeout 20m \
-            --set global.createNamespace=false \
-            -f /tmp/values-prod.yaml \
-            ${{ steps.deploy-vars.outputs.helm_set_args }}
+          if helm status collabspace -n collabspace > /dev/null 2>&1; then
+            echo "==> Existing release found — upgrading with --reuse-values"
+            helm upgrade collabspace infrastructure/helm/collabspace \
+              --namespace collabspace \
+              --timeout 20m \
+              --reuse-values \
+              ${{ steps.deploy-vars.outputs.helm_set_args }}
+          else
+            echo "==> No release found — fresh install with full values"
+            helm upgrade --install collabspace infrastructure/helm/collabspace \
+              --namespace collabspace \
+              --timeout 20m \
+              --set global.createNamespace=false \
+              -f /tmp/values-prod.yaml \
+              ${{ steps.deploy-vars.outputs.helm_set_args }}
+          fi
 
 
 
