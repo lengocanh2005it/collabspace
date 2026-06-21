@@ -187,8 +187,8 @@ resp=$(curl_post "$BASE/auth/verify-email" -d "{\"userId\":\"$USER_B_ID\",\"otp\
 code=$(echo "$resp" | cut -d' ' -f1)
 body=$(echo "$resp" | cut -d' ' -f2-)
 assert_2xx "$code" "$body" "verify-email User B"
-log "  User B registered and verified; waiting 15s for task-service user replica..."
-sleep 15
+log "  User B registered and verified; waiting 20s for task-service user replica (Kafka/Debezium)..."
+sleep 20
 
 # ---------- Step 2: Create workspace + invite User B -------------------------
 
@@ -322,24 +322,28 @@ log "  Comment created: $COMMENT_ID"
 
 # ---------- Step 7: User B checks notifications ------------------------------
 
-log "Step 7: User B checking notifications (allow 2s for event propagation)..."
-sleep 2
-
-resp=$(curl_get "$BASE/notifications" -H "Authorization: Bearer $TOKEN_B")
-code=$(echo "$resp" | cut -d' ' -f1)
-body=$(echo "$resp" | cut -d' ' -f2-)
-assert_2xx "$code" "$body" "list notifications"
-
-NOTIF_COUNT=$(echo "$body" | python3 -c "
+log "Step 7: User B checking notifications (Kafka async — retry up to 30s)..."
+NOTIF_COUNT="0"
+for attempt in 1 2 3 4 5 6; do
+  sleep 5
+  resp=$(curl_get "$BASE/notifications" -H "Authorization: Bearer $TOKEN_B")
+  code=$(echo "$resp" | cut -d' ' -f1)
+  body=$(echo "$resp" | cut -d' ' -f2-)
+  assert_2xx "$code" "$body" "list notifications"
+  NOTIF_COUNT=$(echo "$body" | python3 -c "
 import sys, json
 d = json.load(sys.stdin)
 items = d if isinstance(d, list) else d.get('data', d.get('items', d.get('notifications', [])))
 print(len(items))
-" 2>/dev/null || echo "?")
+" 2>/dev/null || echo "0")
+  if [[ "$NOTIF_COUNT" != "0" && "$NOTIF_COUNT" != "?" ]]; then
+    break
+  fi
+  log "  No notifications yet (attempt ${attempt}/6), retrying..."
+done
 log "  User B has $NOTIF_COUNT notification(s)."
-
 if [[ "$NOTIF_COUNT" == "0" || "$NOTIF_COUNT" == "?" ]]; then
-  log "  WARNING: notifications may not have propagated yet (RabbitMQ async). Check manually or increase sleep."
+  log "  WARNING: notifications did not propagate after 30s. Check Kafka/notification-service logs."
 fi
 
 # ---------- Summary ----------------------------------------------------------
