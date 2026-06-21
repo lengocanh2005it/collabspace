@@ -182,16 +182,10 @@ export class MongoDlqRecordRepository implements IDlqRecordRepository {
 
   async releaseStaleLocks(lockedBefore: Date): Promise<number> {
     const result = await this.model
-      .updateMany({ status: 'replaying', lockedAt: { $lt: lockedBefore } }, [
-        {
-          $set: {
-            status: { $ifNull: ['$lockedFromStatus', 'pending'] },
-            lockedAt: null,
-            lockedBy: null,
-            lockedFromStatus: null,
-          },
-        },
-      ])
+      .updateMany(
+        { status: 'replaying', lockedAt: { $lt: lockedBefore } },
+        { $set: { status: 'pending', lockedAt: null, lockedBy: null } },
+      )
       .exec();
     return result.modifiedCount;
   }
