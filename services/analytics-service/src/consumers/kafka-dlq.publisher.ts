@@ -19,8 +19,15 @@ export class KafkaDlqPublisher implements OnModuleInit, OnModuleDestroy {
       brokers: kafkaConfig.brokers,
     });
     this.producer = kafka.producer();
-    await this.producer.connect();
-    this.logger.log(`Kafka DLQ producer connected topic=${kafkaConfig.dlqTopic}`);
+    try {
+      await this.producer.connect();
+      this.logger.log(`Kafka DLQ producer connected topic=${kafkaConfig.dlqTopic}`);
+    } catch (error) {
+      this.logger.warn(
+        `Kafka DLQ producer failed to connect (non-fatal): ${error instanceof Error ? error.message : String(error)}`,
+      );
+      this.producer = null;
+    }
   }
 
   async publish(envelope: KafkaDlqEnvelope): Promise<void> {
