@@ -428,26 +428,26 @@ jobs:
 
       - name: Ensure namespace exists
 
-        run: kubectl create namespace collabspace --dry-run=client -o yaml | kubectl apply -f -
+        run: |
+          kubectl create namespace collabspace --dry-run=client -o yaml | kubectl apply -f -
+          kubectl label namespace collabspace app.kubernetes.io/managed-by=Helm --overwrite
+          kubectl annotate namespace collabspace \
+            meta.helm.sh/release-name=collabspace \
+            meta.helm.sh/release-namespace=collabspace \
+            --overwrite
 
 
 
       - name: Helm upgrade (DOKS)
 
         run: |
-
           helm upgrade --install collabspace infrastructure/helm/collabspace \
-
             --namespace collabspace \
-
+            --create-namespace \
             --timeout 20m \
-
             --wait \
-
             --set global.createNamespace=false \
-
             -f /tmp/values-prod.yaml \
-
             ${{ steps.deploy-vars.outputs.helm_set_args }}
 
 
