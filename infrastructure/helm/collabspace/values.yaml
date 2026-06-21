@@ -677,3 +677,32 @@ apps:
       DLQ_AUTO_RETRY_BATCH_SIZE: "50"
       DLQ_MAX_RETRIES_TRANSIENT: "3"
       DLQ_MAX_RETRIES_UNKNOWN: "1"
+
+  analytics-service:
+    enabled: false
+    replicas: 1
+    image:
+      repository: collabspace/analytics-service
+      tag: latest
+    httpPort: 3000
+    metricsPath: /api/v1/analytics/metrics
+    health:
+      readyPath: /api/v1/analytics/health/ready
+      livePath: /api/v1/analytics/health/live
+      preStopSleep: 5
+      terminationGracePeriodSeconds: 20
+    resources:
+      requests:
+        memory: 128Mi
+        cpu: 100m
+      limits:
+        memory: 256Mi
+        cpu: 250m
+    extraEnv:
+      KAFKA_CONSUMERS_ENABLED: "true"
+      KAFKA_BROKERS: "kafka:9092"
+      KAFKA_CLIENT_ID: "analytics-service"
+      KAFKA_GROUP_ID: "analytics-service"
+      KAFKA_DLQ_TOPIC: "collabspace.dlq.events"
+      KAFKA_CONSUMER_MAX_RETRIES: "3"
+      KAFKA_CONSUMER_RETRY_DELAY_MS: "1000"
