@@ -78,7 +78,7 @@ spec:
             matchExpressions:
               - key: app
                 operator: In
-                values: [user-service, workspace-service, task-service, notification-service, dlq-service]
+                values: [user-service, workspace-service, task-service, notification-service, dlq-service, analytics-service]
       ports:
         - port: 50051
           protocol: TCP
