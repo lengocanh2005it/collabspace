@@ -57,10 +57,14 @@ function classifyKafkaConsumerError(error: unknown): DlqErrorCategory {
   if (
     name.includes('validation') ||
     name.includes('zod') ||
+    name.includes('casterror') ||
+    name.includes('bsonerror') ||
     message.includes('invalid json') ||
     message.includes('not valid json') ||
     message.includes('validation') ||
-    message.includes('schema')
+    message.includes('schema') ||
+    message.includes('cast to') ||
+    message.includes('objectid failed')
   ) {
     return 'schema';
   }
