@@ -445,6 +445,7 @@ jobs:
             --namespace collabspace \
             --timeout 20m \
             --wait \
+            --force \
             --set global.createNamespace=false \
             -f /tmp/values-prod.yaml \
             ${{ steps.deploy-vars.outputs.helm_set_args }}
