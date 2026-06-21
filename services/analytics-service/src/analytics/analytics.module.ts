@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { AnalyticsController } from './controllers/analytics.controller.js';
+import { HealthController } from '../health/health.controller.js';
+import { MetricsController } from '../metrics/metrics.controller.js';
 import { AnalyticsHealthService } from '../health/analytics-health.service.js';
 import { AnalyticsRepository } from './repositories/analytics.repository.js';
 import { AnalyticsService } from './services/analytics.service.js';
@@ -17,7 +19,7 @@ import { TimeseriesDaily, TimeseriesDailySchema } from '../domain/timeseries-dai
       { name: TimeseriesDaily.name, schema: TimeseriesDailySchema },
     ]),
   ],
-  controllers: [AnalyticsController],
+  controllers: [AnalyticsController, HealthController, MetricsController],
   providers: [
     AnalyticsHealthService,
     AnalyticsRepository,
