@@ -29,7 +29,9 @@ export class AddAnalyticsPermission1718000000008 implements MigrationInterface {
     await queryRunner.query(
       `
       INSERT INTO role_permissions (role_id, permission_id)
-      VALUES ($1, (SELECT id FROM permissions WHERE name = $2))
+      SELECT r.id, p.id
+      FROM roles r, permissions p
+      WHERE r.id = $1 AND p.name = $2
       ON CONFLICT DO NOTHING
       `,
       [ADMIN_ROLE_ID, ANALYTICS_READ_PERMISSION.name],
