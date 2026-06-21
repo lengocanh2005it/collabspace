@@ -102,7 +102,7 @@ jobs:
 
           set -euo pipefail
 
-          ALL_SERVICES=(auth-service user-service workspace-service task-service notification-service dlq-service)
+          ALL_SERVICES=(auth-service user-service workspace-service task-service notification-service dlq-service analytics-service)
 
 
 
@@ -155,6 +155,8 @@ jobs:
           [[ "${{ steps.filter.outputs.notification_service }}" == "true" ]] && services+=(notification-service)
 
           [[ "${{ steps.filter.outputs.dlq_service }}" == "true" ]] && services+=(dlq-service)
+
+          [[ "${{ steps.filter.outputs.analytics_service }}" == "true" ]] && services+=(analytics-service)
 
 
 

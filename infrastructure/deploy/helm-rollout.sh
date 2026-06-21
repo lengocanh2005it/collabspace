@@ -30,7 +30,7 @@ fi
 # CI/workflow may export IMAGE_TAG before this script; phase0.env must not override it.
 ci_image_tag="${IMAGE_TAG:-}"
 
-APP_SERVICES=(auth-service user-service workspace-service task-service notification-service dlq-service)
+APP_SERVICES=(auth-service user-service workspace-service task-service notification-service dlq-service analytics-service)
 declare -A SERVICE_IMAGE_TAG_MAP=()
 DEPLOY_SERVICE_LIST=()
 
@@ -164,7 +164,7 @@ ensure_app_external_secrets() {
       kubectl apply -f "$extra"
     fi
   done
-  for es in auth-service user-service workspace-service task-service notification-service dlq-service; do
+  for es in auth-service user-service workspace-service task-service notification-service dlq-service analytics-service; do
     kubectl wait --for=condition=Ready "externalsecret/${es}-secrets" -n "$APP_NS" --timeout=180s
   done
   for es in backup-spaces-secret alertmanager-slack-secret; do
@@ -276,7 +276,7 @@ elif [[ -n "${ci_image_tag:-}" ]]; then
 import re
 
 tag = "${IMAGE_TAG}"
-services = ["auth-service", "user-service", "workspace-service", "task-service", "notification-service", "dlq-service"]
+services = ["auth-service", "user-service", "workspace-service", "task-service", "notification-service", "dlq-service", "analytics-service"]
 
 with open("${VALUES_PROD}", "r") as f:
     content = f.read()
@@ -295,7 +295,7 @@ fi
 
 restore_app_replicas() {
   echo "==> Restoring app replica counts from values-prod..."
-  for dep in auth-service user-service workspace-service task-service notification-service dlq-service; do
+  for dep in auth-service user-service workspace-service task-service notification-service dlq-service analytics-service; do
     replicas="$(grep -A20 "^  ${dep}:" "$VALUES_PROD" | grep -m1 'replicas:' | awk '{print $2}' || echo 1)"
     if kubectl get deployment "$dep" -n "$APP_NS" >/dev/null 2>&1; then
       kubectl scale deployment "$dep" -n "$APP_NS" --replicas="${replicas:-1}"

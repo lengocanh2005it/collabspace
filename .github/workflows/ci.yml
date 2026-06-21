@@ -37,7 +37,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          ALL_SERVICES=(auth-service user-service workspace-service task-service notification-service dlq-service)
+          ALL_SERVICES=(auth-service user-service workspace-service task-service notification-service dlq-service analytics-service)
 
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
             raw="${{ github.event.inputs.services }}"
@@ -64,6 +64,7 @@ jobs:
           [[ "${{ steps.filter.outputs.task_service }}" == "true" ]] && services+=(task-service)
           [[ "${{ steps.filter.outputs.notification_service }}" == "true" ]] && services+=(notification-service)
           [[ "${{ steps.filter.outputs.dlq_service }}" == "true" ]] && services+=(dlq-service)
+          [[ "${{ steps.filter.outputs.analytics_service }}" == "true" ]] && services+=(analytics-service)
 
           if [[ ${#services[@]} -eq 0 ]]; then
             echo "services=[]" >> "$GITHUB_OUTPUT"
