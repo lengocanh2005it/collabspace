@@ -5,6 +5,7 @@ import { ConfigurationModule } from './config/configuration.module.js';
 import { ConfigurationService } from './config/configuration.service.js';
 import { MetricsModule } from './metrics/metrics.module.js';
 import { AnalyticsModule } from './analytics/analytics.module.js';
+import { ConsumersModule } from './consumers/consumers.module.js';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { AnalyticsModule } from './analytics/analytics.module.js';
       }),
     }),
     AnalyticsModule,
+    ConsumersModule,
   ],
 })
 export class AppModule {}
