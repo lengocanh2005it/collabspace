@@ -27,6 +27,32 @@ export const WorkspaceDeletedEventSchema = EventEnvelopeSchema.extend({
   deletedById: z.string().min(1),
 });
 
+export const WorkspaceCreatedEventSchema = EventEnvelopeSchema.extend({
+  workspaceId: z.string().min(1),
+  workspaceName: z.string().min(1),
+  ownerId: z.string().min(1),
+});
+
+export const WorkspaceProjectCreatedEventSchema = EventEnvelopeSchema.extend({
+  workspaceId: z.string().min(1),
+  projectId: z.string().min(1),
+  projectName: z.string().min(1),
+  createdBy: z.string().min(1),
+});
+
+export const WorkspaceMemberJoinedEventSchema = EventEnvelopeSchema.extend({
+  workspaceId: z.string().min(1),
+  userId: z.string().min(1),
+  role: z.string().min(1),
+  invitationId: z.string().optional(),
+});
+
+export const WorkspaceMemberLeftEventSchema = EventEnvelopeSchema.extend({
+  workspaceId: z.string().min(1),
+  userId: z.string().min(1),
+  role: z.string().optional(),
+});
+
 // ── Task events ───────────────────────────────────────────────────────────────
 
 export const TaskAssignedEventSchema = EventEnvelopeSchema.extend({
@@ -38,6 +64,32 @@ export const TaskAssignedEventSchema = EventEnvelopeSchema.extend({
   actorName: z.string(),
   actorAvatarUrl: z.string().optional(),
   assignedAt: z.string().min(1),
+});
+
+const TaskStatusSchema = z.enum(['TODO', 'DOING', 'DONE']);
+
+export const TaskCreatedEventSchema = EventEnvelopeSchema.extend({
+  taskId: z.string().min(1),
+  taskTitle: z.string(),
+  workspaceId: z.string().min(1),
+  creatorId: z.string().min(1),
+  projectId: z.string().nullish(),
+  status: TaskStatusSchema,
+});
+
+export const TaskStatusChangedEventSchema = EventEnvelopeSchema.extend({
+  taskId: z.string().min(1),
+  workspaceId: z.string().min(1),
+  previousStatus: TaskStatusSchema,
+  newStatus: TaskStatusSchema,
+  actorId: z.string().optional(),
+});
+
+export const TaskDeletedEventSchema = EventEnvelopeSchema.extend({
+  taskId: z.string().min(1),
+  workspaceId: z.string().min(1),
+  status: TaskStatusSchema,
+  actorId: z.string().min(1),
 });
 
 // ── Comment events ────────────────────────────────────────────────────────────
@@ -84,7 +136,18 @@ export const UserProfileUpdatedEventSchema = z.object({
 
 export type WorkspaceInvitedEventPayloadParsed = z.infer<typeof WorkspaceInvitedEventSchema>;
 export type WorkspaceDeletedEventPayloadParsed = z.infer<typeof WorkspaceDeletedEventSchema>;
+export type WorkspaceCreatedEventPayloadParsed = z.infer<typeof WorkspaceCreatedEventSchema>;
+export type WorkspaceProjectCreatedEventPayloadParsed = z.infer<
+  typeof WorkspaceProjectCreatedEventSchema
+>;
+export type WorkspaceMemberJoinedEventPayloadParsed = z.infer<
+  typeof WorkspaceMemberJoinedEventSchema
+>;
+export type WorkspaceMemberLeftEventPayloadParsed = z.infer<typeof WorkspaceMemberLeftEventSchema>;
 export type TaskAssignedEventPayloadParsed = z.infer<typeof TaskAssignedEventSchema>;
+export type TaskCreatedEventPayloadParsed = z.infer<typeof TaskCreatedEventSchema>;
+export type TaskStatusChangedEventPayloadParsed = z.infer<typeof TaskStatusChangedEventSchema>;
+export type TaskDeletedEventPayloadParsed = z.infer<typeof TaskDeletedEventSchema>;
 export type TaskCommentedEventPayloadParsed = z.infer<typeof TaskCommentedEventSchema>;
 export type CommentMentionedEventPayloadParsed = z.infer<typeof CommentMentionedEventSchema>;
 export type UserRegisteredEventPayloadParsed = z.infer<typeof UserRegisteredEventSchema>;

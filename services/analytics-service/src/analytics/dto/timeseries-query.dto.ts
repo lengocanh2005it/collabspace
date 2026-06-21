@@ -32,7 +32,7 @@ export class TimeseriesQueryDto {
   @ApiPropertyOptional({ enum: ['day'], default: 'day' })
   @IsOptional()
   @IsIn(['day'])
-  interval: 'day' = 'day';
+  interval = 'day' as const;
 }
 
 export class TimeseriesDataPointDto {

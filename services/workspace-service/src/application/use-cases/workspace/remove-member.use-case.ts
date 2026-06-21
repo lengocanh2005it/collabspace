@@ -1,4 +1,5 @@
 import { ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { randomUUID } from 'node:crypto';
 import {
   type IWorkspaceMemberRepository,
   WORKSPACE_MEMBER_REPOSITORY,
@@ -8,6 +9,7 @@ import {
   WORKSPACE_ACTIVITY_REPOSITORY,
 } from '../../../domain/repositories/workspace-activity.repository';
 import { WorkspaceCacheService } from '../../../infrastructure/cache/workspace-cache.service';
+import { WorkspaceOutboxService } from '../../../infrastructure/outbox/workspace-outbox.service';
 
 @Injectable()
 export class RemoveMemberUseCase {
@@ -17,6 +19,7 @@ export class RemoveMemberUseCase {
     @Inject(WORKSPACE_ACTIVITY_REPOSITORY)
     private readonly activityRepo: IWorkspaceActivityRepository,
     private readonly workspaceCache: WorkspaceCacheService,
+    private readonly workspaceOutbox: WorkspaceOutboxService,
   ) {}
 
   async execute(actorId: string, workspaceId: string, targetUserId: string): Promise<void> {
@@ -37,16 +40,12 @@ export class RemoveMemberUseCase {
     }
 
     if (isSelf) {
-      await this.memberRepo.removeByWorkspaceAndUser(workspaceId, targetUserId);
-      await this.recordRemoval(workspaceId, actorId, targetUserId, target.role, true);
-      await this.workspaceCache.deleteWorkspaceList(targetUserId);
+      await this.removeAndRecord(workspaceId, actorId, targetUserId, target.role, true);
       return;
     }
 
     if (actor.role === 'owner') {
-      await this.memberRepo.removeByWorkspaceAndUser(workspaceId, targetUserId);
-      await this.recordRemoval(workspaceId, actorId, targetUserId, target.role, false);
-      await this.workspaceCache.deleteWorkspaceList(targetUserId);
+      await this.removeAndRecord(workspaceId, actorId, targetUserId, target.role, false);
       return;
     }
 
@@ -55,13 +54,30 @@ export class RemoveMemberUseCase {
         throw new ForbiddenException('Workspace managers can remove only members');
       }
 
-      await this.memberRepo.removeByWorkspaceAndUser(workspaceId, targetUserId);
-      await this.recordRemoval(workspaceId, actorId, targetUserId, target.role, false);
-      await this.workspaceCache.deleteWorkspaceList(targetUserId);
+      await this.removeAndRecord(workspaceId, actorId, targetUserId, target.role, false);
       return;
     }
 
     throw new ForbiddenException('Only the workspace owner or manager can remove members');
+  }
+
+  private async removeAndRecord(
+    workspaceId: string,
+    actorId: string,
+    targetUserId: string,
+    previousRole: string,
+    selfRemoved: boolean,
+  ): Promise<void> {
+    await this.memberRepo.removeByWorkspaceAndUser(workspaceId, targetUserId);
+    await this.recordRemoval(workspaceId, actorId, targetUserId, previousRole, selfRemoved);
+    await this.workspaceOutbox.enqueueMemberLeft({
+      eventId: randomUUID(),
+      occurredAt: new Date().toISOString(),
+      role: previousRole,
+      userId: targetUserId,
+      workspaceId,
+    });
+    await this.workspaceCache.deleteWorkspaceList(targetUserId);
   }
 
   private async recordRemoval(

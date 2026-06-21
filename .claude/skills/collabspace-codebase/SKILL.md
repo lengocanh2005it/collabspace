@@ -37,10 +37,10 @@ Read these files as needed:
 2. Map the request to the owning service.
 3. Check `docs/features.md` for Done / Planned. All core app services plus
    `dlq-service`, workspace/task activity feeds, task/notification E2E, workspace E2E,
-   CI demo smoke, and the Admin Platform APIs are implemented. `analytics-service`
-   is partial until live Kafka source topics/events are aligned with the canonical
-   event bus. Main gaps are automated contract tests, frontend polish/tests,
-   restore drill/offsite backup, capacity baseline, and infra operations.
+   CI demo smoke, the Admin Platform APIs, and `analytics-service` canonical
+   Kafka read-model ingestion are implemented. Main gaps are automated contract
+   tests, frontend polish/tests, restore drill/offsite backup, capacity baseline,
+   and infra operations.
 4. Read `services/<service>/CLAUDE.md` and `.claude/docs/service-architecture.md` for that service's layering rules.
 5. Read the target service's `src/app.module.ts`, controllers, use cases/handlers, entities, repositories, migrations, and tests.
 6. For **TypeORM migrations** (auth, workspace): file `{timestamp}-{PascalCase}.ts`, class `{PascalCase}{timestamp}` — see `nest-service-change` skill. user-service uses `migrations/NNN_*.sql`.

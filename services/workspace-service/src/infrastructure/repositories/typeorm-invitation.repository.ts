@@ -134,6 +134,17 @@ export class TypeOrmInvitationRepository implements IInvitationRepository {
           role: 'member',
         });
         await manager.save(member);
+        await this.workspaceOutboxService.enqueueMemberJoined(
+          {
+            eventId: randomUUID(),
+            occurredAt: new Date().toISOString(),
+            invitationId,
+            role: member.role,
+            userId,
+            workspaceId: orm.workspace_id,
+          },
+          manager,
+        );
       }
 
       return { status: 'accepted', workspaceId: orm.workspace_id };

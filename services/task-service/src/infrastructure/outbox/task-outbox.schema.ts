@@ -5,6 +5,9 @@ export const TASK_OUTBOX_AGGREGATE_TYPE = "Task";
 export const TASK_OUTBOX_EVENT_TASK_ASSIGNED = "task.task_assigned";
 export const TASK_OUTBOX_EVENT_TASK_COMMENTED = "task.comment_created";
 export const TASK_OUTBOX_EVENT_COMMENT_MENTIONED = "task.comment_mentioned";
+export const TASK_OUTBOX_EVENT_TASK_CREATED = "task.task_created";
+export const TASK_OUTBOX_EVENT_TASK_STATUS_CHANGED = "task.task_status_changed";
+export const TASK_OUTBOX_EVENT_TASK_DELETED = "task.task_deleted";
 
 export type TaskOutboxEventDocument = HydratedDocument<TaskOutboxEvent>;
 

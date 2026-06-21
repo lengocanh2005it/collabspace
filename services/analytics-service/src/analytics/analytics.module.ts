@@ -10,6 +10,10 @@ import { AuthModule } from '../integrations/auth/auth.module.js';
 import { platformAdminAuthProviders } from '../integrations/auth/platform-admin-auth.providers.js';
 import { PlatformSnapshot, PlatformSnapshotSchema } from '../domain/platform-snapshot.schema.js';
 import { TimeseriesDaily, TimeseriesDailySchema } from '../domain/timeseries-daily.schema.js';
+import {
+  ProcessedAnalyticsEvent,
+  ProcessedAnalyticsEventSchema,
+} from '../domain/processed-analytics-event.schema.js';
 
 @Module({
   imports: [
@@ -17,6 +21,7 @@ import { TimeseriesDaily, TimeseriesDailySchema } from '../domain/timeseries-dai
     MongooseModule.forFeature([
       { name: PlatformSnapshot.name, schema: PlatformSnapshotSchema },
       { name: TimeseriesDaily.name, schema: TimeseriesDailySchema },
+      { name: ProcessedAnalyticsEvent.name, schema: ProcessedAnalyticsEventSchema },
     ]),
   ],
   controllers: [AnalyticsController, HealthController, MetricsController],

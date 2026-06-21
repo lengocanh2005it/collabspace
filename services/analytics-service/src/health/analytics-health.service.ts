@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectConnection } from '@nestjs/mongoose';
-import type { Connection } from 'mongoose';
+import { ConnectionStates, type Connection } from 'mongoose';
 import { ConfigurationService } from '../config/configuration.service.js';
 
 type CheckStatus = 'up' | 'down' | 'disabled';
@@ -50,7 +50,7 @@ export class AnalyticsHealthService {
 
     const checks: Record<string, HealthCheckResult> = {
       database: await this.runCheck(true, async () => {
-        if (this.mongoConnection.readyState !== 1) {
+        if (this.mongoConnection.readyState !== ConnectionStates.connected) {
           throw new Error('MongoDB is not connected');
         }
 

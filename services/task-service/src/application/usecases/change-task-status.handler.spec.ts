@@ -7,15 +7,30 @@ import { TaskId } from "../../domain/value-objects/TaskId";
 import { UserSnapshot } from "../../domain/value-objects/UserSnapshot";
 import { EntityNotFoundException } from "../../domain/exceptions/EntityNotFoundException";
 import { BusinessRuleException } from "../../domain/exceptions/BusinessRuleException";
+import type { IMongoUnitOfWork } from "../../domain/ports/mongo-unit-of-work.port";
+import type { TaskOutboxService } from "../../infrastructure/outbox/task-outbox.service";
 
 describe("ChangeTaskStatusHandler", () => {
   let handler: ChangeTaskStatusHandler;
   let mockTaskRepo: jest.Mocked<ITaskRepository>;
+  let mockUnitOfWork: jest.Mocked<IMongoUnitOfWork>;
+  let mockTaskOutboxService: jest.Mocked<Pick<TaskOutboxService, "enqueueTaskStatusChanged">>;
+  const session = {} as never;
 
   beforeEach(() => {
     mockTaskRepo = createMockTaskRepository();
+    mockUnitOfWork = {
+      run: jest.fn(async (work) => work(session)),
+    };
+    mockTaskOutboxService = {
+      enqueueTaskStatusChanged: jest.fn().mockResolvedValue(undefined),
+    };
 
-    handler = new ChangeTaskStatusHandler(mockTaskRepo);
+    handler = new ChangeTaskStatusHandler(
+      mockTaskRepo,
+      mockUnitOfWork,
+      mockTaskOutboxService as TaskOutboxService,
+    );
   });
 
   const createMockTask = (status: string = "TODO") => {
@@ -45,7 +60,16 @@ describe("ChangeTaskStatusHandler", () => {
     await handler.execute(command);
 
     expect(task.getStatus().getValue()).toBe("DOING");
-    expect(mockTaskRepo.saveAsync).toHaveBeenCalledWith(task);
+    expect(mockTaskRepo.saveAsync).toHaveBeenCalledWith(task, { session });
+    expect(mockTaskOutboxService.enqueueTaskStatusChanged).toHaveBeenCalledWith(
+      expect.objectContaining({
+        newStatus: "DOING",
+        previousStatus: "TODO",
+        taskId: command.taskId,
+        workspaceId: "workspace-1",
+      }),
+      session,
+    );
   });
 
   it("should throw EntityNotFoundException if task does not exist", async () => {
@@ -81,6 +105,6 @@ describe("ChangeTaskStatusHandler", () => {
     await handler.execute(command);
 
     expect(task.getStatus().getValue()).toBe("DONE");
-    expect(mockTaskRepo.saveAsync).toHaveBeenCalledWith(task);
+    expect(mockTaskRepo.saveAsync).toHaveBeenCalledWith(task, { session });
   });
 });

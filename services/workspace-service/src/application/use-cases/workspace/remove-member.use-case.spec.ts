@@ -10,10 +10,12 @@ describe('RemoveMemberUseCase', () => {
   };
   const activityRepo = { record: jest.fn().mockResolvedValue(undefined) };
   const workspaceCache = { deleteWorkspaceList: jest.fn().mockResolvedValue(undefined) };
+  const workspaceOutbox = { enqueueMemberLeft: jest.fn().mockResolvedValue(undefined) };
   const useCase = new RemoveMemberUseCase(
     memberRepo as never,
     activityRepo as never,
     workspaceCache as unknown as WorkspaceCacheService,
+    workspaceOutbox as never,
   );
 
   beforeEach(() => jest.clearAllMocks());
@@ -25,6 +27,13 @@ describe('RemoveMemberUseCase', () => {
 
     await useCase.execute('user-1', 'ws-1', 'user-1');
     expect(memberRepo.removeByWorkspaceAndUser).toHaveBeenCalledWith('ws-1', 'user-1');
+    expect(workspaceOutbox.enqueueMemberLeft).toHaveBeenCalledWith(
+      expect.objectContaining({
+        role: 'member',
+        userId: 'user-1',
+        workspaceId: 'ws-1',
+      }),
+    );
   });
 
   it('allows a manager to leave the workspace', async () => {
@@ -57,6 +66,13 @@ describe('RemoveMemberUseCase', () => {
     await useCase.execute('manager-1', 'ws-1', 'member-1');
 
     expect(memberRepo.removeByWorkspaceAndUser).toHaveBeenCalledWith('ws-1', 'member-1');
+    expect(workspaceOutbox.enqueueMemberLeft).toHaveBeenCalledWith(
+      expect.objectContaining({
+        role: 'member',
+        userId: 'member-1',
+        workspaceId: 'ws-1',
+      }),
+    );
   });
 
   it('blocks a manager removing another manager', async () => {

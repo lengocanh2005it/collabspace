@@ -1,6 +1,6 @@
 import { Injectable, Logger, type OnModuleDestroy, type OnModuleInit } from '@nestjs/common';
 import { Kafka, type Consumer } from 'kafkajs';
-import { processKafkaConsumerMessage } from '@collabspace/shared';
+import { UserRegisteredEventSchema, processKafkaConsumerMessage } from '@collabspace/shared';
 import { ConfigurationService } from '../config/configuration.service.js';
 import { AnalyticsRepository } from '../analytics/repositories/analytics.repository.js';
 import { KafkaDlqPublisher } from './kafka-dlq.publisher.js';
@@ -26,12 +26,12 @@ export class AuthEventsConsumer implements OnModuleInit, OnModuleDestroy {
     }
 
     const kafka = new Kafka({ clientId: kafkaConfig.clientId, brokers: kafkaConfig.brokers });
-    const consumerGroup = `${kafkaConfig.groupId}-auth-events`;
+    const consumerGroup = `${kafkaConfig.groupId}-user-events`;
 
     this.consumer = kafka.consumer({ groupId: consumerGroup });
     await this.consumer.connect();
     await this.consumer.subscribe({
-      topics: [kafkaConfig.authEventsTopic],
+      topics: [kafkaConfig.userRegisteredTopic],
       fromBeginning: false,
     });
 
@@ -51,32 +51,48 @@ export class AuthEventsConsumer implements OnModuleInit, OnModuleDestroy {
           publishToDlq: (envelope) => this.dlqPublisher.publish(envelope),
           log: this.logger,
           parseValue: parseKafkaJsonValue,
-          handler: (record) => this.handleAuthEvent(record),
+          handler: (record, topic) => this.handleAuthEvent(record, topic),
         });
       },
     });
 
     this.logger.log(
-      `Kafka consumer listening topic=${kafkaConfig.authEventsTopic} group=${consumerGroup}`,
+      `Kafka consumer listening topic=${kafkaConfig.userRegisteredTopic} group=${consumerGroup}`,
     );
   }
 
-  async handleAuthEvent(record: Record<string, unknown>): Promise<void> {
-    const type = record['type'] as string | undefined;
+  async handleAuthEvent(
+    record: Record<string, unknown>,
+    topic = 'collabspace.user.registered',
+  ): Promise<void> {
+    const payload = UserRegisteredEventSchema.safeParse(record);
 
-    switch (type) {
-      case 'user_registered':
+    if (!payload.success) {
+      this.logger.warn(
+        `Skipping invalid user_registered analytics event keys=${Object.keys(record).join(',')}`,
+      );
+      return;
+    }
+
+    const eventId = this.getEventId(record, `user_registered:${payload.data.userId}`);
+
+    const processed = await this.repository.processEventOnce(
+      eventId,
+      'user_registered',
+      topic,
+      async () => {
         await this.repository.incrementSnapshot('users.total', 1);
         await this.repository.incrementSnapshot('users.active', 1);
-        await this.repository.incrementTimeseries(today(), 'users_registered', 1);
-        this.logger.log('Processed user_registered event');
-        break;
+        await this.repository.incrementTimeseries(
+          this.getEventDate(payload.data.occurredAt),
+          'users_registered',
+          1,
+        );
+      },
+    );
 
-      case 'user_login':
-        break;
-
-      default:
-        this.logger.warn(`Skipping unknown auth event type=${type ?? 'undefined'}`);
+    if (processed) {
+      this.logger.log(`Processed user_registered event userId=${payload.data.userId}`);
     }
   }
 
@@ -95,5 +111,18 @@ export class AuthEventsConsumer implements OnModuleInit, OnModuleDestroy {
       this.consumer = null;
       this.runPromise = null;
     }
+  }
+
+  private getEventId(record: Record<string, unknown>, fallback: string): string {
+    return typeof record.eventId === 'string' && record.eventId.length > 0
+      ? record.eventId
+      : fallback;
+  }
+
+  private getEventDate(occurredAt?: string): string {
+    if (!occurredAt) return today();
+    const timestamp = Date.parse(occurredAt);
+    if (Number.isNaN(timestamp)) return today();
+    return new Date(timestamp).toISOString().slice(0, 10);
   }
 }

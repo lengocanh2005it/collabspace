@@ -274,7 +274,7 @@ Current status:
 
 - HTTP API, Mongo repository, health/metrics, Docker Compose, Helm values, and gateway routes are implemented.
 - Protected HTTP requires permission `analytics.read` (platform `admin` receives it via auth migration/seed).
-- Kafka consumers currently target aggregate analytics topics/events; producers/connectors for those aggregate events still need alignment with the canonical event bus before live metrics are complete. See `docs/analytics-service.md`.
+- Kafka consumers read canonical user/workspace/task topics and dedupe with `processed_analytics_events`. See `docs/analytics-service.md`.
 
 ## Infrastructure
 

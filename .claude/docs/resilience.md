@@ -186,7 +186,7 @@ Legend: **Current** = observed or likely today; **Target** = required after resi
 | Protected analytics routes | auth gRPC | `PlatformAdminGuard` requires `analytics.read` | Keep |
 | Reads | MongoDB | repository queries fail | `503`; empty snapshot only when DB is reachable and no data exists |
 | Kafka consumers | broker down | `ready: false` when consumers enabled and broker unreachable | Keep |
-| Duplicate analytics events | Kafka duplicate delivery | `$inc` is not fully idempotent for duplicate event replay | Add event-id dedupe if exact counters are required |
+| Duplicate analytics events | Kafka duplicate delivery | `processed_analytics_events` dedupes before `$inc` | Keep |
 
 ### 4.7 API gateway (Traefik)
 

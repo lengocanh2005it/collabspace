@@ -22,6 +22,7 @@ src/
   domain/
     platform-snapshot.schema.ts
     timeseries-daily.schema.ts
+    processed-analytics-event.schema.ts
 ```
 
 ## Commands
@@ -41,7 +42,9 @@ pnpm run test
 - Metrics: `/api/v1/analytics/metrics` (Bearer `METRICS_AUTH_TOKEN`)
 - Auth: Bearer JWT through auth gRPC; `PlatformAdminGuard` requires `analytics.read`
 - MongoDB db: `collabspace_analytics`
-- Kafka consumer group: `analytics-service`
+- Kafka consumer groups: `analytics-service-user-events`, `analytics-service-workspace-events`, `analytics-service-task-events`
+- Kafka topics: canonical `collabspace.user.registered`, `collabspace.workspace.*`, `collabspace.task.*` analytics events
+- Counter idempotency: `processed_analytics_events`
 - No seed data — read model is built from Kafka events; bootstrap via `scripts/seed-analytics-snapshot.sh` (PR4)
 
 ## Where to add code (PRs)

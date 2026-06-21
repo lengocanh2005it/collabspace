@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { AnalyticsRepository } from '../repositories/analytics.repository.js';
 import type { PlatformOverviewResponseDto } from '../dto/platform-overview.dto.js';
 import type { TimeseriesResponseDto } from '../dto/timeseries-query.dto.js';

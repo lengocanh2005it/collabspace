@@ -13,9 +13,14 @@ export type KafkaConfig = {
   dlqTopic: string;
   maxRetries: number;
   retryDelayMs: number;
-  authEventsTopic: string;
-  workspaceEventsTopic: string;
-  taskEventsTopic: string;
+  userRegisteredTopic: string;
+  workspaceCreatedTopic: string;
+  workspaceProjectCreatedTopic: string;
+  workspaceMemberJoinedTopic: string;
+  workspaceMemberLeftTopic: string;
+  taskCreatedTopic: string;
+  taskStatusChangedTopic: string;
+  taskDeletedTopic: string;
 };
 
 @Injectable()
@@ -52,13 +57,30 @@ export class ConfigurationService {
         this.configService.get<string>('KAFKA_CONSUMER_RETRY_DELAY_MS') ?? '1000',
         10,
       ),
-      authEventsTopic:
-        this.configService.get<string>('KAFKA_TOPIC_AUTH_EVENTS') ?? 'collabspace.auth.events',
-      workspaceEventsTopic:
-        this.configService.get<string>('KAFKA_TOPIC_WORKSPACE_EVENTS') ??
-        'collabspace.workspace.events',
-      taskEventsTopic:
-        this.configService.get<string>('KAFKA_TOPIC_TASK_EVENTS') ?? 'collabspace.task.events',
+      userRegisteredTopic:
+        this.configService.get<string>('KAFKA_TOPIC_USER_REGISTERED') ??
+        'collabspace.user.registered',
+      workspaceCreatedTopic:
+        this.configService.get<string>('KAFKA_TOPIC_WORKSPACE_CREATED') ??
+        'collabspace.workspace.workspace_created',
+      workspaceProjectCreatedTopic:
+        this.configService.get<string>('KAFKA_TOPIC_WORKSPACE_PROJECT_CREATED') ??
+        'collabspace.workspace.project_created',
+      workspaceMemberJoinedTopic:
+        this.configService.get<string>('KAFKA_TOPIC_WORKSPACE_MEMBER_JOINED') ??
+        'collabspace.workspace.member_joined',
+      workspaceMemberLeftTopic:
+        this.configService.get<string>('KAFKA_TOPIC_WORKSPACE_MEMBER_LEFT') ??
+        'collabspace.workspace.member_left',
+      taskCreatedTopic:
+        this.configService.get<string>('KAFKA_TOPIC_TASK_CREATED') ??
+        'collabspace.task.task_created',
+      taskStatusChangedTopic:
+        this.configService.get<string>('KAFKA_TOPIC_TASK_STATUS_CHANGED') ??
+        'collabspace.task.task_status_changed',
+      taskDeletedTopic:
+        this.configService.get<string>('KAFKA_TOPIC_TASK_DELETED') ??
+        'collabspace.task.task_deleted',
     };
   }
 

@@ -18,16 +18,9 @@ Tài liệu này mô tả toàn bộ thiết kế, cấu trúc, API, Kafka consu
 health/metrics, Docker Compose, Helm values, gateway route, và auth guard với
 permission `analytics.read`.
 
-Phần còn thiếu để coi là end-to-end hoàn chỉnh: các Kafka source topics/event
-aggregate mà service đang consume (`collabspace.auth.events`,
-`collabspace.workspace.events`, `collabspace.task.events`) chưa phải topic
-canonical đang được publish bởi các service hiện tại. Event bus hiện có đang dùng
-topic dạng `collabspace.user.registered`, `collabspace.user.profile_updated`,
-`collabspace.workspace.workspace_invited`, `collabspace.workspace.workspace_deleted`,
-`collabspace.task.task_assigned`, `collabspace.task.comment_created`, và
-`collabspace.task.comment_mentioned`. Vì vậy read model live cần một trong hai
-hướng trước production: thêm producer/connector cho aggregate analytics events,
-hoặc đổi consumers để tính toán từ contract Kafka canonical.
+Live Kafka read model đã align với event bus canonical: user/workspace/task
+outbox events đi qua Debezium CDC, analytics consume các topic cụ thể và dedupe
+bằng collection `processed_analytics_events` trước khi cộng counter.
 
 ## 1. Mục đích
 
@@ -41,7 +34,7 @@ hoặc đổi consumers để tính toán từ contract Kafka canonical.
 
 | Metric nhóm | Nguồn data | Phương pháp |
 |-------------|------------|-------------|
-| Users (total, active, banned, activeLast30d) | auth/user events | Kafka consumer + snapshot |
+| Users (total, active, banned, activeLast30d) | user events | Kafka consumer + snapshot |
 | Workspaces (total, avgMembers, perDay) | workspace events | Kafka consumer + snapshot |
 | Projects (total) | workspace events | Kafka consumer |
 | Tasks (total, byStatus) | task events | Kafka consumer |
@@ -53,10 +46,13 @@ hoặc đổi consumers để tính toán từ contract Kafka canonical.
 
 ```
 Kafka topics
-  collabspace.auth.events        (user_registered, user_login)
-  collabspace.workspace.events   (workspace_created, member_joined, ...)
-  collabspace.task.events        (task_created, task_status_changed, ...)
-  collabspace.user.events        (user_profile_updated, ...)
+  collabspace.user.registered
+  collabspace.workspace.workspace_created
+  collabspace.workspace.project_created
+  collabspace.workspace.member_joined / member_left
+  collabspace.task.task_created
+  collabspace.task.task_status_changed
+  collabspace.task.task_deleted
          │
          ▼
 analytics-service (Kafka consumer group: analytics-service)
@@ -66,6 +62,7 @@ analytics-service (Kafka consumer group: analytics-service)
 MongoDB collections:
   platform_snapshot    (1 doc, upsert theo interval)
   timeseries_daily     (1 doc/ngày/metric)
+  processed_analytics_events (dedupe theo eventId)
          │
          ▼
 HTTP API /api/v1/analytics/*
@@ -112,11 +109,11 @@ services/analytics-service/
 │   │
 │   └── domain/
 │       ├── platform-snapshot.schema.ts   # Mongoose schema
-│       └── timeseries-daily.schema.ts
+│       ├── timeseries-daily.schema.ts
+│       └── processed-analytics-event.schema.ts
 │
 ├── test/
 ├── CLAUDE.md
-├── Dockerfile
 ├── package.json
 └── tsconfig.json
 ```
@@ -169,6 +166,20 @@ services/analytics-service/
 
 Index: `{ date: 1, metric: 1 }` unique.
 
+### `processed_analytics_events` collection
+
+```typescript
+{
+  _id: "eventId-or-derived-id",
+  eventType: "task_created",
+  topic: "collabspace.task.task_created",
+  processedAt: Date
+}
+```
+
+`_id` unique giúp Kafka duplicate delivery không cộng counter nhiều lần. Nếu handler
+thất bại sau khi claim event, repository xóa claim để retry có thể xử lý lại.
+
 ---
 
 ## 5. Kafka Consumers
@@ -179,9 +190,14 @@ Consumer group: `analytics-service`
 
 | Topic | Events xử lý |
 |-------|-------------|
-| `collabspace.auth.events` | `user_registered`, `user_login` |
-| `collabspace.workspace.events` | `workspace_created`, `member_joined`, `member_left` |
-| `collabspace.task.events` | `task_created`, `task_status_changed`, `task_deleted` |
+| `collabspace.user.registered` | `user_registered` |
+| `collabspace.workspace.workspace_created` | `workspace_created` |
+| `collabspace.workspace.project_created` | `project_created` |
+| `collabspace.workspace.member_joined` | `member_joined` |
+| `collabspace.workspace.member_left` | `member_left` |
+| `collabspace.task.task_created` | `task_created` |
+| `collabspace.task.task_status_changed` | `task_status_changed` |
+| `collabspace.task.task_deleted` | `task_deleted` |
 
 ### Consumer pattern (giống notification-service)
 
@@ -191,7 +207,7 @@ export class TaskEventsConsumer implements OnModuleInit {
   constructor(private readonly kafka: KafkaService, private readonly repo: AnalyticsRepository) {}
 
   async onModuleInit() {
-    await this.kafka.subscribe('collabspace.task.events', async (message) => {
+    await this.kafka.subscribe('collabspace.task.task_created', async (message) => {
       const event = JSON.parse(message.value.toString());
       await this.handleTaskEvent(event);
     });
@@ -222,9 +238,10 @@ export class TaskEventsConsumer implements OnModuleInit {
 
 ### Idempotency
 
-Mỗi event có `eventId`. Repository dùng `findOneAndUpdate` với `$inc` — safe với duplicate deliver. Không cần bảng dedup riêng vì `$inc` idempotent nếu event thực sự duplicate (Kafka at-least-once).
-
-Nếu cần chính xác hơn, thêm collection `processed_event_ids` với TTL 7 ngày.
+Mỗi event mới cho analytics có `eventId`; `user.registered` có thể dùng fallback
+ổn định `user_registered:{userId}` vì event đăng ký chỉ tính một lần cho mỗi user.
+Repository gọi `processEventOnce(eventId, eventType, topic, handler)` trước khi
+`$inc`, lưu claim vào `processed_analytics_events`. Duplicate event → no-op.
 
 ---
 
@@ -334,9 +351,18 @@ KAFKA_BROKERS=kafka:9092
 KAFKA_CLIENT_ID=analytics-service
 KAFKA_GROUP_ID=analytics-service
 KAFKA_CONSUMERS_ENABLED=true
+KAFKA_TOPIC_USER_REGISTERED=collabspace.user.registered
+KAFKA_TOPIC_WORKSPACE_CREATED=collabspace.workspace.workspace_created
+KAFKA_TOPIC_WORKSPACE_PROJECT_CREATED=collabspace.workspace.project_created
+KAFKA_TOPIC_WORKSPACE_MEMBER_JOINED=collabspace.workspace.member_joined
+KAFKA_TOPIC_WORKSPACE_MEMBER_LEFT=collabspace.workspace.member_left
+KAFKA_TOPIC_TASK_CREATED=collabspace.task.task_created
+KAFKA_TOPIC_TASK_STATUS_CHANGED=collabspace.task.task_status_changed
+KAFKA_TOPIC_TASK_DELETED=collabspace.task.task_deleted
 
-# Auth (nhận JWT từ gateway)
-JWT_SECRET=<same as other services>
+# Auth
+AUTH_SERVICE_GRPC_URL=auth-service:50051
+AUTH_SERVICE_GRPC_TIMEOUT_MS=3000
 
 # Metrics
 METRICS_AUTH_TOKEN=<secret>
@@ -374,6 +400,14 @@ METRICS_AUTH_TOKEN=<secret>
       KAFKA_BROKERS: "kafka:9092"
       KAFKA_CLIENT_ID: "analytics-service"
       KAFKA_GROUP_ID: "analytics-service"
+      KAFKA_TOPIC_USER_REGISTERED: "collabspace.user.registered"
+      KAFKA_TOPIC_WORKSPACE_CREATED: "collabspace.workspace.workspace_created"
+      KAFKA_TOPIC_WORKSPACE_PROJECT_CREATED: "collabspace.workspace.project_created"
+      KAFKA_TOPIC_WORKSPACE_MEMBER_JOINED: "collabspace.workspace.member_joined"
+      KAFKA_TOPIC_WORKSPACE_MEMBER_LEFT: "collabspace.workspace.member_left"
+      KAFKA_TOPIC_TASK_CREATED: "collabspace.task.task_created"
+      KAFKA_TOPIC_TASK_STATUS_CHANGED: "collabspace.task.task_status_changed"
+      KAFKA_TOPIC_TASK_DELETED: "collabspace.task.task_deleted"
       MONGO_DB_NAME: "collabspace_analytics"
 ```
 

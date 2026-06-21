@@ -217,10 +217,11 @@ Tất cả routes (trừ health/metrics) yêu cầu Bearer JWT với permission 
 
 **Query params `/activity`:** `metric` (`users_registered` \| `workspaces_created` \| `tasks_created` \| `tasks_completed`), `from` (ISO date, default 30d trước), `to` (ISO date, default hôm nay), `interval` (`day`).
 
-**Kafka consumer groups:** `analytics-service-auth-events`, `analytics-service-workspace-events`, `analytics-service-task-events`.
-Lưu ý: các consumer này hiện trỏ tới aggregate topics riêng của analytics; cần
-align producer/topic với event contract canonical trước khi live metrics được coi
-là hoàn chỉnh.
+**Kafka consumer groups:** `analytics-service-user-events`, `analytics-service-workspace-events`, `analytics-service-task-events`.
+Consumers đọc canonical topics `collabspace.user.registered`,
+`collabspace.workspace.workspace_created/project_created/member_joined/member_left`,
+và `collabspace.task.task_created/task_status_changed/task_deleted`; dedupe qua
+`processed_analytics_events`.
 
 ---
 

@@ -59,7 +59,7 @@ export function toWorkspaceInvitedEventPayload(
 ): WorkspaceInvitedEventPayload | null {
   const result = WorkspaceInvitedEventSchema.safeParse(record);
   if (!result.success) return null;
-  return result.data as WorkspaceInvitedEventPayload;
+  return result.data;
 }
 
 export function toWorkspaceDeletedEventPayload(
@@ -67,7 +67,7 @@ export function toWorkspaceDeletedEventPayload(
 ): WorkspaceDeletedEventPayload | null {
   const result = WorkspaceDeletedEventSchema.safeParse(record);
   if (!result.success) return null;
-  return result.data as WorkspaceDeletedEventPayload;
+  return result.data;
 }
 
 export function toTaskAssignedEventPayload(
@@ -75,7 +75,7 @@ export function toTaskAssignedEventPayload(
 ): TaskAssignedEventPayload | null {
   const result = TaskAssignedEventSchema.safeParse(record);
   if (!result.success) return null;
-  return result.data as TaskAssignedEventPayload;
+  return result.data;
 }
 
 export function toTaskCommentedEventPayload(
@@ -83,7 +83,7 @@ export function toTaskCommentedEventPayload(
 ): TaskCommentedEventPayload | null {
   const result = TaskCommentedEventSchema.safeParse(record);
   if (!result.success) return null;
-  return result.data as TaskCommentedEventPayload;
+  return result.data;
 }
 
 export function toCommentMentionedEventPayload(
@@ -91,7 +91,7 @@ export function toCommentMentionedEventPayload(
 ): CommentMentionedNotificationPayload | null {
   const result = CommentMentionedEventSchema.safeParse(record);
   if (!result.success) return null;
-  return result.data as CommentMentionedNotificationPayload;
+  return result.data;
 }
 
 export function toUserRegisteredEventPayload(
@@ -99,7 +99,7 @@ export function toUserRegisteredEventPayload(
 ): UserRegisteredEventPayload | null {
   const result = UserRegisteredEventSchema.safeParse(record);
   if (!result.success) return null;
-  return result.data as UserRegisteredEventPayload;
+  return result.data;
 }
 
 export function toUserProfileUpdatedEventPayload(
@@ -107,5 +107,5 @@ export function toUserProfileUpdatedEventPayload(
 ): UserProfileUpdatedEventPayload | null {
   const result = UserProfileUpdatedEventSchema.safeParse(record);
   if (!result.success) return null;
-  return result.data as UserProfileUpdatedEventPayload;
+  return result.data;
 }

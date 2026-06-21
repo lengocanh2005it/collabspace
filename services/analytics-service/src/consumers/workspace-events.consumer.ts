@@ -1,6 +1,12 @@
 import { Injectable, Logger, type OnModuleDestroy, type OnModuleInit } from '@nestjs/common';
 import { Kafka, type Consumer } from 'kafkajs';
-import { processKafkaConsumerMessage } from '@collabspace/shared';
+import {
+  WorkspaceCreatedEventSchema,
+  WorkspaceMemberJoinedEventSchema,
+  WorkspaceMemberLeftEventSchema,
+  WorkspaceProjectCreatedEventSchema,
+  processKafkaConsumerMessage,
+} from '@collabspace/shared';
 import { ConfigurationService } from '../config/configuration.service.js';
 import { AnalyticsRepository } from '../analytics/repositories/analytics.repository.js';
 import { KafkaDlqPublisher } from './kafka-dlq.publisher.js';
@@ -30,10 +36,13 @@ export class WorkspaceEventsConsumer implements OnModuleInit, OnModuleDestroy {
 
     this.consumer = kafka.consumer({ groupId: consumerGroup });
     await this.consumer.connect();
-    await this.consumer.subscribe({
-      topics: [kafkaConfig.workspaceEventsTopic],
-      fromBeginning: false,
-    });
+    const topics = [
+      kafkaConfig.workspaceCreatedTopic,
+      kafkaConfig.workspaceProjectCreatedTopic,
+      kafkaConfig.workspaceMemberJoinedTopic,
+      kafkaConfig.workspaceMemberLeftTopic,
+    ];
+    await this.consumer.subscribe({ topics, fromBeginning: false });
 
     this.runPromise = this.consumer.run({
       eachMessage: async ({ topic, partition, message }) => {
@@ -51,39 +60,36 @@ export class WorkspaceEventsConsumer implements OnModuleInit, OnModuleDestroy {
           publishToDlq: (envelope) => this.dlqPublisher.publish(envelope),
           log: this.logger,
           parseValue: parseKafkaJsonValue,
-          handler: (record) => this.handleWorkspaceEvent(record),
+          handler: (record, topic) => this.handleWorkspaceEvent(record, topic),
         });
       },
     });
 
-    this.logger.log(
-      `Kafka consumer listening topic=${kafkaConfig.workspaceEventsTopic} group=${consumerGroup}`,
-    );
+    this.logger.log(`Kafka consumer listening topics=${topics.join(',')} group=${consumerGroup}`);
   }
 
-  async handleWorkspaceEvent(record: Record<string, unknown>): Promise<void> {
-    const type = record['type'] as string | undefined;
+  async handleWorkspaceEvent(
+    record: Record<string, unknown>,
+    topic = 'collabspace.workspace.workspace_created',
+  ): Promise<void> {
+    const kafkaConfig = this.configurationService.getKafkaConfig();
+    const type = this.resolveEventType(topic, kafkaConfig);
 
     switch (type) {
       case 'workspace_created':
-        await this.repository.incrementSnapshot('workspaces.total', 1);
-        await this.repository.incrementTimeseries(today(), 'workspaces_created', 1);
-        this.logger.log('Processed workspace_created event');
+        await this.handleWorkspaceCreated(record, topic);
         break;
 
       case 'project_created':
-        await this.repository.incrementSnapshot('projects.total', 1);
-        this.logger.log('Processed project_created event');
+        await this.handleProjectCreated(record, topic);
         break;
 
       case 'member_joined':
-        await this.repository.incrementSnapshot('workspaces.totalMembers', 1);
-        this.logger.log('Processed member_joined event');
+        await this.handleMemberJoined(record, topic);
         break;
 
       case 'member_left':
-        await this.repository.decrementSnapshot('workspaces.totalMembers', 1);
-        this.logger.log('Processed member_left event');
+        await this.handleMemberLeft(record, topic);
         break;
 
       default:
@@ -106,5 +112,115 @@ export class WorkspaceEventsConsumer implements OnModuleInit, OnModuleDestroy {
       this.consumer = null;
       this.runPromise = null;
     }
+  }
+
+  private async handleWorkspaceCreated(
+    record: Record<string, unknown>,
+    topic: string,
+  ): Promise<void> {
+    const payload = WorkspaceCreatedEventSchema.safeParse(record);
+    if (!payload.success) {
+      this.logger.warn(
+        `Skipping invalid workspace_created analytics event keys=${Object.keys(record).join(',')}`,
+      );
+      return;
+    }
+
+    const processed = await this.repository.processEventOnce(
+      payload.data.eventId,
+      'workspace_created',
+      topic,
+      async () => {
+        await this.repository.incrementSnapshot('workspaces.total', 1);
+        await this.repository.incrementSnapshot('workspaces.totalMembers', 1);
+        await this.repository.incrementTimeseries(
+          this.getEventDate(payload.data.occurredAt),
+          'workspaces_created',
+          1,
+        );
+      },
+    );
+    if (processed) this.logger.log(`Processed workspace_created event ${payload.data.workspaceId}`);
+  }
+
+  private async handleProjectCreated(
+    record: Record<string, unknown>,
+    topic: string,
+  ): Promise<void> {
+    const payload = WorkspaceProjectCreatedEventSchema.safeParse(record);
+    if (!payload.success) {
+      this.logger.warn(
+        `Skipping invalid project_created analytics event keys=${Object.keys(record).join(',')}`,
+      );
+      return;
+    }
+
+    const processed = await this.repository.processEventOnce(
+      payload.data.eventId,
+      'project_created',
+      topic,
+      async () => {
+        await this.repository.incrementSnapshot('projects.total', 1);
+      },
+    );
+    if (processed) this.logger.log(`Processed project_created event ${payload.data.projectId}`);
+  }
+
+  private async handleMemberJoined(record: Record<string, unknown>, topic: string): Promise<void> {
+    const payload = WorkspaceMemberJoinedEventSchema.safeParse(record);
+    if (!payload.success) {
+      this.logger.warn(
+        `Skipping invalid member_joined analytics event keys=${Object.keys(record).join(',')}`,
+      );
+      return;
+    }
+
+    const processed = await this.repository.processEventOnce(
+      payload.data.eventId,
+      'member_joined',
+      topic,
+      async () => {
+        await this.repository.incrementSnapshot('workspaces.totalMembers', 1);
+      },
+    );
+    if (processed) this.logger.log(`Processed member_joined event ${payload.data.userId}`);
+  }
+
+  private async handleMemberLeft(record: Record<string, unknown>, topic: string): Promise<void> {
+    const payload = WorkspaceMemberLeftEventSchema.safeParse(record);
+    if (!payload.success) {
+      this.logger.warn(
+        `Skipping invalid member_left analytics event keys=${Object.keys(record).join(',')}`,
+      );
+      return;
+    }
+
+    const processed = await this.repository.processEventOnce(
+      payload.data.eventId,
+      'member_left',
+      topic,
+      async () => {
+        await this.repository.decrementSnapshot('workspaces.totalMembers', 1);
+      },
+    );
+    if (processed) this.logger.log(`Processed member_left event ${payload.data.userId}`);
+  }
+
+  private resolveEventType(
+    topic: string,
+    kafkaConfig: ReturnType<ConfigurationService['getKafkaConfig']>,
+  ) {
+    if (topic === kafkaConfig.workspaceCreatedTopic) return 'workspace_created';
+    if (topic === kafkaConfig.workspaceProjectCreatedTopic) return 'project_created';
+    if (topic === kafkaConfig.workspaceMemberJoinedTopic) return 'member_joined';
+    if (topic === kafkaConfig.workspaceMemberLeftTopic) return 'member_left';
+    return typeof topic === 'string' && topic.length > 0 ? topic.split('.').at(-1) : undefined;
+  }
+
+  private getEventDate(occurredAt?: string): string {
+    if (!occurredAt) return today();
+    const timestamp = Date.parse(occurredAt);
+    if (Number.isNaN(timestamp)) return today();
+    return new Date(timestamp).toISOString().slice(0, 10);
   }
 }

@@ -36,7 +36,7 @@ export function toWorkspaceDeletedEventPayload(
 ): WorkspaceDeletedEventPayload | null {
   const result = WorkspaceDeletedEventSchema.safeParse(record);
   if (!result.success) return null;
-  return result.data as WorkspaceDeletedEventPayload;
+  return result.data;
 }
 
 export function toUserRegisteredEventPayload(
@@ -44,7 +44,7 @@ export function toUserRegisteredEventPayload(
 ): UserRegisteredEventPayload | null {
   const result = UserRegisteredEventSchema.safeParse(record);
   if (!result.success) return null;
-  return result.data as UserRegisteredEventPayload;
+  return result.data;
 }
 
 export function toUserProfileUpdatedEventPayload(
@@ -52,5 +52,5 @@ export function toUserProfileUpdatedEventPayload(
 ): UserProfileUpdatedEventPayload | null {
   const result = UserProfileUpdatedEventSchema.safeParse(record);
   if (!result.success) return null;
-  return result.data as UserProfileUpdatedEventPayload;
+  return result.data;
 }

@@ -494,14 +494,14 @@ src/
 - Protected analytics routes use `PlatformAdminGuard` and permission `analytics.read`.
 - Mongo database is `collabspace_analytics`.
 - Metrics route is `/api/v1/analytics/metrics` and uses `METRICS_AUTH_TOKEN` when set.
-- Kafka consumers should stay aligned with `.claude/docs/service-contracts.md` event topics.
-- Current gap: consumers target aggregate analytics topics/events that need producers/connectors or a consumer rewrite to canonical event topics before live metrics are complete.
+- Kafka consumers stay aligned with `.claude/docs/service-contracts.md` canonical event topics.
+- Event handlers use `processed_analytics_events` to avoid double-counting duplicate Kafka delivery.
 
 ### Do not
 
 - Treat analytics as source of truth for product data; it is a derived read model.
 - Add synchronous cross-service reads to normal request paths.
-- Mark analytics complete unless live event ingestion is aligned with the canonical Kafka contract.
+- Add counter mutations without event-id dedupe.
 
 ---
 
