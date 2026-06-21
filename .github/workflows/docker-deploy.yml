@@ -443,7 +443,6 @@ jobs:
         run: |
           helm upgrade --install collabspace infrastructure/helm/collabspace \
             --namespace collabspace \
-            --create-namespace \
             --timeout 20m \
             --wait \
             --set global.createNamespace=false \
