@@ -238,7 +238,7 @@ spec:
             matchExpressions:
               - key: app
                 operator: In
-                values: [task-service, notification-service, dlq-service]
+                values: [task-service, notification-service, dlq-service, analytics-service]
         - podSelector:
             matchLabels:
               app: debezium-connect
@@ -263,7 +263,7 @@ spec:
             matchExpressions:
               - key: app
                 operator: In
-                values: [auth-service, notification-service]
+                values: [auth-service, user-service, notification-service]
       ports:
         - port: 6379
           protocol: TCP
