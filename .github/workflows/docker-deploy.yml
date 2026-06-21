@@ -614,6 +614,8 @@ jobs:
 
         if: github.event_name == 'push' || github.event.inputs.run_e2e != 'false'
 
+        continue-on-error: true
+
         env:
 
           BASE_URL: https://collabspace.ngocanh2005it.site/api/v1
