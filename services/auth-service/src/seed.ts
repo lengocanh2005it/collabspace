@@ -94,6 +94,11 @@ const SEED_PERMISSIONS: SeedPermission[] = [
     id: '81000000-0000-4000-8000-000000000010',
     name: 'dlq.manage',
   },
+  {
+    description: 'Read platform analytics snapshots and timeseries',
+    id: '81000000-0000-4000-8000-000000000011',
+    name: 'analytics.read',
+  },
 ];
 
 const SEED_ROLES: SeedRole[] = [

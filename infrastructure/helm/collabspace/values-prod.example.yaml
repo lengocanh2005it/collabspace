@@ -302,3 +302,29 @@ apps:
       WS_ENABLED: "false"
       WS_PATH: /notifications/ws
       ALLOW_DEV_IDENTITY_HEADERS: "false"
+
+  analytics-service:
+    enabled: true
+    replicas: 1
+    image:
+      repository: ghcr.io/REPLACE_ME_GHCR_OWNER/collabspace-analytics-service
+      tag: REPLACE_ME_IMAGE_TAG
+    extraEnv:
+      KAFKA_CONSUMERS_ENABLED: "true"
+      KAFKA_BROKERS: "kafka:9092"
+      KAFKA_CLIENT_ID: "analytics-service"
+      KAFKA_GROUP_ID: "analytics-service"
+      KAFKA_DLQ_TOPIC: "collabspace.dlq.events"
+      KAFKA_CONSUMER_MAX_RETRIES: "3"
+      KAFKA_CONSUMER_RETRY_DELAY_MS: "1000"
+      KAFKA_TOPIC_USER_REGISTERED: "collabspace.user.registered"
+      KAFKA_TOPIC_WORKSPACE_CREATED: "collabspace.workspace.workspace_created"
+      KAFKA_TOPIC_WORKSPACE_PROJECT_CREATED: "collabspace.workspace.project_created"
+      KAFKA_TOPIC_WORKSPACE_MEMBER_JOINED: "collabspace.workspace.member_joined"
+      KAFKA_TOPIC_WORKSPACE_MEMBER_LEFT: "collabspace.workspace.member_left"
+      KAFKA_TOPIC_TASK_CREATED: "collabspace.task.task_created"
+      KAFKA_TOPIC_TASK_STATUS_CHANGED: "collabspace.task.task_status_changed"
+      KAFKA_TOPIC_TASK_DELETED: "collabspace.task.task_deleted"
+      AUTH_SERVICE_GRPC_URL: auth-service:50051
+      AUTH_SERVICE_GRPC_TIMEOUT_MS: "3000"
+      ALLOW_DEV_IDENTITY_HEADERS: "false"

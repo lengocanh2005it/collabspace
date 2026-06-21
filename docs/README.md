@@ -16,6 +16,7 @@ Chỉ mục tài liệu dự án (tiếng Việt có dấu). Tài liệu kỹ th
 | Tài liệu | Mô tả |
 |----------|--------|
 | [api-routes.md](./api-routes.md) | Chỉ mục route HTTP (đọc nhanh) |
+| [analytics-service.md](./analytics-service.md) | Thiết kế và trạng thái `analytics-service` admin dashboard read model |
 | [cross-service-data.md](./cross-service-data.md) | Dữ liệu xuyên service, read model |
 | [trade-offs.md](./trade-offs.md) | Quyết định kiến trúc và đánh đổi |
 | [design-patterns.md](./design-patterns.md) | **Design patterns** — catalog theo service, file tham chiếu |

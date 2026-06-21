@@ -29,6 +29,7 @@ Base URL: **`https://collabspace.ngocanh2005it.site/api/v1`**
 | Task | `/api/v1/tasks` | https://collabspace.ngocanh2005it.site/api/v1/tasks |
 | Notification | `/api/v1/notifications` | https://collabspace.ngocanh2005it.site/api/v1/notifications |
 | DLQ | `/api/v1/dlq` | https://collabspace.ngocanh2005it.site/api/v1/dlq |
+| Analytics | `/api/v1/analytics` | https://collabspace.ngocanh2005it.site/api/v1/analytics |
 
 ### Health / readiness
 
@@ -40,6 +41,7 @@ Base URL: **`https://collabspace.ngocanh2005it.site/api/v1`**
 | Task | https://collabspace.ngocanh2005it.site/api/v1/tasks/health/ready |
 | Notification | https://collabspace.ngocanh2005it.site/api/v1/notifications/health/ready |
 | DLQ | https://collabspace.ngocanh2005it.site/api/v1/dlq/health/ready |
+| Analytics | https://collabspace.ngocanh2005it.site/api/v1/analytics/health/ready |
 
 **Lưu ý gateway:**
 
@@ -61,6 +63,7 @@ Bật khi Helm `gateway.swagger.expose: true`. **Không** qua prefix `/api/v1`; 
 | Task | https://collabspace.ngocanh2005it.site/swagger/task | https://collabspace.ngocanh2005it.site/swagger/task-json |
 | Notification | https://collabspace.ngocanh2005it.site/swagger/notification | https://collabspace.ngocanh2005it.site/swagger/notification-json |
 | DLQ | https://collabspace.ngocanh2005it.site/swagger/dlq | https://collabspace.ngocanh2005it.site/swagger/dlq-json |
+| Analytics | https://collabspace.ngocanh2005it.site/swagger/analytics | https://collabspace.ngocanh2005it.site/swagger/analytics-json |
 
 Pattern chung: `https://collabspace.ngocanh2005it.site/swagger/<tên-rút-gọn>` và `https://collabspace.ngocanh2005it.site/swagger/<tên-rút-gọn>-json`.
 
@@ -145,6 +148,7 @@ BASE_URL=https://collabspace.ngocanh2005it.site/api/v1 ./scripts/demo-e2e.sh
 | task-service | 3003 | 3000 | http://localhost:3003/swagger | http://localhost:3003/api/v1/tasks/health/ready |
 | notification-service | 3004 | 3000 | http://localhost:3004/swagger | http://localhost:3004/api/v1/notifications/health/ready |
 | dlq-service | 3006 | 3000 | http://localhost:3006/swagger | http://localhost:3006/api/v1/dlq/health/ready |
+| analytics-service | 3005 | 3000 | http://localhost:3005/swagger | http://localhost:3005/api/v1/analytics/health/ready |
 
 ### Observability local (Compose profile)
 

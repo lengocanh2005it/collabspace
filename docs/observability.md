@@ -44,6 +44,7 @@ Folder Grafana: **CollabSpace**
 | **CollabSpace App Logs** | `collabspace-logs-errors` | **Xu hướng** log (volume, error lines) — **không** tail ở đây |
 | **CollabSpace Load Test Run** | `collabspace-load-test` | Xem metric khi chạy k6; annotation tag `k6` |
 | **CollabSpace DLQ** | `collabspace-dlq` | Records by status/category, replay success/fail rate, oldest pending age gauge (alert ≥30min), events ingested per topic |
+| **Analytics panels** | Service Health / future analytics dashboard | `analytics-service` up/down, request rate, consumer lag, snapshot freshness |
 
 ### Đọc log chi tiết → Explore (Loki)
 
@@ -57,7 +58,7 @@ Dashboard **App Logs** chỉ có chart. Để search/tail:
 {namespace="collabspace", app="auth-service"} |~ "(?i)(error|exception|fatal)"
 ```
 
-Label `app` có giá trị: `auth-service`, `user-service`, `workspace-service`, `task-service`, `notification-service`, …
+Label `app` có giá trị: `auth-service`, `user-service`, `workspace-service`, `task-service`, `notification-service`, `dlq-service`, `analytics-service`, …
 
 **Không dùng** cú pháp Loki trong Prometheus Explore (`{namespace="..."}` là LogQL, không phải PromQL).
 
@@ -66,7 +67,7 @@ Label `app` có giá trị: `auth-service`, `user-service`, `workspace-service`,
 ```promql
 up{job="auth-service"}
 sum(rate(http_requests_total{job="auth-service"}[5m]))
-sum by (job) (collabspace_process_resident_memory_bytes{job=~"auth-service|user-service"})
+sum by (job) (collabspace_process_resident_memory_bytes{job=~"auth-service|user-service|analytics-service"})
 ```
 
 Default metrics app dùng prefix `collabspace_` (ví dụ `collabspace_process_cpu_seconds_total`).

@@ -98,6 +98,11 @@ Other services:
 - `POST /api/v1/dlq/replay-batch` (`dlq.manage`)
 - `POST /api/v1/dlq/messages/{id}/resolve` (`dlq.manage`)
 - `POST /api/v1/dlq/messages/{id}/discard` (`dlq.manage`)
+- `GET /api/v1/analytics/overview` (`analytics.read`)
+- `GET /api/v1/analytics/users` (`analytics.read`)
+- `GET /api/v1/analytics/workspaces` (`analytics.read`)
+- `GET /api/v1/analytics/tasks` (`analytics.read`)
+- `GET /api/v1/analytics/activity` (`analytics.read`)
 
 Admin status and role changes revoke all refresh tokens for the target user.
 Successful login updates `lastLoginAt`; a timestamp write failure is logged but
@@ -413,6 +418,10 @@ Debezium Outbox Event Router on `workspace_outbox_events` (`infrastructure/kafka
 |---------------------|-------------|-----------|
 | `workspace.workspace_invited` | `collabspace.workspace.workspace_invited` | `notification-service` |
 | `workspace.workspace_deleted` | `collabspace.workspace.workspace_deleted` | `notification-service`, `task-service` |
+| `workspace.workspace_created` | `collabspace.workspace.workspace_created` | `analytics-service` |
+| `workspace.project_created` | `collabspace.workspace.project_created` | `analytics-service` |
+| `workspace.member_joined` | `collabspace.workspace.member_joined` | `analytics-service` |
+| `workspace.member_left` | `collabspace.workspace.member_left` | `analytics-service` |
 
 - **Message value**: expanded domain JSON from outbox `payload` column (`transforms.outbox.table.expand.json.payload=true`).
 - **Producer path**: `WORKSPACE_OUTBOX_PUBLISH_MODE=debezium` (default) — CDC only; no in-app broker publish.
@@ -427,7 +436,7 @@ Debezium Outbox Event Router on `user_outbox_events` (`infrastructure/kafka/conn
 | Outbox `event_type` | Kafka topic | Consumers |
 |---------------------|-------------|-----------|
 | `user.profile_updated` | `collabspace.user.profile_updated` | `task-service`, `notification-service` |
-| `user.registered` | `collabspace.user.registered` | `task-service`, `notification-service` |
+| `user.registered` | `collabspace.user.registered` | `task-service`, `notification-service`, `analytics-service` |
 
 - **Producer path**: `USER_OUTBOX_PUBLISH_MODE=debezium` (default) — CDC only.
 - **Consumer env**: `KAFKA_TOPIC_USER_PROFILE_UPDATED`, `KAFKA_TOPIC_USER_REGISTERED`; groups `${KAFKA_GROUP_ID}-user-events` / `-workspace-events` (see workspace section).
@@ -442,11 +451,14 @@ Debezium Mongo Outbox Event Router on `task_outbox_events` (`infrastructure/kafk
 | `task.task_assigned` | `collabspace.task.task_assigned` | `notification-service` |
 | `task.comment_created` | `collabspace.task.comment_created` | `notification-service` |
 | `task.comment_mentioned` | `collabspace.task.comment_mentioned` | `notification-service` |
+| `task.task_created` | `collabspace.task.task_created` | `analytics-service` |
+| `task.task_status_changed` | `collabspace.task.task_status_changed` | `analytics-service` |
+| `task.task_deleted` | `collabspace.task.task_deleted` | `analytics-service` |
 
 - **Message value**: domain JSON from outbox `payload` field (MongoEventRouter). Mongo CDC may emit `payload` as a **JSON-encoded string** — consumers use `parseKafkaOutboxJsonValue` (parse twice when needed).
 - **Producer path**: `TASK_OUTBOX_PUBLISH_MODE=debezium` — Debezium CDC only (no in-app broker publish).
-- **Transaction**: assign task + outbox, comment + activity + outbox — Mongo `withTransaction` (requires replica set `rs0`).
-- **Consumer env**: `KAFKA_TOPIC_TASK_ASSIGNED`, `KAFKA_TOPIC_COMMENT_CREATED`, `KAFKA_TOPIC_COMMENT_MENTIONED`; group `${KAFKA_GROUP_ID}-task-events`.
+- **Transaction**: create/assign/status/delete task + outbox, comment + activity + outbox — Mongo `withTransaction` (requires replica set `rs0`).
+- **Consumer env**: `KAFKA_TOPIC_TASK_ASSIGNED`, `KAFKA_TOPIC_COMMENT_CREATED`, `KAFKA_TOPIC_COMMENT_MENTIONED`, analytics topic overrides `KAFKA_TOPIC_TASK_CREATED`, `KAFKA_TOPIC_TASK_STATUS_CHANGED`, `KAFKA_TOPIC_TASK_DELETED`; group `${KAFKA_GROUP_ID}-task-events`.
 - **Notification types**: `task.comment_created` → `COMMENT_ADDED`; `task.comment_mentioned` → `COMMENT_MENTIONED`; `task.task_assigned` → `TASK_ASSIGNED`.
 - **Local E2E**: `scripts/kafka-phase5-e2e.ps1` — mention (unassigned task) → assign → assignee comment → notifications.
 
@@ -497,6 +509,42 @@ State rules:
 - Ingested `logic` and `schema` records start as `requires_manual_review`.
 - Auto-retry only picks eligible `pending` records, uses bounded backoff, and moves exhausted records to `requires_manual_review`.
 - `resolved` and `discarded` are terminal admin decisions for the current record.
+
+### Analytics Service HTTP Contract
+
+Base prefix: `/api/v1/analytics`.
+
+All analytics data routes require a verified bearer user JWT through auth gRPC
+and permission `analytics.read`; platform `admin` receives this permission from
+auth migration/seed. Health routes are public. Metrics require
+`METRICS_AUTH_TOKEN` when configured.
+
+Routes:
+
+- `GET /api/v1/analytics/health/live`
+- `GET /api/v1/analytics/health/ready`
+- `GET /api/v1/analytics/metrics`
+- `GET /api/v1/analytics/overview`
+- `GET /api/v1/analytics/users`
+- `GET /api/v1/analytics/workspaces`
+- `GET /api/v1/analytics/tasks`
+- `GET /api/v1/analytics/activity?metric=&from=&to=&interval=day`
+
+Activity metrics: `users_registered`, `workspaces_created`, `tasks_created`,
+`tasks_completed`; MVP interval is `day`.
+
+Kafka read model consumers:
+
+- `collabspace.user.registered` → user totals and `users_registered` timeseries.
+- `collabspace.workspace.workspace_created` → workspace totals and `workspaces_created` timeseries.
+- `collabspace.workspace.project_created` → project totals.
+- `collabspace.workspace.member_joined` / `member_left` → workspace member totals.
+- `collabspace.task.task_created` → task totals and `tasks_created` timeseries.
+- `collabspace.task.task_status_changed` → task status counters and `tasks_completed` timeseries when `newStatus=DONE`.
+- `collabspace.task.task_deleted` → task totals/status decrement.
+
+Analytics counters are idempotent by event id through Mongo collection
+`processed_analytics_events`; duplicate Kafka deliveries are no-ops.
 
 ### User directory replicas (`user_registered`, `user_profile_updated`)
 

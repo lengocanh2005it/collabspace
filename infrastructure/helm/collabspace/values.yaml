@@ -677,3 +677,42 @@ apps:
       DLQ_AUTO_RETRY_BATCH_SIZE: "50"
       DLQ_MAX_RETRIES_TRANSIENT: "3"
       DLQ_MAX_RETRIES_UNKNOWN: "1"
+
+  analytics-service:
+    enabled: true
+    replicas: 1
+    image:
+      repository: collabspace/analytics-service
+      tag: latest
+    httpPort: 3000
+    metricsPath: /api/v1/analytics/metrics
+    health:
+      readyPath: /api/v1/analytics/health/ready
+      livePath: /api/v1/analytics/health/live
+      preStopSleep: 5
+      terminationGracePeriodSeconds: 20
+    resources:
+      requests:
+        memory: 128Mi
+        cpu: 100m
+      limits:
+        memory: 256Mi
+        cpu: 250m
+    extraEnv:
+      KAFKA_CONSUMERS_ENABLED: "true"
+      KAFKA_BROKERS: "kafka:9092"
+      KAFKA_CLIENT_ID: "analytics-service"
+      KAFKA_GROUP_ID: "analytics-service"
+      KAFKA_DLQ_TOPIC: "collabspace.dlq.events"
+      KAFKA_CONSUMER_MAX_RETRIES: "3"
+      KAFKA_CONSUMER_RETRY_DELAY_MS: "1000"
+      KAFKA_TOPIC_USER_REGISTERED: "collabspace.user.registered"
+      KAFKA_TOPIC_WORKSPACE_CREATED: "collabspace.workspace.workspace_created"
+      KAFKA_TOPIC_WORKSPACE_PROJECT_CREATED: "collabspace.workspace.project_created"
+      KAFKA_TOPIC_WORKSPACE_MEMBER_JOINED: "collabspace.workspace.member_joined"
+      KAFKA_TOPIC_WORKSPACE_MEMBER_LEFT: "collabspace.workspace.member_left"
+      KAFKA_TOPIC_TASK_CREATED: "collabspace.task.task_created"
+      KAFKA_TOPIC_TASK_STATUS_CHANGED: "collabspace.task.task_status_changed"
+      KAFKA_TOPIC_TASK_DELETED: "collabspace.task.task_deleted"
+      AUTH_SERVICE_GRPC_URL: auth-service:50051
+      AUTH_SERVICE_GRPC_TIMEOUT_MS: "3000"

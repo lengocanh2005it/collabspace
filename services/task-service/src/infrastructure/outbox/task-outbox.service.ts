@@ -1,6 +1,11 @@
 import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import type { ClientSession, Model } from "mongoose";
+import type {
+  TaskCreatedEventPayload,
+  TaskDeletedEventPayload,
+  TaskStatusChangedEventPayload,
+} from "@collabspace/shared";
 import type { TaskAssignedEventPayload } from "../../domain/events/task.events";
 import type {
   CommentMentionedEventPayload,
@@ -11,6 +16,9 @@ import {
   TASK_OUTBOX_EVENT_COMMENT_MENTIONED,
   TASK_OUTBOX_EVENT_TASK_ASSIGNED,
   TASK_OUTBOX_EVENT_TASK_COMMENTED,
+  TASK_OUTBOX_EVENT_TASK_CREATED,
+  TASK_OUTBOX_EVENT_TASK_DELETED,
+  TASK_OUTBOX_EVENT_TASK_STATUS_CHANGED,
   TaskOutboxEvent,
   type TaskOutboxEventDocument,
 } from "./task-outbox.schema";
@@ -21,7 +29,10 @@ const DEFAULT_BATCH_SIZE = Number(process.env.TASK_OUTBOX_BATCH_SIZE ?? 25);
 type OutboxPayload =
   | TaskAssignedEventPayload
   | TaskCommentedEventPayload
-  | CommentMentionedEventPayload;
+  | CommentMentionedEventPayload
+  | TaskCreatedEventPayload
+  | TaskStatusChangedEventPayload
+  | TaskDeletedEventPayload;
 
 @Injectable()
 export class TaskOutboxService {
@@ -35,6 +46,32 @@ export class TaskOutboxService {
     session?: ClientSession,
   ): Promise<void> {
     await this.enqueueEvent(TASK_OUTBOX_EVENT_TASK_ASSIGNED, payload.taskId, payload, session);
+  }
+
+  async enqueueTaskCreated(
+    payload: TaskCreatedEventPayload,
+    session?: ClientSession,
+  ): Promise<void> {
+    await this.enqueueEvent(TASK_OUTBOX_EVENT_TASK_CREATED, payload.taskId, payload, session);
+  }
+
+  async enqueueTaskStatusChanged(
+    payload: TaskStatusChangedEventPayload,
+    session?: ClientSession,
+  ): Promise<void> {
+    await this.enqueueEvent(
+      TASK_OUTBOX_EVENT_TASK_STATUS_CHANGED,
+      payload.taskId,
+      payload,
+      session,
+    );
+  }
+
+  async enqueueTaskDeleted(
+    payload: TaskDeletedEventPayload,
+    session?: ClientSession,
+  ): Promise<void> {
+    await this.enqueueEvent(TASK_OUTBOX_EVENT_TASK_DELETED, payload.taskId, payload, session);
   }
 
   async enqueueCommentMentioned(

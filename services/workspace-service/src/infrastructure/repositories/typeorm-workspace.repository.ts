@@ -137,6 +137,16 @@ export class TypeOrmWorkspaceRepository implements IWorkspaceRepository {
       await manager.save(member);
 
       const domainWorkspace = this.toDomain(saved);
+      await this.outboxService.enqueueWorkspaceCreated(
+        {
+          eventId: randomUUID(),
+          occurredAt: new Date().toISOString(),
+          ownerId: data.ownerId,
+          workspaceId: saved.id,
+          workspaceName: saved.name,
+        },
+        manager,
+      );
       await this.cache.deleteWorkspaceList(data.userId);
       return domainWorkspace;
     });

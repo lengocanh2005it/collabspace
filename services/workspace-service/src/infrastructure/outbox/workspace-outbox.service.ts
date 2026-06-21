@@ -6,6 +6,10 @@ import type { DataSource, EntityManager } from 'typeorm';
 import { getWorkspaceOutboxConfig } from './workspace-outbox.config';
 import {
   WORKSPACE_OUTBOX_AGGREGATE_TYPE,
+  WORKSPACE_OUTBOX_EVENT_MEMBER_JOINED,
+  WORKSPACE_OUTBOX_EVENT_MEMBER_LEFT,
+  WORKSPACE_OUTBOX_EVENT_PROJECT_CREATED,
+  WORKSPACE_OUTBOX_EVENT_WORKSPACE_CREATED,
   WORKSPACE_OUTBOX_EVENT_WORKSPACE_DELETED,
   WORKSPACE_OUTBOX_EVENT_WORKSPACE_INVITED,
   WorkspaceOutboxEventEntity,
@@ -61,6 +65,34 @@ export class WorkspaceOutboxService {
     manager?: EntityManager,
   ): Promise<void> {
     await this.enqueueEvent(WORKSPACE_OUTBOX_EVENT_WORKSPACE_DELETED, payload, manager);
+  }
+
+  async enqueueWorkspaceCreated(
+    payload: Record<string, unknown>,
+    manager?: EntityManager,
+  ): Promise<void> {
+    await this.enqueueEvent(WORKSPACE_OUTBOX_EVENT_WORKSPACE_CREATED, payload, manager);
+  }
+
+  async enqueueProjectCreated(
+    payload: Record<string, unknown>,
+    manager?: EntityManager,
+  ): Promise<void> {
+    await this.enqueueEvent(WORKSPACE_OUTBOX_EVENT_PROJECT_CREATED, payload, manager);
+  }
+
+  async enqueueMemberJoined(
+    payload: Record<string, unknown>,
+    manager?: EntityManager,
+  ): Promise<void> {
+    await this.enqueueEvent(WORKSPACE_OUTBOX_EVENT_MEMBER_JOINED, payload, manager);
+  }
+
+  async enqueueMemberLeft(
+    payload: Record<string, unknown>,
+    manager?: EntityManager,
+  ): Promise<void> {
+    await this.enqueueEvent(WORKSPACE_OUTBOX_EVENT_MEMBER_LEFT, payload, manager);
   }
 
   async claimPendingBatch(limit?: number): Promise<ClaimedOutboxEvent[]> {
