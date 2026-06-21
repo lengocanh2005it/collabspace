@@ -428,6 +428,12 @@ jobs:
 
 
 
+      - name: Ensure namespace exists
+
+        run: kubectl create namespace collabspace --dry-run=client -o yaml | kubectl apply -f -
+
+
+
       - name: Helm upgrade (DOKS)
 
         run: |
@@ -435,8 +441,6 @@ jobs:
           helm upgrade --install collabspace infrastructure/helm/collabspace \
 
             --namespace collabspace \
-
-            --create-namespace \
 
             --timeout 20m \
 
