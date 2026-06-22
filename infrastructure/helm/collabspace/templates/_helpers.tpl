@@ -48,7 +48,11 @@ app.kubernetes.io/version: {{ .root.Chart.AppVersion | quote }}
 
 {{- define "collabspace.postgresql.host" -}}
 {{- $r := .root | default . -}}
+{{- if $r.Values.cloudnativepg.enabled -}}
+{{- printf "%s-rw" ($r.Values.cloudnativepg.clusterName | default "postgres") -}}
+{{- else -}}
 {{- $r.Values.infra.hosts.postgresql | default "postgres" }}
+{{- end -}}
 {{- end }}
 
 {{- define "collabspace.mongodb.host" -}}

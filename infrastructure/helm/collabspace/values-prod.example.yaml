@@ -37,7 +37,48 @@ global:
     containerName: task-attachments
     maxFileSize: "5242880"
 
+cloudnativepg:
+  enabled: true
+  # Set false when the postgres Cluster already exists outside this Helm
+  # release, for example after a one-time raw API restore migration.
+  renderCluster: true
+  clusterName: postgres
+  instances: 3
+  superuserSecret:
+    name: postgres-superuser
+    create: true
+    username: postgres
+  storage:
+    size: 8Gi
+    storageClass: do-block-storage
+  postgresql:
+    pgHba:
+      - host all all 0.0.0.0/0 md5
+    parameters:
+      wal_level: logical
+      max_replication_slots: "8"
+      max_wal_senders: "8"
+  bootstrap:
+    database: collabspace_auth
+    owner: postgres
+    postInitSQL:
+      - CREATE DATABASE collabspace_user;
+      - CREATE DATABASE collabspace_workspace;
+  resources:
+    requests:
+      memory: 256Mi
+      cpu: 200m
+    limits:
+      memory: 512Mi
+      cpu: 500m
+  scheduledBackup:
+    enabled: false
+    name: postgres-daily
+    schedule: "0 2 * * *"
+    backupOwnerReference: self
+
 postgresql:
+  enabled: false
   auth:
     postgresPassword: "REPLACE_ME"
     password: "REPLACE_ME"

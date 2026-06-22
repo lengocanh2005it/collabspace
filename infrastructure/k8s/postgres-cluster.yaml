@@ -1,0 +1,35 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: postgres
+  namespace: collabspace
+spec:
+  instances: 3
+  storage:
+    size: 8Gi
+    storageClass: do-block-storage
+  postgresql:
+    parameters:
+      wal_level: logical
+      max_replication_slots: "8"
+      max_wal_senders: "8"
+    pg_hba:
+      - host all all 0.0.0.0/0 md5
+  bootstrap:
+    initdb:
+      database: collabspace_auth
+      owner: postgres
+      secret:
+        name: postgres-superuser
+      postInitSQL:
+        - CREATE DATABASE collabspace_user;
+        - CREATE DATABASE collabspace_workspace;
+  superuserSecret:
+    name: postgres-superuser
+  resources:
+    requests:
+      memory: 256Mi
+      cpu: 200m
+    limits:
+      memory: 512Mi
+      cpu: 500m

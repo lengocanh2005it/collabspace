@@ -35,6 +35,50 @@ infra:
     mongodb: mongo
     redis: redis-master
 
+# --- CloudNativePG (DOKS HA PostgreSQL target) ---
+# Install the CNPG operator before enabling this block:
+#   helm upgrade --install cnpg cnpg/cloudnative-pg -n cnpg-system --create-namespace
+cloudnativepg:
+  enabled: false
+  # Set false when the client-side Helm/kubectl RESTMapper cannot discover the
+  # CRD yet; app wiring still switches to postgres-rw and the Cluster can be
+  # created separately from infrastructure/k8s/postgres-cluster.yaml.
+  renderCluster: true
+  clusterName: postgres
+  instances: 3
+  superuserSecret:
+    name: postgres-superuser
+    create: true
+    username: postgres
+  storage:
+    size: 8Gi
+    storageClass: ""
+  postgresql:
+    pgHba:
+      - host all all 0.0.0.0/0 md5
+    parameters:
+      wal_level: logical
+      max_replication_slots: "8"
+      max_wal_senders: "8"
+  bootstrap:
+    database: collabspace_auth
+    owner: postgres
+    postInitSQL:
+      - CREATE DATABASE collabspace_user;
+      - CREATE DATABASE collabspace_workspace;
+  resources:
+    requests:
+      memory: 256Mi
+      cpu: 200m
+    limits:
+      memory: 512Mi
+      cpu: 500m
+  scheduledBackup:
+    enabled: false
+    name: postgres-daily
+    schedule: "0 2 * * *"
+    backupOwnerReference: self
+
 # --- Bitnami PostgreSQL (auth, user, workspace databases) ---
 postgresql:
   enabled: true
@@ -463,7 +507,9 @@ pdb:
 apps:
   auth-service:
     enabled: true
-    replicas: 2
+    # DOKS 3x4GiB pool can't fit 2 replicas/service across all infra (CPU-bound).
+    # Bump back to 2 only after adding nodes. See docs/cloudnativepg-migration.md.
+    replicas: 1
     image:
       repository: collabspace/auth-service
       tag: latest
@@ -507,7 +553,7 @@ apps:
 
   user-service:
     enabled: true
-    replicas: 2
+    replicas: 1
     image:
       repository: collabspace/user-service
       tag: latest
@@ -539,7 +585,7 @@ apps:
 
   workspace-service:
     enabled: true
-    replicas: 2
+    replicas: 1
     image:
       repository: collabspace/workspace-service
       tag: latest
@@ -574,7 +620,7 @@ apps:
 
   task-service:
     enabled: true
-    replicas: 2
+    replicas: 1
     image:
       repository: collabspace/task-service
       tag: latest
@@ -614,7 +660,7 @@ apps:
 
   notification-service:
     enabled: true
-    replicas: 2
+    replicas: 1
     image:
       repository: collabspace/notification-service
       tag: latest

@@ -1,0 +1,83 @@
+{{- if .Values.cloudnativepg.enabled }}
+{{- $ns := include "collabspace.namespace" . }}
+{{- $cnpg := .Values.cloudnativepg }}
+{{- $clusterName := $cnpg.clusterName | default "postgres" }}
+{{- $secretName := $cnpg.superuserSecret.name | default "postgres-superuser" }}
+{{- if $cnpg.superuserSecret.create }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ $secretName }}
+  namespace: {{ $ns }}
+  labels:
+    app.kubernetes.io/name: {{ $clusterName }}
+    app.kubernetes.io/component: postgres
+    app.kubernetes.io/part-of: collabspace
+type: kubernetes.io/basic-auth
+stringData:
+  username: {{ $cnpg.superuserSecret.username | default "postgres" | quote }}
+  password: {{ include "collabspace.postgresPassword" . | quote }}
+{{- end }}
+{{- if ne (toString $cnpg.renderCluster) "false" }}
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: {{ $clusterName }}
+  namespace: {{ $ns }}
+  labels:
+    app.kubernetes.io/name: {{ $clusterName }}
+    app.kubernetes.io/component: postgres
+    app.kubernetes.io/part-of: collabspace
+spec:
+  instances: {{ $cnpg.instances | default 3 }}
+  storage:
+    size: {{ $cnpg.storage.size | default "8Gi" | quote }}
+    {{- if $cnpg.storage.storageClass }}
+    storageClass: {{ $cnpg.storage.storageClass | quote }}
+    {{- end }}
+  postgresql:
+    {{- if $cnpg.postgresql.parameters }}
+    parameters:
+      {{- toYaml $cnpg.postgresql.parameters | nindent 6 }}
+    {{- end }}
+    {{- if $cnpg.postgresql.pgHba }}
+    pg_hba:
+      {{- toYaml $cnpg.postgresql.pgHba | nindent 6 }}
+    {{- end }}
+  bootstrap:
+    initdb:
+      database: {{ $cnpg.bootstrap.database | default "collabspace_auth" | quote }}
+      owner: {{ $cnpg.bootstrap.owner | default "postgres" | quote }}
+      secret:
+        name: {{ $secretName }}
+      {{- if $cnpg.bootstrap.postInitSQL }}
+      postInitSQL:
+        {{- toYaml $cnpg.bootstrap.postInitSQL | nindent 8 }}
+      {{- end }}
+  superuserSecret:
+    name: {{ $secretName }}
+  {{- if $cnpg.resources }}
+  resources:
+    {{- toYaml $cnpg.resources | nindent 4 }}
+  {{- end }}
+{{- if $cnpg.scheduledBackup.enabled }}
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: {{ $cnpg.scheduledBackup.name | default "postgres-daily" }}
+  namespace: {{ $ns }}
+  labels:
+    app.kubernetes.io/name: {{ $clusterName }}
+    app.kubernetes.io/component: postgres-backup
+    app.kubernetes.io/part-of: collabspace
+spec:
+  schedule: {{ $cnpg.scheduledBackup.schedule | quote }}
+  cluster:
+    name: {{ $clusterName }}
+  backupOwnerReference: {{ $cnpg.scheduledBackup.backupOwnerReference | default "self" }}
+{{- end }}
+{{- end }}
+{{- end }}

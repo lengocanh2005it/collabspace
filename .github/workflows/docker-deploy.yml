@@ -378,6 +378,8 @@ jobs:
 
           helm repo add traefik https://traefik.github.io/charts
 
+          helm repo add cnpg https://cloudnative-pg.github.io/charts
+
           helm repo update
 
 
@@ -450,6 +452,65 @@ jobs:
 
 
 
+      - name: Detect PostgreSQL mode
+
+        id: postgres-mode
+
+        shell: bash
+
+        run: |
+          set -euo pipefail
+          enabled="$(awk '
+            /^cloudnativepg:[[:space:]]*$/ { in_block=1; next }
+            in_block && /^[^[:space:]]/ { in_block=0 }
+            in_block && /^[[:space:]]+enabled:[[:space:]]*true([[:space:]]*(#.*)?)?$/ { found=1; print "true"; exit }
+            END { if (!found) print "false" }
+          ' /tmp/values-prod.yaml)"
+          echo "cloudnativepg_enabled=${enabled}" >> "$GITHUB_OUTPUT"
+
+
+
+      - name: Detect CloudNativePG ownership
+
+        id: cnpg-ownership
+
+        if: steps.postgres-mode.outputs.cloudnativepg_enabled == 'true'
+
+        shell: bash
+
+        run: |
+          set -euo pipefail
+          args=""
+          raw_path="/apis/postgresql.cnpg.io/v1/namespaces/collabspace/clusters/postgres"
+
+          if cluster_json="$(kubectl get --raw "$raw_path" 2>/dev/null)"; then
+            release_name="$(echo "$cluster_json" | jq -r '.metadata.annotations["meta.helm.sh/release-name"] // ""')"
+            release_namespace="$(echo "$cluster_json" | jq -r '.metadata.annotations["meta.helm.sh/release-namespace"] // ""')"
+
+            if [[ "$release_name" != "collabspace" || "$release_namespace" != "collabspace" ]]; then
+              echo "==> Existing CloudNativePG cluster is not Helm-owned; disabling Cluster rendering for this deploy"
+              args="--set cloudnativepg.renderCluster=false"
+            fi
+          fi
+
+          echo "helm_args=${args}" >> "$GITHUB_OUTPUT"
+
+
+
+      - name: Ensure CloudNativePG operator
+
+        if: steps.postgres-mode.outputs.cloudnativepg_enabled == 'true'
+
+        run: |
+          helm upgrade --install cnpg cnpg/cloudnative-pg \
+            --namespace cnpg-system \
+            --create-namespace \
+            --version 0.22.0 \
+            --wait \
+            --timeout 10m
+
+
+
       - name: Ensure namespace exists
 
         run: |
@@ -480,6 +541,7 @@ jobs:
               --namespace collabspace \
               --timeout 20m \
               --reuse-values \
+              ${{ steps.cnpg-ownership.outputs.helm_args }} \
               ${{ steps.deploy-vars.outputs.helm_set_args }}
           else
             echo "==> Applying full values-prod.yaml (fresh install or force_full_values=true)"
@@ -488,6 +550,7 @@ jobs:
               --timeout 20m \
               --set global.createNamespace=false \
               -f /tmp/values-prod.yaml \
+              ${{ steps.cnpg-ownership.outputs.helm_args }} \
               ${{ steps.deploy-vars.outputs.helm_set_args }}
           fi
 
@@ -496,7 +559,34 @@ jobs:
       - name: Wait for datastores to be ready
 
         run: |
-          kubectl rollout status statefulset/postgres -n collabspace --timeout=10m
+          if [[ "${{ steps.postgres-mode.outputs.cloudnativepg_enabled }}" == "true" ]]; then
+            raw_path="/apis/postgresql.cnpg.io/v1/namespaces/collabspace/clusters/postgres"
+            deadline=$((SECONDS + 600))
+
+            until [[ "$SECONDS" -ge "$deadline" ]]; do
+              cluster_json="$(kubectl get --raw "$raw_path" 2>/dev/null || true)"
+              ready="$(echo "$cluster_json" | jq -r '.status.readyInstances // 0' 2>/dev/null || echo 0)"
+              instances="$(echo "$cluster_json" | jq -r '.status.instances // 0' 2>/dev/null || echo 0)"
+              phase="$(echo "$cluster_json" | jq -r '.status.phase // ""' 2>/dev/null || echo "")"
+              ready="${ready:-0}"
+              instances="${instances:-0}"
+
+              echo "CloudNativePG postgres: phase=${phase:-unknown} ready=${ready}/${instances}"
+
+              if [[ "$instances" != "0" && "$ready" == "$instances" ]]; then
+                break
+              fi
+
+              sleep 10
+            done
+
+            if [[ "$ready" != "$instances" || "$instances" == "0" ]]; then
+              echo "CloudNativePG cluster/postgres did not become ready in time" >&2
+              exit 1
+            fi
+          else
+            kubectl rollout status statefulset/postgres -n collabspace --timeout=10m
+          fi
           kubectl rollout status statefulset/mongo -n collabspace --timeout=10m
 
 
@@ -524,10 +614,15 @@ jobs:
           metadata:
             name: migrate-auth
             namespace: collabspace
+            labels:
+              collabspace.dev/migration: auth-service
           spec:
             ttlSecondsAfterFinished: 3600
             backoffLimit: 2
             template:
+              metadata:
+                labels:
+                  collabspace.dev/migration: auth-service
               spec:
                 restartPolicy: Never
                 imagePullSecrets:
@@ -545,10 +640,15 @@ jobs:
           metadata:
             name: migrate-user
             namespace: collabspace
+            labels:
+              collabspace.dev/migration: user-service
           spec:
             ttlSecondsAfterFinished: 3600
             backoffLimit: 2
             template:
+              metadata:
+                labels:
+                  collabspace.dev/migration: user-service
               spec:
                 restartPolicy: Never
                 imagePullSecrets:
@@ -566,10 +666,15 @@ jobs:
           metadata:
             name: migrate-workspace
             namespace: collabspace
+            labels:
+              collabspace.dev/migration: workspace-service
           spec:
             ttlSecondsAfterFinished: 3600
             backoffLimit: 2
             template:
+              metadata:
+                labels:
+                  collabspace.dev/migration: workspace-service
               spec:
                 restartPolicy: Never
                 imagePullSecrets:
