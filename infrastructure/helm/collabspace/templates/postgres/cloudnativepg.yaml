@@ -32,6 +32,7 @@ metadata:
     app.kubernetes.io/part-of: collabspace
 spec:
   instances: {{ $cnpg.instances | default 3 }}
+  enableSuperuserAccess: {{ $cnpg.enableSuperuserAccess | default false }}
   storage:
     size: {{ $cnpg.storage.size | default "8Gi" | quote }}
     {{- if $cnpg.storage.storageClass }}

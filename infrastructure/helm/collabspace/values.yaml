@@ -46,6 +46,10 @@ cloudnativepg:
   renderCluster: true
   clusterName: postgres
   instances: 3
+  # CNPG mặc định xoá password role `postgres` khi false → services connect bằng
+  # POSTGRES_USER=postgres sẽ fail 28P01. Bật true để CNPG sync password từ
+  # superuserSecret. Xem .claude/docs/doks-operations.md.
+  enableSuperuserAccess: true
   superuserSecret:
     name: postgres-superuser
     create: true

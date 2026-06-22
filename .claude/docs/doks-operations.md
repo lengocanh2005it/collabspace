@@ -196,6 +196,21 @@ Giữ unseal key trong password manager — không commit vào repo.
 - Nếu PVC không bind trên DOKS, kiểm tra `storageClass: do-block-storage`.
 - Với CloudNativePG, PVC thuộc các pod `postgres-1`, `postgres-2`, `postgres-3`; writes đi qua service `postgres-rw`.
 
+## Tạo cluster DOKS mới / migration (bài học 2026-06-23)
+
+Khi `helm install` lên cluster DOKS K8s **v1.36+** (Gateway API CRDs cài sẵn):
+
+1. **Traefik Gateway API CRD conflict** — chart Traefik v33 cố apply `crds/gateway-standard-install.yaml`, đụng CRD có sẵn (`conflict with "c3": .spec.versions`). Fix:
+   - Apply riêng **chỉ** các `traefik.io_*` CRD: `tar -xzf charts/traefik-33.2.1.tgz`, `kubectl apply -f traefik/crds/traefik.io_*.yaml` (BỎ `gateway-standard-install.yaml` và `hub.traefik.io_*`).
+   - Rồi `helm install ... --skip-crds` (nếu không có IngressRoute/Middleware sẽ báo `no matches for kind "IngressRoute"`).
+2. **CNPG operator** — cài `--server-side --force-conflicts` (CRD annotation quá lớn cho client-side apply trên v1.36).
+3. **CNPG `enableSuperuserAccess`** — mặc định `false` → CNPG **xoá password role `postgres`** mỗi lần reconcile → services connect `POSTGRES_USER=postgres` fail `28P01`. PHẢI set `cloudnativepg.enableSuperuserAccess: true` (đã có trong `values.yaml` + template `postgres/cloudnativepg.yaml`). Patch nóng: `kubectl patch cluster postgres --type merge -p '{"spec":{"enableSuperuserAccess":true}}'`.
+4. **Namespace tạo tay** — gắn label/annotation Helm trước khi install: `app.kubernetes.io/managed-by=Helm`, `meta.helm.sh/release-name/namespace`.
+5. **Migrate data cross-cluster** — `pg_dump --clean --if-exists --no-owner --no-acl` qua `kubectl exec` (peer auth, không cần password) cho 3 DB Postgres; `mongodump/mongorestore --archive --gzip --drop` cho 4 DB Mongo (password qua `$MONGODB_ROOT_PASSWORD` trong pod, không lộ ra command line). Scale app `--replicas=0` khi restore. Verify bằng so sánh row counts old↔new.
+6. **LB mới có IP mới** — annotation `do-loadbalancer-id` không tái dùng được LB còn gắn cluster cũ; đổi DNS A record sang IP mới sau khi smoke test pass.
+7. **Traefik acme.json permission** — PVC `/data` mặc định thuộc root, Traefik (UID 65532) không ghi được → resolver bị skip (`permission denied`). Set `traefik.podSecurityContext.fsGroup: 65532` (+ `traefik.updateStrategy.type: Recreate` vì RWO PVC). Đã có trong `values.yaml`/`values-prod.yaml`.
+8. **Let's Encrypt cert race với DO LB** — Traefik thử ACME HTTP-01 ~17s sau khi pod start, nhưng DO LB cần ~30-60s mới external-ready → LE nhận `404` (rolling: 2 pod, kube-proxy route sang pod cũ thiếu token) hoặc `Timeout during connect` (Recreate: LB gap). Traefik KHÔNG tự retry. **Fix:** đợi LB external-ready (probe `http://<domain>/.well-known/acme-challenge/<mark>` thấy trong log pod), rồi `kubectl get ingressroute collabspace-routes -o yaml > /tmp/ir.yaml; kubectl delete ingressroute collabspace-routes; kubectl apply -f /tmp/ir.yaml` → Traefik thử ACME ngay khi LB đã ổn định → cert cấp OK (issuer Let's Encrypt). KHÔNG restart Traefik (sẽ reset LB → race lại).
+
 ## Liên quan
 
 - URL & health công khai: `docs/service-urls.md`
