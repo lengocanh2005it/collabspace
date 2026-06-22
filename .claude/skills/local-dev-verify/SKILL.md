@@ -152,14 +152,13 @@ K8s / production observability (after Helm deploy):
 - k6 smoke: `BASE_URL=http://<HOST>/api/v1 ./infrastructure/deploy/run-k6-smoke-prod.sh`
 - Guide: [docs/observability.md](../../docs/observability.md)
 
-**DigitalOcean production — sau push ảnh hưởng Docker/Helm:**
+**DigitalOcean production (DOKS 3-node SGP1) — sau push ảnh hưởng Docker/Helm:**
 
-1. Đọc `.claude/docs/doks-operations.md` trước khi SSH/patch tay hoặc deploy sang DOKS.
-2. Health nhanh: `curl http://167.172.77.110/api/v1/<service>/health/live` (expect **200**).
+1. Đọc `.claude/docs/doks-operations.md` trước khi patch tay hoặc debug prod.
+2. Health nhanh: `curl https://collabspace.ngocanh2005it.site/api/v1/<service>/health/ready` (expect **200**).
 3. CI: `gh run list --workflow=docker-deploy.yml --limit 1` — build fail thường do Dockerfile monorepo; deploy fail thường do pod crash / probe 404 / thiếu `NODE_PATH`.
-4. SSH: `export KUBECONFIG=/etc/rancher/k3s/k3s.yaml`; `kubectl get pods -n collabspace`; `kubectl logs deploy/<service> --tail=40`.
-5. DOKS target: dùng `KUBECONFIG_DOKS`, PVC `do-block-storage`, smoke test qua LoadBalancer IP trước khi đổi DNS.
-   - PostgreSQL HA migration: set `cloudnativepg.enabled=true` and `postgresql.enabled=false`; CI installs CNPG operator and waits for `cluster/postgres`. App writes use `postgres-rw`. If the CNPG `Cluster` already exists outside Helm ownership, keep `cloudnativepg.renderCluster=false`; CI also detects and overrides this case.
+4. Kubectl: `kubectl get pods -n collabspace`; `kubectl logs deploy/<service> --tail=40`. KUBECONFIG từ GitHub secret `KUBECONFIG_DOKS` (CI) hoặc `doctl kubernetes cluster kubeconfig save <cluster-id>` (local).
+5. **PostgreSQL HA — CloudNativePG** (đã migration 2026-06-22): cluster `postgres`, pods `postgres-2/3/4`, service `postgres-rw` (writes) + `postgres-ro` (reads). `cloudnativepg.enabled=true` / `postgresql.enabled=false` / `renderCluster=false` trong values-prod.yaml. Exec vào postgres: `kubectl exec -n collabspace $(kubectl get cluster postgres -n collabspace -o jsonpath='{.status.currentPrimary}') -c postgres -- psql -U postgres`.
 6. **Không** patch `kubectl` probe/env rồi bỏ quên — fix trong Helm chart / Dockerfile và push; hotfix tay bị `helm upgrade` ghi đè.
 
 Trước push đổi `Dockerfile.service` hoặc workspace packages: chạy `pnpm run build` service + cân nhắc `docker build` smoke (xem droplet doc).

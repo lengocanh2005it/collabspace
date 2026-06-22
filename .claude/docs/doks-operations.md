@@ -1,35 +1,35 @@
-# DigitalOcean Kubernetes — vận hành & DOKS migration (agents)
+# DigitalOcean Kubernetes — vận hành DOKS production (agents)
 
-Hướng dẫn cho AI agents khi debug/deploy production hiện tại trên **Droplet k3s single-node** và khi migration sang **DOKS 3 node**. URL công khai: `docs/service-urls.md`.
+Hướng dẫn cho AI agents khi debug/deploy production trên **DOKS 3-node SGP1**. URL công khai: `docs/service-urls.md`.
+
+> **Migration hoàn thành 2026-06-22.** Production đã chuyển từ Droplet k3s single-node sang DOKS. Droplet `167.172.77.110` không còn là production. Không còn dùng `/etc/rancher/k3s/k3s.yaml` hay SSH vào Droplet để vận hành.
 
 ## Trạng thái môi trường
 
 | Mục | Giá trị |
 |-----|---------|
-| Production hiện tại | Droplet k3s single-node (`167.172.77.110`) |
-| Migration target | DOKS 3 worker nodes (SGP1), blue/green song song với Droplet |
+| **Production** | **DOKS 3 worker nodes, SGP1** |
 | Domain | `collabspace.ngocanh2005it.site` |
+| KUBECONFIG | GitHub secret `KUBECONFIG_DOKS`; local: `doctl kubernetes cluster kubeconfig save <cluster-id>` |
 | Namespace app | `collabspace` |
 | Helm release | `collabspace` |
 | Chart | `infrastructure/helm/collabspace` |
 | Prod values (gitignored) | `infrastructure/helm/collabspace/values-prod.yaml` |
-| DOKS PostgreSQL target | CloudNativePG cluster `postgres` (`postgres-rw` for writes, `postgres-ro` for reads) |
+| **PostgreSQL** | **CloudNativePG** cluster `postgres` — pods `postgres-2/3/4`, `postgres-rw` (writes), `postgres-ro` (reads); `cloudnativepg.enabled=true` / `postgresql.enabled=false` / `renderCluster=false` |
 
 **Không** đọc/commit `values-prod.yaml` hoặc in secret ra log/chat.
 
-## DOKS target model
+### Exec vào PostgreSQL
 
-DOKS là managed Kubernetes: DigitalOcean quản lý control plane. Nếu cần control plane HA, bật tùy chọn **HA control plane** của DOKS; nếu muốn tự quản lý control plane thật thì đó là mô hình kubeadm/k3s multi-node trên Droplet, không phải DOKS.
+```bash
+# Tìm primary pod động (không hardcode postgres-0):
+PG_POD=$(kubectl get cluster postgres -n collabspace -o jsonpath='{.status.currentPrimary}')
+kubectl exec -n collabspace "$PG_POD" -c postgres -- psql -U postgres -d collabspace_auth
+```
 
-Migration khuyến nghị là **blue/green**:
+### DOKS model
 
-1. Giữ Droplet k3s production đang chạy.
-2. Tạo DOKS 3 node và lấy kubeconfig bằng `doctl kubernetes cluster kubeconfig save <cluster-name>`.
-3. Cài Vault + ESO, seed lại `secret/collabspace/prod`.
-4. Deploy Helm release `collabspace` lên DOKS. With `cloudnativepg.enabled=true`, GitHub Actions installs/upgrades the CNPG operator first, then Helm renders the `Cluster`.
-5. Restore Postgres/Mongo nếu cần giữ data thật.
-6. Smoke test qua DOKS LoadBalancer IP.
-7. Đổi DNS sang DOKS LoadBalancer IP; giữ Droplet vài ngày để rollback.
+DOKS là managed Kubernetes: DigitalOcean quản lý control plane. CI deploy dùng `KUBECONFIG_DOKS` secret — không SSH vào Droplet nữa.
 
 ## CI/CD pipeline (per-service)
 
@@ -43,7 +43,7 @@ Migration khuyến nghị là **blue/green**:
 
 ### CD (`docker-deploy.yml`) — push `main` / dispatch
 
-Hiện tại production Droplet dùng SSH vào server rồi chạy Helm với kubeconfig k3s local. Sau migration sang DOKS, cập nhật workflow để dùng `KUBECONFIG_DOKS` secret và chạy `helm upgrade` trực tiếp vào DOKS thay vì SSH. Xem backlog: `docs/team/phan-phu-tho-infrastructure-backlog.md`.
+CI deploy trực tiếp vào DOKS qua GitHub secret `KUBECONFIG_DOKS` và chạy `helm upgrade`. Không còn SSH vào Droplet.
 
 1. `detect-changes` → danh sách service cần build/deploy.
 2. **Build matrix** — chỉ image của service đổi → GHCR tag **`{service}-{sha7}`**.
@@ -127,8 +127,6 @@ kubectl get pods -n collabspace -l cnpg.io/cluster=postgres
 Từ máy ngoài:
 
 ```bash
-curl -s -o /dev/null -w "%{http_code}\n" http://167.172.77.110/api/v1/notifications/health/live
-# hoặc qua domain
 curl -s -o /dev/null -w "%{http_code}\n" https://collabspace.ngocanh2005it.site/api/v1/notifications/health/live
 ```
 
@@ -160,7 +158,7 @@ kubectl scale deployment --all --replicas=1 -n collabspace
 
 ## StorageClass
 
-Droplet k3s hiện dùng `local-path`. DOKS target phải dùng `do-block-storage` cho PVC. Nếu pod `Pending` do PVC:
+DOKS dùng `do-block-storage` cho tất cả PVC (PostgreSQL CNPG, MongoDB, Redis, Prometheus, Grafana). Nếu pod `Pending` do PVC:
 
 ```bash
 kubectl describe pvc <pvc-name> -n collabspace
@@ -169,7 +167,7 @@ kubectl describe pvc <pvc-name> -n collabspace
 
 ## Vault unseal sau restart
 
-Vault standalone cần unseal lại mỗi khi pod restart, cả trên Droplet k3s lẫn DOKS:
+Vault standalone cần unseal lại mỗi khi pod restart trên DOKS:
 
 ```bash
 kubectl exec -n vault vault-0 -- vault operator unseal <unseal-key>

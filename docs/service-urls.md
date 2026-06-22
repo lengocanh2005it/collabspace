@@ -1,24 +1,23 @@
 # CollabSpace — Chỉ mục URL (API, Swagger, Infrastructure)
 
-Tài liệu tham chiếu nhanh các URL truy cập **production Droplet k3s**, **local Docker**, và **observability**.
+Tài liệu tham chiếu nhanh các URL truy cập **production DOKS**, **local Docker**, và **observability**.
 Route chi tiết từng endpoint: [`api-routes.md`](./api-routes.md) · Observability: [`observability.md`](./observability.md)
 
 ---
 
-## Production hiện tại — Droplet k3s (K8s + Traefik)
+## Production — DOKS 3-node SGP1 (hiện tại)
 
 | Thông tin | Giá trị |
 |-----------|---------|
-| **Cluster** | Droplet k3s single-node — DigitalOcean Droplet |
+| **Cluster** | DOKS 3 worker nodes — DigitalOcean Kubernetes Service, SGP1 |
 | **Domain** | `collabspace.ngocanh2005it.site` |
-| **Public IP** | `167.172.77.110` |
 | **Protocol** | **HTTPS** qua Traefik / Let's Encrypt |
+| **KUBECONFIG** | GitHub secret `KUBECONFIG_DOKS` |
+| **PostgreSQL** | CloudNativePG cluster `postgres` — pods `postgres-2/3/4`, service `postgres-rw` (writes) / `postgres-ro` (reads) |
+
+Migration từ Droplet k3s single-node (`167.172.77.110`) hoàn thành **2026-06-22**.
 
 **Agents:** troubleshooting deploy/rollout/probe → [`.claude/docs/doks-operations.md`](../.claude/docs/doks-operations.md)
-
-### DOKS migration target
-
-Phase tiếp theo là migration blue/green sang **DOKS 3 worker nodes**. DOKS LoadBalancer IP chỉ được ghi vào doc này sau khi cluster mới deploy, smoke test pass, và DNS đã cutover.
 
 ---
 
