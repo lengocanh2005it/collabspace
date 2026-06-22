@@ -41,6 +41,17 @@ spec:
         app.kubernetes.io/component: kafka
         app.kubernetes.io/part-of: collabspace
     spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values: [mongo, loki]
+                topologyKey: kubernetes.io/hostname
       securityContext:
         fsGroup: 1000
         fsGroupChangePolicy: OnRootMismatch
@@ -96,6 +107,8 @@ spec:
               value: "true"
             - name: KAFKA_LOG_DIRS
               value: "/var/lib/kafka/data"
+            - name: KAFKA_HEAP_OPTS
+              value: {{ .Values.kafka.heapOpts | default "-Xmx384m -Xms256m" | quote }}
           readinessProbe:
             exec:
               command:

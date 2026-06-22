@@ -201,15 +201,16 @@ kafka:
     repository: apache/kafka
     tag: "3.8.0"
     pullPolicy: IfNotPresent
+  heapOpts: "-Xmx384m -Xms256m"
   persistence:
     enabled: true
     size: 5Gi
   resources:
     requests:
-      memory: 512Mi
-      cpu: 250m
+      memory: 384Mi
+      cpu: 200m
     limits:
-      memory: 768Mi
+      memory: 512Mi
       cpu: 750m
   exporter:
     enabled: true
@@ -232,6 +233,7 @@ debeziumConnect:
     repository: quay.io/debezium/connect
     tag: 2.7.3.Final
     pullPolicy: IfNotPresent
+  heapOpts: "-Xmx384m -Xms256m"
   bootstrapServers: kafka:9092
   groupId: collabspace-connect
   configStorageTopic: collabspace_connect_configs
@@ -239,10 +241,10 @@ debeziumConnect:
   statusStorageTopic: collabspace_connect_statuses
   resources:
     requests:
-      memory: 512Mi
-      cpu: 150m
+      memory: 384Mi
+      cpu: 100m
     limits:
-      memory: 768Mi
+      memory: 512Mi
       cpu: 750m
   connectors:
     enabled: true
@@ -425,6 +427,17 @@ loki:
     auth_enabled: false
   singleBinary:
     replicas: 1
+    affinity:
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values: [kafka, mongo]
+              topologyKey: kubernetes.io/hostname
     persistence:
       enabled: true
       size: 5Gi
