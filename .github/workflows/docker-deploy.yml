@@ -736,14 +736,43 @@ jobs:
 
 
 
-      - name: Wait for pods to be fully ready
+      - name: Health check all services
         run: |
-          echo "==> Waiting 30s for NestJS apps to finish booting after rollout..."
-          sleep 30
-          kubectl wait pod -n collabspace -l app=auth-service \
-            --for=condition=ready --timeout=3m
-          kubectl wait pod -n collabspace -l app=workspace-service \
-            --for=condition=ready --timeout=3m
+          set -euo pipefail
+
+          check_service() {
+            local name=$1
+            local svc=$2
+            local port=$3
+            local path=$4
+            local max_attempts=36   # 3 minutes @ 5s each
+            local attempt=0
+
+            echo "==> Health check: ${name} (${path})"
+            while [[ $attempt -lt $max_attempts ]]; do
+              attempt=$((attempt + 1))
+              code=$(kubectl exec -n collabspace \
+                "$(kubectl get pod -n collabspace -l app=${svc} -o jsonpath='{.items[0].metadata.name}')" \
+                -- wget -qO- -S "http://localhost:${port}${path}" 2>&1 \
+                | grep "HTTP/" | awk '{print $2}' || echo "000")
+              if [[ "$code" == "200" ]]; then
+                echo "  [OK] ${name} healthy (attempt ${attempt})"
+                return 0
+              fi
+              echo "  [WAIT] ${name} HTTP ${code} (attempt ${attempt}/${max_attempts}), retry in 5s..."
+              sleep 5
+            done
+            echo "  [FAIL] ${name} did not become healthy after $((max_attempts * 5))s"
+            return 1
+          }
+
+          check_service "auth-service"          "auth-service"          3000 "/api/v1/auth/health/ready"
+          check_service "user-service"          "user-service"          3000 "/api/v1/users/health/ready"
+          check_service "workspace-service"     "workspace-service"     8080 "/api/v1/workspaces/health/ready"
+          check_service "task-service"          "task-service"          3000 "/api/v1/tasks/health/ready"
+          check_service "notification-service"  "notification-service"  3000 "/api/v1/notifications/health/ready"
+
+          echo "==> All services healthy."
 
       - name: Force DNS resolution to DOKS LoadBalancer
         run: |
