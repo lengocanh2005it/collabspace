@@ -10,8 +10,10 @@ npm run build
 Pop-Location
 
 Write-Host "Compressing frontend build..."
-if (Test-Path "$deployDir\frontend.zip") { Remove-Item "$deployDir\frontend.zip" -Force }
-Compress-Archive -Path "$frontendDir\dist\*" -DestinationPath "$deployDir\frontend.zip" -Force
+if (Test-Path "$deployDir\frontend.tar.gz") { Remove-Item "$deployDir\frontend.tar.gz" -Force }
+Push-Location "$frontendDir\dist"
+tar.exe -czf "$deployDir\frontend.tar.gz" *
+Pop-Location
 
 Write-Host "Creating Nginx configuration..."
 $nginxConf = @"
@@ -29,13 +31,13 @@ Set-Content "$deployDir\default.conf" -Value $nginxConf
 
 Write-Host "Deploying to Kubernetes..."
 kubectl delete configmap frontend-payload nginx-conf -n collabspace --ignore-not-found
-kubectl create configmap frontend-payload --from-file="$deployDir\frontend.zip=$deployDir\frontend.zip" -n collabspace
-kubectl create configmap nginx-conf --from-file="$deployDir\default.conf=default.conf" -n collabspace
+kubectl create configmap frontend-payload --from-file=frontend.tar.gz="$deployDir\frontend.tar.gz" -n collabspace
+kubectl create configmap nginx-conf --from-file=default.conf="$deployDir\default.conf" -n collabspace
 
 kubectl apply -f "$deployDir\frontend-deployment.yaml"
 
 Write-Host "Cleaning up temporary files..."
-Remove-Item "$deployDir\frontend.zip" -Force
+Remove-Item "$deployDir\frontend.tar.gz" -Force
 Remove-Item "$deployDir\default.conf" -Force
 
 Write-Host "Deployment successful!"

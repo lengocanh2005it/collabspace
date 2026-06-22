@@ -1,0 +1,96 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: collabspace-frontend
+  namespace: collabspace
+  labels:
+    app: collabspace-frontend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: collabspace-frontend
+  template:
+    metadata:
+      labels:
+        app: collabspace-frontend
+    spec:
+      initContainers:
+        - name: init-frontend
+          image: busybox:1.36
+          command: ["sh", "-c", "tar -xzf /payload/frontend.tar.gz -C /app/html/"]
+          volumeMounts:
+            - name: payload-volume
+              mountPath: /payload
+            - name: html-volume
+              mountPath: /app/html
+      containers:
+        - name: nginx
+          image: nginx:alpine
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: html-volume
+              mountPath: /usr/share/nginx/html
+            - name: nginx-conf-volume
+              mountPath: /etc/nginx/conf.d/default.conf
+              subPath: default.conf
+      volumes:
+        - name: payload-volume
+          configMap:
+            name: frontend-payload
+        - name: nginx-conf-volume
+          configMap:
+            name: nginx-conf
+        - name: html-volume
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: collabspace-frontend
+  namespace: collabspace
+spec:
+  selector:
+    app: collabspace-frontend
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: collabspace-frontend-route
+  namespace: collabspace
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: PathPrefix(`/`)
+      kind: Rule
+      services:
+        - name: collabspace-frontend
+          port: 80
+  tls:
+    certResolver: letsencrypt
+    domains:
+      - main: collabspace.ngocanh2005it.site
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-traefik-to-frontend
+  namespace: collabspace
+spec:
+  podSelector:
+    matchLabels:
+      app: collabspace-frontend
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: traefik
+    ports:
+    - protocol: TCP
+      port: 80
