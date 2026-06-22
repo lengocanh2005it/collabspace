@@ -21,6 +21,7 @@ data:
   JAEGER_AGENT_HOST: "jaeger"
   {{- if eq $name "auth-service" }}
   POSTGRES_HOST: {{ include "collabspace.postgresql.host" (dict "root" $root) | quote }}
+  POSTGRES_PORT: "5432"
   POSTGRES_DB: "collabspace_auth"
   POSTGRES_USER: "postgres"
   DATABASE_SCHEMA: "public"
@@ -29,6 +30,7 @@ data:
   {{- end }}
   {{- if eq $name "user-service" }}
   POSTGRES_HOST: {{ include "collabspace.postgresql.host" (dict "root" $root) | quote }}
+  POSTGRES_PORT: "5432"
   POSTGRES_DB: "collabspace_user"
   POSTGRES_USER: "postgres"
   DATABASE_SCHEMA: "public"
@@ -37,6 +39,7 @@ data:
   {{- end }}
   {{- if eq $name "workspace-service" }}
   POSTGRES_HOST: {{ include "collabspace.postgresql.host" (dict "root" $root) | quote }}
+  POSTGRES_PORT: "5432"
   POSTGRES_DB: "collabspace_workspace"
   POSTGRES_USER: "postgres"
   DATABASE_SCHEMA: "public"
