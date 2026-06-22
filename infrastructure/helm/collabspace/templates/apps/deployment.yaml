@@ -58,6 +58,9 @@ spec:
                 name: {{ $name }}-config
             - secretRef:
                 name: {{ $name }}-secrets
+          env:
+            - name: POSTGRES_PORT
+              value: "5432"
           resources:
             {{- toYaml $app.resources | nindent 12 }}
           readinessProbe:
