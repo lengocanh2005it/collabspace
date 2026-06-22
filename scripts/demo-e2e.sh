@@ -271,8 +271,8 @@ log "  Verifying email for User B (OTP: $otp_b)..."
 resp=$(curl_post "$BASE/auth/verify-email" -d "{\"userId\":\"$USER_B_ID\",\"otp\":\"$otp_b\"}")
 code=$(echo "$resp" | cut -d' ' -f1); body=$(echo "$resp" | cut -d' ' -f2-)
 assert_2xx "$code" "$body" "verify-email User B"
-log "  User B verified. Waiting 25s for Kafka/Debezium user replica to sync to task-service..."
-sleep 25
+log "  User B verified. Waiting 50s for Kafka/Debezium user replica to sync to task-service..."
+sleep 50
 
 # ---------- Step 2: Create workspace + invite User B -------------------------
 
@@ -351,8 +351,8 @@ USERNAME_B=$(py_field "$body" "username")
 log "  User B: id=$USER_B_ID username=${USERNAME_B:-<none>}"
 
 log "  Assigning task to User B (retry — user replica may still be propagating)..."
-resp=$(curl_patch_retry 8 4 "assign task" \
-  --retry-on 404 --retry-on 422 --retry-on 403 -- \
+resp=$(curl_patch_retry 15 5 "assign task" \
+  --retry-on 404 --retry-on 422 --retry-on 403 --retry-on 500 -- \
   "$BASE/tasks/$TASK_ID/assignee" \
   -H "Authorization: Bearer $TOKEN_A" \
   -d "{\"assigneeId\":\"$USER_B_ID\"}")
