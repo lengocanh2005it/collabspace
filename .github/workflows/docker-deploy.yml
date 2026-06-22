@@ -736,6 +736,15 @@ jobs:
 
 
 
+      - name: Wait for pods to be fully ready
+        run: |
+          echo "==> Waiting 30s for NestJS apps to finish booting after rollout..."
+          sleep 30
+          kubectl wait pod -n collabspace -l app=auth-service \
+            --for=condition=ready --timeout=3m
+          kubectl wait pod -n collabspace -l app=workspace-service \
+            --for=condition=ready --timeout=3m
+
       - name: Force DNS resolution to DOKS LoadBalancer
         run: |
           echo "==> Fetching Traefik LoadBalancer IP..."

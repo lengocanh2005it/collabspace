@@ -204,18 +204,18 @@ require_tool() {
 require_tool curl
 require_tool python3
 
-log "Checking gateway + auth-service health (retry up to 2m)..."
+log "Checking gateway + auth-service health (retry up to 4m)..."
 HEALTH_OK=0
-for attempt in $(seq 1 24); do
+for attempt in $(seq 1 48); do
   resp=$(curl_get "$BASE/auth/health" 2>/dev/null || echo "0 {}")
   code=$(echo "$resp" | cut -d' ' -f1)
   if [[ "$code" == "200" ]]; then
     HEALTH_OK=1; break
   fi
-  log "  Health check HTTP $code (attempt ${attempt}/24), retry in 5s..."
+  log "  Health check HTTP $code (attempt ${attempt}/48), retry in 5s..."
   sleep 5
 done
-[[ "$HEALTH_OK" == "1" ]] || fail "Gateway/auth-service unreachable after 2m. Check cluster health."
+[[ "$HEALTH_OK" == "1" ]] || fail "Gateway/auth-service unreachable after 4m. Check cluster health."
 log "  Gateway healthy."
 
 # Unique suffix so re-runs don't collide
