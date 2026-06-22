@@ -76,7 +76,7 @@ spec:
             httpGet:
               path: {{ $app.health.livePath }}
               port: {{ $app.httpPort }}
-            initialDelaySeconds: {{ default 30 $app.health.liveInitialDelaySeconds }}
+            initialDelaySeconds: {{ default 90 $app.health.liveInitialDelaySeconds }}
             periodSeconds: 10
             timeoutSeconds: 5
             successThreshold: 1
