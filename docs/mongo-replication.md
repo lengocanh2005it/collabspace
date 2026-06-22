@@ -139,3 +139,4 @@ Bitnami chart tự inject URI đúng qua secret — không cần sửa app code 
 |------|-------|-----------|---------|
 | 2026-06-22 | Lê Ngọc Anh | Phân tích capacity, lập kế hoạch replica | Draft |
 | 2026-06-22 | Codex | Cập nhật snapshot DOKS sau khi có metrics-server và right-size CPU requests | Updated |
+| 2026-06-22 | Lê Ngọc Anh | Nâng replicaCount 1→2, helm upgrade | ✅ PRIMARY+SECONDARY+ARBITER trên 3 node khác nhau |
