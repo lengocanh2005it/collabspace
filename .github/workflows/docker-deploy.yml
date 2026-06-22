@@ -684,7 +684,12 @@ jobs:
                 containers:
                   - name: migrate
                     image: ghcr.io/${OWNER}/collabspace-${service_name}:${image_tag}
-                    command: ["node", "dist/src/migrate.js"]
+                    command:
+                      - /bin/sh
+                      - -c
+                      - |
+                        export DATABASE_URL="postgresql://\$(node -e 'console.log(encodeURIComponent(process.env.POSTGRES_USER))'):\$(node -e 'console.log(encodeURIComponent(process.env.POSTGRES_PASSWORD))')@\${POSTGRES_HOST}:5432/\${POSTGRES_DB}"
+                        exec node dist/src/migrate.js
                     envFrom:
                       - configMapRef:
                           name: ${service_name}-config
