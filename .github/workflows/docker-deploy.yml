@@ -130,11 +130,19 @@ jobs:
 
           fi
 
-          echo "auth_migrations=${{ steps.filter.outputs.auth_migrations }}" >> "$GITHUB_OUTPUT"
+          auth_migrations="${{ steps.filter.outputs.auth_migrations }}"
+          user_migrations="${{ steps.filter.outputs.user_migrations }}"
+          workspace_migrations="${{ steps.filter.outputs.workspace_migrations }}"
 
-          echo "user_migrations=${{ steps.filter.outputs.user_migrations }}" >> "$GITHUB_OUTPUT"
+          [[ "${{ steps.filter.outputs.auth_service }}" == "true" ]] && auth_migrations=true
+          [[ "${{ steps.filter.outputs.user_service }}" == "true" ]] && user_migrations=true
+          [[ "${{ steps.filter.outputs.workspace_service }}" == "true" ]] && workspace_migrations=true
 
-          echo "workspace_migrations=${{ steps.filter.outputs.workspace_migrations }}" >> "$GITHUB_OUTPUT"
+          echo "auth_migrations=${auth_migrations}" >> "$GITHUB_OUTPUT"
+
+          echo "user_migrations=${user_migrations}" >> "$GITHUB_OUTPUT"
+
+          echo "workspace_migrations=${workspace_migrations}" >> "$GITHUB_OUTPUT"
 
 
 
@@ -783,6 +791,8 @@ jobs:
           kubectl rollout restart deployment/workspace-service -n collabspace
           kubectl rollout restart deployment/task-service -n collabspace
           kubectl rollout restart deployment/notification-service -n collabspace
+          kubectl rollout restart deployment/dlq-service -n collabspace
+          kubectl rollout restart deployment/analytics-service -n collabspace
 
 
 
@@ -799,6 +809,10 @@ jobs:
           kubectl rollout status deployment/task-service -n collabspace --timeout=5m
 
           kubectl rollout status deployment/notification-service -n collabspace --timeout=5m
+
+          kubectl rollout status deployment/dlq-service -n collabspace --timeout=5m
+
+          kubectl rollout status deployment/analytics-service -n collabspace --timeout=5m
 
 
 
@@ -837,6 +851,8 @@ jobs:
           check_service "workspace-service"     "workspace-service"     8080 "/api/v1/workspaces/health/ready"
           check_service "task-service"          "task-service"          3000 "/api/v1/tasks/health/ready"
           check_service "notification-service"  "notification-service"  3000 "/api/v1/notifications/health/ready"
+          check_service "dlq-service"           "dlq-service"           3000 "/api/v1/dlq/health/ready"
+          check_service "analytics-service"     "analytics-service"     3000 "/api/v1/analytics/health/ready"
 
           echo "==> All services healthy."
 
