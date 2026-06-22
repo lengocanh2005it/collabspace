@@ -16,6 +16,7 @@ Hướng dẫn cho AI agents khi debug/deploy production trên **DOKS 3-node SGP
 | Chart | `infrastructure/helm/collabspace` |
 | Prod values (gitignored) | `infrastructure/helm/collabspace/values-prod.yaml` |
 | **PostgreSQL** | **CloudNativePG** cluster `postgres` — pods `postgres-2/3/4`, `postgres-rw` (writes), `postgres-ro` (reads); `cloudnativepg.enabled=true` / `postgresql.enabled=false` / `renderCluster=false` |
+| Metrics API | `metrics-server` installed from `infrastructure/k8s/metrics-server.yaml`; `kubectl top nodes` / `kubectl top pods -n collabspace` available |
 
 **Không** đọc/commit `values-prod.yaml` hoặc in secret ra log/chat.
 
@@ -99,6 +100,10 @@ Image NestJS dùng workspace packages (`@collabspace/shared`, `@collabspace/nest
 ```bash
 # Pod status
 kubectl get pods -n collabspace
+
+# Actual CPU/memory usage
+kubectl top nodes
+kubectl top pods -n collabspace
 
 # Pod + image tag
 kubectl get deploy -n collabspace -o custom-columns=NAME:.metadata.name,READY:.status.readyReplicas,IMAGE:.spec.template.spec.containers[0].image

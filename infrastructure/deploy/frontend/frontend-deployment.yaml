@@ -6,7 +6,7 @@ metadata:
   labels:
     app: collabspace-frontend
 spec:
-  replicas: 3
+  replicas: 1
   selector:
     matchLabels:
       app: collabspace-frontend

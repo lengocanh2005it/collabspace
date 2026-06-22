@@ -157,7 +157,7 @@ K8s / production observability (after Helm deploy):
 1. Đọc `.claude/docs/doks-operations.md` trước khi patch tay hoặc debug prod.
 2. Health nhanh: `curl https://collabspace.ngocanh2005it.site/api/v1/<service>/health/ready` (expect **200**).
 3. CI: `gh run list --workflow=docker-deploy.yml --limit 1` — build fail thường do Dockerfile monorepo; deploy fail thường do pod crash / probe 404 / thiếu `NODE_PATH`.
-4. Kubectl: `kubectl get pods -n collabspace`; `kubectl logs deploy/<service> --tail=40`. KUBECONFIG từ GitHub secret `KUBECONFIG_DOKS` (CI) hoặc `doctl kubernetes cluster kubeconfig save <cluster-id>` (local).
+4. Kubectl: `kubectl get pods -n collabspace`; `kubectl top nodes`; `kubectl top pods -n collabspace`; `kubectl logs deploy/<service> --tail=40`. KUBECONFIG từ GitHub secret `KUBECONFIG_DOKS` (CI) hoặc `doctl kubernetes cluster kubeconfig save <cluster-id>` (local).
 5. **PostgreSQL HA — CloudNativePG** (đã migration 2026-06-22): cluster `postgres`, pods `postgres-2/3/4`, service `postgres-rw` (writes) + `postgres-ro` (reads). `cloudnativepg.enabled=true` / `postgresql.enabled=false` / `renderCluster=false` trong values-prod.yaml. Exec vào postgres: `kubectl exec -n collabspace $(kubectl get cluster postgres -n collabspace -o jsonpath='{.status.currentPrimary}') -c postgres -- psql -U postgres`.
 6. **Không** patch `kubectl` probe/env rồi bỏ quên — fix trong Helm chart / Dockerfile và push; hotfix tay bị `helm upgrade` ghi đè.
 

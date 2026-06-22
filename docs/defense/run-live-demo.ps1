@@ -14,7 +14,7 @@ Write-Host "Please start your screen recorder now." -ForegroundColor Green
 Write-Host "============================================================" -ForegroundColor Cyan
 Start-Sleep -Seconds 2
 
-Pause-Step "DEMONSTRATION 1: The Live Frontend & High Availability Destruction Test`nOpen https://collabspace.ngocanh2005it.site/ in your browser. We will now forcefully delete a frontend pod."
+Pause-Step "DEMONSTRATION 1: The Live Frontend & Recovery Test`nOpen https://collabspace.ngocanh2005it.site/ in your browser. We will now forcefully delete the frontend pod."
 $pod = (kubectl get pods -l app=collabspace-frontend -n collabspace -o jsonpath="{.items[0].metadata.name}")
 Write-Host "> kubectl delete pod $pod -n collabspace --force" -ForegroundColor White
 kubectl delete pod $pod -n collabspace --force
