@@ -11,16 +11,19 @@ set -euo pipefail
 
 export KUBECONFIG="${KUBECONFIG:-/etc/rancher/k3s/k3s.yaml}"
 NS="collabspace"
+APP_NS="$NS"
+# shellcheck source=infrastructure/deploy/lib/postgres-target.sh
+source "$(dirname "$0")/lib/postgres-target.sh"
 
 # ── PostgreSQL ────────────────────────────────────────────────────────────────
-PG_POD="postgres-0"
+PG_POD="$(postgres_primary_pod "$NS")"
 PG_USER="postgres"
 
-echo "==> PostgreSQL: truncate all tables in 3 databases..."
+echo "==> PostgreSQL: truncate all tables in 3 databases (pod: $PG_POD)..."
 
 for DB in collabspace_auth collabspace_user collabspace_workspace; do
   echo "    Wiping $DB..."
-  kubectl exec -n "$NS" "$PG_POD" -- psql -U "$PG_USER" -d "$DB" -c "
+  kubectl exec -n "$NS" "$PG_POD" -c postgres -- psql -U "$PG_USER" -d "$DB" -c "
     DO \$\$
     DECLARE
       r RECORD;
