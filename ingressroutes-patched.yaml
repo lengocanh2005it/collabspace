@@ -1,0 +1,295 @@
+apiVersion: v1
+items:
+- apiVersion: traefik.io/v1alpha1
+  kind: IngressRoute
+  metadata:
+    annotations:
+      meta.helm.sh/release-name: collabspace
+      meta.helm.sh/release-namespace: collabspace
+    creationTimestamp: "2026-06-21T16:17:41Z"
+    generation: 2
+    labels:
+      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/part-of: collabspace
+    name: collabspace-grafana
+    namespace: collabspace
+    resourceVersion: "68449"
+    uid: 7f475dad-a857-45dc-94d8-68b77793fd77
+  spec:
+    entryPoints:
+    - web
+    - websecure
+    routes:
+    - kind: Rule
+      match: PathPrefix(`/grafana`)
+      priority: 180
+      services:
+      - name: grafana
+        port: 80
+    tls:
+      certResolver: letsencrypt
+      domains:
+      - main: collabspace.ngocanh2005it.site
+- apiVersion: traefik.io/v1alpha1
+  kind: IngressRoute
+  metadata:
+    annotations:
+      meta.helm.sh/release-name: collabspace
+      meta.helm.sh/release-namespace: collabspace
+    creationTimestamp: "2026-06-21T16:17:41Z"
+    generation: 2
+    labels:
+      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/part-of: collabspace
+    name: collabspace-routes
+    namespace: collabspace
+    resourceVersion: "68457"
+    uid: 6660b054-6ee4-4f92-aeee-e7464bdf7c82
+  spec:
+    entryPoints:
+    - web
+    - websecure
+    routes:
+    - kind: Rule
+      match: PathPrefix(`/api/v1/workspaces/internal`) || PathPrefix(`/api/v1/users/internal`)
+      priority: 200
+      services:
+      - name: internal-api-reject
+        port: 80
+    - kind: Rule
+      match: PathPrefix(`/api/v1/users/health`)
+      middlewares:
+      - name: rate-limit
+      - name: cors-headers
+      priority: 150
+      services:
+      - name: user-service
+        port: 3000
+    - kind: Rule
+      match: PathPrefix(`/api/v1/workspaces/health`)
+      middlewares:
+      - name: rate-limit
+      - name: cors-headers
+      priority: 150
+      services:
+      - name: workspace-service
+        port: 8080
+    - kind: Rule
+      match: PathPrefix(`/api/v1/tasks/health`)
+      middlewares:
+      - name: rate-limit
+      - name: cors-headers
+      priority: 150
+      services:
+      - name: task-service
+        port: 3000
+    - kind: Rule
+      match: PathPrefix(`/api/v1/notifications/health`)
+      middlewares:
+      - name: rate-limit
+      - name: cors-headers
+      priority: 150
+      services:
+      - name: notification-service
+        port: 3000
+    - kind: Rule
+      match: PathPrefix(`/api/v1/dlq/health`)
+      middlewares:
+      - name: rate-limit
+      - name: cors-headers
+      priority: 150
+      services:
+      - name: dlq-service
+        port: 3000
+    - kind: Rule
+      match: PathPrefix(`/api/v1/analytics/health`)
+      middlewares:
+      - name: rate-limit
+      - name: cors-headers
+      priority: 150
+      services:
+      - name: analytics-service
+        port: 3000
+    - kind: Rule
+      match: Path(`/api/v1/auth/me`)
+      middlewares:
+      - name: cors-headers
+      - name: strip-identity-headers
+      - name: forward-auth
+      - name: rate-limit
+      priority: 100
+      services:
+      - name: auth-service
+        port: 3000
+    - kind: Rule
+      match: PathPrefix(`/api/v1/auth`)
+      middlewares:
+      - name: rate-limit
+      - name: cors-headers
+      services:
+      - name: auth-service
+        port: 3000
+    - kind: Rule
+      match: PathPrefix(`/api/v1/users`)
+      middlewares:
+      - name: cors-headers
+      - name: strip-identity-headers
+      - name: forward-auth
+      - name: rate-limit
+      services:
+      - name: user-service
+        port: 3000
+    - kind: Rule
+      match: PathPrefix(`/api/v1/invitations`)
+      middlewares:
+      - name: cors-headers
+      - name: strip-identity-headers
+      - name: forward-auth
+      - name: rate-limit
+      services:
+      - name: workspace-service
+        port: 8080
+    - kind: Rule
+      match: PathPrefix(`/api/v1/workspaces`)
+      middlewares:
+      - name: cors-headers
+      - name: strip-identity-headers
+      - name: forward-auth
+      - name: rate-limit
+      services:
+      - name: workspace-service
+        port: 8080
+    - kind: Rule
+      match: PathPrefix(`/api/v1/tasks`)
+      middlewares:
+      - name: cors-headers
+      - name: strip-identity-headers
+      - name: forward-auth
+      - name: rate-limit
+      services:
+      - name: task-service
+        port: 3000
+    - kind: Rule
+      match: PathPrefix(`/api/v1/notifications`)
+      middlewares:
+      - name: cors-headers
+      - name: strip-identity-headers
+      - name: forward-auth
+      - name: rate-limit
+      services:
+      - name: notification-service
+        port: 3000
+    - kind: Rule
+      match: PathPrefix(`/api/v1/dlq`)
+      middlewares:
+      - name: cors-headers
+      - name: strip-identity-headers
+      - name: forward-auth
+      - name: rate-limit
+      services:
+      - name: dlq-service
+        port: 3000
+    - kind: Rule
+      match: PathPrefix(`/api/v1/analytics`)
+      middlewares:
+      - name: cors-headers
+      - name: strip-identity-headers
+      - name: forward-auth
+      - name: rate-limit
+      services:
+      - name: analytics-service
+        port: 3000
+    tls:
+      certResolver: letsencrypt
+      domains:
+      - main: collabspace.ngocanh2005it.site
+- apiVersion: traefik.io/v1alpha1
+  kind: IngressRoute
+  metadata:
+    annotations:
+      meta.helm.sh/release-name: collabspace
+      meta.helm.sh/release-namespace: collabspace
+    creationTimestamp: "2026-06-21T16:17:41Z"
+    generation: 2
+    labels:
+      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/part-of: collabspace
+    name: collabspace-swagger
+    namespace: collabspace
+    resourceVersion: "68460"
+    uid: 317fa443-33a1-4d76-9313-9c3cab56e707
+  spec:
+    entryPoints:
+    - web
+    - websecure
+    routes:
+    - kind: Rule
+      match: PathPrefix(`/swagger/analytics`)
+      middlewares:
+      - name: rate-limit
+      - name: cors-headers
+      priority: 185
+      services:
+      - name: analytics-service
+        port: 3000
+    - kind: Rule
+      match: PathPrefix(`/swagger/auth`)
+      middlewares:
+      - name: rate-limit
+      - name: cors-headers
+      priority: 185
+      services:
+      - name: auth-service
+        port: 3000
+    - kind: Rule
+      match: PathPrefix(`/swagger/dlq`)
+      middlewares:
+      - name: rate-limit
+      - name: cors-headers
+      priority: 185
+      services:
+      - name: dlq-service
+        port: 3000
+    - kind: Rule
+      match: PathPrefix(`/swagger/notification`)
+      middlewares:
+      - name: rate-limit
+      - name: cors-headers
+      priority: 185
+      services:
+      - name: notification-service
+        port: 3000
+    - kind: Rule
+      match: PathPrefix(`/swagger/task`)
+      middlewares:
+      - name: rate-limit
+      - name: cors-headers
+      priority: 185
+      services:
+      - name: task-service
+        port: 3000
+    - kind: Rule
+      match: PathPrefix(`/swagger/user`)
+      middlewares:
+      - name: rate-limit
+      - name: cors-headers
+      priority: 185
+      services:
+      - name: user-service
+        port: 3000
+    - kind: Rule
+      match: PathPrefix(`/swagger/workspace`)
+      middlewares:
+      - name: rate-limit
+      - name: cors-headers
+      priority: 185
+      services:
+      - name: workspace-service
+        port: 8080
+    tls:
+      certResolver: letsencrypt
+      domains:
+      - main: collabspace.ngocanh2005it.site
+kind: List
+metadata:
+  resourceVersion: ""
