@@ -29,6 +29,36 @@ BASE_URL=http://localhost/api/v1 ./run-load-test.sh slo-baseline
 
 Khi set `GRAFANA_URL`, `GRAFANA_USER`, `GRAFANA_PASSWORD`, k6 gọi API annotation → marker trên dashboard **CollabSpace Load Test Run**.
 
+## Chạy trên DOKS (không cần cài k6 local)
+
+```bash
+# 1. Tạo secret (chỉ cần làm một lần)
+kubectl create secret generic k6-config -n collabspace \
+  --from-literal=userPassword=<seed-password> \
+  --from-literal=grafanaPassword=<grafana-admin-password>
+
+# 2. Apply ConfigMaps + chạy Job (mặc định: smoke, 10 VU, 2 phút)
+kubectl apply -f infrastructure/load-testing/k6-job.yaml
+
+# 3. Xem kết quả
+kubectl logs -n collabspace -l app=k6-load-test -f
+
+# 4. Xóa Job sau khi xong (hoặc tự xóa sau 10 phút qua ttlSecondsAfterFinished)
+kubectl delete job k6-load-test -n collabspace
+```
+
+**Đổi scenario / VUs** — patch trực tiếp hoặc dùng `kubectl set env`:
+
+```bash
+# Chạy slo-baseline với 20 VU
+kubectl set env job/k6-load-test K6_SCENARIO=slo-baseline K6_VUS=20 -n collabspace
+
+# Hoặc edit file rồi re-apply (Job cần xóa trước)
+kubectl delete job k6-load-test -n collabspace
+# Sửa K6_SCENARIO / K6_VUS trong k6-job.yaml
+kubectl apply -f infrastructure/load-testing/k6-job.yaml
+```
+
 ## Docker Compose
 
 ```bash
