@@ -535,6 +535,17 @@ jobs:
           helm status collabspace -n collabspace > /dev/null 2>&1 && RELEASE_EXISTS=1
           FORCE_FULL="${{ github.event.inputs.force_full_values }}"
 
+          # If a previous CI run was interrupted mid-upgrade, Helm leaves the
+          # release in pending-upgrade/pending-install state. Roll it back to
+          # the last successful revision so the next upgrade can proceed.
+          RELEASE_STATUS=$(helm status collabspace -n collabspace -o json 2>/dev/null | jq -r '.info.status // "none"')
+          if [[ "$RELEASE_STATUS" == "pending-upgrade" || "$RELEASE_STATUS" == "pending-install" || "$RELEASE_STATUS" == "pending-rollback" ]]; then
+            echo "==> Release stuck in $RELEASE_STATUS — rolling back to last good revision"
+            helm rollback collabspace 0 -n collabspace --wait --timeout 5m || true
+            RELEASE_EXISTS=0
+            helm status collabspace -n collabspace > /dev/null 2>&1 && RELEASE_EXISTS=1
+          fi
+
           if [[ "$RELEASE_EXISTS" == "1" && "$FORCE_FULL" != "true" ]]; then
             echo "==> Existing release — upgrading with --reuse-values"
             helm upgrade collabspace infrastructure/helm/collabspace \
