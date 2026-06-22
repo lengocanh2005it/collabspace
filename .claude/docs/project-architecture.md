@@ -287,7 +287,7 @@ Traefik is the API Gateway. Static config: `traefik.yml`; dynamic: `api-gateway/
 Trust boundaries (Phase B):
 
 - `strip-identity-headers` → `forward-auth` → `auth-service` `/verify` on protected public routes.
-- Internal paths `/users/internal/*`, `/workspaces/internal/*` blocked at gateway (503); S2S uses cluster DNS + Service JWT.
+- Internal paths `/api/v1/*/internal/*` blocked at gateway (503); S2S uses cluster DNS + Service JWT.
 - K8s: `infrastructure/k8s/network-policies.yaml` (or Helm `networkPolicies`) — default deny + per-service allow lists.
 
 Correlation ID (Phase C):

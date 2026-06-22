@@ -193,7 +193,7 @@ Legend: **Current** = observed or likely today; **Target** = required after resi
 | Scenario | Target |
 |----------|--------|
 | Client sends spoofed `X-User-Id` | Stripped at gateway; services verify JWT via gRPC **(DONE — B2/B1)** |
-| Client hits `/users/internal` or `/workspaces/internal` via gateway | 503 reject service **(DONE — B4)** |
+| Client hits `/api/v1/*/internal/*` via gateway | 503 reject service **(DONE — B4)** |
 | auth-service down | Protected routes fail auth; public auth routes fail with `502/503` |
 | Single app instance not ready | Health check removes from pool |
 | Downstream slow | Retry then circuit open; fail fast |

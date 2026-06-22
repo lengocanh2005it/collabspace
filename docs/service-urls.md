@@ -50,14 +50,14 @@ Base URL: **`https://collabspace.ngocanh2005it.site/api/v1`**
 **Lưu ý gateway:**
 
 - Client gửi `Authorization: Bearer <JWT>` — Traefik forward-auth qua auth-service `/api/v1/auth/verify`.
-- Route **internal** (`/api/v1/users/internal/*`, `/api/v1/workspaces/internal/*`) **bị chặn 503** từ ngoài cluster.
+- Route **internal** (`/api/v1/*/internal/*`) **bị chặn 503** từ ngoài cluster.
 - Metrics: `/api/v1/<service>/metrics` — cần Bearer `METRICS_AUTH_TOKEN` (không public).
 
 ---
 
 ## Swagger UI (OpenAPI)
 
-Bật khi Helm `gateway.swagger.expose: true`. **Không** qua prefix `/api/v1`; **không** cần JWT.
+Tắt mặc định trong production (`gateway.swagger.expose: false`). Nếu bật tạm thời, route nằm ngoài prefix `/api/v1` và được bảo vệ qua gateway forward-auth.
 
 | Service | Swagger UI | OpenAPI JSON |
 |---------|------------|--------------|
@@ -77,7 +77,9 @@ Mỗi endpoint có **request/response schema** (`@ApiOkResponse`, `@ApiCreatedRe
 
 ## Infrastructure & Observability
 
-### Grafana (public qua Traefik)
+### Grafana
+
+Tắt public route mặc định trong production (`gateway.grafana.expose: false`). Nếu bật tạm thời, route được bảo vệ qua gateway forward-auth; dùng port-forward hoặc VPN/admin access cho vận hành thường ngày.
 
 | Mục đích | URL |
 |----------|-----|
@@ -85,7 +87,7 @@ Mỗi endpoint có **request/response schema** (`@ApiOkResponse`, `@ApiCreatedRe
 | **Explore — Loki** (tail/search log) | https://collabspace.ngocanh2005it.site/grafana/explore |
 | **Explore — Prometheus** (PromQL) | https://collabspace.ngocanh2005it.site/grafana/explore?orgId=1&left=%7B%22datasource%22:%22prometheus%22%7D |
 
-**Đăng nhập:** user `admin` — password từ Helm/Grafana PVC (mặc định chart: `collabspace-grafana`; PVC cũ có thể khác).
+**Đăng nhập:** user `admin` — password từ Kubernetes Secret/Grafana PVC. Không dùng mật khẩu mặc định trong production.
 
 ### Dashboard Grafana (folder **CollabSpace**)
 
@@ -104,7 +106,7 @@ Mỗi endpoint có **request/response schema** (`@ApiOkResponse`, `@ApiCreatedRe
 | Alertmanager | cluster DNS | Chưa route public |
 | Vault + ESO | cluster | Secrets prod — xem [`infrastructure/vault/README.md`](../infrastructure/vault/README.md) |
 | Kafka + Debezium Connect | cluster | Event bus — xem [`infrastructure/kafka/README.md`](../infrastructure/kafka/README.md) |
-| Jaeger | — | `observability.jaeger.enabled: false` (tắt mặc định) |
+| Jaeger | cluster / protected route only | `observability.jaeger.enabled: false`, `gateway.jaeger.expose: false` mặc định |
 
 ### Load test (k6)
 
@@ -130,7 +132,7 @@ BASE_URL=https://collabspace.ngocanh2005it.site/api/v1 ./scripts/demo-e2e.sh
 # $env:BASE_URL="https://collabspace.ngocanh2005it.site/api/v1"; .\scripts\demo-e2e.ps1
 ```
 
-**Demo users** (sau seed): `ngocanh@collabspace.dev`, `quangtien@collabspace.dev` — password `collabspace123`.
+Không seed hoặc công bố demo platform-admin account trong production. Demo E2E tự tạo user tạm thời theo timestamp.
 
 ---
 

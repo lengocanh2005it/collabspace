@@ -84,6 +84,7 @@ GitHub secrets cho DOKS target: `KUBECONFIG_DOKS`, `GHCR_USERNAME`, `GHCR_TOKEN`
 | Pod `Pending` | PVC không bind — kiểm tra `storageClass: do-block-storage` |
 | Postgres wait fails after CNPG migration | Check `kubectl get cluster postgres -n collabspace`; app writes should target `postgres-rw`, not the old Bitnami service |
 | App sees `POSTGRES_PORT=tcp://...` | Legacy service-name injection or Kubernetes service links; Helm pins `POSTGRES_PORT=5432`, but remove legacy `service/postgres` after CNPG migration |
+| `MONGO_URI` visible in ConfigMap | Bug — Mongo connection URLs must come from app Secret/ExternalSecret, not ConfigMap |
 
 ### Monorepo Docker — bắt buộc nhớ
 

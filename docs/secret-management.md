@@ -18,9 +18,9 @@ Production:  Vault pod  →  ESO (1h)     →  K8s Secret       →  Pod envFrom
 | Vault key | Env var | Service dùng |
 |-----------|---------|--------------|
 | `jwt_secret` | `JWT_SECRET` | auth, notification |
-| `service_jwt_secret` | `SERVICE_JWT_SECRET` | user, workspace, task, notification, dlq |
+| `service_jwt_secret` | `SERVICE_JWT_SECRET` | auth, user, workspace, task, notification, dlq, analytics |
 | `postgres_password` | trong `DATABASE_URL` | auth, user, workspace |
-| `mongo_username` / `mongo_password` | trong `MONGO_URI` | task, notification, dlq |
+| `mongo_username` / `mongo_password` | trong `MONGO_URI` | task, notification, dlq, analytics |
 | `redis_password` | `REDIS_PASSWORD` | auth, notification |
 | `kafka_bootstrap_servers` | `KAFKA_BROKERS` | user, workspace, task, notification, dlq |
 | `metrics_auth_token` | `METRICS_AUTH_TOKEN` | tất cả |

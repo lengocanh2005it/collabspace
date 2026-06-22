@@ -17,6 +17,7 @@ import compression from 'compression';
 async function bootstrap() {
   ensureDatabaseUrl();
   assertRequiredInProduction('BREVO_API_KEY', process.env.BREVO_API_KEY);
+  assertRequiredInProduction('SERVICE_JWT_SECRET', process.env.SERVICE_JWT_SECRET);
 
   const app = await NestFactory.create(AppModule);
   app.use(compression());

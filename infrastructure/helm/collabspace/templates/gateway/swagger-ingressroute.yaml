@@ -22,6 +22,8 @@ spec:
         - name: {{ $name }}
           port: {{ $app.httpPort }}
       middlewares:
+        - name: strip-identity-headers
+        - name: forward-auth
         - name: rate-limit
         - name: cors-headers
 {{- end }}

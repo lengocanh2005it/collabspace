@@ -21,9 +21,9 @@ Keys in each path:
 | Vault key | Env var(s) | Services |
 |-----------|------------|----------|
 | `jwt_secret` | `JWT_SECRET` | auth, notification |
-| `service_jwt_secret` | `SERVICE_JWT_SECRET` | user, workspace, task, notification (S2S HTTP) |
+| `service_jwt_secret` | `SERVICE_JWT_SECRET` | auth, user, workspace, task, notification, dlq, analytics (S2S HTTP) |
 | `postgres_password` | `POSTGRES_PASSWORD`, `DATABASE_URL` | auth, user, workspace |
-| `mongo_username` / `mongo_password` | `MONGO_URI` | task, notification |
+| `mongo_username` / `mongo_password` | `MONGO_URI` | task, notification, dlq, analytics |
 | `redis_password` | `REDIS_PASSWORD` | auth, notification |
 | `metrics_auth_token` | `METRICS_AUTH_TOKEN` | all five apps |
 | `azure_storage_connection_string` | `AZURE_STORAGE_CONNECTION_STRING` | user-service (avatar), task-service (attachments) |

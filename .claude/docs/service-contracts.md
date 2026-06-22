@@ -4,7 +4,7 @@ For dependency failures, timeouts, idempotency, and degradation behavior, see `r
 
 ## HTTP API Rules
 
-- **OpenAPI (Swagger UI):** each app service exposes **`GET /swagger`** on its HTTP port with **request/response schemas** (`@ApiOkResponse` / `@ApiCreatedResponse`, DTO `@ApiProperty`). K8s prod: Traefik `http://<HOST>/swagger/<service>` (`gateway.swagger.expose: true`). URL index: [service-urls.md](../../docs/service-urls.md); overview: [README.md](../../README.md#openapi-swagger-ui). Protected routes use Bearer user JWT; internal S2S HTTP routes use **Service JWT** (`Authorization: Bearer …`) per [Service-to-Service HTTP Authentication](#service-to-service-http-authentication-service-jwt).
+- **OpenAPI (Swagger UI):** each app service exposes **`GET /swagger`** on its HTTP port with **request/response schemas** (`@ApiOkResponse` / `@ApiCreatedResponse`, DTO `@ApiProperty`). K8s prod keeps public Swagger disabled by default (`gateway.swagger.expose: false`); if temporarily exposed, Traefik protects it with forward-auth. URL index: [service-urls.md](../../docs/service-urls.md); overview: [README.md](../../README.md#openapi-swagger-ui). Protected routes use Bearer user JWT; internal S2S HTTP routes use **Service JWT** (`Authorization: Bearer …`) per [Service-to-Service HTTP Authentication](#service-to-service-http-authentication-service-jwt).
 - Implemented NestJS services use global prefix `/api/v1` (task and notification: global `api` + `v1/...` on `@Controller()`).
 - Controllers should use resource-oriented paths.
 - Auth-required endpoints should verify bearer tokens through auth-service, preferably via existing gRPC integration patterns.
@@ -364,7 +364,7 @@ Outbound HTTP clients sign a fresh service JWT per request (default: **new token
 
 | Variable | Consumers | Purpose |
 | -------- | --------- | ------- |
-| `SERVICE_JWT_SECRET` | task-service, notification-service (sign); workspace-service, user-service (verify); dlq-service (prod bootstrap guard requirement) | Sign and verify service JWTs. **Must match** across all services in the same environment. |
+| `SERVICE_JWT_SECRET` | auth-service, workspace-service, user-service (verify); task-service, notification-service (sign); dlq-service, analytics-service (prod bootstrap guard requirement) | Sign and verify service JWTs. **Must match** across all services in the same environment. |
 
 ### Error responses
 
@@ -380,7 +380,7 @@ Messages are human-readable; clients should branch on `code`.
 
 ### Network and gateway (unchanged)
 
-- Traefik still returns **503** for `/api/v1/workspaces/internal/*` and `/api/v1/users/internal/*`.
+- Traefik still returns **503** for `/api/v1/*/internal/*`.
 - K8s NetworkPolicies still restrict which pods may reach internal ports (e.g. only `task-service` → `workspace-service`). Service JWT adds **application-layer** identity and scope on top of B4.
 
 ### Shared library (Phase 1+)
@@ -746,7 +746,7 @@ Internal service-to-service (not for browser clients):
 
 - `GET /workspaces/internal/{workspaceId}/membership?userId=` — Service JWT (`workspace.membership.read`, `aud=workspace-service`); returns `{ workspaceId, userId, isMember, role }`; `404` when workspace missing.
 - Used by `task-service` for membership guards instead of spoofable `X-User-Id` on public routes.
-- **Not exposed via Traefik** — call on cluster/service DNS only; gateway returns 503 for `/workspaces/internal/*` and `/users/internal/*`.
+- **Not exposed via Traefik** — call on cluster/service DNS only; gateway returns 503 for `/api/v1/*/internal/*`.
 - Auth details: [Service JWT](#service-to-service-http-authentication-service-jwt).
 
 ## Task MVP Contract

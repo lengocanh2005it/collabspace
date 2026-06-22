@@ -265,6 +265,9 @@ spec:
   ingress:
     - from:
         - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: mongodb
+        - podSelector:
             matchExpressions:
               - key: app
                 operator: In

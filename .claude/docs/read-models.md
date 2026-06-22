@@ -47,6 +47,6 @@ SERVICE_JWT_SECRET=collabspace-dev-service-jwt-secret-change-me
 SERVICE_JWT_SECRET=collabspace-dev-service-jwt-secret-change-me
 ```
 
-Task-service sends Service JWT on `WorkspaceHttpClient` and `UserProfileHttpClient`. Gateway blocks public access to `/workspaces/internal/*`.
+Task-service sends Service JWT on `WorkspaceHttpClient` and `UserProfileHttpClient`. Gateway blocks public access to `/api/v1/*/internal/*`.
 
 See also: `.claude/docs/service-contracts.md` → User replica events. **Overview (VI):** [docs/cross-service-data.md](../../docs/cross-service-data.md). **Trade-offs:** [docs/trade-offs.md](../../docs/trade-offs.md).

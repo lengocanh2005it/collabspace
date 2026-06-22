@@ -49,6 +49,18 @@ export class WorkspaceHealthService {
           throw new Error('Database is not initialized');
         }
       }),
+      databaseSchema: await this.runCheck(true, async () => {
+        await this.databaseService.assertRequiredTables([
+          'idempotency_records',
+          'invitations',
+          'migrations',
+          'projects',
+          'workspace_activities',
+          'workspace_members',
+          'workspace_outbox_events',
+          'workspaces',
+        ]);
+      }),
     };
 
     return this.toReadinessReport('workspace-service', checks);

@@ -31,7 +31,7 @@ Microservices CollabSpace phụ thuộc lẫn nhau (gRPC, Kafka, Debezium Connec
 - **Gateway strip** → Traefik `strip-identity-headers` trước `forward-auth` (client không gửi được `X-User-Id` giả).
 - **Task → workspace S2S** → internal membership API + Service JWT (không dùng `X-User-Id` header).
 - **NetworkPolicy (K8s)** → default deny; task/notification → user internal HTTP; task → workspace internal; peers → auth gRPC.
-- **Gateway internal block** → Traefik từ chối `/workspaces/internal` và `/users/internal` (503).
+- **Gateway internal block** → Traefik từ chối `/api/v1/*/internal/*` (503).
 - **Metrics lockdown** → env `METRICS_AUTH_TOKEN` (Bearer hoặc `X-Metrics-Token`); Helm `global.secrets.metricsAuthToken`.
 - **Backup policy** → `docs/backup-policy.md`, scripts `infrastructure/backup/scripts/`.
 - **NFRs** → `docs/nfrs.md` (thuộc tính chất lượng hệ thống).

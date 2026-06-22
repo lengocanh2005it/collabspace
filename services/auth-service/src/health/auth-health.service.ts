@@ -63,6 +63,18 @@ export class AuthHealthService {
       database: await this.runCheck(true, async () => {
         await this.databaseService.ping();
       }),
+      databaseSchema: await this.runCheck(true, async () => {
+        await this.databaseService.assertRequiredTables([
+          'auth_outbox_events',
+          'migrations',
+          'permissions',
+          'refresh_tokens',
+          'role_permissions',
+          'roles',
+          'user_roles',
+          'users',
+        ]);
+      }),
       outbox: outboxConfig.enabled
         ? await this.runCheck(false, async () => {
             const stats = await this.emailOutbox.getStats();

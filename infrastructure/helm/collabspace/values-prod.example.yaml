@@ -198,11 +198,11 @@ gateway:
     certResolver: letsencrypt
     sans: []   # thêm "www.REPLACE_ME_DOMAIN" nếu DNS có CNAME www
   grafana:
-    expose: true
+    expose: false
   swagger:
-    expose: true
+    expose: false
   jaeger:
-    expose: true
+    expose: false
   cors:
     allowOrigins:
       - "*"

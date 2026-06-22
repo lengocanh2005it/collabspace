@@ -13,7 +13,7 @@ spec:
     - web
     - websecure
   routes:
-    - match: PathPrefix(`/api/v1/workspaces/internal`) || PathPrefix(`/api/v1/users/internal`)
+    - match: PathPrefix(`/api/v1/auth/internal`) || PathPrefix(`/api/v1/users/internal`) || PathPrefix(`/api/v1/workspaces/internal`) || PathPrefix(`/api/v1/tasks/internal`) || PathPrefix(`/api/v1/notifications/internal`) || PathPrefix(`/api/v1/dlq/internal`) || PathPrefix(`/api/v1/analytics/internal`)
       kind: Rule
       priority: 200
       services:

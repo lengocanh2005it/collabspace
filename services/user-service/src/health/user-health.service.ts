@@ -63,6 +63,21 @@ export class UserHealthService {
             required: process.env.NODE_ENV === 'production',
             status: process.env.NODE_ENV === 'production' ? 'down' : 'disabled',
           },
+      databaseSchema: hasDatabaseUrl
+        ? await this.runCheck(true, async () => {
+            await this.databaseService.assertRequiredTables([
+              'migrations',
+              'profiles',
+              'user_outbox_events',
+              'user_preferences',
+              'user_status',
+            ]);
+          })
+        : {
+            detail: 'DATABASE_URL not configured; using in-memory repository mode',
+            required: process.env.NODE_ENV === 'production',
+            status: process.env.NODE_ENV === 'production' ? 'down' : 'disabled',
+          },
     };
 
     return this.toReadinessReport('user-service', checks);

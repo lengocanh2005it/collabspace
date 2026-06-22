@@ -302,9 +302,9 @@ gateway:
     certResolver: letsencrypt
     sans: []                # e.g. ["www.ngocanh2005it.site"]
   grafana:
-    expose: true
+    expose: false
   swagger:
-    expose: true
+    expose: false
   jaeger:
     expose: false
   rateLimit:
@@ -357,7 +357,7 @@ observability:
 # --- Grafana sub-chart config ---
 grafana:
   fullnameOverride: grafana
-  adminPassword: "collabspace-grafana"
+  adminPassword: "change-me-via-prod-secret"
   persistence:
     enabled: true
     size: 2Gi

@@ -46,21 +46,15 @@ data:
   DATABASE_LOGGING: "false"
   {{- end }}
   {{- if eq $name "task-service" }}
-  MONGO_URI: {{ include "collabspace.mongoUri" (dict "database" "collabspace_task" "root" $root) | quote }}
   AZURE_STORAGE_CONTAINER_NAME: {{ $root.Values.global.azureStorage.containerName | default "task-attachments" | quote }}
   AZURE_STORAGE_MAX_FILE_SIZE: {{ $root.Values.global.azureStorage.maxFileSize | default "5242880" | quote }}
   {{- end }}
   {{- if eq $name "notification-service" }}
-  MONGO_URI: {{ include "collabspace.mongoUri" (dict "database" "collabspace_notification" "root" $root) | quote }}
   REDIS_PORT: "6379"
   REDIS_DB: "0"
   {{- end }}
   {{- if eq $name "dlq-service" }}
-  MONGO_URI: {{ include "collabspace.mongoUri" (dict "database" "collabspace_dlq" "root" $root) | quote }}
   AUTH_SERVICE_GRPC_URL: "auth-service:50051"
-  {{- end }}
-  {{- if eq $name "analytics-service" }}
-  MONGO_URI: {{ include "collabspace.mongoUri" (dict "database" "collabspace_analytics" "root" $root) | quote }}
   {{- end }}
   {{- range $key, $val := $app.extraEnv }}
   {{ $key }}: {{ $val | quote }}
