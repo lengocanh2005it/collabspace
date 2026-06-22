@@ -1,0 +1,320 @@
+name: Restore Drill
+
+on:
+  schedule:
+    - cron: '0 4 * * 1'  # Every Monday 4AM UTC
+  workflow_dispatch:
+    inputs:
+      pg_stamp:
+        description: 'Postgres snapshot stamp (e.g. 20260621/20260621T020023Z). Leave blank to use latest.'
+        required: false
+        default: ''
+      mongo_stamp:
+        description: 'Mongo snapshot stamp (e.g. 20260622/20260622T023031Z). Leave blank to use latest.'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  restore-drill:
+    name: Restore from DO Spaces → DOKS temp namespace
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      NAMESPACE: collabspace-restore-drill
+      SPACES_ENDPOINT: https://sgp1.digitaloceanspaces.com
+      SPACES_BUCKET: collabspace-bucket
+      SPACES_REGION: sgp1
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure kubectl
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBECONFIG_DOKS }}" > ~/.kube/config
+          chmod 600 ~/.kube/config
+          kubectl cluster-info --request-timeout=10s
+
+      - name: Resolve latest snapshot stamps
+        id: stamps
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.DO_SPACES_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.DO_SPACES_SECRET }}
+          AWS_DEFAULT_REGION: sgp1
+        run: |
+          PG_STAMP="${{ github.event.inputs.pg_stamp }}"
+          MONGO_STAMP="${{ github.event.inputs.mongo_stamp }}"
+
+          _aws() { aws --endpoint-url "$SPACES_ENDPOINT" "$@"; }
+
+          resolve_stamp() {
+            local prefix="$1"
+            # List YYYYMMDD/ dirs, pick latest, then latest stamp inside
+            local latest_day
+            latest_day=$(_aws s3 ls "s3://${SPACES_BUCKET}/backups/${prefix}/" \
+              | awk '{print $2}' | sed 's|/$||' | sort | tail -1)
+            if [[ -z "$latest_day" ]]; then
+              echo "ERROR: no snapshots found under backups/${prefix}/" >&2
+              exit 1
+            fi
+            local latest_stamp
+            latest_stamp=$(_aws s3 ls "s3://${SPACES_BUCKET}/backups/${prefix}/${latest_day}/" \
+              | awk '{print $2}' | sed 's|/$||' | sort | tail -1)
+            if [[ -z "$latest_stamp" ]]; then
+              echo "ERROR: no stamp dirs found under backups/${prefix}/${latest_day}/" >&2
+              exit 1
+            fi
+            # Validate PG: reject empty dumps (< 1KB per file)
+            if [[ "$prefix" == "postgres" ]]; then
+              local min_size=1024
+              for db in collabspace_auth collabspace_user collabspace_workspace; do
+                local size
+                size=$(_aws s3 ls "s3://${SPACES_BUCKET}/backups/${prefix}/${latest_day}/${latest_stamp}/${db}.sql.gz" \
+                  | awk '{print $3}')
+                if [[ -z "$size" || "$size" -lt "$min_size" ]]; then
+                  echo "WARNING: ${db}.sql.gz is ${size:-0} bytes — skipping stamp ${latest_day}/${latest_stamp}, trying previous day" >&2
+                  local prev_day
+                  prev_day=$(_aws s3 ls "s3://${SPACES_BUCKET}/backups/${prefix}/" \
+                    | awk '{print $2}' | sed 's|/$||' | sort | tail -2 | head -1)
+                  latest_stamp=$(_aws s3 ls "s3://${SPACES_BUCKET}/backups/${prefix}/${prev_day}/" \
+                    | awk '{print $2}' | sed 's|/$||' | sort | tail -1)
+                  latest_day="$prev_day"
+                  break
+                fi
+              done
+            fi
+            echo "${latest_day}/${latest_stamp}"
+          }
+
+          if [[ -z "$PG_STAMP" ]]; then
+            PG_STAMP=$(resolve_stamp postgres)
+            echo "Resolved PG stamp: $PG_STAMP"
+          fi
+          if [[ -z "$MONGO_STAMP" ]]; then
+            MONGO_STAMP=$(resolve_stamp mongo)
+            echo "Resolved Mongo stamp: $MONGO_STAMP"
+          fi
+
+          echo "pg_stamp=$PG_STAMP"     >> "$GITHUB_OUTPUT"
+          echo "mongo_stamp=$MONGO_STAMP" >> "$GITHUB_OUTPUT"
+
+      - name: Create drill namespace
+        run: |
+          kubectl create namespace "$NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Copy Spaces credentials into drill namespace
+        env:
+          DO_SPACES_KEY: ${{ secrets.DO_SPACES_KEY }}
+          DO_SPACES_SECRET: ${{ secrets.DO_SPACES_SECRET }}
+        run: |
+          kubectl create secret generic drill-spaces-creds \
+            --namespace "$NAMESPACE" \
+            --from-literal=doSpacesKey="$DO_SPACES_KEY" \
+            --from-literal=doSpacesSecret="$DO_SPACES_SECRET" \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Deploy temp Postgres + Mongo pods and services
+        run: |
+          kubectl apply -n "$NAMESPACE" -f - <<'EOF'
+          apiVersion: v1
+          kind: Pod
+          metadata:
+            name: drill-postgres
+            labels:
+              app: drill-postgres
+          spec:
+            containers:
+            - name: postgres
+              image: postgres:17-alpine
+              env:
+              - name: POSTGRES_PASSWORD
+                value: drillpass123
+              - name: POSTGRES_DB
+                value: collabspace_auth
+              ports:
+              - containerPort: 5432
+          ---
+          apiVersion: v1
+          kind: Service
+          metadata:
+            name: drill-postgres
+          spec:
+            selector:
+              app: drill-postgres
+            ports:
+            - port: 5432
+          ---
+          apiVersion: v1
+          kind: Pod
+          metadata:
+            name: drill-mongo
+            labels:
+              app: drill-mongo
+          spec:
+            containers:
+            - name: mongo
+              image: mongo:6
+              ports:
+              - containerPort: 27017
+          ---
+          apiVersion: v1
+          kind: Service
+          metadata:
+            name: drill-mongo
+          spec:
+            selector:
+              app: drill-mongo
+            ports:
+            - port: 27017
+          EOF
+
+          echo "Waiting for drill-postgres and drill-mongo to be Ready..."
+          kubectl wait pod/drill-postgres pod/drill-mongo \
+            -n "$NAMESPACE" --for=condition=Ready --timeout=120s
+
+      - name: Restore Postgres
+        run: |
+          cat <<EOF | kubectl apply -f -
+          apiVersion: batch/v1
+          kind: Job
+          metadata:
+            name: drill-pg-restore
+            namespace: $NAMESPACE
+          spec:
+            ttlSecondsAfterFinished: 60
+            template:
+              spec:
+                restartPolicy: Never
+                containers:
+                - name: pg-restore
+                  image: postgres:17-alpine
+                  env:
+                  - name: DO_SPACES_KEY
+                    valueFrom:
+                      secretKeyRef:
+                        name: drill-spaces-creds
+                        key: doSpacesKey
+                  - name: DO_SPACES_SECRET
+                    valueFrom:
+                      secretKeyRef:
+                        name: drill-spaces-creds
+                        key: doSpacesSecret
+                  - name: PGPASSWORD
+                    value: drillpass123
+                  command:
+                  - /bin/sh
+                  - -c
+                  - |
+                    set -e
+                    apk add --no-cache aws-cli > /dev/null 2>&1
+                    export AWS_ACCESS_KEY_ID="\$DO_SPACES_KEY"
+                    export AWS_SECRET_ACCESS_KEY="\$DO_SPACES_SECRET"
+                    export AWS_DEFAULT_REGION=sgp1
+                    ENDPOINT=$SPACES_ENDPOINT
+                    BUCKET=$SPACES_BUCKET
+                    STAMP=${{ steps.stamps.outputs.pg_stamp }}
+                    PGHOST=drill-postgres PGUSER=postgres
+                    mkdir -p /work
+                    for db in collabspace_auth collabspace_user collabspace_workspace; do
+                      echo "  Downloading \${db}.sql.gz"
+                      aws --endpoint-url "\$ENDPOINT" s3 cp \
+                        "s3://\${BUCKET}/backups/postgres/\${STAMP}/\${db}.sql.gz" \
+                        "/work/\${db}.sql.gz"
+                    done
+                    echo "Downloaded:"; ls -lh /work/
+                    for db in collabspace_auth collabspace_user collabspace_workspace; do
+                      psql -h \$PGHOST -U \$PGUSER -c "DROP DATABASE IF EXISTS \${db};" postgres
+                      psql -h \$PGHOST -U \$PGUSER -c "CREATE DATABASE \${db};" postgres
+                      gunzip -c "/work/\${db}.sql.gz" | psql -h \$PGHOST -U \$PGUSER -d "\$db" -q
+                      ROWS=\$(psql -h \$PGHOST -U \$PGUSER -d "\$db" -tAc \
+                        "SELECT COALESCE(SUM(n_live_tup),0) FROM pg_stat_user_tables;")
+                      echo "[OK] \$db — ~\${ROWS} rows"
+                    done
+                    echo "POSTGRES_RESTORE_DRILL_OK"
+          EOF
+
+          kubectl wait --for=condition=Complete job/drill-pg-restore \
+            -n "$NAMESPACE" --timeout=300s
+          kubectl logs -n "$NAMESPACE" -l job-name=drill-pg-restore
+
+      - name: Restore Mongo
+        run: |
+          cat <<EOF | kubectl apply -f -
+          apiVersion: batch/v1
+          kind: Job
+          metadata:
+            name: drill-mongo-restore
+            namespace: $NAMESPACE
+          spec:
+            ttlSecondsAfterFinished: 60
+            template:
+              spec:
+                restartPolicy: Never
+                containers:
+                - name: mongo-restore
+                  image: mongo:6
+                  env:
+                  - name: DO_SPACES_KEY
+                    valueFrom:
+                      secretKeyRef:
+                        name: drill-spaces-creds
+                        key: doSpacesKey
+                  - name: DO_SPACES_SECRET
+                    valueFrom:
+                      secretKeyRef:
+                        name: drill-spaces-creds
+                        key: doSpacesSecret
+                  command:
+                  - /bin/sh
+                  - -c
+                  - |
+                    set -e
+                    apt-get update -qq && apt-get install -y -qq awscli > /dev/null 2>&1
+                    export AWS_ACCESS_KEY_ID="\$DO_SPACES_KEY"
+                    export AWS_SECRET_ACCESS_KEY="\$DO_SPACES_SECRET"
+                    export AWS_DEFAULT_REGION=sgp1
+                    ENDPOINT=$SPACES_ENDPOINT
+                    BUCKET=$SPACES_BUCKET
+                    STAMP=${{ steps.stamps.outputs.mongo_stamp }}
+                    mkdir -p /work
+                    echo "  Downloading mongo.archive.gz"
+                    aws --endpoint-url "\$ENDPOINT" s3 cp \
+                      "s3://\${BUCKET}/backups/mongo/\${STAMP}/mongo.archive.gz" \
+                      /work/mongo.archive.gz
+                    ls -lh /work/
+                    mongosh --host drill-mongo --quiet --eval \
+                      "db.getSiblingDB('collabspace_task').dropDatabase(); db.getSiblingDB('collabspace_notification').dropDatabase();"
+                    gunzip -c /work/mongo.archive.gz | \
+                      mongorestore --host drill-mongo --archive --gzip --drop
+                    echo "==> Verifying collections:"
+                    mongosh --host drill-mongo --quiet --eval \
+                      "db.adminCommand({listDatabases:1}).databases
+                        .filter(d => d.name.startsWith('collabspace'))
+                        .forEach(d => {
+                          const cols = db.getSiblingDB(d.name).getCollectionNames();
+                          print(d.name + ' (' + cols.length + ' collections): ' + cols.join(', '));
+                        });"
+                    echo "MONGO_RESTORE_DRILL_OK"
+          EOF
+
+          kubectl wait --for=condition=Complete job/drill-mongo-restore \
+            -n "$NAMESPACE" --timeout=300s
+          kubectl logs -n "$NAMESPACE" -l job-name=drill-mongo-restore
+
+      - name: Cleanup drill namespace
+        if: always()
+        run: kubectl delete namespace "$NAMESPACE" --ignore-not-found
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "### Restore Drill Results" >> "$GITHUB_STEP_SUMMARY"
+          echo "| | |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|---|---|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Postgres stamp | \`${{ steps.stamps.outputs.pg_stamp }}\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Mongo stamp | \`${{ steps.stamps.outputs.mongo_stamp }}\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Namespace | \`$NAMESPACE\` (deleted after drill) |" >> "$GITHUB_STEP_SUMMARY"

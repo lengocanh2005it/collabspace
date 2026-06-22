@@ -80,6 +80,21 @@ docker compose -f infrastructure/docker/docker-compose.yml \
 # artifact lưu ở infrastructure/backup/artifacts/<stamp>/
 ```
 
+## Automated restore drill (CI)
+
+Workflow `.github/workflows/restore-drill.yml` chạy mỗi thứ Hai 4AM UTC:
+
+1. Tạo namespace `collabspace-restore-drill` trên DOKS
+2. Spin up temp `postgres:17-alpine` + `mongo:6` pods
+3. Resolve stamp mới nhất từ DO Spaces (tự skip PG dump < 1KB)
+4. Restore PG (3 DBs) + Mongo
+5. Verify row/collection counts
+6. Xóa namespace
+
+Trigger thủ công: **Actions → Restore Drill → Run workflow** (có thể chỉ định stamp cụ thể).
+
+Secrets cần: `KUBECONFIG_DOKS`, `DO_SPACES_KEY`, `DO_SPACES_SECRET` (đã có trong GitHub repo secrets).
+
 ## Tài liệu liên quan
 
 - Chính sách: [`docs/backup-policy.md`](../../docs/backup-policy.md)
