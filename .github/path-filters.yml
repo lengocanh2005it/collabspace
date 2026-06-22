@@ -122,3 +122,15 @@ helm_chart:
   - 'infrastructure/vault/k8s/**'
   - 'api-gateway/**'
   - 'infrastructure/deploy/**'
+
+auth_migrations:
+  - 'services/auth-service/migrations/**'
+  - 'services/auth-service/src/migrations/**'
+
+user_migrations:
+  - 'services/user-service/migrations/**'
+  - 'services/user-service/src/migrations/**'
+
+workspace_migrations:
+  - 'services/workspace-service/migrations/**'
+  - 'services/workspace-service/src/migrations/**'
