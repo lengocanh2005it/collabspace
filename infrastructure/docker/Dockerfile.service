@@ -11,6 +11,7 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY packages/shared/package.json packages/shared/package.json
 COPY packages/nest-auth/package.json packages/nest-auth/package.json
 COPY packages/typeorm-migrate/package.json packages/typeorm-migrate/package.json
+COPY packages/eslint-config/package.json packages/eslint-config/package.json
 COPY services/${SERVICE_NAME}/package.json services/${SERVICE_NAME}/package.json
 RUN --mount=type=cache,id=pnpm-ci,target=/root/.local/share/pnpm/store \
     pnpm install --frozen-lockfile --ignore-scripts
@@ -38,6 +39,7 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY packages/shared/package.json packages/shared/package.json
 COPY packages/nest-auth/package.json packages/nest-auth/package.json
 COPY packages/typeorm-migrate/package.json packages/typeorm-migrate/package.json
+COPY packages/eslint-config/package.json packages/eslint-config/package.json
 COPY services/${SERVICE_NAME}/package.json services/${SERVICE_NAME}/package.json
 RUN --mount=type=cache,id=pnpm-ci,target=/root/.local/share/pnpm/store \
     pnpm install --frozen-lockfile --prod --ignore-scripts
@@ -60,6 +62,7 @@ COPY --from=prod-deps /app/node_modules ./node_modules
 COPY --from=prod-deps /app/services/${SERVICE_NAME}/node_modules ./services/${SERVICE_NAME}/node_modules
 COPY --from=prod-deps /app/packages/shared/node_modules ./packages/shared/node_modules
 COPY --from=prod-deps /app/packages/nest-auth/node_modules ./packages/nest-auth/node_modules
+COPY --from=prod-deps /app/packages/typeorm-migrate/node_modules ./packages/typeorm-migrate/node_modules
 COPY --from=builder /app/packages/shared/dist ./packages/shared/dist
 COPY --from=builder /app/packages/shared/package.json ./packages/shared/package.json
 COPY --from=builder /app/packages/nest-auth/dist ./packages/nest-auth/dist
