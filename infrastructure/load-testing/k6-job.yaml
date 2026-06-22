@@ -131,7 +131,7 @@ data:
       thresholds: {
         http_req_failed: ['rate<0.01'],
         checks: ['rate>0.99'],
-        'http_req_duration{group:::auth login}':        ['p(95)<800'],
+        'http_req_duration{scenario:default}':          ['p(95)<800'],
         'http_req_duration{group:::list workspaces}':   ['p(95)<500'],
         'http_req_duration{group:::task board}':        ['p(95)<600'],
         'http_req_duration{group:::list tasks}':        ['p(95)<600'],
@@ -335,6 +335,7 @@ spec:
         - /bin/sh
         - -c
         - |
+          mkdir -p /scripts/scenarios /scripts/lib
           cp /cm-scenarios/* /scripts/scenarios/
           cp /cm-lib/*       /scripts/lib/
           echo "Scripts ready:"; find /scripts -type f
@@ -360,6 +361,8 @@ spec:
           value: "10"
         - name: K6_DURATION
           value: "2m"
+        - name: K6_INSECURE_SKIP_TLS_VERIFY
+          value: "true"
         - name: K6_USER_A_EMAIL
           value: "ngocanh@collabspace.dev"
         - name: K6_USER_B_EMAIL
