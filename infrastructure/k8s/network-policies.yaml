@@ -213,6 +213,10 @@ spec:
         - podSelector:
             matchLabels:
               cnpg.io/cluster: postgres
+        - podSelector:
+            matchExpressions:
+              - key: collabspace.dev/migration
+                operator: Exists
       ports:
         - port: 5432
           protocol: TCP
