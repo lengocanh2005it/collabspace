@@ -481,6 +481,7 @@ GitHub Actions is the preferred CI/CD path for Droplet deployment:
 
 - `.github/workflows/ci.yml` runs `pnpm run lint:ci` (format + Biome + ESLint), then `pnpm run build` and `pnpm run test`.
 - `.github/workflows/docker-deploy.yml` builds app service images using `infrastructure/docker/Dockerfile.service`, pushes them to GHCR, then SSH deploys to k3s via `helm-deploy-ci.sh` + `verify-k8s-readiness.sh` (Phase 4).
+- DOKS deploys with `KUBECONFIG_DOKS`; when `cloudnativepg.enabled=true` in `values-prod.yaml`, the workflow installs/upgrades the CNPG operator and waits for `cluster/postgres` instead of the Bitnami `statefulset/postgres`.
 - Droplet scripts live in `infrastructure/deploy/` (`helm-rollout.sh`, `run-k8s-migrations.sh`, phase checklists).
 - Production Compose overlay: `infrastructure/docker/docker-compose.prod.yml`.
 - DigitalOcean production (k3s + Helm): `docs/deployment-k3s-phases.md`.

@@ -67,7 +67,7 @@ declare -A MIGRATE_CMD=(
 
 wait_postgres() {
   echo "==> Waiting for PostgreSQL..."
-  kubectl wait --for=condition=Ready pod -l app.kubernetes.io/name=postgresql -n "$APP_NS" --timeout=300s
+  wait_postgres_ready "$APP_NS" 300s
 }
 
 apply_migration_job() {

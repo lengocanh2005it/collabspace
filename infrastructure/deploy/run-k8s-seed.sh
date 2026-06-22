@@ -71,7 +71,7 @@ sync_demo_seed_configmap() {
 
 wait_datastores() {
   echo "==> Waiting for Postgres + Mongo (seed does not use RabbitMQ)..."
-  kubectl wait --for=condition=Ready pod -l app.kubernetes.io/name=postgresql -n "$APP_NS" --timeout=300s
+  wait_postgres_ready "$APP_NS" 300s
   kubectl wait --for=condition=Ready pod -l app.kubernetes.io/name=mongodb -n "$APP_NS" --timeout=300s
 }
 

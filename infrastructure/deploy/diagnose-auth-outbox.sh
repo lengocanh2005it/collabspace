@@ -4,14 +4,16 @@ set -euo pipefail
 
 export KUBECONFIG="${KUBECONFIG:-/etc/rancher/k3s/k3s.yaml}"
 APP_NS="${APP_NS:-collabspace}"
-PGPASS="$(kubectl get secret auth-service-secrets -n "$APP_NS" -o jsonpath='{.data.POSTGRES_PASSWORD}' | base64 -d)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=lib/postgres-target.sh
+source "$SCRIPT_DIR/lib/postgres-target.sh"
 
 echo "=== Auth outbox env (auth pod) ==="
 kubectl exec -n "$APP_NS" deploy/auth-service -- env | grep -iE '^OUTBOX_|^GRAPHILE_|^EMAIL_' | sort || true
 
 echo ""
 echo "=== Outbox rows (unprocessed) ==="
-kubectl exec -n "$APP_NS" postgres-0 -- env PGPASSWORD="$PGPASS" psql -U postgres -d collabspace_auth -c \
+postgres_psql "$APP_NS" -d collabspace_auth -c \
   "SELECT left(id::text, 8) AS id,
           attempt_count,
           failed_at IS NOT NULL AS failed,

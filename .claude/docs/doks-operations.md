@@ -13,6 +13,7 @@ Hướng dẫn cho AI agents khi debug/deploy production hiện tại trên **Dr
 | Helm release | `collabspace` |
 | Chart | `infrastructure/helm/collabspace` |
 | Prod values (gitignored) | `infrastructure/helm/collabspace/values-prod.yaml` |
+| DOKS PostgreSQL target | CloudNativePG cluster `postgres` (`postgres-rw` for writes, `postgres-ro` for reads) |
 
 **Không** đọc/commit `values-prod.yaml` hoặc in secret ra log/chat.
 
@@ -25,7 +26,7 @@ Migration khuyến nghị là **blue/green**:
 1. Giữ Droplet k3s production đang chạy.
 2. Tạo DOKS 3 node và lấy kubeconfig bằng `doctl kubernetes cluster kubeconfig save <cluster-name>`.
 3. Cài Vault + ESO, seed lại `secret/collabspace/prod`.
-4. Deploy Helm release `collabspace` lên DOKS.
+4. Deploy Helm release `collabspace` lên DOKS. With `cloudnativepg.enabled=true`, GitHub Actions installs/upgrades the CNPG operator first, then Helm renders the `Cluster`.
 5. Restore Postgres/Mongo nếu cần giữ data thật.
 6. Smoke test qua DOKS LoadBalancer IP.
 7. Đổi DNS sang DOKS LoadBalancer IP; giữ Droplet vài ngày để rollback.
@@ -61,6 +62,8 @@ GitHub secrets cho DOKS target: `KUBECONFIG_DOKS`, `GHCR_USERNAME`, `GHCR_TOKEN`
 
 **Alertmanager → Slack:** `SLACK_ALERT_WEBHOOK_URL` trong Vault `slack_alert_webhook_url` → ESO `alertmanager-slack-secret`. Bật `observability.alertmanager.slack.enabled: true` trong `values-prod.yaml`.
 
+**CloudNativePG migration:** follow `docs/cloudnativepg-migration.md`. Backup Bitnami first, then set `cloudnativepg.enabled: true` and `postgresql.enabled: false` in `values-prod.yaml`; Helm app ConfigMaps, Debezium, postgres-exporter, and backup CronJob switch to `postgres-rw` automatically. If `cluster/postgres` already exists outside Helm ownership, keep `cloudnativepg.renderCluster=false`; CI detects that case and adds the override to avoid a Helm ownership conflict.
+
 **Vault seed:** phải có `BREVO_API_KEY` (auth-service crash nếu thiếu).
 
 ## Dev local ≠ image production (nguyên nhân hay gặp)
@@ -74,6 +77,7 @@ GitHub secrets cho DOKS target: `KUBECONFIG_DOKS`, `GHCR_USERNAME`, `GHCR_TOKEN`
 | `timed out waiting for the condition` | Pod không Ready (crash hoặc probe fail) |
 | Gateway **503** / `no available server` | Không pod Ready; Traefik không có backend |
 | Pod `Pending` | PVC không bind — kiểm tra `storageClass: do-block-storage` |
+| Postgres wait fails after CNPG migration | Check `kubectl get cluster postgres -n collabspace`; app writes should target `postgres-rw`, not the old Bitnami service |
 
 ### Monorepo Docker — bắt buộc nhớ
 
@@ -114,6 +118,10 @@ kubectl describe pod -n collabspace -l app=notification-service | tail -20
 
 # PVC status
 kubectl get pvc -n collabspace
+
+# CNPG status (after migration)
+kubectl get cluster postgres -n collabspace
+kubectl get pods -n collabspace -l cnpg.io/cluster=postgres
 ```
 
 Từ máy ngoài:
@@ -177,6 +185,7 @@ Giữ unseal key trong password manager — không commit vào repo.
 - Kafka consumer (notification/task): cần `KAFKA_CONSUMERS_ENABLED=true` và broker reachable
 - Debezium Connect + connectors: đăng ký sau khi Postgres/Mongo stack healthy
 - Nếu PVC không bind trên DOKS, kiểm tra `storageClass: do-block-storage`.
+- Với CloudNativePG, PVC thuộc các pod `postgres-1`, `postgres-2`, `postgres-3`; writes đi qua service `postgres-rw`.
 
 ## Liên quan
 

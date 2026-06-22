@@ -86,10 +86,8 @@ bootstrap_workspace_schema_sync() {
   k8s_job_log "OK  workspace schema bootstrap"
 }
 
-PGPASS=""
-
 psql_exec() {
-  kubectl exec -i -n "$APP_NS" postgres-0 -- env PGPASSWORD="$PGPASS" psql -U postgres -v ON_ERROR_STOP=1 "$@"
+  postgres_psql "$APP_NS" -v ON_ERROR_STOP=1 "$@"
 }
 
 k8s_job_log "Step 0/5: stop all app services (scale to 0, wait for pods)"
@@ -102,8 +100,6 @@ else
   k8s_job_log "Step 1/5: SKIP_WIPE=true — keeping existing databases"
   terminate_postgres_app_sessions "$APP_NS"
 fi
-
-PGPASS="$(kubectl get secret postgres -n "$APP_NS" -o jsonpath='{.data.postgres-password}' | base64 -d)"
 
 k8s_job_log "Step 2/5: bootstrap empty Postgres schemas"
 ensure_app_services_stopped "$APP_NS"

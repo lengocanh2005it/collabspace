@@ -10,6 +10,9 @@ set -euo pipefail
 
 EMAIL="${1:-}"
 APP_NS="${APP_NS:-collabspace}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=lib/postgres-target.sh
+source "$SCRIPT_DIR/lib/postgres-target.sh"
 
 if [[ -z "$EMAIL" ]]; then
   echo "Usage: get-demo-otp.sh <email>" >&2
@@ -17,18 +20,6 @@ if [[ -z "$EMAIL" ]]; then
 fi
 
 export KUBECONFIG="${KUBECONFIG:-/etc/rancher/k3s/k3s.yaml}"
-
-PG_POD=$(kubectl get pod -n "$APP_NS" -l app.kubernetes.io/name=postgresql \
-  -o jsonpath='{.items[0].metadata.name}' 2>/dev/null)
-
-if [[ -z "$PG_POD" ]]; then
-  echo "ERROR: Cannot find postgresql pod in namespace $APP_NS" >&2
-  exit 1
-fi
-
-kubectl exec -n "$APP_NS" "$PG_POD" -- \
-  bash -c "PGPASSWORD=\"\$POSTGRES_PASSWORD\" psql -U postgres -d collabspace_auth -t -A -c \
-  \"SELECT payload->>'otp' FROM auth_outbox_events \
-    WHERE event_type='auth.email_verification_otp' \
-      AND payload->>'email'='${EMAIL}' \
-    ORDER BY created_at DESC LIMIT 1;\""
+EMAIL_ESC="${EMAIL//\'/\'\'}"
+postgres_psql "$APP_NS" -d collabspace_auth -tAc \
+  "SELECT payload->>'otp' FROM auth_outbox_events WHERE event_type = 'auth.email_verification_otp' AND payload->>'email' = '${EMAIL_ESC}' ORDER BY created_at DESC LIMIT 1;"

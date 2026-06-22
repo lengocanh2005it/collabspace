@@ -3,6 +3,10 @@
 # Usage: source after k8s-job-wait.sh (for k8s_job_log) or standalone with echo.
 set -euo pipefail
 
+SCALE_APP_SERVICES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=postgres-target.sh
+source "$SCALE_APP_SERVICES_DIR/postgres-target.sh"
+
 COLLABSPACE_APP_DEPLOYMENTS=(
   auth-service
   user-service
@@ -60,12 +64,10 @@ wait_app_services_stopped() {
 
 terminate_postgres_app_sessions() {
   local ns="${1:-${APP_NS:-collabspace}}"
-  local pgpass
-  pgpass="$(kubectl get secret postgres -n "$ns" -o jsonpath='{.data.postgres-password}' | base64 -d)"
 
   k8s_job_log "Terminating leftover PostgreSQL sessions on app databases..."
   for db in collabspace_auth collabspace_user collabspace_workspace; do
-    kubectl exec -n "$ns" postgres-0 -- env PGPASSWORD="$pgpass" psql -U postgres -v ON_ERROR_STOP=0 -c \
+    postgres_psql "$ns" -v ON_ERROR_STOP=0 -c \
       "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '${db}' AND pid <> pg_backend_pid();" \
       >/dev/null 2>&1 || true
   done

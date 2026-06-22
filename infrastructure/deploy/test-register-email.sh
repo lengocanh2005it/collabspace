@@ -7,9 +7,10 @@ FULL_NAME="${2:-Test User}"
 PASSWORD="${3:-CollabTest2026!}"
 export KUBECONFIG="${KUBECONFIG:-/etc/rancher/k3s/k3s.yaml}"
 APP_NS="${APP_NS:-collabspace}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=lib/postgres-target.sh
+source "$SCRIPT_DIR/lib/postgres-target.sh"
 EMAIL_ESC="${EMAIL//\'/\'\'}"
-
-PGPASS="$(kubectl get secret auth-service-secrets -n "$APP_NS" -o jsonpath='{.data.POSTGRES_PASSWORD}' | base64 -d)"
 
 echo "=== POST /auth/register (${EMAIL}) ==="
 REGISTER_RESP="$(curl -sS -w '\nHTTP:%{http_code}' -X POST http://127.0.0.1/api/v1/auth/register \
@@ -21,7 +22,7 @@ sleep 12
 
 echo
 echo "=== Outbox for ${EMAIL} ==="
-kubectl exec -n "$APP_NS" postgres-0 -- env PGPASSWORD="$PGPASS" psql -U postgres -d collabspace_auth -c \
+postgres_psql "$APP_NS" -d collabspace_auth -c \
   "SELECT event_type, attempt_count, claimed_at IS NOT NULL AS claimed, processed_at IS NOT NULL AS done, failed_at IS NOT NULL AS failed, left(coalesce(last_error,''),150) AS err, created_at FROM auth_outbox_events WHERE payload->>'email' = '${EMAIL_ESC}' ORDER BY created_at DESC LIMIT 3;"
 
 echo

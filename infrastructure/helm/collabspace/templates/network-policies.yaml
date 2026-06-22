@@ -204,7 +204,11 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      cnpg.io/cluster: postgres
+      {{- if .Values.cloudnativepg.enabled }}
+      cnpg.io/cluster: {{ .Values.cloudnativepg.clusterName | default "postgres" }}
+      {{- else }}
+      app.kubernetes.io/name: postgresql
+      {{- end }}
   policyTypes:
     - Ingress
   ingress:
@@ -213,17 +217,28 @@ spec:
             matchExpressions:
               - key: app
                 operator: In
-                values: [auth-service, user-service, workspace-service, backup-postgres, postgres-exporter]
+                values: [auth-service, user-service, workspace-service, postgres-exporter, backup-postgres]
         - podSelector:
             matchLabels:
               app: debezium-connect
         - podSelector:
-            matchLabels:
-              cnpg.io/cluster: postgres
+            matchExpressions:
+              - key: collabspace.dev/migration
+                operator: Exists
+        - podSelector:
+            matchExpressions:
+              - key: collabspace.dev/seed
+                operator: Exists
       ports:
         - port: 5432
           protocol: TCP
-        - port: 8000
+    {{- if .Values.cloudnativepg.enabled }}
+    - from:
+        - podSelector:
+            matchLabels:
+              cnpg.io/cluster: {{ .Values.cloudnativepg.clusterName | default "postgres" }}
+      ports:
+        - port: 5432
           protocol: TCP
     - from:
         - namespaceSelector:
@@ -234,6 +249,7 @@ spec:
           protocol: TCP
         - port: 8000
           protocol: TCP
+    {{- end }}
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy

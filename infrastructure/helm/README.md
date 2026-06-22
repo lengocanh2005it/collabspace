@@ -1,6 +1,6 @@
 # CollabSpace Helm Deployment
 
-Kubernetes deployment for CollabSpace using an **umbrella Helm chart** with Bitnami data-store subcharts and Traefik as the API gateway.
+Kubernetes deployment for CollabSpace using an **umbrella Helm chart** with data-store templates/subcharts and Traefik as the API gateway.
 
 ## Chart layout
 
@@ -28,6 +28,7 @@ infrastructure/helm/
 - `kubectl` configured for your cluster
 - Storage class for PVCs (Bitnami PostgreSQL, MongoDB, Redis)
 - Container images built and available to the cluster (`collabspace/*:latest`)
+- For CloudNativePG mode: CNPG operator installed, or let the DOKS GitHub Actions workflow install `cnpg/cloudnative-pg` when `cloudnativepg.enabled=true`.
 
 ### Install Helm (if missing)
 
@@ -83,6 +84,8 @@ Mẫu commit-safe: `values-prod.example.yaml`. File `values-prod.yaml` thật **
 
 **With HashiCorp Vault + External Secrets Operator** (recommended): see `infrastructure/vault/README.md`. Set `global.externalSecrets.enabled: true` so Helm does not render `{app}-secrets` (ESO syncs from Vault).
 
+**CloudNativePG mode (DOKS HA PostgreSQL):** set `cloudnativepg.enabled: true` and `postgresql.enabled: false` in `values-prod.yaml`. The chart renders the CNPG `Cluster` and switches PostgreSQL clients to `postgres-rw` automatically through the `collabspace.postgresql.host` helper. The static manifest equivalent is `infrastructure/k8s/postgres-cluster.yaml`; migration order is documented in `docs/cloudnativepg-migration.md`.
+
 **Without ESO** (CI injects Helm values only):
 
 ```yaml
@@ -113,7 +116,7 @@ helm upgrade --install collabspace . \
 
 | Layer | Source | Notes |
 |-------|--------|-------|
-| PostgreSQL | Bitnami subchart | DBs: `collabspace_auth`, `collabspace_user`, `collabspace_workspace` |
+| PostgreSQL | Bitnami subchart by default; CloudNativePG when `cloudnativepg.enabled=true` | DBs: `collabspace_auth`, `collabspace_user`, `collabspace_workspace` |
 | MongoDB | Bitnami subchart | DBs: `collabspace_task`, `collabspace_notification` |
 | Redis | Bitnami subchart | Auth sessions + notification cache |
 
@@ -130,7 +133,7 @@ Subcharts use `fullnameOverride` so application env vars match Docker Compose:
 
 | Service | Hostname | Port |
 |---------|----------|------|
-| PostgreSQL | `postgres` | 5432 |
+| PostgreSQL | `postgres` (Bitnami) or `postgres-rw` (CloudNativePG) | 5432 |
 | MongoDB | `mongo` | 27017 |
 | Redis | `redis` | 6379 |
 | workspace-service | `workspace-service` | **8080** |

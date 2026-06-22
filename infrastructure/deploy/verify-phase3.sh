@@ -5,6 +5,8 @@ set -euo pipefail
 export KUBECONFIG="${KUBECONFIG:-/etc/rancher/k3s/k3s.yaml}"
 APP_NS="${APP_NS:-collabspace}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=lib/postgres-target.sh
+source "$SCRIPT_DIR/lib/postgres-target.sh"
 
 fail=0
 check() {
@@ -19,7 +21,7 @@ check() {
 }
 
 check "Helm release collabspace" helm status collabspace -n "$APP_NS"
-check "PostgreSQL pod Ready" kubectl wait --for=condition=Ready pod -l app.kubernetes.io/name=postgresql -n "$APP_NS" --timeout=30s
+check "PostgreSQL Ready" wait_postgres_ready "$APP_NS" 30s
 check "MongoDB pod Ready" kubectl wait --for=condition=Ready pod -l app.kubernetes.io/name=mongodb -n "$APP_NS" --timeout=30s
 check "Traefik service exists" kubectl get svc traefik -n "$APP_NS"
 check "IngressRoute exists" kubectl get ingressroute collabspace-routes -n "$APP_NS"

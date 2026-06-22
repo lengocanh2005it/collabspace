@@ -4,6 +4,9 @@ set -euo pipefail
 
 APP_NS="${APP_NS:-collabspace}"
 export KUBECONFIG="${KUBECONFIG:-/etc/rancher/k3s/k3s.yaml}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=lib/postgres-target.sh
+source "$SCRIPT_DIR/lib/postgres-target.sh"
 
 echo "==> Kafka pod"
 kubectl get pods -n "$APP_NS" -l app=kafka -o wide
@@ -28,8 +31,7 @@ for name in collabspace-workspace-outbox collabspace-user-outbox collabspace-tas
 done
 
 echo "==> Postgres wal_level"
-PGPASS="$(kubectl get secret postgres -n "$APP_NS" -o jsonpath='{.data.postgres-password}' | base64 -d)"
-kubectl exec -n "$APP_NS" postgres-0 -- env PGPASSWORD="$PGPASS" psql -U postgres -tAc 'SHOW wal_level;'
+postgres_psql "$APP_NS" -tAc 'SHOW wal_level;'
 
 echo "==> Mongo replica set"
 MONGO_PASS="$(kubectl get secret mongo -n "$APP_NS" -o jsonpath='{.data.mongodb-root-password}' | base64 -d)"

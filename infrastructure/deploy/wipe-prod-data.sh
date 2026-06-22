@@ -19,10 +19,8 @@ else
   terminate_postgres_app_sessions "$NS"
 fi
 
-PGPASS=$(kubectl get secret postgres -n "$NS" -o jsonpath='{.data.postgres-password}' | base64 -d)
-
 psql_exec() {
-  kubectl exec -n "$NS" postgres-0 -- env PGPASSWORD="$PGPASS" psql -U postgres -v ON_ERROR_STOP=1 "$@"
+  postgres_psql "$NS" -v ON_ERROR_STOP=1 "$@"
 }
 
 echo "==> Wiping PostgreSQL databases..."

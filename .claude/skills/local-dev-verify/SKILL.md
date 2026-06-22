@@ -159,6 +159,7 @@ K8s / production observability (after Helm deploy):
 3. CI: `gh run list --workflow=docker-deploy.yml --limit 1` — build fail thường do Dockerfile monorepo; deploy fail thường do pod crash / probe 404 / thiếu `NODE_PATH`.
 4. SSH: `export KUBECONFIG=/etc/rancher/k3s/k3s.yaml`; `kubectl get pods -n collabspace`; `kubectl logs deploy/<service> --tail=40`.
 5. DOKS target: dùng `KUBECONFIG_DOKS`, PVC `do-block-storage`, smoke test qua LoadBalancer IP trước khi đổi DNS.
+   - PostgreSQL HA migration: set `cloudnativepg.enabled=true` and `postgresql.enabled=false`; CI installs CNPG operator and waits for `cluster/postgres`. App writes use `postgres-rw`. If the CNPG `Cluster` already exists outside Helm ownership, keep `cloudnativepg.renderCluster=false`; CI also detects and overrides this case.
 6. **Không** patch `kubectl` probe/env rồi bỏ quên — fix trong Helm chart / Dockerfile và push; hotfix tay bị `helm upgrade` ghi đè.
 
 Trước push đổi `Dockerfile.service` hoặc workspace packages: chạy `pnpm run build` service + cân nhắc `docker build` smoke (xem droplet doc).

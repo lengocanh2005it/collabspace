@@ -14,6 +14,8 @@ CHART_DIR="${CHART_DIR:-$APP_DIR/infrastructure/helm/collabspace}"
 VALUES_PROD="${VALUES_PROD:-$CHART_DIR/values-prod.yaml}"
 PHASE0_ENV="${PHASE0_ENV:-$APP_DIR/infrastructure/deploy/phase0.env}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=lib/postgres-target.sh
+source "$SCRIPT_DIR/lib/postgres-target.sh"
 
 export KUBECONFIG="${KUBECONFIG:-/etc/rancher/k3s/k3s.yaml}"
 
@@ -135,6 +137,15 @@ adopt_namespace_for_helm() {
   fi
 }
 
+cloudnativepg_enabled_in_values() {
+  awk '
+    /^cloudnativepg:[[:space:]]*$/ { in_block=1; next }
+    in_block && /^[^[:space:]]/ { in_block=0 }
+    in_block && /^[[:space:]]+enabled:[[:space:]]*true([[:space:]]*(#.*)?)?$/ { found=1; print "true"; exit }
+    END { if (!found) print "false" }
+  ' "$VALUES_PROD"
+}
+
 ensure_app_external_secrets() {
   if ! grep -A3 'externalSecrets:' "$VALUES_PROD" 2>/dev/null | grep -q 'enabled: true'; then
     return
@@ -198,6 +209,18 @@ if [[ "${SKIP_HELM_DEP_UPDATE:-}" == "true" ]]; then
 else
   echo "==> Helm dependency update..."
   helm dependency update "$CHART_DIR"
+fi
+
+if [[ "$(cloudnativepg_enabled_in_values)" == "true" ]]; then
+  echo "==> Ensuring CloudNativePG operator..."
+  helm repo add cnpg https://cloudnative-pg.github.io/charts >/dev/null 2>&1 || true
+  helm repo update cnpg
+  helm upgrade --install cnpg cnpg/cloudnative-pg \
+    --namespace cnpg-system \
+    --create-namespace \
+    --version 0.22.0 \
+    --wait \
+    --timeout 10m
 fi
 
 adopt_namespace_for_helm
@@ -315,7 +338,7 @@ if [[ "${RUN_K8S_MIGRATIONS:-false}" == "true" ]]; then
   done
 
   echo "==> Waiting for data stores..."
-  kubectl wait --for=condition=Ready pod -l app.kubernetes.io/name=postgresql -n "$APP_NS" --timeout=300s || true
+  wait_postgres_ready "$APP_NS" 300s || true
   kubectl wait --for=condition=Ready pod -l app.kubernetes.io/name=mongodb -n "$APP_NS" --timeout=300s || true
   kubectl wait --for=condition=Ready pod -l app.kubernetes.io/name=redis -n "$APP_NS" --timeout=300s || true
 

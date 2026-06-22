@@ -118,6 +118,7 @@ analytics_service:
 
 helm_chart:
   - 'infrastructure/helm/**'
+  - 'infrastructure/k8s/**'
   - 'infrastructure/vault/k8s/**'
   - 'api-gateway/**'
   - 'infrastructure/deploy/**'
