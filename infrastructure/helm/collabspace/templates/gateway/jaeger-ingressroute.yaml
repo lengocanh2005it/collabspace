@@ -1,0 +1,30 @@
+{{- if and .Values.gateway.enabled .Values.observability.jaeger.enabled .Values.gateway.jaeger.expose }}
+{{- $ns := include "collabspace.namespace" . }}
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: collabspace-jaeger
+  namespace: {{ $ns }}
+  labels:
+    app.kubernetes.io/part-of: collabspace
+spec:
+  entryPoints:
+    - web
+    - websecure
+  routes:
+    - match: PathPrefix(`/jaeger`)
+      kind: Rule
+      priority: 180
+      services:
+        - name: jaeger
+          port: 16686
+  {{- if and .Values.gateway.tls .Values.gateway.tls.enabled }}
+  tls:
+    certResolver: {{ .Values.gateway.tls.certResolver | default "letsencrypt" }}
+    {{- if .Values.gateway.publicHost }}
+    domains:
+      - main: {{ .Values.gateway.publicHost }}
+    {{- end }}
+  {{- end }}
+{{- end }}

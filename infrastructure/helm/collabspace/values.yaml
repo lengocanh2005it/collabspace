@@ -297,6 +297,8 @@ gateway:
     expose: true
   swagger:
     expose: true
+  jaeger:
+    expose: false
   rateLimit:
     average: 100
     burst: 50

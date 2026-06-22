@@ -15,7 +15,7 @@ data:
   NODE_PATH: {{ printf "/app/node_modules:/app/services/%s/node_modules" $name | quote }}
   PORT: {{ $app.httpPort | quote }}
   LOG_LEVEL: "info"
-  TRACING_ENABLED: "false"
+  TRACING_ENABLED: {{ $root.Values.observability.jaeger.enabled | default false | quote }}
   SWAGGER_UI_PATH: {{ include "collabspace.swaggerUiPath" (dict "appName" $name "app" $app) | quote }}
   OTEL_EXPORTER_OTLP_ENDPOINT: "http://jaeger:4318/v1/traces"
   JAEGER_AGENT_HOST: "jaeger"
