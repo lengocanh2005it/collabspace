@@ -64,6 +64,8 @@ spec:
               value: "1"
             - name: STATUS_STORAGE_REPLICATION_FACTOR
               value: "1"
+            - name: KAFKA_HEAP_OPTS
+              value: {{ $dc.heapOpts | default "-Xmx384m -Xms256m" | quote }}
             - name: KEY_CONVERTER
               value: org.apache.kafka.connect.json.JsonConverter
             - name: VALUE_CONVERTER
