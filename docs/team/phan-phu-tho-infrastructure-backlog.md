@@ -20,7 +20,7 @@ Tài liệu này liệt kê **công việc hạ tầng / DevOps / observability 
 | Vault + ESO + `backup-spaces-secret` + `alertmanager-slack-secret` | |
 | Helm prod Droplet `167.172.77.110` + TLS `collabspace.ngocanh2005it.site` | Restore/chaos drill log thật trên staging (script có; Docker offline 2026-06-10) |
 | Prometheus/Grafana/Loki + Jaeger manifest + k6 + Trivy | |
-| **Backup K8s:** CronJob `backup-postgres` + `backup-mongo` → DO Spaces `collabspace-bucket` | Mongo backup job chưa test thủ công trên prod (Postgres ✅) |
+| **Backup K8s:** CronJob `backup-postgres` + `backup-mongo` → DO Spaces `collabspace-bucket` | ✅ Cả hai đã test thủ công trên prod DOKS (2026-06-22) |
 | `restore-*.sh`, `SecretRotation.md`, `secret-scan` job trong CI | |
 
 **Tài liệu liên quan:**
@@ -329,7 +329,7 @@ Dùng bảng này khi seed Vault KV (`secret/collabspace/staging`, …).
 - [x] **Docker/demo:** `backup-postgres.sh` + `backup-mongo.sh` (chạy tay)
 - [x] **K8s/prod:** CronJob `backup-postgres` + `backup-mongo` — upload DO Spaces (`collabspace-bucket`, prefix `backups/`); credentials qua Vault → ESO `backup-spaces-secret` (`DO_SPACES_KEY/SECRET` trong `phase0.env`)
 - [x] Retention cleanup 7 ngày trên Spaces (trong CronJob upload container)
-- [~] **Verified:** Postgres backup test job upload OK (2026-06-19); Mongo job chưa test thủ công
+- [x] **Verified:** Postgres backup test job upload OK (2026-06-19); Mongo backup test job upload OK trên DOKS (2026-06-22) — `s3://collabspace-bucket/backups/mongo/20260622/`
 
 ### 15. Restore drill (quarterly)
 
