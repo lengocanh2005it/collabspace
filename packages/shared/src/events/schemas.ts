@@ -112,6 +112,7 @@ export const CommentMentionedEventSchema = CommentEventBase;
 // ── User events ───────────────────────────────────────────────────────────────
 
 export const UserRegisteredEventSchema = z.object({
+  eventId: z.string().optional(),
   userId: z.string().min(1),
   fullName: z.string().min(1),
   email: z.string().optional(),
@@ -122,6 +123,7 @@ export const UserRegisteredEventSchema = z.object({
 });
 
 export const UserProfileUpdatedEventSchema = z.object({
+  eventId: z.string().optional(),
   userId: z.string().min(1),
   fullName: z.string().optional(),
   displayName: z.string().nullish(),

@@ -1,10 +1,15 @@
 import { Injectable, Logger, type OnModuleDestroy, type OnModuleInit } from "@nestjs/common";
+import { Inject } from "@nestjs/common";
 import { Kafka, type Consumer } from "kafkajs";
 import { processKafkaConsumerMessage } from "@collabspace/shared";
 import { ConfigurationService } from "../../../configuration/configuration.service";
 import { WorkspaceDeletionService } from "../../../application/services/workspace-deletion.service";
 import { parseKafkaOutboxJsonValue, toWorkspaceDeletedEventPayload } from "./kafka-outbox-message";
 import { KafkaDlqPublisher } from "./kafka-dlq.publisher";
+import {
+  PROCESSED_KAFKA_EVENT_REPOSITORY_TOKEN,
+  type IProcessedKafkaEventRepository,
+} from "./processed-event.repository";
 
 @Injectable()
 export class WorkspaceDeletedKafkaConsumer implements OnModuleInit, OnModuleDestroy {
@@ -16,6 +21,8 @@ export class WorkspaceDeletedKafkaConsumer implements OnModuleInit, OnModuleDest
     private readonly configurationService: ConfigurationService,
     private readonly deletionService: WorkspaceDeletionService,
     private readonly kafkaDlqPublisher: KafkaDlqPublisher,
+    @Inject(PROCESSED_KAFKA_EVENT_REPOSITORY_TOKEN)
+    private readonly processedEventRepository: IProcessedKafkaEventRepository,
   ) {}
 
   async onModuleInit(): Promise<void> {
@@ -65,12 +72,29 @@ export class WorkspaceDeletedKafkaConsumer implements OnModuleInit, OnModuleDest
               return;
             }
 
-            const deletedTasks = await this.deletionService.deleteWorkspaceData(
-              payload.workspaceId,
-            );
-            this.logger.warn(
-              `workspace_deleted via kafka workspaceId=${payload.workspaceId} deletedTasks=${deletedTasks}`,
-            );
+            if (payload.eventId) {
+              const claimed = await this.processedEventRepository.tryClaim(payload.eventId);
+              if (!claimed) {
+                this.logger.log(
+                  `workspace_deleted already processed eventId=${payload.eventId} workspaceId=${payload.workspaceId}`,
+                );
+                return;
+              }
+            }
+
+            try {
+              const deletedTasks = await this.deletionService.deleteWorkspaceData(
+                payload.workspaceId,
+              );
+              this.logger.warn(
+                `workspace_deleted via kafka workspaceId=${payload.workspaceId} deletedTasks=${deletedTasks}`,
+              );
+            } catch (error) {
+              if (payload.eventId) {
+                await this.processedEventRepository.releaseClaim(payload.eventId);
+              }
+              throw error;
+            }
           },
         });
       },

@@ -2,6 +2,7 @@ export const USER_REGISTERED_EVENT = 'user_registered';
 export const USER_PROFILE_UPDATED_EVENT = 'user_profile_updated';
 
 export interface UserRegisteredEventPayload {
+  eventId?: string;
   userId: string;
   fullName: string;
   email?: string;
@@ -12,6 +13,7 @@ export interface UserRegisteredEventPayload {
 }
 
 export interface UserProfileUpdatedEventPayload {
+  eventId?: string;
   userId: string;
   fullName?: string;
   displayName?: string | null;

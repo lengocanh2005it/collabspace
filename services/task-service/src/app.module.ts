@@ -45,6 +45,14 @@ import { WorkspaceDeletionService } from "./application/services/workspace-delet
 import { WorkspaceDeletedKafkaConsumer } from "./infrastructure/messaging/kafka/workspace-deleted-kafka.consumer";
 import { UserEventsKafkaConsumer } from "./infrastructure/messaging/kafka/user-events-kafka.consumer";
 import { KafkaDlqPublisher } from "./infrastructure/messaging/kafka/kafka-dlq.publisher";
+import {
+  ProcessedKafkaEvent,
+  ProcessedKafkaEventSchema,
+} from "./infrastructure/messaging/kafka/processed-event.schema";
+import {
+  ProcessedKafkaEventRepository,
+  PROCESSED_KAFKA_EVENT_REPOSITORY_TOKEN,
+} from "./infrastructure/messaging/kafka/processed-event.repository";
 import { TaskOutboxService } from "./infrastructure/outbox/task-outbox.service";
 import { TaskOutboxEvent, TaskOutboxEventSchema } from "./infrastructure/outbox/task-outbox.schema";
 import { MongoUnitOfWork } from "./infrastructure/database/mongo-unit-of-work";
@@ -134,6 +142,7 @@ const Handlers = [
       { name: UserReplica.name, schema: UserReplicaSchema },
       { name: TaskOutboxEvent.name, schema: TaskOutboxEventSchema },
       { name: IdempotencyKeyRecord.name, schema: IdempotencyKeySchema },
+      { name: ProcessedKafkaEvent.name, schema: ProcessedKafkaEventSchema },
     ]),
   ],
   controllers: [HealthController, TaskController, TaskAdminController, TaskCommentController],
@@ -158,6 +167,11 @@ const Handlers = [
     WorkspaceDeletedKafkaConsumer,
     UserEventsKafkaConsumer,
     KafkaDlqPublisher,
+    ProcessedKafkaEventRepository,
+    {
+      provide: PROCESSED_KAFKA_EVENT_REPOSITORY_TOKEN,
+      useExisting: ProcessedKafkaEventRepository,
+    },
     IdempotencyService,
     AuthGuard,
     WorkspaceValidationGuard,
