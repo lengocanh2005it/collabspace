@@ -20,7 +20,7 @@
       }
     ]
   },
-  "description": "Watch metrics during k6 load tests — pair with Logs & Errors dashboard",
+  "description": "Watch metrics during k6 load tests — pair with Jaeger for distributed tracing",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
@@ -37,6 +37,13 @@
       "title": "App Logs",
       "type": "link",
       "url": "/grafana/d/collabspace-logs-errors/collabspace-logs-errors"
+    },
+    {
+      "icon": "external link",
+      "title": "Jaeger Traces",
+      "type": "link",
+      "url": "/jaeger/search",
+      "tooltip": "Open Jaeger distributed trace viewer"
     }
   ],
   "liveNow": true,
@@ -46,15 +53,143 @@
       "id": 50,
       "options": {
         "code": { "language": "plaintext", "showLineNumbers": false, "showMiniMap": false },
-        "content": "Open **Logs & Errors** in another tab while k6 runs. Orange **k6** annotations mark test start/end.\n\n```bash\nBASE_URL=http://HOST/api/v1 ./infrastructure/load-testing/run-load-test.sh smoke\nBASE_URL=http://HOST/api/v1 ./infrastructure/load-testing/run-load-test.sh demo-flow\n```",
+        "content": "**Run a load test:** `kubectl apply -f infrastructure/load-testing/k6-job.yaml`\n\nOrange **k6** annotations mark test start/end. Click **Jaeger Traces** (top right) to drill into individual request spans during a latency spike.",
         "mode": "markdown"
       },
       "title": "How to use",
       "type": "text"
     },
     {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "fixedColor": "orange", "mode": "fixed" },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 5 },
+              { "color": "orange", "value": 10 }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 3 },
+      "id": 10,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "expr": "sum(increase(traefik_entrypoint_requests_total{entrypoint=\"websecure\"}[1m]))",
+          "legendFormat": "Requests / min",
+          "refId": "A"
+        }
+      ],
+      "title": "Active Request Rate (1m)",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "fixedColor": "blue", "mode": "fixed" },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 500 },
+              { "color": "red", "value": 1000 }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 3 },
+      "id": 11,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job=~\"auth-service|user-service|workspace-service|task-service|notification-service\"}[1m])) by (le)) * 1000",
+          "legendFormat": "p95 latency",
+          "refId": "A"
+        }
+      ],
+      "title": "p95 Latency",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "fixedColor": "red", "mode": "fixed" },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "red", "value": 5 }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 3 },
+      "id": 12,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "expr": "100 * sum(rate(http_requests_total{job=~\"auth-service|user-service|workspace-service|task-service|notification-service\",status=~\"5..\"}[1m])) / clamp_min(sum(rate(http_requests_total{job=~\"auth-service|user-service|workspace-service|task-service|notification-service\"}[1m])), 0.001)",
+          "legendFormat": "5xx rate",
+          "refId": "A"
+        }
+      ],
+      "title": "5xx Error Rate",
+      "type": "stat"
+    },
+    {
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 3 },
+      "id": 13,
+      "options": {
+        "code": { "language": "plaintext", "showLineNumbers": false, "showMiniMap": false },
+        "content": "### Jaeger Distributed Traces\n\n[View auth-service traces](/jaeger/search?service=auth-service)\n\n[View workspace-service traces](/jaeger/search?service=workspace-service)\n\n[Slowest traces (>500ms)](/jaeger/search?minDuration=500ms)",
+        "mode": "markdown"
+      },
+      "title": "Trace Deep Links",
+      "type": "text"
+    },
+    {
       "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 3 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 7 },
       "id": 100,
       "panels": [],
       "title": "Gateway & Traffic",
@@ -83,7 +218,7 @@
         },
         "overrides": []
       },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
       "id": 1,
       "options": {
         "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true },
@@ -134,7 +269,7 @@
         },
         "overrides": []
       },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
       "id": 2,
       "options": {
         "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true },
@@ -157,12 +292,12 @@
           "refId": "C"
         }
       ],
-      "title": "Latency by Service",
+      "title": "Latency by Service (p50 / p95 / p99)",
       "type": "timeseries"
     },
     {
       "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 12 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 16 },
       "id": 101,
       "panels": [],
       "title": "Errors & Saturation",
@@ -187,7 +322,7 @@
         },
         "overrides": []
       },
-      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 13 },
+      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 17 },
       "id": 3,
       "options": {
         "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true },
@@ -226,7 +361,7 @@
         },
         "overrides": []
       },
-      "gridPos": { "h": 7, "w": 12, "x": 12, "y": 13 },
+      "gridPos": { "h": 7, "w": 12, "x": 12, "y": 17 },
       "id": 4,
       "options": {
         "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true },
@@ -260,7 +395,7 @@
         },
         "overrides": []
       },
-      "gridPos": { "h": 7, "w": 24, "x": 0, "y": 20 },
+      "gridPos": { "h": 7, "w": 24, "x": 0, "y": 24 },
       "id": 5,
       "options": {
         "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "right", "showLegend": true },
@@ -287,6 +422,6 @@
   "timezone": "browser",
   "title": "CollabSpace Load Test Run",
   "uid": "collabspace-load-test",
-  "version": 1,
+  "version": 2,
   "weekStart": ""
 }

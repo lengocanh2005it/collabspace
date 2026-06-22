@@ -468,4 +468,52 @@ spec:
         - port: 9090
           protocol: TCP
 {{- end }}
+{{- if .Values.observability.jaeger.enabled }}
+---
+# Allow Traefik to reach Jaeger UI (port 16686) for the /jaeger IngressRoute
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-traefik-to-jaeger-ui
+  namespace: {{ $ns }}
+spec:
+  podSelector:
+    matchLabels:
+      app: jaeger
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: traefik
+      ports:
+        - port: 16686
+          protocol: TCP
+---
+# Allow all microservices to push OTLP traces to Jaeger (port 4318)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-services-to-jaeger-otlp
+  namespace: {{ $ns }}
+spec:
+  podSelector:
+    matchLabels:
+      app: jaeger
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchExpressions:
+              - key: app
+                operator: In
+                values: {{ toJson $appServices }}
+      ports:
+        - port: 4318
+          protocol: TCP
+        - port: 4317
+          protocol: TCP
+{{- end }}
 {{- end }}

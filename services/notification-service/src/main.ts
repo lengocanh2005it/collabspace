@@ -1,3 +1,4 @@
+import "./observability/instrumentation";
 import { NestFactory } from "@nestjs/core";
 import { assertRequiredInProduction } from "@collabspace/shared";
 import { AppModule } from "./app.module";
