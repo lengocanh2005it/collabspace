@@ -160,15 +160,36 @@ capacity or keep standalone.
 
 ## Capacity estimate
 
-After the latest CPU right-sizing, DOKS request pressure was approximately:
+Latest DOKS snapshot, measured on 2026-06-22 15:37 ICT:
 
 ```text
-node 1: 1582m / 1900m = 83%
-node 2: 1197m / 1900m = 63%
-node 3: 1497m / 1900m = 78%
+kubectl top nodes
+
+pool-r0ba46mj2-3cyqf6   739m   38%   2171Mi   72%
+pool-r0ba46mj2-3cyqfa   493m   25%   2346Mi   78%
+pool-r0ba46mj2-3cyqfe   442m   23%   2009Mi   66%
 ```
 
-Current standalone Redis:
+Scheduler pressure from `kubectl describe nodes`:
+
+| Node | CPU request | Memory request | Current Redis/Mongo placement | Read |
+|------|-------------|----------------|-------------------------------|------|
+| `pool-r0ba46mj2-3cyqf6` | 1522m / 1900m (80%) | 2193Mi / ~3000Mi (73%) | `redis-master-0`, `mongo-arbiter-0`, `kafka-0`, `postgres-3` | CPU request is already fairly high, but live CPU is still moderate |
+| `pool-r0ba46mj2-3cyqfa` | 1532m / 1900m (80%) | 2343Mi / ~3000Mi (78%) | `mongo-0`, `debezium-connect`, `loki`, `grafana`, `postgres-4`, `metrics-server` | Tightest memory node; avoid concentrating more stateful pods here |
+| `pool-r0ba46mj2-3cyqfe` | 1322m / 1900m (69%) | 1937Mi / ~3000Mi (64%) | app services, `postgres-2`, `prometheus` | Best headroom for one new Redis replica or Mongo secondary |
+
+Current hot pods from `kubectl top pods -n collabspace`:
+
+| Pod | CPU | Memory | Note |
+|-----|-----|--------|------|
+| `kafka-0` | 439m | 589Mi | Biggest live CPU user in the namespace |
+| `mongo-0` | 196m | 245Mi | Current single Mongo data member |
+| `debezium-connect` | 22m | 455Mi | Biggest app-side memory consumer |
+| `task-service` | 89m | 106Mi | App CPU visible but still below request/limit |
+| `notification-service` | 80m | 82Mi | App CPU visible but still below request/limit |
+| `redis-master-0` | 28m | 13Mi | Redis live usage is small |
+
+Current standalone Redis request footprint:
 
 ```text
 redis-master-0: 100m CPU request, 128Mi memory request, 2Gi PVC
@@ -215,9 +236,21 @@ Expected extra request vs current:
 - Sentinel containers: 3 x `25m`.
 - Net CPU request increase: roughly `+125m` to `+175m`, depending on whether the
   current master remains at `100m` or is lowered to `50m`.
+- Net memory request increase: roughly `+448Mi`, from current `128Mi` to
+  target `3 x 128Mi Redis + 3 x 64Mi Sentinel = 576Mi`.
 - Storage: current `1 x 2Gi`; target `3 x 2Gi = 6Gi`.
 
 Storage is not the main concern. Scheduler headroom is the main constraint.
+With one Redis/Sentinel pod spread per node and the master request lowered to
+`50m`, the expected post-migration request shape is acceptable but not spacious:
+
+- `3cyqf6`: roughly `1497m` CPU request and `2257Mi` memory request.
+- `3cyqfa`: roughly `1607m` CPU request and `2535Mi` memory request.
+- `3cyqfe`: roughly `1397m` CPU request and `2129Mi` memory request.
+
+The migration should therefore keep Redis pods spread across nodes. Do not let
+both new replicas land on `3cyqfa`; that node is already the memory-tightest
+one.
 
 ## Migration strategy
 
@@ -277,6 +310,9 @@ Target before enabling Sentinel:
 - No memory pressure.
 - Enough room for at least three new/surged Redis/Sentinel containers during
   rollout.
+- Prefer one Redis/Sentinel pod per node. Current best target for a new stateful
+  pod is `pool-r0ba46mj2-3cyqfe`; avoid adding more memory-heavy pods to
+  `pool-r0ba46mj2-3cyqfa`.
 
 If Metrics API ever disappears, verify it with:
 
@@ -1053,8 +1089,8 @@ bash scripts/sync-agent-docs.sh
    documented as production dependencies?
    - Recommended answer: yes, because Helm already configures `REDIS_HOST`.
 4. Should we install `metrics-server` first?
-   - Recommended answer: yes, but it is not a blocker if scheduler requests are
-   already below the target headroom.
+   - Current answer: already done. Keep `infrastructure/k8s/metrics-server.yaml`
+   as the reviewed manifest and use `kubectl top` for live usage snapshots.
 5. Should we add a fourth DOKS node before or after Sentinel?
    - Recommended answer: after Sentinel only if failover rollout still causes
    `Insufficient cpu` or if production HA/SLO expectations increase.

@@ -21,18 +21,39 @@ Cluster đang chạy architecture `replicaset` nhưng chỉ 1 member → nếu `
 
 | Cấu hình | RAM request thêm | Failover | Ghi chú |
 |----------|-----------------|----------|---------|
-| `replicaCount: 2` + arbiter | ~256Mi (secondary) + ~64Mi (arbiter có sẵn) | ✅ primary chết → secondary tự lên | **Khuyến nghị** |
+| `replicaCount: 2` + arbiter | ~256Mi thêm cho secondary; arbiter đã chạy sẵn với 128Mi request | ✅ primary chết → secondary tự lên | **Khuyến nghị** |
 | `replicaCount: 3` | ~512Mi | ✅ tốt hơn | Overkill với cluster hiện tại |
 
-### Kiểm tra capacity trước khi nâng (snapshot 2026-06-22)
+### Kiểm tra capacity trước khi nâng (snapshot 2026-06-22 15:37 ICT)
 
-| Node | CPU Request | RAM Request | Ghi chú |
-|------|------------|-------------|---------|
-| `pool-r0ba46mj2-3cyqf6` | 1582m / 1900m (83%) | 2609Mi / ~3000Mi (86%) | Cao — không nên schedule thêm |
-| `pool-r0ba46mj2-3cyqfa` | 1197m / 1900m (63%) | 1511Mi / ~3000Mi (50%) | **Còn ~1500Mi** — schedule secondary vào đây |
-| `pool-r0ba46mj2-3cyqfe` | 1497m / 1900m (78%) | 1969Mi / ~3000Mi (65%) | Trung bình |
+Nguồn đo:
 
-Secondary MongoDB (256Mi request) sẽ được schedule vào `3cyqfa` — đủ thoải mái.
+```bash
+kubectl top nodes
+kubectl top pods -n collabspace
+kubectl describe nodes
+kubectl get pods -n collabspace -o wide
+```
+
+`kubectl top` cho biết CPU/RAM đang dùng thực tế; `kubectl describe nodes`
+cho biết requests mà scheduler dùng khi quyết định pod có bị `Pending` vì
+`Insufficient cpu`/memory hay không.
+
+| Node | CPU dùng thực | RAM dùng thực | CPU request | RAM request | Ghi chú |
+|------|---------------|---------------|-------------|-------------|---------|
+| `pool-r0ba46mj2-3cyqf6` | 739m / 1900m (38%) | 2171Mi (72%) | 1522m / 1900m (80%) | 2193Mi / ~3000Mi (73%) | Đang chạy `kafka-0`, `redis-master-0`, `workspace-service`, `postgres-3`, `mongo-arbiter-0`, `vault-0` |
+| `pool-r0ba46mj2-3cyqfa` | 493m / 1900m (25%) | 2346Mi (78%) | 1532m / 1900m (80%) | 2343Mi / ~3000Mi (78%) | Đang chạy `mongo-0`, `debezium-connect`, `grafana`, `loki`, `postgres-4`, `metrics-server`; memory cao nhất |
+| `pool-r0ba46mj2-3cyqfe` | 442m / 1900m (23%) | 2009Mi (66%) | 1322m / 1900m (69%) | 1937Mi / ~3000Mi (64%) | **Node còn headroom tốt nhất** cho Mongo secondary |
+
+Mongo secondary theo values hiện tại cần khoảng `200m` CPU request và `256Mi`
+RAM request. Nếu secondary được schedule vào `3cyqfe`, node đó tăng lên khoảng
+`1522m / 1900m` CPU request (80%) và `2193Mi / ~3000Mi` RAM request (72%), vẫn
+ổn hơn so với đặt thêm lên `3cyqfa` hoặc `3cyqf6`.
+
+Khuyến nghị: khi nâng `replicaCount: 2`, theo dõi scheduler để `mongo-1` không
+rơi vào `3cyqfa` nếu có thể. Nếu chart không có hard anti-affinity, dùng
+`podAntiAffinity`/`topologySpreadConstraints` mềm để tách `mongo-0` và
+`mongo-1` khác node, ưu tiên `3cyqfe`.
 
 ---
 
@@ -58,11 +79,11 @@ mongodb:
     enabled: true           # giữ nguyên (mặc định true)
     resources:
       requests:
-        memory: 64Mi
+        memory: 128Mi
         cpu: 50m
       limits:
-        memory: 128Mi
-        cpu: 100m
+        memory: 256Mi
+        cpu: 200m
 ```
 
 ### 2. Helm upgrade
@@ -117,3 +138,4 @@ Bitnami chart tự inject URI đúng qua secret — không cần sửa app code 
 | Ngày | Người | Hành động | Kết quả |
 |------|-------|-----------|---------|
 | 2026-06-22 | Lê Ngọc Anh | Phân tích capacity, lập kế hoạch replica | Draft |
+| 2026-06-22 | Codex | Cập nhật snapshot DOKS sau khi có metrics-server và right-size CPU requests | Updated |
