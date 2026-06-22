@@ -412,19 +412,12 @@ jobs:
 
 
 
-      - name: Add Helm repos (for template rendering only)
+      - name: Add Helm repos
 
         run: |
-
-          helm repo add grafana https://grafana.github.io/helm-charts
-
-          helm repo add bitnami https://charts.bitnami.com/bitnami
-
-          helm repo add traefik https://traefik.github.io/charts
-
           helm repo add cnpg https://cloudnative-pg.github.io/charts
 
-          helm repo update
+          helm repo update cnpg
 
 
 
@@ -546,6 +539,11 @@ jobs:
         if: steps.postgres-mode.outputs.cloudnativepg_enabled == 'true'
 
         run: |
+          if helm status cnpg -n cnpg-system >/dev/null 2>&1 && [[ "${{ needs.detect-changes.outputs.helm_chart }}" != "true" ]]; then
+            echo "==> CloudNativePG operator already installed; skipping upgrade"
+            exit 0
+          fi
+
           helm upgrade --install cnpg cnpg/cloudnative-pg \
             --namespace cnpg-system \
             --create-namespace \
@@ -567,51 +565,36 @@ jobs:
 
 
 
-      - name: Helm upgrade (DOKS)
+      - name: Prepare Helm release state
 
-        # Existing release: --reuse-values + image tag overrides only — avoids touching
-        # StatefulSet/PVC immutable fields that Kubernetes forbids patching.
-        # force_full_values=true: apply full values-prod.yaml (use for infra config changes
-        # like PostgreSQL replication — requires StatefulSets to be deleted manually first).
+        id: release-state
+
         shell: bash
+
         run: |
-          RELEASE_EXISTS=0
-          helm status collabspace -n collabspace > /dev/null 2>&1 && RELEASE_EXISTS=1
-          FORCE_FULL="${{ github.event.inputs.force_full_values }}"
+          set -euo pipefail
+
+          release_exists=false
+          helm status collabspace -n collabspace >/dev/null 2>&1 && release_exists=true
 
           # If a previous CI run was interrupted mid-upgrade, Helm leaves the
           # release in pending-upgrade/pending-install state. Roll it back to
-          # the last successful revision so the next upgrade can proceed.
-          RELEASE_STATUS=$(helm status collabspace -n collabspace -o json 2>/dev/null | jq -r '.info.status // "none"')
-          if [[ "$RELEASE_STATUS" == "pending-upgrade" || "$RELEASE_STATUS" == "pending-install" || "$RELEASE_STATUS" == "pending-rollback" ]]; then
-            echo "==> Release stuck in $RELEASE_STATUS — rolling back to last good revision"
+          # the last successful revision so migrations and the next upgrade can proceed.
+          release_status=$(helm status collabspace -n collabspace -o json 2>/dev/null | jq -r '.info.status // "none"')
+          if [[ "$release_status" == "pending-upgrade" || "$release_status" == "pending-install" || "$release_status" == "pending-rollback" ]]; then
+            echo "==> Release stuck in $release_status — rolling back to last good revision"
             helm rollback collabspace 0 -n collabspace --wait --timeout 5m || true
-            RELEASE_EXISTS=0
-            helm status collabspace -n collabspace > /dev/null 2>&1 && RELEASE_EXISTS=1
+            release_exists=false
+            helm status collabspace -n collabspace >/dev/null 2>&1 && release_exists=true
           fi
 
-          if [[ "$RELEASE_EXISTS" == "1" && "$FORCE_FULL" != "true" ]]; then
-            echo "==> Existing release — upgrading with --reuse-values"
-            helm upgrade collabspace infrastructure/helm/collabspace \
-              --namespace collabspace \
-              --timeout 20m \
-              --reuse-values \
-              ${{ steps.cnpg-ownership.outputs.helm_args }} \
-              ${{ steps.deploy-vars.outputs.helm_set_args }}
-          else
-            echo "==> Applying full values-prod.yaml (fresh install or force_full_values=true)"
-            helm upgrade --install collabspace infrastructure/helm/collabspace \
-              --namespace collabspace \
-              --timeout 20m \
-              --set global.createNamespace=false \
-              -f /tmp/values-prod.yaml \
-              ${{ steps.cnpg-ownership.outputs.helm_args }} \
-              ${{ steps.deploy-vars.outputs.helm_set_args }}
-          fi
+          echo "exists=${release_exists}" >> "$GITHUB_OUTPUT"
 
 
 
-      - name: Wait for datastores to be ready
+      - name: Wait for existing datastores to be ready
+
+        if: steps.release-state.outputs.exists == 'true'
 
         run: |
           if [[ "${{ steps.postgres-mode.outputs.cloudnativepg_enabled }}" == "true" ]]; then
@@ -647,6 +630,8 @@ jobs:
 
 
       - name: Run DB migrations
+
+        if: steps.release-state.outputs.exists == 'true'
 
         shell: bash
 
@@ -709,24 +694,26 @@ jobs:
           if [[ "${RUN_AUTH}" == "true" ]]; then
             run_migration migrate-auth auth-service "${AUTH_TAG}"
           else
-            echo "==> Skipping auth migration: no auth migration files changed"
+            echo "==> Skipping auth migration: no auth service or migration changes"
           fi
 
           if [[ "${RUN_USER}" == "true" ]]; then
             run_migration migrate-user user-service "${USER_TAG}"
           else
-            echo "==> Skipping user migration: no user migration files changed"
+            echo "==> Skipping user migration: no user service or migration changes"
           fi
 
           if [[ "${RUN_WORKSPACE}" == "true" ]]; then
             run_migration migrate-workspace workspace-service "${WS_TAG}"
           else
-            echo "==> Skipping workspace migration: no workspace migration files changed"
+            echo "==> Skipping workspace migration: no workspace service or migration changes"
           fi
 
 
 
       - name: Wait for migrations to complete
+
+        if: steps.release-state.outputs.exists == 'true'
 
         run: |
           set -euo pipefail
@@ -783,16 +770,226 @@ jobs:
 
 
 
-      - name: Rollout restart app deployments
+      - name: Helm upgrade (DOKS)
+
+        # Existing release: --reuse-values + image tag overrides only — avoids touching
+        # StatefulSet/PVC immutable fields that Kubernetes forbids patching.
+        # force_full_values=true: apply full values-prod.yaml (use for infra config changes
+        # like PostgreSQL replication — requires StatefulSets to be deleted manually first).
+        shell: bash
+        run: |
+          RELEASE_EXISTS="${{ steps.release-state.outputs.exists }}"
+          FORCE_FULL="${{ github.event.inputs.force_full_values }}"
+
+          if [[ "$RELEASE_EXISTS" == "true" && "$FORCE_FULL" != "true" ]]; then
+            echo "==> Existing release — upgrading with --reuse-values"
+            helm upgrade collabspace infrastructure/helm/collabspace \
+              --namespace collabspace \
+              --timeout 20m \
+              --reuse-values \
+              ${{ steps.cnpg-ownership.outputs.helm_args }} \
+              ${{ steps.deploy-vars.outputs.helm_set_args }}
+          else
+            replica_args=""
+            if [[ "$RELEASE_EXISTS" != "true" ]]; then
+              # Fresh installs need ConfigMaps/Secrets/datastores before migrations,
+              # but app pods should not start against an unmigrated schema.
+              replica_args="--set apps.auth-service.replicas=0 --set apps.user-service.replicas=0 --set apps.workspace-service.replicas=0 --set apps.task-service.replicas=0 --set apps.notification-service.replicas=0 --set apps.dlq-service.replicas=0 --set apps.analytics-service.replicas=0"
+            fi
+
+            echo "==> Applying full values-prod.yaml (fresh install or force_full_values=true)"
+            helm upgrade --install collabspace infrastructure/helm/collabspace \
+              --namespace collabspace \
+              --timeout 20m \
+              --set global.createNamespace=false \
+              -f /tmp/values-prod.yaml \
+              ${{ steps.cnpg-ownership.outputs.helm_args }} \
+              ${{ steps.deploy-vars.outputs.helm_set_args }} \
+              ${replica_args}
+          fi
+
+
+
+      - name: Wait for datastores to be ready
+
+        if: steps.release-state.outputs.exists != 'true'
 
         run: |
-          kubectl rollout restart deployment/auth-service -n collabspace
-          kubectl rollout restart deployment/user-service -n collabspace
-          kubectl rollout restart deployment/workspace-service -n collabspace
-          kubectl rollout restart deployment/task-service -n collabspace
-          kubectl rollout restart deployment/notification-service -n collabspace
-          kubectl rollout restart deployment/dlq-service -n collabspace
-          kubectl rollout restart deployment/analytics-service -n collabspace
+          if [[ "${{ steps.postgres-mode.outputs.cloudnativepg_enabled }}" == "true" ]]; then
+            raw_path="/apis/postgresql.cnpg.io/v1/namespaces/collabspace/clusters/postgres"
+            deadline=$((SECONDS + 600))
+
+            until [[ "$SECONDS" -ge "$deadline" ]]; do
+              cluster_json="$(kubectl get --raw "$raw_path" 2>/dev/null || true)"
+              ready="$(echo "$cluster_json" | jq -r '.status.readyInstances // 0' 2>/dev/null || echo 0)"
+              instances="$(echo "$cluster_json" | jq -r '.status.instances // 0' 2>/dev/null || echo 0)"
+              phase="$(echo "$cluster_json" | jq -r '.status.phase // ""' 2>/dev/null || echo "")"
+              ready="${ready:-0}"
+              instances="${instances:-0}"
+
+              echo "CloudNativePG postgres: phase=${phase:-unknown} ready=${ready}/${instances}"
+
+              if [[ "$instances" != "0" && "$ready" == "$instances" ]]; then
+                break
+              fi
+
+              sleep 10
+            done
+
+            if [[ "$ready" != "$instances" || "$instances" == "0" ]]; then
+              echo "CloudNativePG cluster/postgres did not become ready in time" >&2
+              exit 1
+            fi
+          else
+            kubectl rollout status statefulset/postgres -n collabspace --timeout=10m
+          fi
+          kubectl rollout status statefulset/mongo -n collabspace --timeout=10m
+
+
+
+      - name: Run DB migrations after fresh install
+
+        if: steps.release-state.outputs.exists != 'true'
+
+        shell: bash
+
+        run: |
+          set -euo pipefail
+          OWNER="${GITHUB_REPOSITORY_OWNER,,}"
+          AUTH_TAG="${{ steps.deploy-vars.outputs.auth_tag }}"
+          USER_TAG="${{ steps.deploy-vars.outputs.user_tag }}"
+          WS_TAG="${{ steps.deploy-vars.outputs.workspace_tag }}"
+          RUN_AUTH="${{ needs.detect-changes.outputs.auth_migrations }}"
+          RUN_USER="${{ needs.detect-changes.outputs.user_migrations }}"
+          RUN_WORKSPACE="${{ needs.detect-changes.outputs.workspace_migrations }}"
+
+          run_migration() {
+            local job_name="$1"
+            local service_name="$2"
+            local image_tag="$3"
+
+            echo "==> Creating migration job: ${job_name}"
+            kubectl delete job "${job_name}" -n collabspace --ignore-not-found
+            kubectl apply -f - <<EOF
+          apiVersion: batch/v1
+          kind: Job
+          metadata:
+            name: ${job_name}
+            namespace: collabspace
+            labels:
+              collabspace.dev/migration: ${service_name}
+          spec:
+            ttlSecondsAfterFinished: 3600
+            backoffLimit: 2
+            template:
+              metadata:
+                labels:
+                  collabspace.dev/migration: ${service_name}
+              spec:
+                restartPolicy: Never
+                imagePullSecrets:
+                  - name: ghcr-credentials
+                containers:
+                  - name: migrate
+                    image: ghcr.io/${OWNER}/collabspace-${service_name}:${image_tag}
+                    command:
+                      - /bin/sh
+                      - -c
+                      - |
+                        export DATABASE_URL="postgresql://\$(node -e 'console.log(encodeURIComponent(process.env.POSTGRES_USER))'):\$(node -e 'console.log(encodeURIComponent(process.env.POSTGRES_PASSWORD))')@\${POSTGRES_HOST}:5432/\${POSTGRES_DB}"
+                        exec node dist/src/migrate.js
+                    envFrom:
+                      - configMapRef:
+                          name: ${service_name}-config
+                      - secretRef:
+                          name: ${service_name}-secrets
+          EOF
+          }
+
+          if [[ "${RUN_AUTH}" == "true" ]]; then
+            run_migration migrate-auth auth-service "${AUTH_TAG}"
+          else
+            echo "==> Skipping auth migration"
+          fi
+
+          if [[ "${RUN_USER}" == "true" ]]; then
+            run_migration migrate-user user-service "${USER_TAG}"
+          else
+            echo "==> Skipping user migration"
+          fi
+
+          if [[ "${RUN_WORKSPACE}" == "true" ]]; then
+            run_migration migrate-workspace workspace-service "${WS_TAG}"
+          else
+            echo "==> Skipping workspace migration"
+          fi
+
+
+
+      - name: Wait for fresh install migrations to complete
+
+        if: steps.release-state.outputs.exists != 'true'
+
+        run: |
+          set -euo pipefail
+          RUN_AUTH="${{ needs.detect-changes.outputs.auth_migrations }}"
+          RUN_USER="${{ needs.detect-changes.outputs.user_migrations }}"
+          RUN_WORKSPACE="${{ needs.detect-changes.outputs.workspace_migrations }}"
+
+          wait_migration() {
+            local job=$1
+            local deadline=$((SECONDS + 300))
+            echo "==> Waiting for $job..."
+            while [[ $SECONDS -lt $deadline ]]; do
+              status=$(kubectl get job "$job" -n collabspace \
+                -o jsonpath='{.status.conditions[?(@.status=="True")].type}' 2>/dev/null || echo "")
+              if [[ "$status" == *"Complete"* ]]; then
+                echo "  $job: Complete"
+                return 0
+              fi
+              if [[ "$status" == *"Failed"* ]]; then
+                echo "  $job: FAILED — pod logs:"
+                pod=$(kubectl get pods -n collabspace -l "job-name=$job" \
+                  --sort-by=.metadata.creationTimestamp -o jsonpath='{.items[-1].metadata.name}' 2>/dev/null || echo "")
+                [[ -n "$pod" ]] && kubectl logs -n collabspace "$pod" --tail=60 || true
+                return 1
+              fi
+              sleep 5
+            done
+            return 1
+          }
+
+          if [[ "${RUN_AUTH}" == "true" ]]; then
+            wait_migration migrate-auth
+          else
+            echo "==> Auth migration was skipped"
+          fi
+
+          if [[ "${RUN_USER}" == "true" ]]; then
+            wait_migration migrate-user
+          else
+            echo "==> User migration was skipped"
+          fi
+
+          if [[ "${RUN_WORKSPACE}" == "true" ]]; then
+            wait_migration migrate-workspace
+          else
+            echo "==> Workspace migration was skipped"
+          fi
+
+
+
+      - name: Enable app deployments after fresh install
+
+        if: steps.release-state.outputs.exists != 'true'
+
+        run: |
+          helm upgrade collabspace infrastructure/helm/collabspace \
+            --namespace collabspace \
+            --timeout 20m \
+            -f /tmp/values-prod.yaml \
+            ${{ steps.cnpg-ownership.outputs.helm_args }} \
+            ${{ steps.deploy-vars.outputs.helm_set_args }}
 
 
 
@@ -831,10 +1028,10 @@ jobs:
             echo "==> Health check: ${name} (${path})"
             while [[ $attempt -lt $max_attempts ]]; do
               attempt=$((attempt + 1))
-              code=$(kubectl exec -n collabspace \
+              output=$(kubectl exec -n collabspace \
                 "$(kubectl get pod -n collabspace -l app=${svc} -o jsonpath='{.items[0].metadata.name}')" \
-                -- wget -qO- -S "http://localhost:${port}${path}" 2>&1 \
-                | grep "HTTP/" | awk '{print $2}' || echo "000")
+                -- wget -qO- -S "http://localhost:${port}${path}" 2>&1 || true)
+              code=$(printf '%s\n' "$output" | awk '/HTTP\// { code=$2 } END { print code ? code : "000" }')
               if [[ "$code" == "200" ]]; then
                 echo "  [OK] ${name} healthy (attempt ${attempt})"
                 return 0
@@ -846,13 +1043,24 @@ jobs:
             return 1
           }
 
-          check_service "auth-service"          "auth-service"          3000 "/api/v1/auth/health/ready"
-          check_service "user-service"          "user-service"          3000 "/api/v1/users/health/ready"
-          check_service "workspace-service"     "workspace-service"     8080 "/api/v1/workspaces/health/ready"
-          check_service "task-service"          "task-service"          3000 "/api/v1/tasks/health/ready"
-          check_service "notification-service"  "notification-service"  3000 "/api/v1/notifications/health/ready"
-          check_service "dlq-service"           "dlq-service"           3000 "/api/v1/dlq/health/ready"
-          check_service "analytics-service"     "analytics-service"     3000 "/api/v1/analytics/health/ready"
+          pids=()
+          check_service "auth-service"          "auth-service"          3000 "/api/v1/auth/health/ready" & pids+=("$!")
+          check_service "user-service"          "user-service"          3000 "/api/v1/users/health/ready" & pids+=("$!")
+          check_service "workspace-service"     "workspace-service"     8080 "/api/v1/workspaces/health/ready" & pids+=("$!")
+          check_service "task-service"          "task-service"          3000 "/api/v1/tasks/health/ready" & pids+=("$!")
+          check_service "notification-service"  "notification-service"  3000 "/api/v1/notifications/health/ready" & pids+=("$!")
+          check_service "dlq-service"           "dlq-service"           3000 "/api/v1/dlq/health/ready" & pids+=("$!")
+          check_service "analytics-service"     "analytics-service"     3000 "/api/v1/analytics/health/ready" & pids+=("$!")
+
+          failed=0
+          for pid in "${pids[@]}"; do
+            wait "$pid" || failed=1
+          done
+
+          if [[ "$failed" != "0" ]]; then
+            echo "==> One or more services failed health checks"
+            exit 1
+          fi
 
           echo "==> All services healthy."
 

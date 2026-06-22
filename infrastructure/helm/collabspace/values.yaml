@@ -605,7 +605,6 @@ apps:
       readyPath: /api/v1/workspaces/health/ready
       livePath: /api/v1/workspaces/health/live
       readyFailureThreshold: 5
-      liveInitialDelaySeconds: 15
       preStopSleep: 15
       terminationGracePeriodSeconds: 45
     resources:

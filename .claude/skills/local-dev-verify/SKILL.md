@@ -156,11 +156,12 @@ K8s / production observability (after Helm deploy):
 
 1. Đọc `.claude/docs/doks-operations.md` trước khi patch tay hoặc debug prod.
 2. Health nhanh: `curl https://collabspace.ngocanh2005it.site/api/v1/<service>/health/ready` (expect **200**).
-3. CI: `gh run list --workflow=docker-deploy.yml --limit 1` — build fail thường do Dockerfile monorepo; deploy fail thường do pod crash / probe 404 / thiếu `NODE_PATH`. Migration Jobs chỉ chạy khi path filter thấy file migration của auth/user/workspace đổi; manual dispatch vẫn chạy migration.
+3. CI: `gh run list --workflow=docker-deploy.yml --limit 1` — build fail thường do Dockerfile monorepo; deploy fail thường do pod crash / probe 404 / thiếu `NODE_PATH`. Existing-release deploy runs Postgres migrations before Helm app rollout when auth/user/workspace service images or migration files change; manual dispatch runs all three migration jobs.
 4. Kubectl: `kubectl get pods -n collabspace`; `kubectl top nodes`; `kubectl top pods -n collabspace`; `kubectl logs deploy/<service> --tail=40`. KUBECONFIG từ GitHub secret `KUBECONFIG_DOKS` (CI) hoặc `doctl kubernetes cluster kubeconfig save <cluster-id>` (local).
 5. **PostgreSQL HA — CloudNativePG** (đã migration 2026-06-22): cluster `postgres`, pods `postgres-2/3/4`, service `postgres-rw` (writes) + `postgres-ro` (reads). `cloudnativepg.enabled=true` / `postgresql.enabled=false` / `renderCluster=false` trong values-prod.yaml. Exec vào postgres: `kubectl exec -n collabspace $(kubectl get cluster postgres -n collabspace -o jsonpath='{.status.currentPrimary}') -c postgres -- psql -U postgres`.
    App/migration Postgres env: ConfigMap chứa `POSTGRES_HOST`/`POSTGRES_DB`/`POSTGRES_USER`; Secret chứa `POSTGRES_PASSWORD`; `@collabspace/typeorm-migrate` dựng `DATABASE_URL` và URL-encode password runtime.
-6. **Không** patch `kubectl` probe/env rồi bỏ quên — fix trong Helm chart / Dockerfile và push; hotfix tay bị `helm upgrade` ghi đè.
+6. Legacy Bitnami Postgres cleanup is guarded by `CONFIRM_DELETE_LEGACY_POSTGRES=true infrastructure/deploy/cleanup-legacy-bitnami-postgres.sh`; it preserves `pvc/data-postgres-0` unless `DELETE_LEGACY_POSTGRES_PVC=true` is set.
+7. **Không** patch `kubectl` probe/env rồi bỏ quên — fix trong Helm chart / Dockerfile và push; hotfix tay bị `helm upgrade` ghi đè.
 
 Trước push đổi `Dockerfile.service` hoặc workspace packages: chạy `pnpm run build` service + cân nhắc `docker build` smoke (xem droplet doc).
 
