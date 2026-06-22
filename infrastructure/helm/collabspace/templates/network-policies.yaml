@@ -204,7 +204,7 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app.kubernetes.io/name: postgresql
+      cnpg.io/cluster: postgres
   policyTypes:
     - Ingress
   ingress:
@@ -213,12 +213,26 @@ spec:
             matchExpressions:
               - key: app
                 operator: In
-                values: [auth-service, user-service, workspace-service]
+                values: [auth-service, user-service, workspace-service, backup-postgres, postgres-exporter]
         - podSelector:
             matchLabels:
               app: debezium-connect
+        - podSelector:
+            matchLabels:
+              cnpg.io/cluster: postgres
       ports:
         - port: 5432
+          protocol: TCP
+        - port: 8000
+          protocol: TCP
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: cnpg-system
+      ports:
+        - port: 5432
+          protocol: TCP
+        - port: 8000
           protocol: TCP
 ---
 apiVersion: networking.k8s.io/v1
