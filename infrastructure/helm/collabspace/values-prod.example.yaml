@@ -198,6 +198,8 @@ gateway:
     expose: true
   swagger:
     expose: true
+  jaeger:
+    expose: true
   cors:
     allowOrigins:
       - "*"
@@ -231,6 +233,8 @@ observability:
     retention: 7d
     storageSize: 3Gi
   exporters:
+    enabled: true
+  jaeger:
     enabled: true
   alertmanager:
     slack:
