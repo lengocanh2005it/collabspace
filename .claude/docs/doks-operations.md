@@ -63,7 +63,7 @@ GitHub secrets cho DOKS target: `KUBECONFIG_DOKS`, `GHCR_USERNAME`, `GHCR_TOKEN`
 
 **Alertmanager → Slack:** `SLACK_ALERT_WEBHOOK_URL` trong Vault `slack_alert_webhook_url` → ESO `alertmanager-slack-secret`. Bật `observability.alertmanager.slack.enabled: true` trong `values-prod.yaml`.
 
-**CloudNativePG migration:** follow `docs/cloudnativepg-migration.md`. Backup Bitnami first, then set `cloudnativepg.enabled: true` and `postgresql.enabled: false` in `values-prod.yaml`; Helm app ConfigMaps, Debezium, postgres-exporter, and backup CronJob switch to `postgres-rw` automatically. If `cluster/postgres` already exists outside Helm ownership, keep `cloudnativepg.renderCluster=false`; CI detects that case and adds the override to avoid a Helm ownership conflict.
+**CloudNativePG migration:** follow `docs/cloudnativepg-migration.md`. Backup Bitnami first, then set `cloudnativepg.enabled: true` and `postgresql.enabled: false` in `values-prod.yaml`; Helm switches Postgres host wiring to `postgres-rw`. App/migration code builds `DATABASE_URL` from `POSTGRES_HOST`, `POSTGRES_DB`, `POSTGRES_USER`, and Secret `POSTGRES_PASSWORD`, URL-encoding the password at runtime. Debezium, postgres-exporter, and backup CronJob switch to `postgres-rw` automatically. If `cluster/postgres` already exists outside Helm ownership, keep `cloudnativepg.renderCluster=false`; CI detects that case and adds the override to avoid a Helm ownership conflict.
 
 **Vault seed:** phải có `BREVO_API_KEY` (auth-service crash nếu thiếu).
 

@@ -34,13 +34,34 @@ export function loadEnvFile(cwd = process.cwd()): void {
 }
 
 export function requireDatabaseUrl(): string {
-  const databaseUrl = process.env.DATABASE_URL;
+  const databaseUrl = ensureDatabaseUrl();
 
   if (!databaseUrl) {
     throw new Error('DATABASE_URL is required to run migrations');
   }
 
   return databaseUrl;
+}
+
+export function ensureDatabaseUrl(): string | undefined {
+  if (process.env.DATABASE_URL) {
+    return process.env.DATABASE_URL;
+  }
+
+  const host = process.env.POSTGRES_HOST ?? process.env.DATABASE_HOST;
+  const database = process.env.POSTGRES_DB ?? process.env.DATABASE_NAME;
+  const username = process.env.POSTGRES_USER ?? process.env.DATABASE_USER ?? 'postgres';
+  const password = process.env.POSTGRES_PASSWORD ?? process.env.DATABASE_PASSWORD;
+  const port = process.env.POSTGRES_PORT ?? process.env.DATABASE_PORT ?? '5432';
+
+  if (!host || !database || !password) {
+    return undefined;
+  }
+
+  const encodedUser = encodeURIComponent(username);
+  const encodedPassword = encodeURIComponent(password);
+  process.env.DATABASE_URL = `postgresql://${encodedUser}:${encodedPassword}@${host}:${port}/${database}`;
+  return process.env.DATABASE_URL;
 }
 
 export function toBoolean(value: string | undefined, fallback: boolean): boolean {

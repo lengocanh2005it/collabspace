@@ -634,6 +634,8 @@ jobs:
                     envFrom:
                       - configMapRef:
                           name: auth-service-config
+                      - secretRef:
+                          name: auth-service-secrets
           ---
           apiVersion: batch/v1
           kind: Job
@@ -660,6 +662,8 @@ jobs:
                     envFrom:
                       - configMapRef:
                           name: user-service-config
+                      - secretRef:
+                          name: user-service-secrets
           ---
           apiVersion: batch/v1
           kind: Job
@@ -686,6 +690,8 @@ jobs:
                     envFrom:
                       - configMapRef:
                           name: workspace-service-config
+                      - secretRef:
+                          name: workspace-service-secrets
           EOF
 
 

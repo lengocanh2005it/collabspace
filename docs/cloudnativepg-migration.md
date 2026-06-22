@@ -149,7 +149,7 @@ kubectl exec -n collabspace postgres-1 -- \
   psql -U postgres -f /tmp/dump.sql
 ```
 
-### Bước 6 — Cập nhật DATABASE_URL trong ConfigMaps
+### Bước 6 — Cập nhật Postgres env wiring
 
 CNPG tạo 2 services:
 - `postgres-rw` — primary, dùng cho writes (migrations, app writes)
@@ -172,15 +172,20 @@ postgresql:
 
 Cập nhật migration Jobs trong workflow:
 ```yaml
-# configMapRef: auth-service-config vẫn dùng được
-# Helm helper tự render DATABASE_URL trỏ tới postgres-rw khi cloudnativepg.enabled=true
+# configMapRef: *-service-config chứa POSTGRES_HOST/POSTGRES_DB/POSTGRES_USER
+# secretRef: *-service-secrets chứa POSTGRES_PASSWORD
+# Service bootstrap/migration helper tự dựng DATABASE_URL với URL-encoded
+# password. Không nhúng password vào ConfigMap.
 ```
 
 Đã có wiring trong Helm chart:
 - `cloudnativepg.enabled=true` render CNPG `Cluster` và optional `ScheduledBackup`.
 - `cloudnativepg.renderCluster=false` vẫn tạo/sync `postgres-superuser` Secret và chuyển app sang `postgres-rw`, nhưng không cố tạo lại `Cluster`.
 - `collabspace.postgresql.host` tự chuyển từ `postgres` sang `postgres-rw`.
-- App ConfigMaps, Debezium connectors, postgres-exporter và backup CronJob dùng helper host này.
+- App ConfigMaps chứa Postgres host/db/user không nhạy cảm.
+- App Deployments đọc Secret `POSTGRES_PASSWORD`; service code tự dựng
+  `DATABASE_URL` từ `POSTGRES_HOST`/`POSTGRES_DB`/`POSTGRES_USER`/`POSTGRES_PASSWORD`.
+- Debezium connectors, postgres-exporter và backup CronJob dùng helper host này.
 
 ### Bước 7 — Scale apps lên lại, verify
 
@@ -242,7 +247,9 @@ kubectl get --raw \
   /apis/postgresql.cnpg.io/v1/namespaces/collabspace/clusters/postgres
 ```
 
-Migration Jobs vẫn dùng `configMapRef: auth-service-config` — chỉ cần đảm bảo `DATABASE_HOST` trong ConfigMap trỏ về `postgres-rw`.
+Migration Jobs dùng cả `configMapRef` và `secretRef`. Helper
+`@collabspace/typeorm-migrate` dựng `DATABASE_URL` từ các biến Postgres rời và
+URL-encode password, nên password chứa `/`, `+`, `=` vẫn hợp lệ.
 
 ## Scheduled Backup (tích hợp CNPG)
 

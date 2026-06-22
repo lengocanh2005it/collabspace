@@ -4,6 +4,7 @@ export {
 } from './data-source';
 export {
   loadEnvFile,
+  ensureDatabaseUrl,
   migrationsGlobFromMigrateDir,
   requireDatabaseUrl,
   toBoolean,

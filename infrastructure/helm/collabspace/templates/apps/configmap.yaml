@@ -20,19 +20,25 @@ data:
   OTEL_EXPORTER_OTLP_ENDPOINT: "http://jaeger:4318/v1/traces"
   JAEGER_AGENT_HOST: "jaeger"
   {{- if eq $name "auth-service" }}
-  DATABASE_URL: {{ include "collabspace.postgresUrl" (dict "database" "collabspace_auth" "root" $root) | quote }}
+  POSTGRES_HOST: {{ include "collabspace.postgresql.host" (dict "root" $root) | quote }}
+  POSTGRES_DB: "collabspace_auth"
+  POSTGRES_USER: "postgres"
   DATABASE_SCHEMA: "public"
   DATABASE_SSL: "false"
   DATABASE_SYNCHRONIZE: "false"
   {{- end }}
   {{- if eq $name "user-service" }}
-  DATABASE_URL: {{ include "collabspace.postgresUrl" (dict "database" "collabspace_user" "root" $root) | quote }}
+  POSTGRES_HOST: {{ include "collabspace.postgresql.host" (dict "root" $root) | quote }}
+  POSTGRES_DB: "collabspace_user"
+  POSTGRES_USER: "postgres"
   DATABASE_SCHEMA: "public"
   DATABASE_SSL: "false"
   DATABASE_SYNCHRONIZE: "false"
   {{- end }}
   {{- if eq $name "workspace-service" }}
-  DATABASE_URL: {{ include "collabspace.postgresUrl" (dict "database" "collabspace_workspace" "root" $root) | quote }}
+  POSTGRES_HOST: {{ include "collabspace.postgresql.host" (dict "root" $root) | quote }}
+  POSTGRES_DB: "collabspace_workspace"
+  POSTGRES_USER: "postgres"
   DATABASE_SCHEMA: "public"
   DATABASE_LOGGING: "false"
   {{- end }}

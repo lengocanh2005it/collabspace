@@ -1,5 +1,6 @@
 import './observability/instrumentation';
 import { assertRequiredInProduction } from '@collabspace/shared';
+import { ensureDatabaseUrl } from '@collabspace/typeorm-migrate';
 import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { type MicroserviceOptions, Transport } from '@nestjs/microservices';
@@ -23,6 +24,7 @@ const toBoolean = (value: string | undefined, fallback: boolean): boolean => {
 };
 
 async function bootstrap() {
+  ensureDatabaseUrl();
   assertRequiredInProduction('DATABASE_URL', process.env.DATABASE_URL);
   assertRequiredInProduction('SERVICE_JWT_SECRET', process.env.SERVICE_JWT_SECRET);
 

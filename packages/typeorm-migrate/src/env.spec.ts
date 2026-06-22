@@ -1,5 +1,10 @@
 import { join } from 'node:path';
-import { migrationsGlobFromMigrateDir, requireDatabaseUrl, toBoolean } from './env';
+import {
+  ensureDatabaseUrl,
+  migrationsGlobFromMigrateDir,
+  requireDatabaseUrl,
+  toBoolean,
+} from './env';
 
 describe('typeorm-migrate env helpers', () => {
   it('migrationsGlobFromMigrateDir requires 13-digit timestamp prefix', () => {
@@ -24,6 +29,40 @@ describe('typeorm-migrate env helpers', () => {
     const original = process.env.DATABASE_URL;
     delete process.env.DATABASE_URL;
     expect(() => requireDatabaseUrl()).toThrow(/DATABASE_URL is required/);
-    process.env.DATABASE_URL = original;
+    if (original === undefined) {
+      delete process.env.DATABASE_URL;
+    } else {
+      process.env.DATABASE_URL = original;
+    }
+  });
+
+  it('ensureDatabaseUrl builds an encoded URL from Postgres parts', () => {
+    const originalEnv = {
+      DATABASE_URL: process.env.DATABASE_URL,
+      POSTGRES_HOST: process.env.POSTGRES_HOST,
+      POSTGRES_DB: process.env.POSTGRES_DB,
+      POSTGRES_USER: process.env.POSTGRES_USER,
+      POSTGRES_PASSWORD: process.env.POSTGRES_PASSWORD,
+      POSTGRES_PORT: process.env.POSTGRES_PORT,
+    };
+
+    delete process.env.DATABASE_URL;
+    process.env.POSTGRES_HOST = 'postgres-rw';
+    process.env.POSTGRES_DB = 'collabspace_auth';
+    process.env.POSTGRES_USER = 'postgres';
+    process.env.POSTGRES_PASSWORD = 'abc/def+ghi=';
+    process.env.POSTGRES_PORT = '5432';
+
+    expect(ensureDatabaseUrl()).toBe(
+      'postgresql://postgres:abc%2Fdef%2Bghi%3D@postgres-rw:5432/collabspace_auth',
+    );
+
+    for (const [key, value] of Object.entries(originalEnv)) {
+      if (value === undefined) {
+        delete process.env[key];
+      } else {
+        process.env[key] = value;
+      }
+    }
   });
 });
