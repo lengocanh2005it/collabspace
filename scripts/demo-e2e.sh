@@ -342,9 +342,10 @@ log "  Getting User B's profile (userId + username)..."
 resp=$(curl_get "$BASE/users/me" -H "Authorization: Bearer $TOKEN_B")
 code=$(echo "$resp" | cut -d' ' -f1); body=$(echo "$resp" | cut -d' ' -f2-)
 assert_2xx "$code" "$body" "get User B profile"
-USER_B_ID=$(py_field "$body" "id")
+USER_B_ID=$(py_field "$body" "userId")
+[[ -n "$USER_B_ID" ]] || USER_B_ID=$(py_field "$body" "data.userId")
+[[ -n "$USER_B_ID" ]] || USER_B_ID=$(py_field "$body" "id")
 [[ -n "$USER_B_ID" ]] || USER_B_ID=$(py_field "$body" "data.id")
-[[ -n "$USER_B_ID" ]] || USER_B_ID=$(py_field "$body" "userId")
 [[ -n "$USER_B_ID" ]] || fail "No user id in /users/me response: $body"
 USERNAME_B=$(py_field "$body" "username")
 [[ -n "$USERNAME_B" ]] || USERNAME_B=$(py_field "$body" "data.username")
