@@ -296,9 +296,11 @@ spec:
             matchExpressions:
               - key: app
                 operator: In
-                values: [auth-service, user-service, notification-service]
+                values: [auth-service, user-service, workspace-service, task-service, notification-service, redis-exporter]
       ports:
         - port: 6379
+          protocol: TCP
+        - port: 26379
           protocol: TCP
 ---
 {{- if .Values.kafka.enabled }}
