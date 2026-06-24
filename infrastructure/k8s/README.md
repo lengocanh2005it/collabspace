@@ -1,6 +1,6 @@
 # Legacy Kubernetes Manifests — Dev Reference Only
 
-> **DEPRECATED — do not use for production or new deployments.** These plain YAML files predate the Helm chart and contain unsafe defaults (`DATABASE_SYNCHRONIZE=true` in workspace deployment, hardcoded passwords in exporters, missing current gRPC/service ports). Production runs on DOKS via Helm + Vault/ESO only.
+> **DEPRECATED — do not use for production or new deployments.** These plain YAML files predate the Helm chart and may drift from current Helm/Vault/ESO deployment conventions. They now use explicit `REPLACE_ME` placeholders for secrets and exporter credentials, but production runs on DOKS via Helm + Vault/ESO only.
 
 These plain YAML files were the original CollabSpace K8s deployment (Agent BRAVO).
 
@@ -20,7 +20,7 @@ These plain YAML files were the original CollabSpace K8s deployment (Agent BRAVO
 
 ## Using legacy YAML (reference only)
 
-**Warning:** `workspace-deployment.yaml` sets `DATABASE_SYNCHRONIZE: "true"` — never use in production. `exporters-deployment.yaml` embeds demo credentials (`postgres:postgres`, `admin:password`), and `services.yaml` can drift from current HTTP/gRPC ports — replace/review before any non-local test cluster.
+**Warning:** these manifests are reference-only. Replace every `REPLACE_ME` value, create the referenced exporter credential Secret, and review `services.yaml` against current HTTP/gRPC ports before any non-local test cluster.
 
 ```bash
 kubectl apply -f infrastructure/k8s/

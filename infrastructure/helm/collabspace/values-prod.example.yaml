@@ -239,6 +239,13 @@ observability:
     enabled: true
   jaeger:
     enabled: true
+    resources:
+      requests:
+        memory: 256Mi
+        cpu: 25m
+      limits:
+        memory: 512Mi
+        cpu: 250m
   alertmanager:
     slack:
       enabled: true

@@ -1,4 +1,16 @@
 # Metrics exporters for Postgres, Redis, and MongoDB (K8s)
+apiVersion: v1
+kind: Secret
+metadata:
+  name: exporter-credentials
+  namespace: collabspace
+type: Opaque
+stringData:
+  redis-addr: "REPLACE_ME_REDIS_ADDR"
+  postgres-data-source-name: "REPLACE_ME_POSTGRES_DSN"
+  mongodb-uri: "REPLACE_ME_MONGODB_URI"
+
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -21,7 +33,10 @@ spec:
           image: oliver006/redis_exporter:latest
           env:
             - name: REDIS_ADDR
-              value: "redis://:collabspace123@redis:6379"
+              valueFrom:
+                secretKeyRef:
+                  name: exporter-credentials
+                  key: redis-addr
           ports:
             - containerPort: 9121
 
@@ -63,7 +78,10 @@ spec:
           image: prometheuscommunity/postgres-exporter:latest
           env:
             - name: DATA_SOURCE_NAME
-              value: "postgresql://postgres:postgres@postgres:5432/postgres?sslmode=disable"
+              valueFrom:
+                secretKeyRef:
+                  name: exporter-credentials
+                  key: postgres-data-source-name
           ports:
             - containerPort: 9187
 
@@ -104,8 +122,13 @@ spec:
         - name: mongodb-exporter
           image: percona/mongodb_exporter:latest
           args:
-            # Legacy demo credentials — replace before use; prefer Helm observability stack.
-            - --mongodb.uri=mongodb://admin:password@mongo:27017
+            - --mongodb.uri=$(MONGODB_URI)
+          env:
+            - name: MONGODB_URI
+              valueFrom:
+                secretKeyRef:
+                  name: exporter-credentials
+                  key: mongodb-uri
           ports:
             - containerPort: 9216
 

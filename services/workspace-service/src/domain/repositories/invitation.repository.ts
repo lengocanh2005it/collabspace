@@ -2,6 +2,12 @@ import type { Invitation } from '../entities/invitation.entity';
 
 export const INVITATION_REPOSITORY = Symbol('INVITATION_REPOSITORY');
 
+export type AcceptInvitationResult = {
+  status: 'accepted';
+  workspaceId: string;
+  memberJoined: boolean;
+};
+
 export interface IInvitationRepository {
   findById(id: string): Promise<Invitation | null>;
   findPendingByWorkspace(workspaceId: string): Promise<Invitation[]>;
@@ -14,9 +20,6 @@ export interface IInvitationRepository {
     workspaceName?: string;
   }): Promise<Invitation>;
   findPendingForInvitee(email: string, userId: string): Promise<Invitation[]>;
-  acceptAndJoinWorkspace(
-    invitationId: string,
-    userId: string,
-  ): Promise<{ status: string; workspaceId: string }>;
+  acceptAndJoinWorkspace(invitationId: string, userId: string): Promise<AcceptInvitationResult>;
   updateStatus(id: string, status: string, userId?: string): Promise<Invitation>;
 }

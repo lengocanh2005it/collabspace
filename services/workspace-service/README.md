@@ -26,7 +26,7 @@ pnpm test
 
 ## API Endpoints
 
-All API requests require an `X-User-Id` header (usually injected by the API Gateway after Auth validation).
+Protected API requests require `Authorization: Bearer <access-token>`. The service verifies user JWTs through auth-service gRPC; direct-port `X-User-Id` fallback is only for local development when `ALLOW_DEV_IDENTITY_HEADERS=true`.
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|

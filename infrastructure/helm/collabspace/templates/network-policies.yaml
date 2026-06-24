@@ -271,7 +271,7 @@ spec:
             matchExpressions:
               - key: app
                 operator: In
-                values: [task-service, notification-service, dlq-service, analytics-service]
+                values: [task-service, notification-service, dlq-service, analytics-service, backup-mongo]
         - podSelector:
             matchLabels:
               app: debezium-connect

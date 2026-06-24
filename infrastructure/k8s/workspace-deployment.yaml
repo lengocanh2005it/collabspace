@@ -5,7 +5,7 @@
 # CRITICAL: Port 8080 (NestJS Node.js service)
 # Health: /api/v1/workspaces/health
 # Database: PostgreSQL (collabspace_workspace)
-# Migrations: TypeORM synchronize / migrations
+# Migrations: run TypeORM migrations explicitly; do not use synchronize.
 
 apiVersion: v1
 kind: ConfigMap
@@ -22,10 +22,9 @@ data:
   NODE_ENV: "production"
   PORT: "8080"
   # Database
-  DATABASE_URL: "postgresql://postgres:postgres@postgres:5432/collabspace_workspace"
   DATABASE_SCHEMA: "public"
   DATABASE_LOGGING: "false"
-  DATABASE_SYNCHRONIZE: "true" # In production use migrations instead
+  DATABASE_SYNCHRONIZE: "false"
   WORKSPACE_OUTBOX_PUBLISH_MODE: "debezium"
   # Service discovery
   AUTH_SERVICE_URL: "http://auth-service:3000"
@@ -43,7 +42,11 @@ metadata:
     app: workspace-service
 type: Opaque
 stringData:
-  JWT_SECRET: "change-me-in-production"  # CHANGE IN PRODUCTION
+  POSTGRES_USER: "REPLACE_ME"
+  POSTGRES_PASSWORD: "REPLACE_ME"
+  DATABASE_URL: "REPLACE_ME_POSTGRES_URL"
+  JWT_SECRET: "REPLACE_ME"
+  SERVICE_JWT_SECRET: "REPLACE_ME"
 
 ---
 apiVersion: apps/v1

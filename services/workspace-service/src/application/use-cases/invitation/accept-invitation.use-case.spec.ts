@@ -37,7 +37,7 @@ describe('AcceptInvitationUseCase', () => {
   });
 
   it('should delegate to repository and return result', async () => {
-    const expected = { status: 'accepted', workspaceId: 'ws-1' };
+    const expected = { memberJoined: true, status: 'accepted', workspaceId: 'ws-1' };
     mockInvitationRepo.findById.mockResolvedValue(
       new Invitation(
         'inv-1',
@@ -54,7 +54,39 @@ describe('AcceptInvitationUseCase', () => {
 
     const result = await useCase.execute('user-2', 'inv-1');
     expect(mockInvitationRepo.acceptAndJoinWorkspace).toHaveBeenCalledWith('inv-1', 'user-2');
-    expect(result).toBe(expected);
+    expect(mockActivityRepo.record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        actorId: 'user-2',
+        type: 'member_joined',
+        workspaceId: 'ws-1',
+      }),
+    );
+    expect(result).toEqual({ status: 'accepted', workspaceId: 'ws-1' });
+  });
+
+  it('does not record duplicate member_joined activity for idempotent accepts', async () => {
+    mockInvitationRepo.findById.mockResolvedValue(
+      new Invitation(
+        'inv-1',
+        'ws-1',
+        'u-1',
+        'invitee@example.com',
+        'user-2',
+        'accepted',
+        new Date(),
+        new Date(Date.now() + 86_400_000),
+      ),
+    );
+    mockInvitationRepo.acceptAndJoinWorkspace.mockResolvedValue({
+      memberJoined: false,
+      status: 'accepted',
+      workspaceId: 'ws-1',
+    });
+
+    const result = await useCase.execute('user-2', 'inv-1');
+
+    expect(mockActivityRepo.record).not.toHaveBeenCalled();
+    expect(result).toEqual({ status: 'accepted', workspaceId: 'ws-1' });
   });
 
   it('rejects platform admin accounts', async () => {

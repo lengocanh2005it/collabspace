@@ -8,10 +8,13 @@ import { ListWorkspacesUseCase } from '../src/application/use-cases/workspace/li
 import { UpdateWorkspaceUseCase } from '../src/application/use-cases/workspace/update-workspace.use-case';
 import { DeleteWorkspaceUseCase } from '../src/application/use-cases/workspace/delete-workspace.use-case';
 import { ListMembersUseCase } from '../src/application/use-cases/workspace/list-members.use-case';
+import { RemoveMemberUseCase } from '../src/application/use-cases/workspace/remove-member.use-case';
+import { UpdateMemberRoleUseCase } from '../src/application/use-cases/workspace/update-member-role.use-case';
 import { GetWorkspaceActivityUseCase } from '../src/application/use-cases/workspace/get-workspace-activity.use-case';
 import { InviteMemberUseCase } from '../src/application/use-cases/invitation/invite-member.use-case';
 import { AcceptInvitationUseCase } from '../src/application/use-cases/invitation/accept-invitation.use-case';
 import { ListInvitationsUseCase } from '../src/application/use-cases/invitation/list-invitations.use-case';
+import { ListMyInvitationsUseCase } from '../src/application/use-cases/invitation/list-my-invitations.use-case';
 import { RejectInvitationUseCase } from '../src/application/use-cases/invitation/reject-invitation.use-case';
 import { WORKSPACE_REPOSITORY } from '../src/domain/repositories/workspace.repository';
 import { WORKSPACE_MEMBER_REPOSITORY } from '../src/domain/repositories/workspace-member.repository';
@@ -22,6 +25,7 @@ import { InvitationController } from '../src/presentation/http/invitation.contro
 import { AuthGuard } from '../src/presentation/http/guards/auth.guard';
 import { IdempotencyService } from '../src/infrastructure/idempotency/idempotency.service';
 import { createInMemoryWorkspaceRepositories } from './support/in-memory-workspace-repositories';
+import { AuthHttpClient } from '../src/integrations/auth/auth-http.client';
 
 const OWNER_ID = '11111111-1111-4111-8111-111111111111';
 const INVITEE_ID = '22222222-2222-4222-8222-222222222222';
@@ -40,15 +44,35 @@ describe('Workspace invitation flow (e2e)', () => {
         AcceptInvitationUseCase,
         ListInvitationsUseCase,
         RejectInvitationUseCase,
+        { provide: ListMyInvitationsUseCase, useValue: { execute: jest.fn() } },
         { provide: GetWorkspaceUseCase, useValue: { execute: jest.fn() } },
         { provide: ListWorkspacesUseCase, useValue: { execute: jest.fn() } },
         { provide: UpdateWorkspaceUseCase, useValue: { execute: jest.fn() } },
         { provide: DeleteWorkspaceUseCase, useValue: { execute: jest.fn() } },
+        { provide: RemoveMemberUseCase, useValue: { execute: jest.fn() } },
+        { provide: UpdateMemberRoleUseCase, useValue: { execute: jest.fn() } },
         { provide: GetWorkspaceActivityUseCase, useValue: { execute: jest.fn() } },
         { provide: WORKSPACE_REPOSITORY, useValue: repos.workspaceRepo },
         { provide: WORKSPACE_MEMBER_REPOSITORY, useValue: repos.memberRepo },
         { provide: INVITATION_REPOSITORY, useValue: repos.invitationRepo },
         { provide: WORKSPACE_ACTIVITY_REPOSITORY, useValue: repos.activityRepo },
+        {
+          provide: AuthHttpClient,
+          useValue: {
+            getCurrentUserAccount: jest.fn().mockResolvedValue({
+              email: 'invitee@collabspace.dev',
+              permissions: [],
+              roles: ['user'],
+              userId: INVITEE_ID,
+            }),
+            lookupAccountByEmail: jest.fn().mockResolvedValue({
+              email: 'invitee@collabspace.dev',
+              permissions: [],
+              roles: ['user'],
+              userId: INVITEE_ID,
+            }),
+          },
+        },
         {
           provide: IdempotencyService,
           useValue: { findCached: jest.fn(), store: jest.fn() },
@@ -113,6 +137,15 @@ describe('Workspace invitation flow (e2e)', () => {
         expect(response.body).toHaveLength(1);
         expect(response.body[0].id).toBe(invitationId);
         expect(response.body[0].status).toBe('pending');
+      });
+
+    await request(app.getHttpServer())
+      .post(`/api/v1/invitations/${invitationId}/accept`)
+      .set('X-User-Id', INVITEE_ID)
+      .expect(201)
+      .expect((response) => {
+        expect(response.body.status).toBe('accepted');
+        expect(response.body.workspaceId).toBe(workspaceId);
       });
 
     await request(app.getHttpServer())

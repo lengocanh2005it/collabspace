@@ -1,10 +1,13 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'node:crypto';
-import type { DataSource, Repository } from 'typeorm';
+import type { DataSource, EntityManager, Repository } from 'typeorm';
 import { Invitation } from '../../domain/entities/invitation.entity';
 import { InvitationInvalidStateError } from '../../domain/exceptions/invitation.exceptions';
-import type { IInvitationRepository } from '../../domain/repositories/invitation.repository';
+import type {
+  AcceptInvitationResult,
+  IInvitationRepository,
+} from '../../domain/repositories/invitation.repository';
 import { WorkspaceOutboxService } from '../outbox/workspace-outbox.service';
 import { InvitationOrmEntity } from '../database/entities/invitation.orm-entity';
 import { WorkspaceMemberOrmEntity } from '../database/entities/workspace-member.orm-entity';
@@ -103,13 +106,19 @@ export class TypeOrmInvitationRepository implements IInvitationRepository {
   async acceptAndJoinWorkspace(
     invitationId: string,
     userId: string,
-  ): Promise<{ status: string; workspaceId: string }> {
+  ): Promise<AcceptInvitationResult> {
     return this.dataSource.transaction(async (manager) => {
       const orm = await manager.findOne(InvitationOrmEntity, {
         where: { id: invitationId },
+        lock: { mode: 'pessimistic_write' },
       });
       if (!orm) throw new NotFoundException('Invitation not found');
       const invitation = this.toDomain(orm);
+
+      if (invitation.status === 'accepted' && invitation.inviteeUserId === userId) {
+        return { status: 'accepted', workspaceId: orm.workspace_id, memberJoined: false };
+      }
+
       try {
         invitation.assertCanAccept();
       } catch (error) {
@@ -119,27 +128,40 @@ export class TypeOrmInvitationRepository implements IInvitationRepository {
         throw error;
       }
 
-      orm.status = 'accepted';
-      orm.invitee_user_id = userId;
-      await manager.save(orm);
-
       const existingMember = await manager.findOne(WorkspaceMemberOrmEntity, {
         where: { workspace_id: orm.workspace_id, user_id: userId },
       });
 
-      if (!existingMember) {
-        const member = manager.create(WorkspaceMemberOrmEntity, {
+      const existingAcceptedInvite = await manager.findOne(InvitationOrmEntity, {
+        where: {
+          invitee_email: orm.invitee_email,
+          status: 'accepted',
           workspace_id: orm.workspace_id,
-          user_id: userId,
-          role: 'member',
-        });
-        await manager.save(member);
+        },
+      });
+
+      if (existingAcceptedInvite && existingAcceptedInvite.id !== orm.id) {
+        await manager.delete(InvitationOrmEntity, { id: orm.id });
+      } else {
+        orm.status = 'accepted';
+        orm.invitee_user_id = userId;
+        await manager.save(orm);
+      }
+
+      const memberJoined =
+        existingMember == null &&
+        (await this.insertMemberIfMissing(manager, {
+          userId,
+          workspaceId: orm.workspace_id,
+        }));
+
+      if (memberJoined) {
         await this.workspaceOutboxService.enqueueMemberJoined(
           {
             eventId: randomUUID(),
             occurredAt: new Date().toISOString(),
             invitationId,
-            role: member.role,
+            role: 'member',
             userId,
             workspaceId: orm.workspace_id,
           },
@@ -147,7 +169,7 @@ export class TypeOrmInvitationRepository implements IInvitationRepository {
         );
       }
 
-      return { status: 'accepted', workspaceId: orm.workspace_id };
+      return { status: 'accepted', workspaceId: orm.workspace_id, memberJoined };
     });
   }
 
@@ -158,6 +180,26 @@ export class TypeOrmInvitationRepository implements IInvitationRepository {
     if (userId !== undefined) orm.invitee_user_id = userId;
     const saved = await this.repo.save(orm);
     return this.toDomain(saved);
+  }
+
+  private async insertMemberIfMissing(
+    manager: EntityManager,
+    input: { userId: string; workspaceId: string },
+  ): Promise<boolean> {
+    const insertResult = await manager
+      .createQueryBuilder()
+      .insert()
+      .into(WorkspaceMemberOrmEntity)
+      .values({
+        role: 'member',
+        user_id: input.userId,
+        workspace_id: input.workspaceId,
+      })
+      .orIgnore()
+      .returning(['id'])
+      .execute();
+
+    return Array.isArray(insertResult.raw) && insertResult.raw.length > 0;
   }
 
   private toDomain(orm: InvitationOrmEntity): Invitation {

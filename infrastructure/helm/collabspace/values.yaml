@@ -205,16 +205,18 @@ kafka:
     repository: apache/kafka
     tag: "3.8.0"
     pullPolicy: IfNotPresent
-  heapOpts: "-Xmx384m -Xms256m"
+  heapOpts: "-Xmx512m -Xms256m"
   persistence:
     enabled: true
     size: 5Gi
   resources:
     requests:
-      memory: 384Mi
+      memory: 512Mi
       cpu: 200m
     limits:
-      memory: 512Mi
+      # JVM heap 512m + overhead (metaspace/direct buffers/thread stacks) vượt
+      # 512Mi → OOMKilled. Node 8GiB dư nên cấp 1Gi cho thoải mái.
+      memory: 1Gi
       cpu: 750m
   exporter:
     enabled: true
@@ -237,7 +239,7 @@ debeziumConnect:
     repository: quay.io/debezium/connect
     tag: 2.7.3.Final
     pullPolicy: IfNotPresent
-  heapOpts: "-Xmx384m -Xms256m"
+  heapOpts: "-Xmx512m -Xms256m"
   bootstrapServers: kafka:9092
   groupId: collabspace-connect
   configStorageTopic: collabspace_connect_configs
@@ -245,10 +247,11 @@ debeziumConnect:
   statusStorageTopic: collabspace_connect_statuses
   resources:
     requests:
-      memory: 384Mi
+      memory: 512Mi
       cpu: 100m
     limits:
-      memory: 512Mi
+      # Kafka Connect JVM: heap 512m + overhead → 512Mi limit gây OOM. Cấp 1Gi.
+      memory: 1Gi
       cpu: 750m
   connectors:
     enabled: true
@@ -359,6 +362,13 @@ observability:
     enabled: true
   jaeger:
     enabled: false  # bật khi cần tracing (TRACING_ENABLED=true trong services)
+    resources:
+      requests:
+        memory: 256Mi
+        cpu: 25m
+      limits:
+        memory: 512Mi
+        cpu: 250m
 
 # --- Grafana sub-chart config ---
 grafana:

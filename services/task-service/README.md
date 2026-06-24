@@ -32,7 +32,7 @@ pnpm test
 
 ## API Endpoints
 
-All endpoints are prefixed with `/api/v1/tasks`. Requests require an `X-User-Id` header (and optionally `X-Workspace-Id`) injected by the API Gateway.
+All endpoints are prefixed with `/api/v1/tasks`. Protected requests require `Authorization: Bearer <access-token>`; the service verifies JWTs through auth-service gRPC and validates workspace membership through internal HTTP with Service JWT. Direct-port `X-User-Id` fallback is local-development only when `ALLOW_DEV_IDENTITY_HEADERS=true`.
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|

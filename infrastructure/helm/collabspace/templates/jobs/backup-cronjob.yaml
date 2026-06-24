@@ -29,6 +29,11 @@ spec:
     spec:
       backoffLimit: 2
       template:
+        metadata:
+          labels:
+            # Phải khớp allow-postgres-clients NetworkPolicy (app=backup-postgres)
+            # để pod backup được phép kết nối postgres-rw.
+            app: backup-postgres
         spec:
           restartPolicy: OnFailure
           volumes:
@@ -141,6 +146,10 @@ spec:
     spec:
       backoffLimit: 2
       template:
+        metadata:
+          labels:
+            # Phải khớp allow-mongo-clients NetworkPolicy để được kết nối mongo.
+            app: backup-mongo
         spec:
           restartPolicy: OnFailure
           volumes:

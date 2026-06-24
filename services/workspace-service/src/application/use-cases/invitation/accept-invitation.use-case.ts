@@ -33,15 +33,17 @@ export class AcceptInvitationUseCase {
 
     const result = await this.invitationRepo.acceptAndJoinWorkspace(invitationId, userId);
 
-    await this.activityRepo.record({
-      workspaceId: result.workspaceId,
-      actorId: userId,
-      actorName: null,
-      type: 'member_joined',
-      summary: 'A new member joined the workspace',
-      meta: { invitationId, userId },
-    });
+    if (result.memberJoined) {
+      await this.activityRepo.record({
+        workspaceId: result.workspaceId,
+        actorId: userId,
+        actorName: null,
+        type: 'member_joined',
+        summary: 'A new member joined the workspace',
+        meta: { invitationId, userId },
+      });
+    }
 
-    return result;
+    return { status: result.status, workspaceId: result.workspaceId };
   }
 }

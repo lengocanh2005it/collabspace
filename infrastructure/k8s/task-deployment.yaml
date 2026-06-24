@@ -48,7 +48,8 @@ type: Opaque
 stringData:
   MONGO_USER: ""  # Optional: Add if MongoDB auth enabled
   MONGO_PASSWORD: ""  # Optional: Add if MongoDB auth enabled
-  JWT_SECRET: "change-me-in-production"  # CHANGE IN PRODUCTION
+  JWT_SECRET: "REPLACE_ME"
+  SERVICE_JWT_SECRET: "REPLACE_ME"
 
 ---
 apiVersion: apps/v1

@@ -49,4 +49,3 @@ All HTTP endpoints are prefixed with `/api/v1/notifications`.
 - `SERVICE_JWT_SECRET`: Shared secret for service-to-service HTTP (required in production)
 - `MONGO_URI`: MongoDB connection string
 - `KAFKA_CONSUMERS_ENABLED`, `KAFKA_BROKERS`, `KAFKA_DLQ_TOPIC`: Kafka consumer + DLQ (see `.env.example`)
-- `WS_ENABLED`: Legacy placeholder from the earlier WebSocket plan; realtime now uses SSE and does not require a dedicated feature flag in code.

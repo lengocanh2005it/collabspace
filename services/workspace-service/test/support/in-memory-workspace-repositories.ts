@@ -122,6 +122,18 @@ export function createInMemoryWorkspaceRepositories(): InMemoryWorkspaceReposito
       if (!invitation) {
         throw new NotFoundException('Invitation not found');
       }
+      const alreadyMember = members.some(
+        (member) => member.workspaceId === invitation.workspaceId && member.userId === userId,
+      );
+
+      if (invitation.status === 'accepted' && invitation.inviteeUserId === userId) {
+        return {
+          memberJoined: false,
+          status: 'accepted',
+          workspaceId: invitation.workspaceId,
+        };
+      }
+
       try {
         invitation.assertCanAccept();
       } catch (error) {
@@ -142,16 +154,17 @@ export function createInMemoryWorkspaceRepositories(): InMemoryWorkspaceReposito
         invitation.expiresAt,
       );
 
-      const alreadyMember = members.some(
-        (member) => member.workspaceId === invitation.workspaceId && member.userId === userId,
-      );
       if (!alreadyMember) {
         members.push(
           new WorkspaceMember(randomUUID(), invitation.workspaceId, userId, 'member', new Date()),
         );
       }
 
-      return { status: 'accepted', workspaceId: invitation.workspaceId };
+      return {
+        memberJoined: !alreadyMember,
+        status: 'accepted',
+        workspaceId: invitation.workspaceId,
+      };
     },
     async createAndPublishInvited(data) {
       const now = new Date();
