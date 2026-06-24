@@ -160,34 +160,41 @@ capacity or keep standalone.
 
 ## Capacity estimate
 
-Latest DOKS snapshot, measured on 2026-06-22 15:37 ICT:
+> **Note:** This section was updated on 2026-06-24 to reflect the new DOKS cluster
+> (`pool-wdt5jtp8x`, 3 × `s-4vcpu-8gb`). The previous cluster (`pool-r0ba46mj2`,
+> 3 × `s-2vcpu-4gb`) has been decommissioned. Headroom is significantly better.
+
+Latest DOKS snapshot, measured on 2026-06-24 ICT:
 
 ```text
 kubectl top nodes
 
-pool-r0ba46mj2-3cyqf6   739m   38%   2171Mi   72%
-pool-r0ba46mj2-3cyqfa   493m   25%   2346Mi   78%
-pool-r0ba46mj2-3cyqfe   442m   23%   2009Mi   66%
+pool-wdt5jtp8x-3cxv85   571m   14%   2987Mi   46%
+pool-wdt5jtp8x-3cxv8p   1015m  26%   4164Mi   64%
+pool-wdt5jtp8x-3cxv8s   483m   12%   2603Mi   40%
 ```
+
+Each node: **4 vCPU / 8 GiB RAM** — allocatable `3890m CPU` / `6568Mi memory`.
 
 Scheduler pressure from `kubectl describe nodes`:
 
-| Node | CPU request | Memory request | Current Redis/Mongo placement | Read |
-|------|-------------|----------------|-------------------------------|------|
-| `pool-r0ba46mj2-3cyqf6` | 1522m / 1900m (80%) | 2193Mi / ~3000Mi (73%) | `redis-master-0`, `mongo-arbiter-0`, `kafka-0`, `postgres-3` | CPU request is already fairly high, but live CPU is still moderate |
-| `pool-r0ba46mj2-3cyqfa` | 1532m / 1900m (80%) | 2343Mi / ~3000Mi (78%) | `mongo-0`, `debezium-connect`, `loki`, `grafana`, `postgres-4`, `metrics-server` | Tightest memory node; avoid concentrating more stateful pods here |
-| `pool-r0ba46mj2-3cyqfe` | 1322m / 1900m (69%) | 1937Mi / ~3000Mi (64%) | app services, `postgres-2`, `prometheus` | Best headroom for one new Redis replica or Mongo secondary |
+| Node | CPU request | Memory request | Notable pods | Note |
+|------|-------------|----------------|--------------|------|
+| `3cxv85` | 1922m / 3890m (49%) | 2685Mi / 6568Mi (41%) | `redis-master-0`, `mongo-1`, `kafka-exporter`, `mongodb-exporter` | Good headroom; current Redis master lives here |
+| `3cxv8p` | 1532m / 3890m (39%) | 2833Mi / 6568Mi (44%) | `kafka-0`, `debezium-connect`, `mongo-arbiter-0` | Kafka + Debezium JVM; avoid adding more stateful pods here |
+| `3cxv8s` | 1172m / 3890m (30%) | 1511Mi / 6568Mi (23%) | `mongo-0`, `redis-exporter` | Best headroom — preferred target for new Redis replicas |
 
 Current hot pods from `kubectl top pods -n collabspace`:
 
 | Pod | CPU | Memory | Note |
 |-----|-----|--------|------|
-| `kafka-0` | 439m | 589Mi | Biggest live CPU user in the namespace |
-| `mongo-0` | 196m | 245Mi | Current single Mongo data member |
-| `debezium-connect` | 22m | 455Mi | Biggest app-side memory consumer |
-| `task-service` | 89m | 106Mi | App CPU visible but still below request/limit |
-| `notification-service` | 80m | 82Mi | App CPU visible but still below request/limit |
-| `redis-master-0` | 28m | 13Mi | Redis live usage is small |
+| `debezium-connect` | 29m | 491Mi | Biggest memory consumer (JVM) |
+| `kafka-0` | 483m | 481Mi | Biggest live CPU user (JVM) |
+| `mongo-1` | 150m | 466Mi | MongoDB secondary |
+| `mongo-0` | 200m | 288Mi | MongoDB primary |
+| `task-service` | 88m | 109Mi | Highest-CPU app service |
+| `notification-service` | 92m | 97Mi | |
+| `redis-master-0` | 25m | 10Mi | Redis live usage is very small |
 
 Current standalone Redis request footprint:
 
@@ -232,25 +239,23 @@ redis:
 
 Expected extra request vs current:
 
-- Redis data containers: current 1 x `50-100m`, target 3 x `50m`.
-- Sentinel containers: 3 x `25m`.
-- Net CPU request increase: roughly `+125m` to `+175m`, depending on whether the
-  current master remains at `100m` or is lowered to `50m`.
-- Net memory request increase: roughly `+448Mi`, from current `128Mi` to
-  target `3 x 128Mi Redis + 3 x 64Mi Sentinel = 576Mi`.
-- Storage: current `1 x 2Gi`; target `3 x 2Gi = 6Gi`.
+- Redis data containers: current 1 × `100m / 128Mi`, target 3 × `50m / 128Mi`.
+- Sentinel sidecar containers: 3 × `25m / 64Mi`.
+- Net CPU request change: roughly `+25m` (from 100m to 3×50m + 3×25m = 225m total).
+- Net memory request increase: roughly `+448Mi` (from 128Mi to 576Mi total).
+- Storage: current `1 × 2Gi`; target `3 × 2Gi = 6Gi`.
 
-Storage is not the main concern. Scheduler headroom is the main constraint.
-With one Redis/Sentinel pod spread per node and the master request lowered to
-`50m`, the expected post-migration request shape is acceptable but not spacious:
+With the new 8 GiB nodes, all three nodes have ample headroom. The extra
+`~150m CPU` and `~450Mi memory` across the cluster is well within capacity.
+Spread Redis/Sentinel pods across nodes using `podAntiAffinity`. Prefer
+scheduling new replicas on `3cxv8s` (lowest request pressure) and avoid
+stacking more JVM workloads on `3cxv8p`.
 
-- `3cyqf6`: roughly `1497m` CPU request and `2257Mi` memory request.
-- `3cyqfa`: roughly `1607m` CPU request and `2535Mi` memory request.
-- `3cyqfe`: roughly `1397m` CPU request and `2129Mi` memory request.
+Post-migration estimated scheduler requests:
 
-The migration should therefore keep Redis pods spread across nodes. Do not let
-both new replicas land on `3cyqfa`; that node is already the memory-tightest
-one.
+- `3cxv85`: ~1947m CPU (50%) / ~2813Mi memory (43%) — master pod stays here.
+- `3cxv8p`: ~1557m CPU (40%) / ~2897Mi memory (44%) — one Sentinel sidecar only.
+- `3cxv8s`: ~1297m CPU (33%) / ~1767Mi memory (27%) — best fit for 1–2 replicas.
 
 ## Migration strategy
 
@@ -310,9 +315,9 @@ Target before enabling Sentinel:
 - No memory pressure.
 - Enough room for at least three new/surged Redis/Sentinel containers during
   rollout.
-- Prefer one Redis/Sentinel pod per node. Current best target for a new stateful
-  pod is `pool-r0ba46mj2-3cyqfe`; avoid adding more memory-heavy pods to
-  `pool-r0ba46mj2-3cyqfa`.
+- Prefer one Redis/Sentinel pod per node. Current best target for new stateful
+  pods is `pool-wdt5jtp8x-3cxv8s` (lowest pressure); avoid adding more
+  memory-heavy pods to `pool-wdt5jtp8x-3cxv8p` (Kafka + Debezium already there).
 
 If Metrics API ever disappears, verify it with:
 
@@ -1092,5 +1097,6 @@ bash scripts/sync-agent-docs.sh
    - Current answer: already done. Keep `infrastructure/k8s/metrics-server.yaml`
    as the reviewed manifest and use `kubectl top` for live usage snapshots.
 5. Should we add a fourth DOKS node before or after Sentinel?
-   - Recommended answer: after Sentinel only if failover rollout still causes
-   `Insufficient cpu` or if production HA/SLO expectations increase.
+   - Recommended answer: not needed for now. The new cluster (3 × `s-4vcpu-8gb`)
+   has sufficient headroom for Sentinel. Revisit only if CPU requests exceed 75%
+   on any node after rollout, or if production HA/SLO expectations increase.

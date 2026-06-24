@@ -14,7 +14,10 @@ import { RedisService } from './redis.service';
         const redisConfig = configurationService.getRedisConfig();
         const options: RedisOptions = configurationService.getRedisOptions();
 
-        const redis = redisConfig.url ? new Redis(redisConfig.url, options) : new Redis(options);
+        const redis =
+          redisConfig.mode !== 'sentinel' && redisConfig.url
+            ? new Redis(redisConfig.url, options)
+            : new Redis(options);
 
         redis.on('connect', () => {
           logger.log('Redis connection established');
