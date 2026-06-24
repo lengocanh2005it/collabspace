@@ -86,6 +86,12 @@ jobs:
 
       helm_chart: ${{ steps.filter.outputs.helm_chart }}
 
+      auth_migrations: ${{ steps.migrations.outputs.auth_migrations }}
+
+      user_migrations: ${{ steps.migrations.outputs.user_migrations }}
+
+      workspace_migrations: ${{ steps.migrations.outputs.workspace_migrations }}
+
     steps:
 
       - uses: actions/checkout@v4
@@ -99,6 +105,28 @@ jobs:
         with:
 
           filters: .github/path-filters.yml
+
+
+
+      - name: Detect migration changes
+
+        id: migrations
+
+        shell: bash
+
+        run: |
+          set -euo pipefail
+
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "auth_migrations=true" >> "$GITHUB_OUTPUT"
+            echo "user_migrations=true" >> "$GITHUB_OUTPUT"
+            echo "workspace_migrations=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "auth_migrations=${{ steps.filter.outputs.auth_migrations }}" >> "$GITHUB_OUTPUT"
+          echo "user_migrations=${{ steps.filter.outputs.user_migrations }}" >> "$GITHUB_OUTPUT"
+          echo "workspace_migrations=${{ steps.filter.outputs.workspace_migrations }}" >> "$GITHUB_OUTPUT"
 
 
 
@@ -628,6 +656,90 @@ jobs:
 
 
 
+      - name: Run DB migrations (rolling upgrade)
+
+        if: steps.release-state.outputs.exists == 'true'
+
+        shell: bash
+
+        run: |
+          set -euo pipefail
+          OWNER="${GITHUB_REPOSITORY_OWNER,,}"
+          RUN_AUTH="${{ needs.detect-changes.outputs.auth_migrations }}"
+          RUN_USER="${{ needs.detect-changes.outputs.user_migrations }}"
+          RUN_WORKSPACE="${{ needs.detect-changes.outputs.workspace_migrations }}"
+
+          echo "==> Migration flags: auth=${RUN_AUTH} user=${RUN_USER} workspace=${RUN_WORKSPACE}"
+
+          run_migration() {
+            local service_name="$1" job_name="migrate-${1%%-service}" image_tag="$2"
+            echo "==> Migration: ${service_name} (tag=${image_tag})"
+            kubectl delete job "${job_name}" -n collabspace --ignore-not-found
+            kubectl apply -f - <<EOF
+          apiVersion: batch/v1
+          kind: Job
+          metadata:
+            name: ${job_name}
+            namespace: collabspace
+            labels:
+              collabspace.dev/migration: ${service_name}
+          spec:
+            ttlSecondsAfterFinished: 3600
+            backoffLimit: 2
+            template:
+              metadata:
+                labels:
+                  collabspace.dev/migration: ${service_name}
+              spec:
+                restartPolicy: Never
+                imagePullSecrets:
+                  - name: ghcr-credentials
+                containers:
+                  - name: migrate
+                    image: ghcr.io/${OWNER}/collabspace-${service_name}:${image_tag}
+                    command:
+                      - /bin/sh
+                      - -c
+                      - |
+                        export DATABASE_URL="postgresql://\$(node -e 'console.log(encodeURIComponent(process.env.POSTGRES_USER))'):\$(node -e 'console.log(encodeURIComponent(process.env.POSTGRES_PASSWORD))')@\${POSTGRES_HOST}:5432/\${POSTGRES_DB}"
+                        exec node dist/src/migrate.js
+                    envFrom:
+                      - configMapRef:
+                          name: ${service_name}-config
+                      - secretRef:
+                          name: ${service_name}-secrets
+          EOF
+          }
+
+          wait_migration() {
+            local job=$1 deadline=$((SECONDS + 300))
+            echo "==> Waiting for ${job}..."
+            while [[ $SECONDS -lt $deadline ]]; do
+              status=$(kubectl get job "$job" -n collabspace \
+                -o jsonpath='{.status.conditions[?(@.status=="True")].type}' 2>/dev/null || echo "")
+              [[ "$status" == *"Complete"* ]] && echo "  ${job}: Complete" && return 0
+              if [[ "$status" == *"Failed"* ]]; then
+                pod=$(kubectl get pods -n collabspace -l "job-name=$job" \
+                  --sort-by=.metadata.creationTimestamp \
+                  -o jsonpath='{.items[-1].metadata.name}' 2>/dev/null || echo "")
+                [[ -n "$pod" ]] && kubectl logs -n collabspace "$pod" --tail=60 || true
+                return 1
+              fi
+              sleep 5
+            done
+            echo "  ${job}: timeout"; return 1
+          }
+
+          [[ "${RUN_AUTH}" == "true" ]] && run_migration auth-service "${{ steps.deploy-vars.outputs.auth_tag }}"
+          [[ "${RUN_USER}" == "true" ]] && run_migration user-service "${{ steps.deploy-vars.outputs.user_tag }}"
+          [[ "${RUN_WORKSPACE}" == "true" ]] && run_migration workspace-service "${{ steps.deploy-vars.outputs.workspace_tag }}"
+
+          [[ "${RUN_AUTH}" == "true" ]] && wait_migration migrate-auth
+          [[ "${RUN_USER}" == "true" ]] && wait_migration migrate-user
+          [[ "${RUN_WORKSPACE}" == "true" ]] && wait_migration migrate-workspace
+
+
+
       - name: Helm upgrade (DOKS)
 
         # Existing release: --reuse-values + image tag overrides only — avoids touching
@@ -702,6 +814,88 @@ jobs:
             kubectl rollout status statefulset/postgres -n collabspace --timeout=10m
           fi
           kubectl rollout status statefulset/mongo -n collabspace --timeout=10m
+
+
+
+      - name: Run DB migrations (fresh install)
+
+        if: steps.release-state.outputs.exists != 'true'
+
+        shell: bash
+
+        run: |
+          set -euo pipefail
+          OWNER="${GITHUB_REPOSITORY_OWNER,,}"
+          RUN_AUTH="${{ needs.detect-changes.outputs.auth_migrations }}"
+          RUN_USER="${{ needs.detect-changes.outputs.user_migrations }}"
+          RUN_WORKSPACE="${{ needs.detect-changes.outputs.workspace_migrations }}"
+
+          run_migration() {
+            local service_name="$1" job_name="migrate-${1%%-service}" image_tag="$2"
+            echo "==> Migration: ${service_name} (tag=${image_tag})"
+            kubectl delete job "${job_name}" -n collabspace --ignore-not-found
+            kubectl apply -f - <<EOF
+          apiVersion: batch/v1
+          kind: Job
+          metadata:
+            name: ${job_name}
+            namespace: collabspace
+            labels:
+              collabspace.dev/migration: ${service_name}
+          spec:
+            ttlSecondsAfterFinished: 3600
+            backoffLimit: 2
+            template:
+              metadata:
+                labels:
+                  collabspace.dev/migration: ${service_name}
+              spec:
+                restartPolicy: Never
+                imagePullSecrets:
+                  - name: ghcr-credentials
+                containers:
+                  - name: migrate
+                    image: ghcr.io/${OWNER}/collabspace-${service_name}:${image_tag}
+                    command:
+                      - /bin/sh
+                      - -c
+                      - |
+                        export DATABASE_URL="postgresql://\$(node -e 'console.log(encodeURIComponent(process.env.POSTGRES_USER))'):\$(node -e 'console.log(encodeURIComponent(process.env.POSTGRES_PASSWORD))')@\${POSTGRES_HOST}:5432/\${POSTGRES_DB}"
+                        exec node dist/src/migrate.js
+                    envFrom:
+                      - configMapRef:
+                          name: ${service_name}-config
+                      - secretRef:
+                          name: ${service_name}-secrets
+          EOF
+          }
+
+          wait_migration() {
+            local job=$1 deadline=$((SECONDS + 300))
+            echo "==> Waiting for ${job}..."
+            while [[ $SECONDS -lt $deadline ]]; do
+              status=$(kubectl get job "$job" -n collabspace \
+                -o jsonpath='{.status.conditions[?(@.status=="True")].type}' 2>/dev/null || echo "")
+              [[ "$status" == *"Complete"* ]] && echo "  ${job}: Complete" && return 0
+              if [[ "$status" == *"Failed"* ]]; then
+                pod=$(kubectl get pods -n collabspace -l "job-name=$job" \
+                  --sort-by=.metadata.creationTimestamp \
+                  -o jsonpath='{.items[-1].metadata.name}' 2>/dev/null || echo "")
+                [[ -n "$pod" ]] && kubectl logs -n collabspace "$pod" --tail=60 || true
+                return 1
+              fi
+              sleep 5
+            done
+            echo "  ${job}: timeout"; return 1
+          }
+
+          [[ "${RUN_AUTH}" == "true" ]] && run_migration auth-service "${{ steps.deploy-vars.outputs.auth_tag }}"
+          [[ "${RUN_USER}" == "true" ]] && run_migration user-service "${{ steps.deploy-vars.outputs.user_tag }}"
+          [[ "${RUN_WORKSPACE}" == "true" ]] && run_migration workspace-service "${{ steps.deploy-vars.outputs.workspace_tag }}"
+
+          [[ "${RUN_AUTH}" == "true" ]] && wait_migration migrate-auth
+          [[ "${RUN_USER}" == "true" ]] && wait_migration migrate-user
+          [[ "${RUN_WORKSPACE}" == "true" ]] && wait_migration migrate-workspace
 
 
 
