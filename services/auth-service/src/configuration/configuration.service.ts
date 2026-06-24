@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Transport, type GrpcOptions } from '@nestjs/microservices';
 import type { TypeOrmModuleOptions } from '@nestjs/typeorm';
-import type { RedisOptions } from 'ioredis';
+import type { RedisOptions, SentinelAddress } from 'ioredis';
 import { join } from 'node:path';
 import type { GraphileWorkerModuleOptions } from '@/infrastructure/graphile-worker/graphile-worker.types';
 
@@ -88,12 +88,20 @@ export type RefreshTokenConfig = {
   ttlDays: number;
 };
 
+export type RedisMode = 'standalone' | 'sentinel';
+
 export type RedisConfig = {
   db: number;
   host: string;
   keyPrefix: string;
+  mode: RedisMode;
   password?: string;
   port: number;
+  sentinelCommandTimeoutMs: number;
+  sentinelConnectTimeoutMs: number;
+  sentinelName: string;
+  sentinelPassword?: string;
+  sentinels?: string;
   url?: string;
   username?: string;
 };
@@ -283,24 +291,50 @@ export class ConfigurationService {
       db: this.configService.get<number>('redis.db') ?? 0,
       host: this.configService.get<string>('redis.host') ?? '127.0.0.1',
       keyPrefix: this.configService.get<string>('redis.keyPrefix') ?? 'auth:',
+      mode: (this.configService.get<string>('redis.mode') ?? 'standalone') as RedisMode,
       password: this.configService.get<string>('redis.password') || undefined,
       port: this.configService.get<number>('redis.port') ?? 6379,
+      sentinelCommandTimeoutMs:
+        this.configService.get<number>('redis.sentinelCommandTimeoutMs') ?? 5000,
+      sentinelConnectTimeoutMs:
+        this.configService.get<number>('redis.sentinelConnectTimeoutMs') ?? 10000,
+      sentinelName: this.configService.get<string>('redis.sentinelName') ?? 'mymaster',
+      sentinelPassword: this.configService.get<string>('redis.sentinelPassword') || undefined,
+      sentinels: this.configService.get<string>('redis.sentinels') || undefined,
       url: this.configService.get<string>('redis.url') || undefined,
       username: this.configService.get<string>('redis.username') || undefined,
     };
   }
 
   getRedisOptions(): RedisOptions {
-    const redisConfig = this.getRedisConfig();
+    const c = this.getRedisConfig();
+
+    if (c.mode === 'sentinel') {
+      return {
+        sentinels: parseSentinelAddresses(c.sentinels),
+        name: c.sentinelName,
+        db: c.db,
+        password: c.password,
+        username: c.username,
+        sentinelPassword: c.sentinelPassword ?? c.password,
+        keyPrefix: c.keyPrefix,
+        lazyConnect: false,
+        maxRetriesPerRequest: 1,
+        enableReadyCheck: true,
+        connectTimeout: c.sentinelConnectTimeoutMs,
+        commandTimeout: c.sentinelCommandTimeoutMs,
+      };
+    }
 
     return {
-      db: redisConfig.db,
-      host: redisConfig.host,
-      keyPrefix: redisConfig.keyPrefix,
-      lazyConnect: true,
-      password: redisConfig.password,
-      port: redisConfig.port,
-      username: redisConfig.username,
+      db: c.db,
+      host: c.host,
+      keyPrefix: c.keyPrefix,
+      lazyConnect: false,
+      password: c.password,
+      port: c.port,
+      username: c.username,
+      maxRetriesPerRequest: 1,
     };
   }
 
@@ -310,4 +344,17 @@ export class ConfigurationService {
       grpcTimeoutMs: this.configService.get<number>('userService.grpcTimeoutMs') ?? 3000,
     };
   }
+}
+
+function parseSentinelAddresses(value: string | undefined): SentinelAddress[] {
+  if (!value) return [];
+  return value
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .map((item) => {
+      const [host, rawPort] = item.split(':');
+      return { host, port: Number(rawPort || 26379) };
+    })
+    .filter((item) => item.host && Number.isFinite(item.port));
 }
