@@ -547,14 +547,25 @@ jobs:
           # Adopt any pre-existing CNPG resources (installed outside Helm) so that
           # helm upgrade --install does not fail with "invalid ownership metadata".
           echo "==> Adopting pre-existing CNPG resources into Helm release 'cnpg'..."
+          # Namespace-scoped resources: -n cnpg-system correctly limits scope
           for kind in deployment daemonset replicaset statefulset service serviceaccount \
-                      configmap role rolebinding clusterrole clusterrolebinding; do
+                      configmap role rolebinding; do
             kubectl get "$kind" -n cnpg-system --no-headers -o name 2>/dev/null \
               | xargs -r -I{} sh -c '
                   kubectl annotate {} -n cnpg-system \
                     meta.helm.sh/release-name=cnpg \
                     meta.helm.sh/release-namespace=cnpg-system --overwrite 2>/dev/null || true
                   kubectl label {} -n cnpg-system \
+                    app.kubernetes.io/managed-by=Helm --overwrite 2>/dev/null || true'
+          done
+          # Cluster-scoped resources: must grep cnpg to avoid iterating system:* resources
+          for kind in clusterrole clusterrolebinding; do
+            kubectl get "$kind" --no-headers -o name 2>/dev/null | grep cnpg \
+              | xargs -r -I{} sh -c '
+                  kubectl annotate {} \
+                    meta.helm.sh/release-name=cnpg \
+                    meta.helm.sh/release-namespace=cnpg-system --overwrite 2>/dev/null || true
+                  kubectl label {} \
                     app.kubernetes.io/managed-by=Helm --overwrite 2>/dev/null || true'
           done
           # CRDs and webhook configs are cluster-scoped
