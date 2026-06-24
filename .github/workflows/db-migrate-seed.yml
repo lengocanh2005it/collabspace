@@ -1,0 +1,313 @@
+name: DB Migrate & Seed
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_migrate:
+        description: "Run DB migrations (auth / user / workspace)"
+        type: boolean
+        default: true
+      run_seed:
+        description: "Run demo seed data (all 5 services)"
+        type: boolean
+        default: false
+      services:
+        description: "Comma-separated services to migrate/seed (empty = all eligible)"
+        required: false
+        default: ""
+      image_tag:
+        description: "Image tag override (default: latest)"
+        required: false
+        default: "latest"
+
+jobs:
+  migrate-seed:
+    name: Migrate & Seed
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v4
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+
+      - name: Configure kubeconfig
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBECONFIG_DOKS }}" | base64 -d > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      - name: Resolve service list
+        id: services
+        run: |
+          set -euo pipefail
+          OWNER="${GITHUB_REPOSITORY_OWNER,,}"
+          INPUT="${{ github.event.inputs.services }}"
+          TAG="${{ github.event.inputs.image_tag }}"
+          [[ -z "$TAG" ]] && TAG="latest"
+
+          ALL_PG=(auth-service user-service workspace-service)
+          ALL_MONGO=(task-service notification-service)
+
+          if [[ -n "$INPUT" ]]; then
+            IFS=',' read -ra REQUESTED <<< "$INPUT"
+          else
+            REQUESTED=("${ALL_PG[@]}" "${ALL_MONGO[@]}")
+          fi
+
+          pg_services=()
+          mongo_services=()
+          for svc in "${REQUESTED[@]}"; do
+            svc=$(echo "$svc" | xargs)
+            for pg in "${ALL_PG[@]}"; do [[ "$svc" == "$pg" ]] && pg_services+=("$svc") && break; done
+            for mg in "${ALL_MONGO[@]}"; do [[ "$svc" == "$mg" ]] && mongo_services+=("$svc") && break; done
+          done
+
+          echo "pg_services=${pg_services[*]}" >> "$GITHUB_OUTPUT"
+          echo "mongo_services=${mongo_services[*]}" >> "$GITHUB_OUTPUT"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "owner=${OWNER}" >> "$GITHUB_OUTPUT"
+          echo "Postgres services  : ${pg_services[*]:-none}"
+          echo "Mongo services     : ${mongo_services[*]:-none}"
+          echo "Image tag          : ${TAG}"
+
+      - name: Run migrations (PostgreSQL services)
+        if: ${{ github.event.inputs.run_migrate == 'true' }}
+        run: |
+          set -euo pipefail
+          OWNER="${{ steps.services.outputs.owner }}"
+          TAG="${{ steps.services.outputs.tag }}"
+          PG_SERVICES="${{ steps.services.outputs.pg_services }}"
+
+          run_migration() {
+            local service_name="$1"
+            local job_name="migrate-${service_name%%-service}"
+            local image_tag="$2"
+
+            echo "==> Migration: ${service_name} (job=${job_name}, tag=${image_tag})"
+            kubectl delete job "${job_name}" -n collabspace --ignore-not-found
+
+            kubectl apply -f - <<EOF
+          apiVersion: batch/v1
+          kind: Job
+          metadata:
+            name: ${job_name}
+            namespace: collabspace
+            labels:
+              collabspace.dev/migration: ${service_name}
+          spec:
+            ttlSecondsAfterFinished: 3600
+            backoffLimit: 2
+            template:
+              metadata:
+                labels:
+                  collabspace.dev/migration: ${service_name}
+              spec:
+                restartPolicy: Never
+                imagePullSecrets:
+                  - name: ghcr-credentials
+                containers:
+                  - name: migrate
+                    image: ghcr.io/${OWNER}/collabspace-${service_name}:${image_tag}
+                    command:
+                      - /bin/sh
+                      - -c
+                      - |
+                        export DATABASE_URL="postgresql://\$(node -e 'console.log(encodeURIComponent(process.env.POSTGRES_USER))'):\$(node -e 'console.log(encodeURIComponent(process.env.POSTGRES_PASSWORD))')@\${POSTGRES_HOST}:5432/\${POSTGRES_DB}"
+                        exec node dist/src/migrate.js
+                    envFrom:
+                      - configMapRef:
+                          name: ${service_name}-config
+                      - secretRef:
+                          name: ${service_name}-secrets
+          EOF
+          }
+
+          wait_job() {
+            local job=$1
+            local deadline=$((SECONDS + 300))
+            echo "==> Waiting for ${job}..."
+            while [[ $SECONDS -lt $deadline ]]; do
+              status=$(kubectl get job "$job" -n collabspace \
+                -o jsonpath='{.status.conditions[?(@.status=="True")].type}' 2>/dev/null || echo "")
+              if [[ "$status" == *"Complete"* ]]; then echo "  ${job}: Complete"; return 0; fi
+              if [[ "$status" == *"Failed"* ]]; then
+                echo "  ${job}: FAILED — pod logs:"
+                pod=$(kubectl get pods -n collabspace -l "job-name=$job" \
+                  --sort-by=.metadata.creationTimestamp \
+                  -o jsonpath='{.items[-1].metadata.name}' 2>/dev/null || echo "")
+                [[ -n "$pod" ]] && kubectl logs -n collabspace "$pod" --tail=80 || true
+                return 1
+              fi
+              sleep 5
+            done
+            echo "  ${job}: timeout after 5 min"; return 1
+          }
+
+          if [[ -z "$PG_SERVICES" ]]; then
+            echo "==> No PostgreSQL services selected — skipping migrations"
+            exit 0
+          fi
+
+          for svc in $PG_SERVICES; do
+            run_migration "$svc" "$TAG"
+          done
+
+          echo ""
+          echo "==> Waiting for all migration jobs..."
+          for svc in $PG_SERVICES; do
+            job_name="migrate-${svc%%-service}"
+            wait_job "$job_name"
+          done
+          echo "==> All migrations done."
+
+      - name: Run seed data
+        if: ${{ github.event.inputs.run_seed == 'true' }}
+        run: |
+          set -euo pipefail
+          OWNER="${{ steps.services.outputs.owner }}"
+          TAG="${{ steps.services.outputs.tag }}"
+          PG_SERVICES="${{ steps.services.outputs.pg_services }}"
+          MONGO_SERVICES="${{ steps.services.outputs.mongo_services }}"
+
+          run_pg_seed() {
+            local service_name="$1"
+            local job_name="seed-${service_name%%-service}"
+            local image_tag="$2"
+
+            echo "==> Seed (PG): ${service_name} (job=${job_name})"
+            kubectl delete job "${job_name}" -n collabspace --ignore-not-found
+
+            kubectl apply -f - <<EOF
+          apiVersion: batch/v1
+          kind: Job
+          metadata:
+            name: ${job_name}
+            namespace: collabspace
+            labels:
+              collabspace.dev/seed: ${service_name}
+          spec:
+            ttlSecondsAfterFinished: 3600
+            backoffLimit: 1
+            template:
+              metadata:
+                labels:
+                  collabspace.dev/seed: ${service_name}
+              spec:
+                restartPolicy: Never
+                imagePullSecrets:
+                  - name: ghcr-credentials
+                containers:
+                  - name: seed
+                    image: ghcr.io/${OWNER}/collabspace-${service_name}:${image_tag}
+                    command:
+                      - /bin/sh
+                      - -c
+                      - |
+                        export DATABASE_URL="postgresql://\$(node -e 'console.log(encodeURIComponent(process.env.POSTGRES_USER))'):\$(node -e 'console.log(encodeURIComponent(process.env.POSTGRES_PASSWORD))')@\${POSTGRES_HOST}:5432/\${POSTGRES_DB}"
+                        exec node dist/seed/seed.js
+                    envFrom:
+                      - configMapRef:
+                          name: ${service_name}-config
+                      - secretRef:
+                          name: ${service_name}-secrets
+          EOF
+          }
+
+          run_mongo_seed() {
+            local service_name="$1"
+            local job_name="seed-${service_name%%-service}"
+            local image_tag="$2"
+
+            echo "==> Seed (Mongo): ${service_name} (job=${job_name})"
+            kubectl delete job "${job_name}" -n collabspace --ignore-not-found
+
+            kubectl apply -f - <<EOF
+          apiVersion: batch/v1
+          kind: Job
+          metadata:
+            name: ${job_name}
+            namespace: collabspace
+            labels:
+              collabspace.dev/seed: ${service_name}
+          spec:
+            ttlSecondsAfterFinished: 3600
+            backoffLimit: 1
+            template:
+              metadata:
+                labels:
+                  collabspace.dev/seed: ${service_name}
+              spec:
+                restartPolicy: Never
+                imagePullSecrets:
+                  - name: ghcr-credentials
+                containers:
+                  - name: seed
+                    image: ghcr.io/${OWNER}/collabspace-${service_name}:${image_tag}
+                    command:
+                      - /bin/sh
+                      - -c
+                      - exec node dist/seed/seed.js
+                    envFrom:
+                      - configMapRef:
+                          name: ${service_name}-config
+                      - secretRef:
+                          name: ${service_name}-secrets
+          EOF
+          }
+
+          wait_job() {
+            local job=$1
+            local deadline=$((SECONDS + 300))
+            echo "==> Waiting for ${job}..."
+            while [[ $SECONDS -lt $deadline ]]; do
+              status=$(kubectl get job "$job" -n collabspace \
+                -o jsonpath='{.status.conditions[?(@.status=="True")].type}' 2>/dev/null || echo "")
+              if [[ "$status" == *"Complete"* ]]; then echo "  ${job}: Complete"; return 0; fi
+              if [[ "$status" == *"Failed"* ]]; then
+                echo "  ${job}: FAILED — pod logs:"
+                pod=$(kubectl get pods -n collabspace -l "job-name=$job" \
+                  --sort-by=.metadata.creationTimestamp \
+                  -o jsonpath='{.items[-1].metadata.name}' 2>/dev/null || echo "")
+                [[ -n "$pod" ]] && kubectl logs -n collabspace "$pod" --tail=80 || true
+                return 1
+              fi
+              sleep 5
+            done
+            echo "  ${job}: timeout after 5 min"; return 1
+          }
+
+          ALL_SEEDED=()
+
+          for svc in $PG_SERVICES; do
+            run_pg_seed "$svc" "$TAG"
+            ALL_SEEDED+=("${svc%%-service}")
+          done
+
+          for svc in $MONGO_SERVICES; do
+            run_mongo_seed "$svc" "$TAG"
+            ALL_SEEDED+=("${svc%%-service}")
+          done
+
+          if [[ ${#ALL_SEEDED[@]} -eq 0 ]]; then
+            echo "==> No services selected for seed — skipping"
+            exit 0
+          fi
+
+          echo ""
+          echo "==> Waiting for seed jobs..."
+          for name in "${ALL_SEEDED[@]}"; do
+            wait_job "seed-${name}"
+          done
+          echo "==> All seeds done."
+          echo ""
+          echo "Demo accounts:"
+          echo "  Workspace owner : ngocanh@collabspace.dev"
+          echo "  Member          : quangtien@collabspace.dev"
+          echo "  Admins          : tho@collabspace.dev | trungtin@collabspace.dev"
+          echo "  Password        : collabspace123"
