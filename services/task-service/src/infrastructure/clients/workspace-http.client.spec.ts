@@ -44,6 +44,18 @@ describe("WorkspaceHttpClient", () => {
         if (key === "SERVICE_JWT_SECRET") {
           return options?.serviceJwtSecret;
         }
+        if (key === "WORKSPACE_SERVICE_RETRY_ATTEMPTS") {
+          return "2";
+        }
+        if (key === "WORKSPACE_SERVICE_RETRY_DELAY_MS") {
+          return "0";
+        }
+        if (key === "WORKSPACE_SERVICE_CIRCUIT_BREAKER_FAILURE_THRESHOLD") {
+          return "1";
+        }
+        if (key === "WORKSPACE_SERVICE_CIRCUIT_BREAKER_RESET_TIMEOUT_MS") {
+          return "30000";
+        }
         return undefined;
       }),
     } as unknown as ConfigService;
@@ -164,6 +176,55 @@ describe("WorkspaceHttpClient", () => {
 
     const client = createClient();
     await expect(client.validateWorkspaceAsync(workspaceId, userId)).resolves.toBe(false);
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("retries transient 5xx responses before returning membership", async () => {
+    process.env.NODE_ENV = "production";
+    global.fetch = jest
+      .fn()
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 503,
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          workspaceId,
+          userId,
+          isMember: true,
+          role: "manager",
+        }),
+      });
+
+    const client = createClient({
+      serviceJwtSecret: "phase-3-service-jwt-secret",
+    });
+
+    await expect(client.getMembershipAsync(workspaceId, userId)).resolves.toEqual({
+      isMember: true,
+      role: "manager",
+    });
+    expect(global.fetch).toHaveBeenCalledTimes(2);
+  });
+
+  it("opens circuit breaker after transient failures and fails fast", async () => {
+    process.env.NODE_ENV = "production";
+    global.fetch = jest.fn().mockRejectedValue(new Error("connection refused"));
+
+    const client = createClient({
+      serviceJwtSecret: "phase-3-service-jwt-secret",
+    });
+
+    await expect(client.validateWorkspaceAsync(workspaceId, userId)).rejects.toThrow(
+      ServiceUnavailableException,
+    );
+    await expect(client.validateWorkspaceAsync(workspaceId, userId)).rejects.toThrow(
+      ServiceUnavailableException,
+    );
+
+    expect(global.fetch).toHaveBeenCalledTimes(2);
   });
 
   it("should reject when service JWT secret is missing in production", async () => {

@@ -1,9 +1,13 @@
 import {
   WorkspaceDeletedEventSchema,
+  WorkspaceMemberLeftEventSchema,
   UserRegisteredEventSchema,
   UserProfileUpdatedEventSchema,
 } from "@collabspace/shared";
-import type { WorkspaceDeletedEventPayload } from "@collabspace/shared";
+import type {
+  WorkspaceDeletedEventPayload,
+  WorkspaceMemberLeftEventPayload,
+} from "@collabspace/shared";
 import type { UserProfileUpdatedEventPayload } from "../../../domain/events/user-profile-update.event";
 import type { UserRegisteredEventPayload } from "../../../domain/events/user-create.event";
 
@@ -35,6 +39,14 @@ export function toWorkspaceDeletedEventPayload(
   record: Record<string, unknown>,
 ): WorkspaceDeletedEventPayload | null {
   const result = WorkspaceDeletedEventSchema.safeParse(record);
+  if (!result.success) return null;
+  return result.data;
+}
+
+export function toWorkspaceMemberLeftEventPayload(
+  record: Record<string, unknown>,
+): WorkspaceMemberLeftEventPayload | null {
+  const result = WorkspaceMemberLeftEventSchema.safeParse(record);
   if (!result.success) return null;
   return result.data;
 }

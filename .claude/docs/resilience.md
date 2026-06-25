@@ -6,7 +6,7 @@
 
 ## Tóm tắt (Vietnamese)
 
-Tài liệu này quy định cách CollabSpace **chịu lỗi**: timeout bắt buộc cho gRPC/HTTP nội bộ, contract lỗi `503` khi dependency down, event phải có `eventId` + consumer idempotent, và ma trận “dependency X down → API Y trả gì”. Một số hành vi **hiện tại** (code) chưa đạt **mục tiêu** — được đánh dấu `GAP` để Phase 1+ xử lý. Khi code và doc lệch nhau, ưu tiên sửa code rồi cập nhật doc.
+Tài liệu này quy định cách CollabSpace **chịu lỗi**: timeout bắt buộc cho gRPC/HTTP nội bộ, retry/circuit breaker cho sync HTTP dependency, contract lỗi `503` khi dependency down, event phải có `eventId` + consumer idempotent, và ma trận “dependency X down → API Y trả gì”. Khi code và doc lệch nhau, ưu tiên sửa code rồi cập nhật doc.
 
 ---
 
@@ -39,11 +39,15 @@ Design goals:
 | No hang | Never block a request thread indefinitely waiting on a peer. |
 | Error mapping | Peer down/timeout → `503 Service Unavailable` with stable `code` ending in `_UNAVAILABLE` or `_TIMEOUT`. |
 | Retries | Only **idempotent** reads or explicitly idempotent writes; max **3** attempts with backoff; no retry on `4xx` (except `429`). |
+| Circuit breaker | Sync HTTP clients MUST fail fast after repeated transient failures and probe again after reset timeout. |
 
 **Existing implementations:**
 
 - `services/auth-service/src/integrations/user-profiles/user-profiles-grpc.service.ts`
 - `services/user-service/src/integrations/auth/auth-grpc.service.ts`
+- `services/task-service/src/infrastructure/clients/workspace-http.client.ts`
+- `services/task-service/src/infrastructure/clients/user-profile-http.client.ts`
+- `services/notification-service/src/infrastructure/clients/user-profile-http.client.ts`
 
 ### 2.2 Asynchronous events (Kafka)
 
@@ -119,6 +123,8 @@ Do **not** map dependency failures to generic `500` if the cause is known.
 | Forward auth | `strip-identity-headers` → `forward-auth` → `/api/v1/auth/verify` | Gateway strips spoofed identity headers, then validates JWT |
 | Kafka DLQ | `collabspace.dlq.events` + `@collabspace/shared` consumer retry | Failed consumer messages |
 | Kafka consumer startup | `@collabspace/shared` `startKafkaConsumerWithRetry` | Retries broker/topic metadata races during deploy without crashing app pods |
+| Sync HTTP retry + circuit breaker | `@collabspace/shared` `retryAsync`, `CircuitBreaker` | task → workspace/user and notification → user fallback clients retry 5xx/network, then fail fast when peer remains unhealthy |
+| Service rate limit | `@collabspace/shared` `createServiceRateLimitMiddleware` | 5 core HTTP services default to 100 req/min/IP; skips health, metrics, Swagger |
 | Auth email outbox | `services/auth-service/src/infrastructure/outbox/*` | DB-backed queue, retries, degraded thresholds |
 | K8s PDB | `infrastructure/k8s/pdb.yaml` | minAvailable per service |
 | Prometheus alerts | `infrastructure/monitoring/alert-rules.yml` + Alertmanager | ServiceDown, 5xx rate, … |
@@ -167,7 +173,8 @@ Legend: **Current** = observed or likely today; **Target** = required after resi
 | API / flow | Dependency down | Current | Target |
 |------------|-----------------|---------|--------|
 | Protected routes | auth gRPC | `AuthGuard` on task/comment controllers | Keep **(DONE — Phase B1)** |
-| Task mutations | workspace membership | Internal HTTP + Service JWT when `WORKSPACE_CLIENT_MODE=http` | Keep **(DONE — Phase B3, B3.1)** |
+| Task mutations | workspace membership | Internal HTTP + Service JWT with timeout, retry, circuit breaker, Redis cache | Keep **(DONE — Phase B3, B3.1 + resilience sync)** |
+| Workspace member removed/left | workspace `member_left` Kafka event | Clears task-service membership cache entry for `(workspaceId,userId)` | Keep **(DONE)** |
 | `TASK_ASSIGNED` publish | Kafka CDC | Mongo outbox + Debezium | Keep **(DONE)** |
 | Reads | MongoDB | Fail | `503` |
 
@@ -223,7 +230,21 @@ Legend: **Current** = observed or likely today; **Target** = required after resi
 | `USER_SERVICE_GRPC_TIMEOUT_MS` | auth | `3000` | Profile gRPC |
 | `AUTH_SERVICE_GRPC_URL` | user | `auth-service:50051` | Token verify |
 | `AUTH_SERVICE_GRPC_TIMEOUT_MS` | user | `3000` | Token verify |
+| `WORKSPACE_SERVICE_TIMEOUT_MS` | task | `3000` (Helm prod: `10000`) | Workspace membership HTTP timeout per attempt |
+| `WORKSPACE_SERVICE_RETRY_ATTEMPTS` | task | `2` | Retry attempts for transient workspace HTTP 5xx/network errors |
+| `WORKSPACE_SERVICE_RETRY_DELAY_MS` | task | `75` | Linear retry delay base for workspace HTTP |
+| `WORKSPACE_SERVICE_CIRCUIT_BREAKER_FAILURE_THRESHOLD` | task | `5` | Consecutive transient failures before fail-fast |
+| `WORKSPACE_SERVICE_CIRCUIT_BREAKER_RESET_TIMEOUT_MS` | task | `30000` | Open-circuit wait before half-open probe |
+| `USER_SERVICE_TIMEOUT_MS` | task, notification | `3000` | User replica lookup HTTP timeout per attempt |
+| `USER_SERVICE_RETRY_ATTEMPTS` | task, notification | `3` | Retry attempts for transient user HTTP 5xx/network errors |
+| `USER_SERVICE_RETRY_DELAY_MS` | task, notification | `50` | Linear retry delay base for user HTTP |
+| `USER_SERVICE_CIRCUIT_BREAKER_FAILURE_THRESHOLD` | task, notification | `5` | Consecutive transient failures before fail-fast |
+| `USER_SERVICE_CIRCUIT_BREAKER_RESET_TIMEOUT_MS` | task, notification | `30000` | Open-circuit wait before half-open probe |
+| `SERVICE_RATE_LIMIT_ENABLED` | auth, user, workspace, task, notification | `true` | Set `false` to disable in-process fixed-window rate limit |
+| `SERVICE_RATE_LIMIT_PER_MINUTE` | auth, user, workspace, task, notification | `100` | Requests per minute per IP/method per pod |
+| `SERVICE_RATE_LIMIT_TTL_MS` | auth, user, workspace, task, notification | `60000` | Rate limit window size |
 | `KAFKA_CONSUMERS_ENABLED` | task, notification, analytics | `false` | Enable Kafka consumers |
+| `KAFKA_TOPIC_WORKSPACE_MEMBER_LEFT` | task, analytics | `collabspace.workspace.member_left` | Workspace membership removal/leave events |
 | `OUTBOX_*` | auth | see `env.config.ts` | Email outbox tuning |
 | `METRICS_AUTH_TOKEN` | all app services | empty (open) | When set, `/metrics` requires Bearer or `X-Metrics-Token` |
 

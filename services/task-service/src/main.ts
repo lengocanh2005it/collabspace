@@ -1,6 +1,6 @@
 import "./observability/instrumentation";
 import "reflect-metadata";
-import { assertRequiredInProduction } from "@collabspace/shared";
+import { assertRequiredInProduction, createServiceRateLimitMiddleware } from "@collabspace/shared";
 import { assertWorkspaceClientModeForProduction } from "./configuration/workspace-client-mode";
 import { NestFactory } from "@nestjs/core";
 import { Logger, ValidationPipe } from "@nestjs/common";
@@ -18,6 +18,7 @@ async function bootstrap() {
 
   const app = await NestFactory.create(AppModule);
   app.use(compression());
+  app.use(createServiceRateLimitMiddleware());
 
   app.useGlobalPipes(
     new ValidationPipe({

@@ -1,6 +1,7 @@
 import {
   parseKafkaOutboxJsonValue,
   toWorkspaceDeletedEventPayload,
+  toWorkspaceMemberLeftEventPayload,
   toUserProfileUpdatedEventPayload,
   toUserRegisteredEventPayload,
 } from "./kafka-outbox-message";
@@ -26,6 +27,25 @@ describe("kafka-outbox-message", () => {
   it("returns null for invalid payload", () => {
     expect(toWorkspaceDeletedEventPayload({ workspaceId: "ws" })).toBeNull();
     expect(parseKafkaOutboxJsonValue(Buffer.from("not-json"))).toBeNull();
+  });
+
+  it("parses workspace member left payload", () => {
+    const payload = {
+      eventId: "evt-left",
+      occurredAt: "2026-06-20T00:00:00.000Z",
+      workspaceId: "ws-1",
+      userId: "user-1",
+      role: "member",
+    };
+
+    const record = parseKafkaOutboxJsonValue(Buffer.from(JSON.stringify(payload)));
+    expect(record).not.toBeNull();
+    if (!record) {
+      throw new Error("expected parsed record");
+    }
+
+    expect(toWorkspaceMemberLeftEventPayload(record)).toEqual(payload);
+    expect(toWorkspaceMemberLeftEventPayload({ workspaceId: "ws-1" })).toBeNull();
   });
 
   it("parses user profile updated payload", () => {

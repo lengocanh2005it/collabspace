@@ -1,8 +1,11 @@
 import { Injectable, ServiceUnavailableException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import {
+  CircuitBreaker,
+  CircuitBreakerOpenError,
   buildOutboundServiceAuthHeaders,
   isOutboundServiceAuthConfigured,
+  retryAsync,
   SERVICE_IDS,
   SERVICE_SCOPES,
 } from "@collabspace/shared";
@@ -23,32 +26,40 @@ export type UserReplicaLookupRequest = {
   username?: string;
 };
 
-async function fetchWithRetry(fn: () => Promise<Response>, maxAttempts = 3): Promise<Response> {
-  let lastError: unknown;
-  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    try {
-      const res = await fn();
-      if (res.status < 500) return res;
-      lastError = new Error(`HTTP ${res.status}`);
-    } catch (err) {
-      lastError = err;
-    }
-    if (attempt < maxAttempts) {
-      await new Promise((r) => setTimeout(r, 50 * attempt));
-    }
-  }
-  throw lastError;
-}
-
 @Injectable()
 export class UserProfileHttpClient {
   private readonly baseUrl: string;
   private readonly timeoutMs: number;
+  private readonly retryAttempts: number;
+  private readonly retryDelayMs: number;
+  private readonly circuitBreaker: CircuitBreaker;
   private readonly serviceJwtSecret: string | undefined;
 
   constructor(private readonly configService: ConfigService) {
     this.baseUrl = this.configService.get<string>("USER_SERVICE_URL") ?? "http://user-service:3000";
     this.timeoutMs = Number(this.configService.get<string>("USER_SERVICE_TIMEOUT_MS") ?? 3000);
+    this.retryAttempts = Math.max(
+      1,
+      Number(this.configService.get<string>("USER_SERVICE_RETRY_ATTEMPTS") ?? 3),
+    );
+    this.retryDelayMs = Math.max(
+      0,
+      Number(this.configService.get<string>("USER_SERVICE_RETRY_DELAY_MS") ?? 50),
+    );
+    this.circuitBreaker = new CircuitBreaker("user-service", {
+      failureThreshold: Math.max(
+        1,
+        Number(
+          this.configService.get<string>("USER_SERVICE_CIRCUIT_BREAKER_FAILURE_THRESHOLD") ?? 5,
+        ),
+      ),
+      resetTimeoutMs: Math.max(
+        1,
+        Number(
+          this.configService.get<string>("USER_SERVICE_CIRCUIT_BREAKER_RESET_TIMEOUT_MS") ?? 30_000,
+        ),
+      ),
+    });
     this.serviceJwtSecret = this.configService.get<string>("SERVICE_JWT_SECRET")?.trim();
   }
 
@@ -100,20 +111,42 @@ export class UserProfileHttpClient {
     };
 
     try {
-      return await fetchWithRetry(() => {
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
-        return fetch(`${this.baseUrl}${path}`, {
-          method: "POST",
-          headers,
-          body: JSON.stringify(body),
-          signal: controller.signal,
-        }).finally(() => clearTimeout(timeout));
+      return await this.circuitBreaker.execute(async () => {
+        const response = await retryAsync(
+          () => {
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
+            return fetch(`${this.baseUrl}${path}`, {
+              method: "POST",
+              headers,
+              body: JSON.stringify(body),
+              signal: controller.signal,
+            }).finally(() => clearTimeout(timeout));
+          },
+          {
+            maxAttempts: this.retryAttempts,
+            delayMs: this.retryDelayMs,
+            shouldRetryResult: (result) => result.status >= 500,
+          },
+        );
+
+        if (response.status >= 500) {
+          throw new Error(`User service returned ${response.status}`);
+        }
+
+        return response;
       });
     } catch (error) {
+      const message =
+        error instanceof CircuitBreakerOpenError
+          ? "User service circuit breaker is open"
+          : error instanceof Error
+            ? error.message
+            : "User service replica lookup failed";
+
       throw new ServiceUnavailableException({
         code: "USER_SERVICE_UNAVAILABLE",
-        message: error instanceof Error ? error.message : "User service replica lookup failed",
+        message,
       });
     }
   }

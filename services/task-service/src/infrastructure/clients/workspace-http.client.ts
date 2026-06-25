@@ -1,9 +1,12 @@
 import { Injectable, ServiceUnavailableException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import {
+  CircuitBreaker,
+  CircuitBreakerOpenError,
   buildOutboundServiceAuthHeaders,
   isOutboundServiceAuthConfigured,
   parseWorkspaceRole,
+  retryAsync,
   SERVICE_IDS,
   SERVICE_SCOPES,
   type WorkspaceRole,
@@ -28,6 +31,9 @@ type WorkspaceMembershipResponse = {
 export class WorkspaceHttpClient implements IWorkspaceClient {
   private readonly baseUrl: string;
   private readonly timeoutMs: number;
+  private readonly retryAttempts: number;
+  private readonly retryDelayMs: number;
+  private readonly circuitBreaker: CircuitBreaker;
   private readonly serviceJwtSecret: string | undefined;
 
   constructor(
@@ -37,6 +43,30 @@ export class WorkspaceHttpClient implements IWorkspaceClient {
     this.baseUrl =
       this.configService.get<string>("WORKSPACE_SERVICE_URL") ?? "http://workspace-service:8080";
     this.timeoutMs = Number(this.configService.get<string>("WORKSPACE_SERVICE_TIMEOUT_MS") ?? 3000);
+    this.retryAttempts = Math.max(
+      1,
+      Number(this.configService.get<string>("WORKSPACE_SERVICE_RETRY_ATTEMPTS") ?? 2),
+    );
+    this.retryDelayMs = Math.max(
+      0,
+      Number(this.configService.get<string>("WORKSPACE_SERVICE_RETRY_DELAY_MS") ?? 75),
+    );
+    this.circuitBreaker = new CircuitBreaker("workspace-service", {
+      failureThreshold: Math.max(
+        1,
+        Number(
+          this.configService.get<string>("WORKSPACE_SERVICE_CIRCUIT_BREAKER_FAILURE_THRESHOLD") ??
+            5,
+        ),
+      ),
+      resetTimeoutMs: Math.max(
+        1,
+        Number(
+          this.configService.get<string>("WORKSPACE_SERVICE_CIRCUIT_BREAKER_RESET_TIMEOUT_MS") ??
+            30_000,
+        ),
+      ),
+    });
     this.serviceJwtSecret = this.configService.get<string>("SERVICE_JWT_SECRET")?.trim();
   }
 
@@ -126,8 +156,6 @@ export class WorkspaceHttpClient implements IWorkspaceClient {
       });
     }
 
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
     const headers: Record<string, string> = {
       ...outboundRequestIdHeaders(),
       ...this.buildAuthHeaders(),
@@ -138,9 +166,28 @@ export class WorkspaceHttpClient implements IWorkspaceClient {
       `/membership?userId=${encodeURIComponent(userId)}`;
 
     try {
-      const response = await fetch(`${this.baseUrl}${path}`, {
-        headers,
-        signal: controller.signal,
+      const response = await this.circuitBreaker.execute(async () => {
+        const result = await retryAsync(
+          () => {
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
+            return fetch(`${this.baseUrl}${path}`, {
+              headers,
+              signal: controller.signal,
+            }).finally(() => clearTimeout(timeout));
+          },
+          {
+            maxAttempts: this.retryAttempts,
+            delayMs: this.retryDelayMs,
+            shouldRetryResult: (result) => result.status >= 500,
+          },
+        );
+
+        if (result.status >= 500) {
+          throw new Error(`Workspace service returned ${result.status}`);
+        }
+
+        return result;
       });
 
       if (response.status === 404) {
@@ -167,12 +214,17 @@ export class WorkspaceHttpClient implements IWorkspaceClient {
         throw error;
       }
 
+      const message =
+        error instanceof CircuitBreakerOpenError
+          ? "Workspace service circuit breaker is open"
+          : error instanceof Error
+            ? error.message
+            : "Workspace service request failed";
+
       throw new ServiceUnavailableException({
         code: "WORKSPACE_SERVICE_UNAVAILABLE",
-        message: error instanceof Error ? error.message : "Workspace service request failed",
+        message,
       });
-    } finally {
-      clearTimeout(timeout);
     }
   }
 }

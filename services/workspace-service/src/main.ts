@@ -1,6 +1,6 @@
 import { DataSource } from 'typeorm';
 import './observability/instrumentation';
-import { assertRequiredInProduction } from '@collabspace/shared';
+import { assertRequiredInProduction, createServiceRateLimitMiddleware } from '@collabspace/shared';
 import { ensureDatabaseUrl } from '@collabspace/typeorm-migrate';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
@@ -19,6 +19,7 @@ async function bootstrap() {
 
   const app = await NestFactory.create(AppModule);
   app.use(compression());
+  app.use(createServiceRateLimitMiddleware());
 
   await app.get(DatabaseService).initialize();
 

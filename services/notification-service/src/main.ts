@@ -1,6 +1,6 @@
 import "./observability/instrumentation";
 import { NestFactory } from "@nestjs/core";
-import { assertRequiredInProduction } from "@collabspace/shared";
+import { assertRequiredInProduction, createServiceRateLimitMiddleware } from "@collabspace/shared";
 import { AppModule } from "./app.module";
 import { ValidationPipe } from "@nestjs/common";
 import compression from "compression";
@@ -10,6 +10,7 @@ async function bootstrap() {
 
   const app = await NestFactory.create(AppModule);
   app.use(compression());
+  app.use(createServiceRateLimitMiddleware());
 
   const corsOrigins = (process.env.CORS_ORIGINS ?? "http://localhost:5173")
     .split(",")

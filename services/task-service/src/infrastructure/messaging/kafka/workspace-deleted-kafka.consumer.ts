@@ -4,7 +4,12 @@ import { Kafka, type Consumer } from "kafkajs";
 import { processKafkaConsumerMessage, startKafkaConsumerWithRetry } from "@collabspace/shared";
 import { ConfigurationService } from "../../../configuration/configuration.service";
 import { WorkspaceDeletionService } from "../../../application/services/workspace-deletion.service";
-import { parseKafkaOutboxJsonValue, toWorkspaceDeletedEventPayload } from "./kafka-outbox-message";
+import { WorkspaceMembershipCacheService } from "../../cache/workspace-membership-cache.service";
+import {
+  parseKafkaOutboxJsonValue,
+  toWorkspaceDeletedEventPayload,
+  toWorkspaceMemberLeftEventPayload,
+} from "./kafka-outbox-message";
 import { KafkaDlqPublisher } from "./kafka-dlq.publisher";
 import {
   PROCESSED_KAFKA_EVENT_REPOSITORY_TOKEN,
@@ -20,6 +25,7 @@ export class WorkspaceDeletedKafkaConsumer implements OnModuleInit, OnModuleDest
   constructor(
     private readonly configurationService: ConfigurationService,
     private readonly deletionService: WorkspaceDeletionService,
+    private readonly membershipCache: WorkspaceMembershipCacheService,
     private readonly kafkaDlqPublisher: KafkaDlqPublisher,
     @Inject(PROCESSED_KAFKA_EVENT_REPOSITORY_TOKEN)
     private readonly processedEventRepository: IProcessedKafkaEventRepository,
@@ -39,6 +45,7 @@ export class WorkspaceDeletedKafkaConsumer implements OnModuleInit, OnModuleDest
 
     const consumerGroup = `${kafkaConfig.groupId}-workspace-events`;
     const workspaceDeletedTopic = kafkaConfig.workspaceDeletedTopic;
+    const workspaceMemberLeftTopic = kafkaConfig.workspaceMemberLeftTopic;
 
     const consumer = kafka.consumer({ groupId: consumerGroup });
     this.consumer = consumer;
@@ -46,7 +53,10 @@ export class WorkspaceDeletedKafkaConsumer implements OnModuleInit, OnModuleDest
     void startKafkaConsumerWithRetry({
       description: `Kafka consumer topic=${workspaceDeletedTopic} group=${consumerGroup}`,
       connect: () => consumer.connect(),
-      subscribe: () => consumer.subscribe({ topic: workspaceDeletedTopic, fromBeginning: false }),
+      subscribe: async () => {
+        await consumer.subscribe({ topic: workspaceDeletedTopic, fromBeginning: false });
+        await consumer.subscribe({ topic: workspaceMemberLeftTopic, fromBeginning: false });
+      },
       run: () =>
         consumer.run({
           eachMessage: async ({ topic, partition, message }) => {
@@ -65,6 +75,11 @@ export class WorkspaceDeletedKafkaConsumer implements OnModuleInit, OnModuleDest
               log: this.logger,
               parseValue: parseKafkaOutboxJsonValue,
               handler: async (record) => {
+                if (topic === workspaceMemberLeftTopic) {
+                  await this.handleWorkspaceMemberLeft(record);
+                  return;
+                }
+
                 const payload = toWorkspaceDeletedEventPayload(record);
                 if (!payload) {
                   this.logger.warn(
@@ -108,6 +123,38 @@ export class WorkspaceDeletedKafkaConsumer implements OnModuleInit, OnModuleDest
       maxRetries: Math.max(kafkaConfig.maxRetries, 12),
       retryDelayMs: Math.max(kafkaConfig.retryDelayMs, 1000),
     });
+  }
+
+  private async handleWorkspaceMemberLeft(record: Record<string, unknown>): Promise<void> {
+    const payload = toWorkspaceMemberLeftEventPayload(record);
+    if (!payload) {
+      this.logger.warn(
+        `Skipping Kafka member_left message missing workspaceId/userId keys=${Object.keys(record).join(",")}`,
+      );
+      return;
+    }
+
+    if (payload.eventId) {
+      const claimed = await this.processedEventRepository.tryClaim(payload.eventId);
+      if (!claimed) {
+        this.logger.log(
+          `member_left already processed eventId=${payload.eventId} workspaceId=${payload.workspaceId} userId=${payload.userId}`,
+        );
+        return;
+      }
+    }
+
+    try {
+      await this.membershipCache.clear(payload.workspaceId, payload.userId);
+      this.logger.log(
+        `member_left invalidated membership cache workspaceId=${payload.workspaceId} userId=${payload.userId}`,
+      );
+    } catch (error) {
+      if (payload.eventId) {
+        await this.processedEventRepository.releaseClaim(payload.eventId);
+      }
+      throw error;
+    }
   }
 
   async onModuleDestroy(): Promise<void> {

@@ -1,5 +1,5 @@
 import './observability/instrumentation';
-import { assertRequiredInProduction } from '@collabspace/shared';
+import { assertRequiredInProduction, createServiceRateLimitMiddleware } from '@collabspace/shared';
 import { ensureDatabaseUrl } from '@collabspace/typeorm-migrate';
 import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
@@ -30,6 +30,7 @@ async function bootstrap() {
 
   const app = await NestFactory.create(AppModule);
   app.use(compression());
+  app.use(createServiceRateLimitMiddleware());
 
   configureHttpApp(app);
   registerMetricsMiddleware(app, app.get(MetricsService));
