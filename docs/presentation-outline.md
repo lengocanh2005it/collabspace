@@ -160,7 +160,7 @@ mindmap
 
 - Sprint, epic, backlog planning
 - Subtask, dependency giữa task
-- Realtime WebSocket toàn diện
+- Realtime WebSocket hai chiều (hiện tại dùng SSE một chiều cho notification badge)
 - Time tracking, automation rules
 - Multi-region HA
 
@@ -1367,7 +1367,7 @@ mindmap
       Kiểm thử tích hợp với DB thật
       Service mesh mTLS
       Multi-region HA
-      Backup tự động + drill khôi phục
+      WebSocket hai chiều nếu cần realtime phức tạp hơn SSE
 ```
 
 > 📄 Nguồn: `docs/production-hardening.md`, `docs/team/phan-phu-tho-infrastructure-backlog.md`, `docs/team/application-backlog.md`
