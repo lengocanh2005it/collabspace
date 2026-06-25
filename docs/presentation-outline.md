@@ -1714,6 +1714,7 @@ sequenceDiagram
 
 | Hạn chế | Chi tiết |
 |---------|---------|
+| **Traefik, Kafka, Debezium vẫn là SPOF** | Chạy 1 instance — nếu down, toàn bộ traffic vào (Traefik), event bus (Kafka), hoặc CDC pipeline (Debezium) bị gián đoạn cho đến khi K8s restart pod |
 | Vault chưa HA | Single-node; chưa có tự động xoay vòng secrets |
 | HTTPS cho Grafana | Đang chạy HTTP, chưa có TLS |
 | Kiểm thử tích hợp với DB thật | Đang dùng in-memory |
@@ -1743,15 +1744,13 @@ mindmap
       Traefik · Kafka · Debezium HA
 ```
 
-**SPOF còn lại — Traefik, Kafka, Debezium chưa được scale:**
+**Nếu tài nguyên cho phép — hướng giải quyết SPOF còn lại:**
 
-| Thành phần | Hiện tại | Vì sao chưa scale |
-|-----------|----------|-------------------|
-| **Traefik** | 1 replica | Scale lên 2+ cần shared storage cho ACME cert (`acme.json` dùng RWO PVC — chỉ 1 pod mount được); cần chuyển sang cert-manager hoặc RWX storage |
-| **Kafka** | 1 broker | Multi-broker cần replication factor > 1, ZooKeeper/KRaft ensemble — tăng đáng kể tài nguyên và độ phức tạp vận hành |
-| **Debezium Connect** | 1 instance | Scale Debezium cần leader election cho connector tasks — phức tạp để cấu hình đúng, dễ sinh duplicate event nếu sai |
-
-Ba thành phần này nằm ngoài phạm vi MVP vì: kỹ thuật phức tạp hơn đáng kể so với scale service NestJS thông thường, tốn tài nguyên node không tương xứng với scope demo, và HA ở tầng này chỉ thực sự cần thiết khi có traffic production thật.
+| Thành phần | Hướng giải quyết |
+|-----------|-----------------|
+| **Traefik** | Chuyển sang `cert-manager` để quản lý TLS thay vì ACME file — khi đó Traefik stateless hoàn toàn, scale lên 2+ replica bình thường |
+| **Kafka** | Chạy 3 broker + replication factor 3 + `min.insync.replicas: 2` — mất 1 broker không mất dữ liệu, consumer tự reconnect broker còn lại |
+| **Debezium Connect** | Chạy Kafka Connect cluster 2+ node — connector tasks tự phân phối, leader election xử lý tự động qua Kafka group protocol |
 
 > 📄 Nguồn: `docs/production-hardening.md`, `docs/team/phan-phu-tho-infrastructure-backlog.md`, `docs/team/application-backlog.md`
 
