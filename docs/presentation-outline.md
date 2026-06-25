@@ -1217,6 +1217,18 @@ sequenceDiagram
 - **Khóa bí mật nội bộ** được quản lý qua Vault, không commit vào code
 - Mỗi service kiểm tra token nội bộ phải đúng nguồn gốc và đích — tránh một service bị xâm phạm giả mạo service khác
 
+> **Tại sao dùng Service JWT thay vì các lựa chọn khác?**
+>
+> Có ba cách phổ biến để xác thực giao tiếp service-to-service:
+>
+> | Cách | Ưu điểm | Nhược điểm |
+> |------|---------|------------|
+> | **Không xác thực** — trust mọi request trong cluster | Đơn giản nhất | Một service bị xâm phạm → toàn hệ thống bị tấn công |
+> | **mTLS** — mỗi service có certificate riêng, xác thực hai chiều | Bảo mật cao nhất, không cần shared secret | Cần service mesh (Istio/Linkerd), phức tạp vận hành, certificate rotation |
+> | **Service JWT** — ký token bằng khóa bí mật chung `SERVICE_JWT_SECRET` | Đơn giản, không cần infra thêm, dễ implement trong NestJS | Shared secret — cần bảo vệ tốt qua Vault |
+>
+> **CollabSpace chọn Service JWT** vì phù hợp quy mô dự án: không cần service mesh, implement trong vài dòng NestJS guard, và `SERVICE_JWT_SECRET` được quản lý qua Vault nên không lộ trong code hay config. mTLS là lựa chọn tốt hơn cho production thật sự ở quy mô lớn — ghi vào backlog kỹ thuật.
+
 ### NetworkPolicy — Giới hạn mạng
 
 ```mermaid
