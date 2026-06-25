@@ -12,11 +12,11 @@
 
 | Pod | RAM thực dùng | Request cấu hình | Limit |
 |-----|--------------|-----------------|-------|
-| auth-service | 99Mi | 256Mi | 512Mi |
-| user-service | 94Mi | 256Mi | 512Mi |
+| auth-service | 99Mi | 128Mi | 256Mi |
+| user-service | 94Mi | 128Mi | 256Mi |
 | workspace-service | 88Mi | 128Mi | 256Mi |
-| task-service | 111Mi | 256Mi | 512Mi |
-| notification-service | 99Mi | 256Mi | 512Mi |
+| task-service | 111Mi | 128Mi | 256Mi |
+| notification-service | 99Mi | 128Mi | 256Mi |
 | traefik | 80Mi | 0Mi (best-effort) | — |
 
 ### Node capacity
@@ -32,11 +32,11 @@
 
 | Việc | RAM request thêm |
 |------|-----------------|
-| 5 service × +1 replica (256+256+128+256+256) | +1,152Mi |
-| Traefik +1 replica (không có resource request — best-effort) | +0Mi |
-| **Tổng** | **+1,152Mi** |
+| 5 service × +1 replica (128Mi × 5) | +640Mi |
+| Traefik: đã là 2 replica trong values.yaml | +0Mi |
+| **Tổng** | **+640Mi** |
 
-**Kết luận: Hoàn toàn đủ.** Request toàn cluster tăng từ ~40% lên ~46%. RAM thực tế ước tính lên ~70% — vẫn an toàn.
+**Kết luận: Hoàn toàn đủ.** Request cluster tăng từ ~40% lên ~46%. RAM thực tế ước tính ~70% — vẫn an toàn.
 
 ---
 
@@ -46,10 +46,10 @@ Kafka đang chạy 1 broker với tất cả topics có `PartitionCount: 1` và 
 
 Để scale Kafka đúng cách cần làm đủ 3 bước:
 1. Tăng broker lên 3
-2. Tăng `replication.factor=3` cho mỗi topic (migrate data)
+2. Tăng `replication.factor=3` cho mỗi topic
 3. Tăng partition lên ≥3 mỗi topic (rebalance consumer group)
 
-Đây là công việc nặng và không cần thiết — Kafka đang dùng 351m CPU / 611Mi RAM, rất nhẹ. Đưa vào backlog khi traffic thật sự cần.
+Kafka đang dùng 351m CPU / 611Mi RAM — rất nhẹ. Đưa vào backlog khi traffic thật sự cần.
 
 ---
 
@@ -61,61 +61,79 @@ Traefik 1 replica là SPOF ở tầng pod:
 
 DigitalOcean Load Balancer phía trước là managed HA — không phải SPOF. Vấn đề chỉ ở Traefik pod.
 
-Scale lên 2 replica cần thêm `podAntiAffinity` để 2 pod không chạy cùng 1 node — nếu không, node đó chết vẫn down hết.
+> Traefik đã được set `deployment.replicas: 2` trong `values.yaml` — không cần thay đổi thêm cho Traefik.
 
 ---
 
-## Scale lên 2 replica
+## Cách scale vĩnh viễn qua Helm
 
-```bash
-# 5 core services
-kubectl scale deployment auth-service         -n collabspace --replicas=2
-kubectl scale deployment user-service         -n collabspace --replicas=2
-kubectl scale deployment workspace-service    -n collabspace --replicas=2
-kubectl scale deployment task-service         -n collabspace --replicas=2
-kubectl scale deployment notification-service -n collabspace --replicas=2
+### Bước 1 — Sửa `infrastructure/helm/collabspace/values.yaml`
 
-# Traefik
-kubectl scale deployment traefik -n collabspace --replicas=2
+Tìm block `apps:` và đổi `replicas: 1` → `replicas: 2` cho 5 service:
+
+```yaml
+apps:
+  auth-service:
+    replicas: 2          # was: 1
+
+  user-service:
+    replicas: 2          # was: 1
+
+  workspace-service:
+    replicas: 2          # was: 1
+
+  task-service:
+    replicas: 2          # was: 1
+
+  notification-service:
+    replicas: 2          # was: 1
 ```
 
-Kiểm tra pod đang chạy:
+### Bước 2 — Helm upgrade
 
 ```bash
-kubectl get pods -n collabspace -l 'app in (auth-service,user-service,workspace-service,task-service,notification-service,traefik)'
+helm upgrade collabspace infrastructure/helm/collabspace \
+  -n collabspace \
+  -f infrastructure/helm/collabspace/values.yaml \
+  -f infrastructure/helm/collabspace/values-prod.yaml \
+  --atomic \
+  --timeout 5m
 ```
 
-Kiểm tra phân bố pod theo node (để xác nhận anti-affinity hoạt động):
+`--atomic`: nếu bất kỳ pod nào không ready trong 5 phút, tự động rollback về revision trước.
+
+### Bước 3 — Kiểm tra
 
 ```bash
-kubectl get pods -n collabspace -o wide | grep -E "auth|user|workspace|task|notification|traefik"
-```
+# Xem pod đã chạy đủ 2 replica chưa
+kubectl get pods -n collabspace
 
-Kiểm tra tài nguyên sau khi scale:
+# Xem pod phân bổ trên node nào
+kubectl get pods -n collabspace -o wide
 
-```bash
+# Xem tài nguyên sau scale
 kubectl top nodes
 kubectl top pods -n collabspace --sort-by=memory
 ```
 
 ---
 
-## Scale về 1 replica (rollback)
+## Rollback
 
 ```bash
-kubectl scale deployment auth-service         -n collabspace --replicas=1
-kubectl scale deployment user-service         -n collabspace --replicas=1
-kubectl scale deployment workspace-service    -n collabspace --replicas=1
-kubectl scale deployment task-service         -n collabspace --replicas=1
-kubectl scale deployment notification-service -n collabspace --replicas=1
-kubectl scale deployment traefik              -n collabspace --replicas=1
+# Xem lịch sử revision
+helm history collabspace -n collabspace
+
+# Rollback về revision trước
+helm rollback collabspace -n collabspace
 ```
+
+Hoặc sửa lại `replicas: 1` trong `values.yaml` rồi chạy lại `helm upgrade`.
 
 ---
 
 ## Lưu ý
 
-- Scale bằng `kubectl scale` là **tạm thời** — Helm deploy lại sẽ reset về `replicaCount: 1` trong `values.yaml`.
-- Để scale **vĩnh viễn**, sửa `replicaCount` trong `infrastructure/helm/collabspace/values.yaml` cho từng service rồi `helm upgrade`.
-- Kafka consumer (notification, task) chạy 2 replica: mỗi consumer group có 2 member, nhưng với 1 partition hiện tại chỉ 1 pod xử lý message — pod còn lại standby sẵn sàng takeover khi pod kia down.
-- Traefik hiện không có `resources.requests` config → best-effort class. Nếu muốn vĩnh viễn nên thêm request vào Helm values để K8s schedule ổn định hơn.
+- Kafka consumer (notification, task) chạy 2 replica: mỗi consumer group có 2 member nhưng với 1 partition hiện tại chỉ 1 pod xử lý message — pod còn lại standby, sẵn sàng takeover khi pod kia down.
+- Traefik không có `resources.requests` trong values.yaml hiện tại → best-effort scheduling class. Nếu muốn K8s schedule ổn định hơn, thêm vào `traefik.resources.requests` trong values.yaml.
+- `maxUnavailable: 0` đã được set trong deployment template — rolling update sẽ không có downtime (surge 1 pod mới trước, xóa pod cũ sau).
