@@ -59,7 +59,7 @@ describe("notification-service RedisModule", () => {
       name: "mymaster",
       enableReadyCheck: true,
     });
-    expect(callArg["keyPrefix"]).toBeUndefined();
+    expect(callArg.keyPrefix).toBeUndefined();
   });
 
   it("returns null when REDIS_MODE=sentinel but REDIS_SENTINELS is empty", async () => {
