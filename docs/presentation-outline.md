@@ -1,7 +1,7 @@
 # CollabSpace — Nội dung báo cáo thuyết trình
 
 > Tài liệu này tổng hợp nội dung chi tiết cho từng slide, bao gồm ý bullet, sơ đồ Mermaid, và nguồn dữ liệu từ codebase.  
-> Cập nhật: 2026-06-22
+> Cập nhật: 2026-06-25
 
 ---
 
@@ -26,7 +26,7 @@
 - Áp dụng đầy đủ 5 kiến trúc mẫu: Clean/Hexagonal, CQRS + Event Sourcing, Transactional Outbox, Saga, Dead Letter Queue
 - Triển khai thực tế lên DOKS với CI/CD pipeline (GitHub Actions → Container Registry → Helm)
 - Observability đủ 3 trụ cột: Metrics (Prometheus + Grafana) · Logs (Loki) · Traces (OpenTelemetry + Jaeger)
-- PostgreSQL HA trên production với CloudNativePG operator — tự động failover
+- **Database HA đầy đủ 3 lớp**: PostgreSQL (CloudNativePG), MongoDB (Replica Set), Redis (Sentinel) — tất cả đều tự động failover, đã drill kiểm chứng
 - Backup tự động hàng ngày lên cloud storage, restore drill đã kiểm chứng
 
 ---
@@ -176,7 +176,7 @@ mindmap
 |------|-----------|
 | **Framework** | NestJS 11 + TypeScript |
 | **Database** | PostgreSQL (auth, user, workspace), MongoDB (task, notification, dlq, analytics) |
-| **Cache** | Redis |
+| **Cache / HA** | Redis Sentinel (1 master + 2 replicas + 3 sentinel sidecars) |
 | **Event bus** | Apache Kafka + Debezium Connect |
 | **Gateway** | Traefik |
 | **Container / Orchestration** | Docker Compose (dev) · Kubernetes DOKS (prod) |
@@ -413,7 +413,7 @@ flowchart LR
         WS_DB[(Workspace DB\nWorkspace · Thành viên\nProject · Lời mời)]
     end
 
-    subgraph MONGO["MongoDB"]
+    subgraph MONGO["MongoDB Replica Set (1 primary + 1 secondary + 1 arbiter)"]
         direction TB
         TASK_DB[(Task DB\nTask · Lịch sử sự kiện\nComment · Bản sao user)]
         NOTIF_DB[(Notification DB\nThông báo · Bản sao user)]
@@ -421,7 +421,7 @@ flowchart LR
         ANA_DB[(Analytics DB\nSnapshot · Timeseries)]
     end
 
-    REDIS[(Redis\nOTP · Phiên · Cache)]
+    REDIS[(Redis Sentinel\nOTP · Phiên · Cache\n1 master + 2 replicas)]
 
     AuthSvc[Auth Service] --> AUTH_DB & REDIS
     UserSvc[User Service] --> USER_DB
@@ -540,10 +540,10 @@ flowchart TD
             A1[auth] & A2[user] & A3[workspace] & A4[task] & A5[notification] & A6[dlq] & A7[analytics]
         end
 
-        subgraph DBs["Databases"]
-            PG[(PostgreSQL)]
-            MDB[(MongoDB)]
-            RD[(Redis)]
+        subgraph DBs["Databases (tất cả đều HA)"]
+            PG[(PostgreSQL\nCloudNativePG HA)]
+            MDB[(MongoDB\nReplica Set)]
+            RD[(Redis\nSentinel)]
         end
 
         subgraph Msg["Messaging"]
@@ -610,6 +610,58 @@ flowchart LR
 - **Tự động failover** — khi primary down, một replica được promote lên primary mà không cần can thiệp tay
 - **Quản lý bởi Kubernetes** — declarative config, tự động retry, rolling update có kiểm soát
 - Tốt hơn nhiều so với chạy PostgreSQL trong một StatefulSet đơn lẻ — đó là cách học thuật, đây là cách production
+
+### Redis High Availability — Sentinel
+
+Trên DOKS, Redis không chạy đơn lẻ mà dùng **Bitnami Redis Sentinel** — mỗi pod chạy 2 container (redis + sentinel sidecar).
+
+```mermaid
+flowchart LR
+    subgraph Sentinel["Redis Sentinel — 3 nodes"]
+        direction TB
+        M[(Master\nNhận đọc/ghi)]
+        R1[(Replica 1\nDự phòng)]
+        R2[(Replica 2\nDự phòng)]
+        M -->|replication| R1
+        M -->|replication| R2
+        S1[Sentinel 1] & S2[Sentinel 2] & S3[Sentinel 3]
+    end
+
+    App[App clients\nioredis Sentinel mode] -->|kết nối qua\nredis:26379| Sentinel
+    S1 & S2 & S3 -->|quorum: 2\nbầu master mới| NewMaster([Master mới\nnếu master cũ down])
+
+    style M fill:#3498DB,color:#fff
+    style R1 fill:#27AE60,color:#fff
+    style R2 fill:#27AE60,color:#fff
+```
+
+- **Quorum = 2** — cần ít nhất 2 sentinel đồng ý mới bầu master mới → tránh split-brain
+- **Failover drill 2026-06-25: ✅ Đạt** — xóa master pod → Sentinel bầu master mới trong **~22 giây**, tất cả app tự reconnect, không cần restart
+- App dùng `REDIS_MODE=sentinel`, `REDIS_SENTINELS=redis:26379` — client tự phát hiện master hiện tại qua Sentinel
+
+### MongoDB High Availability — Replica Set
+
+MongoDB chạy **Replica Set 3 thành viên**: 1 primary + 1 secondary + 1 arbiter.
+
+```mermaid
+flowchart LR
+    subgraph RS["MongoDB Replica Set"]
+        P[(Primary\nNhận ghi)]
+        S[(Secondary\nDữ liệu đồng bộ)]
+        A[Arbiter\nBỏ phiếu bầu]
+        P -->|oplog replication| S
+    end
+
+    Write[Services ghi dữ liệu] -->|writeConcern: majority| P
+    A -->|bỏ phiếu khi primary down| NewPrimary([Secondary → Primary\ntự động promote])
+
+    style P fill:#3498DB,color:#fff
+    style S fill:#27AE60,color:#fff
+    style A fill:#E8964D,color:#fff
+```
+
+- **Arbiter** không lưu dữ liệu, chỉ tham gia bỏ phiếu — tiết kiệm tài nguyên nhưng vẫn đủ quorum
+- Khi primary down, secondary được promote tự động — ứng dụng tự reconnect qua replica set connection string
 
 ### Quản lý secrets với HashiCorp Vault
 
@@ -900,7 +952,7 @@ sequenceDiagram
 | Khi hỏng... | Đăng ký | Đăng nhập / API | Ghi task |
 |-------------|---------|-----------------|---------|
 | User Service | Báo lỗi + rollback tài khoản | Trả thông tin cơ bản, báo hồ sơ không khả dụng | Bản sao dữ liệu có thể cũ |
-| Redis (cache) | Báo lỗi + rollback tài khoản | OTP không gửi được | — |
+| Redis (Sentinel) | Sentinel bầu master mới ~22s, app tự reconnect | Brief reconnect warning, OTP/session khôi phục tự động | Cache miss, repopulate tự động |
 | Auth Service | — | Toàn bộ xác thực thất bại | Không xác thực được token |
 | Kafka / Debezium | Vẫn OK — sự kiện chờ trong outbox | Vẫn OK | Sự kiện delay → vào DLQ |
 | Database | Báo lỗi rõ ràng | Báo lỗi rõ ràng | Báo lỗi rõ ràng |
@@ -1278,6 +1330,8 @@ sequenceDiagram
 - ✅ Kubernetes Helm chart đầy đủ: auto-scaling, disruption budget, network policy, routing
 - ✅ HashiCorp Vault + External Secrets Operator quản lý secrets
 - ✅ PostgreSQL HA với CloudNativePG operator — primary + replica, tự động failover
+- ✅ MongoDB Replica Set (1 primary + 1 secondary + 1 arbiter) — tự động failover
+- ✅ Redis Sentinel (1 master + 2 replicas + 3 sentinel) — failover drill 2026-06-25 đạt, ~22s, không restart app
 - ✅ Backup tự động hàng ngày lên DO Spaces, giữ 7 ngày, restore drill 2026-06-20 đạt
 
 #### Frontend
