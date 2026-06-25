@@ -1079,10 +1079,10 @@ bash scripts/sync-agent-docs.sh
 - [x] DOKS rollout completes.
 - [x] All app health endpoints return `200`.
 - [x] Redis Sentinel returns current master for `mymaster`.
-- [ ] Redis master pod delete triggers failover. _(Phase 4 drill — pending)_
-- [ ] Auth OTP/login still works after failover. _(Phase 4 drill — pending)_
-- [ ] Notification cache/realtime does not crash after failover. _(Phase 4 drill — pending)_
-- [ ] Runbook/drill result recorded. _(Phase 4 drill — pending)_
+- [x] Redis master pod delete triggers failover. _(Drill 2026-06-25: redis-node-0 → redis-node-1 in ~22s)_
+- [x] Auth OTP/login still works after failover. _(Auto-reconnect, all health 200)_
+- [x] Notification cache/realtime does not crash after failover. _(Brief WARN, then reconnected; no restart)_
+- [x] Runbook/drill result recorded. _(`infrastructure/resilience/drills/2026-06-25-redis-sentinel-failover.md`)_
 
 ## Open questions before implementation
 
