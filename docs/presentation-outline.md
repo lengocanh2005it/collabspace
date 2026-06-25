@@ -358,6 +358,25 @@ flowchart TD
     style Analytics fill:#9B59B6,color:#fff
 ```
 
+### Quyết định thiết kế trong sơ đồ
+
+> Mỗi thành phần trong sơ đồ trên là một quyết định chủ động — không phải mặc định.
+
+**Tại sao một API Gateway duy nhất (Traefik)?**
+Thay vì để client gọi thẳng vào từng service, tất cả đi qua một điểm duy nhất. Điều này cho phép xác thực token, chặn header giả mạo (`X-User-Id`), và áp dụng rate limit tập trung — các service không cần tự lo. Traefik được chọn vì hỗ trợ Kubernetes IngressRoute native, ACME TLS tự động, và cấu hình dynamic không cần reload.
+
+**Tại sao gRPC cho xác thực token thay vì REST?**
+Xác thực token xảy ra ở mỗi request — cần nhanh và có contract chặt chẽ. gRPC dùng Protobuf (nhị phân, nhỏ hơn JSON), HTTP/2 (multiplexing), và schema cố định — tránh lỗi silent do field tên sai hay kiểu dữ liệu khác. REST dễ implement nhưng không có schema enforcement ở runtime.
+
+**Tại sao Outbox Pattern + Kafka thay vì gọi Kafka trực tiếp?**
+Nếu service gọi Kafka trong cùng handler với DB write, hai bước đó không nằm trong một transaction: DB ghi thành công nhưng Kafka publish fail → sự kiện mất, dữ liệu không nhất quán. Outbox Pattern giải quyết: sự kiện được ghi vào bảng outbox trong **cùng DB transaction** với dữ liệu, Debezium CDC đọc và đẩy lên Kafka. Không bao giờ mất sự kiện dù Kafka tạm thời down.
+
+**Tại sao tách Auth và User thành 2 service riêng?**
+Auth quản lý credential (password hash, token, phiên) — security-sensitive, nên thay đổi riêng. User quản lý hồ sơ (tên, avatar) — thay đổi thường xuyên, cần scale theo lưu lượng đọc. Tách ra cho phép mỗi bên deploy, scale, và thay đổi schema độc lập.
+
+**Tại sao DLQ là service riêng thay vì xử lý trong từng consumer?**
+Xem giải thích chi tiết ở phần DLQ Service bên dưới.
+
 ### Giải thích các thành phần
 
 **Traefik API Gateway** — điểm vào duy nhất của toàn hệ thống. Đảm nhiệm routing request đến đúng service, xác thực token, chặn các header giả mạo từ client, và áp dụng rate limit / circuit breaker.
@@ -435,6 +454,19 @@ flowchart LR
     DLQSvc[DLQ Service] --> DLQ_DB
     AnaSvc[Analytics Service] --> ANA_DB
 ```
+
+### Quyết định chọn database cho từng service
+
+> Không chọn một DB duy nhất cho tất cả — mỗi service dùng loại DB phù hợp nhất với bài toán của nó.
+
+**Tại sao PostgreSQL cho Auth / User / Workspace?**
+Ba service này có dữ liệu quan hệ chặt chẽ (user ↔ workspace ↔ member) và cần ACID transaction: ví dụ, tạo tài khoản phải vừa ghi credential vừa ghi profile trong cùng một giao dịch — nếu một bước fail, tất cả rollback. PostgreSQL cũng hỗ trợ foreign key, JOIN, và index đa chiều — phù hợp cho dữ liệu có schema cố định và quan hệ phức tạp.
+
+**Tại sao MongoDB cho Task / Notification / DLQ / Analytics?**
+Task dùng Event Sourcing — mỗi thay đổi là một document độc lập append vào chuỗi sự kiện → MongoDB document model phù hợp tự nhiên, không cần schema cứng. Notification và DLQ là các document độc lập, không có quan hệ chéo phức tạp — document store đơn giản hơn. Analytics cần lưu timeseries và snapshot với cấu trúc linh hoạt theo nhu cầu dashboard — MongoDB cho phép thêm field mà không cần migration.
+
+**Tại sao Redis cho cache / session / OTP?**
+Redis là in-memory key-value store với TTL native — hoàn toàn phù hợp cho OTP (cần hết hạn sau N phút), phiên đăng nhập (cần xóa nhanh khi logout), và cache tạm (cần đọc nhanh). Dùng PostgreSQL cho OTP sẽ chậm hơn và phải tự xử lý cleanup; dùng MongoDB thì over-engineered cho dữ liệu thoáng qua.
 
 ### Đồng bộ dữ liệu qua Event — Mô hình Replica / Read Model
 
@@ -586,6 +618,20 @@ flowchart TD
     style Sec fill:#FDEDEC,stroke:#E74C3C
 ```
 
+### Quyết định thiết kế hạ tầng
+
+**Tại sao Kubernetes (DOKS) thay vì một VM đơn?**
+VM đơn (Droplet) không có self-healing: nếu một container crash, phải restart tay hoặc dùng cron. K8s tự động restart pod lỗi, rolling update không downtime, và horizontal scaling theo tải. DOKS được chọn vì managed control plane — không cần quản lý master node, tự động upgrade, và tích hợp native với DigitalOcean Load Balancer và Block Storage.
+
+**Tại sao Helm thay vì apply YAML thủ công?**
+Khi có 7 service mỗi cái cần Deployment + Service + ConfigMap + Secret + IngressRoute, apply từng file YAML thủ công là không thể maintain. Helm đóng gói tất cả vào một chart, cho phép override giá trị theo môi trường (dev/prod), và rollback nhanh bằng một lệnh nếu deploy lỗi.
+
+**Tại sao Vault + External Secrets Operator thay vì lưu secret trong K8s Secret trực tiếp?**
+K8s Secret mặc định chỉ được base64-encode — bất kỳ ai có quyền đọc namespace đều đọc được. Vault lưu secret mã hóa, có audit log ai đọc secret lúc nào, và hỗ trợ rotation. External Secrets Operator tự động đồng bộ từ Vault vào K8s Secret — app không cần thay đổi gì, nhưng bộ lưu trữ bên dưới an toàn hơn nhiều.
+
+**Tại sao CloudNativePG thay vì chạy PostgreSQL trong StatefulSet thông thường?**
+StatefulSet đơn lẻ không có failover tự động — nếu pod down, phải chờ K8s reschedule trên node mới (có thể mất dữ liệu nếu PVC không di chuyển kịp). CloudNativePG là Kubernetes operator chuyên biệt: tự quản lý replication, tự động failover khi primary down, tách biệt endpoint đọc/ghi, và built-in backup.
+
 ### PostgreSQL High Availability — CloudNativePG
 
 Trên môi trường production (DOKS), PostgreSQL không chạy đơn lẻ mà được vận hành qua **CloudNativePG operator** — một Kubernetes operator chuyên biệt cho PostgreSQL.
@@ -615,6 +661,8 @@ flowchart LR
 - **Quản lý bởi Kubernetes** — declarative config, tự động retry, rolling update có kiểm soát
 - Tốt hơn nhiều so với chạy PostgreSQL trong một StatefulSet đơn lẻ — đó là cách học thuật, đây là cách production
 
+> **Quyết định**: Dự án ban đầu dùng Bitnami PostgreSQL StatefulSet. Sau khi migrate sang DOKS, chuyển sang CloudNativePG để có failover thật sự và không phụ thuộc cách setup thủ công. Migration này được thực hiện mà không cần downtime dữ liệu.
+
 ### Redis High Availability — Sentinel
 
 Trên DOKS, Redis không chạy đơn lẻ mà dùng **Bitnami Redis Sentinel** — mỗi pod chạy 2 container (redis + sentinel sidecar).
@@ -642,6 +690,12 @@ flowchart LR
 - **Quorum = 2** — cần ít nhất 2 sentinel đồng ý mới bầu master mới → tránh split-brain
 - **Failover drill 2026-06-25: ✅ Đạt** — xóa master pod → Sentinel bầu master mới trong **~22 giây**, tất cả app tự reconnect, không cần restart
 - App dùng `REDIS_MODE=sentinel`, `REDIS_SENTINELS=redis:26379` — client tự phát hiện master hiện tại qua Sentinel
+
+> **Tại sao Sentinel thay vì Redis Cluster?**  
+> Redis Cluster phân tán dữ liệu theo slot — phù hợp khi cần scale horizontal với hàng trăm GB dữ liệu. CollabSpace dùng Redis cho OTP, session, cache nhỏ — không cần sharding. Sentinel đơn giản hơn để vận hành và đủ đáp ứng yêu cầu HA: một master down, Sentinel bầu replica lên thay mà không cần can thiệp.
+
+> **Tại sao notification-service không dùng `keyPrefix` trong sentinel mode?**  
+> Notification service dùng Redis pub/sub để push badge realtime — pub/sub channel name không được tự động thêm prefix bởi ioredis, nhưng subscriber lại đăng ký channel không có prefix → message không khớp. Bỏ `keyPrefix` ở sentinel mode giải quyết vấn đề này: pub/sub hoạt động đúng, còn standalone mode (dev local) vẫn dùng prefix bình thường.
 
 ### MongoDB High Availability — Replica Set
 
