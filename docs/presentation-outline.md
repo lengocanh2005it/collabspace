@@ -1380,8 +1380,8 @@ sequenceDiagram
 - ✅ 5 kiến trúc mẫu: Clean/Hexagonal, CQRS + Event Sourcing, Transactional Outbox, Saga, DLQ
 - ✅ Event-driven với Kafka + Debezium — không mất sự kiện qua outbox
 - ✅ Design for failure: timeout, degradation, saga rollback, idempotency, network policy
-- ✅ Observability đủ 3 trụ cột: Prometheus + 4 Grafana dashboards + Loki + Jaeger (OpenTelemetry) + Alertmanager + k6
-- ✅ ~153 bộ unit test + 6 bộ integration test + 3 kịch bản load test
+- ✅ Observability đủ 3 trụ cột: Prometheus + 5 Grafana dashboards + Loki + Jaeger (OpenTelemetry) + Alertmanager + k6
+- ✅ ~158 bộ unit test + 6 bộ integration test + 3 kịch bản load test
 - ✅ API docs tự sinh cho tất cả services
 
 #### Infrastructure
@@ -1414,7 +1414,6 @@ sequenceDiagram
 mindmap
   root((Hướng phát triển))
     Tính năng
-      Realtime WebSocket thay thế cơ chế hiện tại
       Subtask · dependency · workflow tùy biến
       Sprint · epic · backlog planning
       Time tracking · automation
