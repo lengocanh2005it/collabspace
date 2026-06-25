@@ -682,10 +682,12 @@ flowchart LR
 
 ```mermaid
 flowchart TD
-    Internet([Internet]) --> Traefik
+    Internet([Internet]) --> DOLB
+
+    DOLB[DigitalOcean Load Balancer\nAuto-provisioned · IP tĩnh · TCP passthrough]
 
     subgraph DOKS["DigitalOcean Kubernetes — namespace: collabspace"]
-        Traefik[Traefik\nRouting · Auth · Rate limit]
+        Traefik[Traefik\nRouting · Auth · Rate limit · TLS termination]
 
         subgraph Apps["7 App Deployments"]
             direction LR
@@ -719,6 +721,7 @@ flowchart TD
         NP[Network Policy\nChặn giao tiếp không được phép]
     end
 
+    DOLB --> Traefik
     Traefik --> Apps
     Apps --> DBs & KF
     DC --> KF
@@ -735,6 +738,39 @@ flowchart TD
 ```
 
 ### Quyết định thiết kế hạ tầng
+
+**DigitalOcean Load Balancer — tự động tạo, không cần cấu hình tay**
+
+Khi Traefik được deploy lên DOKS với `Service type: LoadBalancer`, DigitalOcean **tự động provision một Load Balancer** và gán IP tĩnh bên ngoài — không cần cấu hình LB thủ công hay trỏ port trực tiếp vào node. Đây là tích hợp native giữa DOKS và hạ tầng DigitalOcean.
+
+```mermaid
+flowchart LR
+    Internet([Internet]) --> DOLB
+
+    subgraph DO["DigitalOcean Cloud"]
+        DOLB[DO Load Balancer\nIP tĩnh: 146.190.201.18\nTCP passthrough port 80/443]
+    end
+
+    subgraph K8s["DOKS Cluster — 3 nodes"]
+        DOLB --> T1[Traefik pod\nnode-1]
+        DOLB --> T2[Traefik pod\nnếu scale lên 2]
+        T1 & T2 --> Apps[App pods]
+    end
+
+    DNS[DNS\ncollabspace.ngocanh2005it.site] -->|A record| DOLB
+
+    style DOLB fill:#0080FF,color:#fff
+    style T1 fill:#F39C12,color:#fff
+    style T2 fill:#F39C12,color:#fff
+```
+
+**Cách hoạt động:**
+- DOKS nhìn thấy Service `type: LoadBalancer` → gọi DigitalOcean API tạo LB tự động
+- LB nhận traffic TCP port 80/443 và forward thẳng vào Traefik pod (passthrough — không decrypt TLS)
+- Traefik mới là nơi **terminate TLS** và xử lý Let's Encrypt ACME HTTP-01 challenge
+- DNS `collabspace.ngocanh2005it.site` trỏ A record vào IP tĩnh của LB — khi cluster thay đổi, chỉ cần cập nhật IP này
+
+**Một gotcha thực tế gặp phải:** khi cài Traefik lên cluster mới, Traefik thử ACME challenge ở giây ~17 nhưng DO LB cần 30–60s mới sẵn sàng hoàn toàn → Let's Encrypt validate fail. Fix: đợi LB ổn định rồi re-apply IngressRoute để Traefik thử lại ACME ngay lập tức.
 
 **Tại sao Kubernetes (DOKS) thay vì một VM đơn?**
 VM đơn (Droplet) không có self-healing: nếu một container crash, phải restart tay hoặc dùng cron. K8s tự động restart pod lỗi, rolling update không downtime, và horizontal scaling theo tải. DOKS được chọn vì managed control plane — không cần quản lý master node, tự động upgrade, và tích hợp native với DigitalOcean Load Balancer và Block Storage.
