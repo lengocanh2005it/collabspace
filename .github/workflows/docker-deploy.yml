@@ -741,13 +741,30 @@ jobs:
             echo "  ${job}: timeout"; return 1
           }
 
-          [[ "${RUN_AUTH}" == "true" ]] && run_migration auth-service "${{ steps.deploy-vars.outputs.auth_tag }}"
-          [[ "${RUN_USER}" == "true" ]] && run_migration user-service "${{ steps.deploy-vars.outputs.user_tag }}"
-          [[ "${RUN_WORKSPACE}" == "true" ]] && run_migration workspace-service "${{ steps.deploy-vars.outputs.workspace_tag }}"
+          if [[ "${RUN_AUTH}" != "true" && "${RUN_USER}" != "true" && "${RUN_WORKSPACE}" != "true" ]]; then
+            echo "==> No PostgreSQL migrations requested; skipping."
+            exit 0
+          fi
 
-          [[ "${RUN_AUTH}" == "true" ]] && wait_migration migrate-auth
-          [[ "${RUN_USER}" == "true" ]] && wait_migration migrate-user
-          [[ "${RUN_WORKSPACE}" == "true" ]] && wait_migration migrate-workspace
+          if [[ "${RUN_AUTH}" == "true" ]]; then
+            run_migration auth-service "${{ steps.deploy-vars.outputs.auth_tag }}"
+          fi
+          if [[ "${RUN_USER}" == "true" ]]; then
+            run_migration user-service "${{ steps.deploy-vars.outputs.user_tag }}"
+          fi
+          if [[ "${RUN_WORKSPACE}" == "true" ]]; then
+            run_migration workspace-service "${{ steps.deploy-vars.outputs.workspace_tag }}"
+          fi
+
+          if [[ "${RUN_AUTH}" == "true" ]]; then
+            wait_migration migrate-auth
+          fi
+          if [[ "${RUN_USER}" == "true" ]]; then
+            wait_migration migrate-user
+          fi
+          if [[ "${RUN_WORKSPACE}" == "true" ]]; then
+            wait_migration migrate-workspace
+          fi
 
 
 
@@ -900,13 +917,30 @@ jobs:
             echo "  ${job}: timeout"; return 1
           }
 
-          [[ "${RUN_AUTH}" == "true" ]] && run_migration auth-service "${{ steps.deploy-vars.outputs.auth_tag }}"
-          [[ "${RUN_USER}" == "true" ]] && run_migration user-service "${{ steps.deploy-vars.outputs.user_tag }}"
-          [[ "${RUN_WORKSPACE}" == "true" ]] && run_migration workspace-service "${{ steps.deploy-vars.outputs.workspace_tag }}"
+          if [[ "${RUN_AUTH}" != "true" && "${RUN_USER}" != "true" && "${RUN_WORKSPACE}" != "true" ]]; then
+            echo "==> No PostgreSQL migrations requested; skipping."
+            exit 0
+          fi
 
-          [[ "${RUN_AUTH}" == "true" ]] && wait_migration migrate-auth
-          [[ "${RUN_USER}" == "true" ]] && wait_migration migrate-user
-          [[ "${RUN_WORKSPACE}" == "true" ]] && wait_migration migrate-workspace
+          if [[ "${RUN_AUTH}" == "true" ]]; then
+            run_migration auth-service "${{ steps.deploy-vars.outputs.auth_tag }}"
+          fi
+          if [[ "${RUN_USER}" == "true" ]]; then
+            run_migration user-service "${{ steps.deploy-vars.outputs.user_tag }}"
+          fi
+          if [[ "${RUN_WORKSPACE}" == "true" ]]; then
+            run_migration workspace-service "${{ steps.deploy-vars.outputs.workspace_tag }}"
+          fi
+
+          if [[ "${RUN_AUTH}" == "true" ]]; then
+            wait_migration migrate-auth
+          fi
+          if [[ "${RUN_USER}" == "true" ]]; then
+            wait_migration migrate-user
+          fi
+          if [[ "${RUN_WORKSPACE}" == "true" ]]; then
+            wait_migration migrate-workspace
+          fi
 
 
 

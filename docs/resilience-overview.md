@@ -9,7 +9,7 @@ Microservices CollabSpace phụ thuộc lẫn nhau (gRPC, Kafka, Debezium Connec
 ## Nguyên tắc cốt lõi
 
 1. **Timeout** mọi gọi sync giữa services (mặc định 3s).
-2. **Event** có `eventId` + `occurredAt`; consumer **idempotent**.
+2. **Event** có `eventId` + `occurredAt`; consumer **idempotent** và retry lúc startup nếu Kafka metadata/topic chưa sẵn sàng.
 3. Dependency down → **`503`** + `code` rõ (`*_UNAVAILABLE`), không `500` mù.
 4. **Health**: `live` vs `ready`; không nhận traffic khi `ready: false`.
 5. **Không fail im lặng** trên luồng quan trọng (đăng ký, xác thực, ghi dữ liệu).

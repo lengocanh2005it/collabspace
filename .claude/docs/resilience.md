@@ -53,6 +53,7 @@ Design goals:
 | Publish timing | Publish **after** local persistence succeeds (prefer transactional outbox). |
 | Delivery | Assume **at-least-once** delivery. |
 | Consumer | Handlers MUST be **idempotent** (dedupe on `eventId` before side effects). |
+| Consumer startup | Consumers MUST retry transient broker/topic metadata errors during startup and MUST NOT crash the HTTP service after bounded startup retries fail. |
 | Failure | After max retries → **DLQ topic** `collabspace.dlq.events` (see `docs/runbooks/KafkaDlqNotEmpty.md`). |
 | Unknown fields | Consumers MUST ignore unknown JSON fields. |
 
@@ -117,6 +118,7 @@ Do **not** map dependency failures to generic `500` if the cause is known.
 | Traefik circuit breaker | `circuit-breaker` | `NetworkErrorRatio() > 0.3` |
 | Forward auth | `strip-identity-headers` → `forward-auth` → `/api/v1/auth/verify` | Gateway strips spoofed identity headers, then validates JWT |
 | Kafka DLQ | `collabspace.dlq.events` + `@collabspace/shared` consumer retry | Failed consumer messages |
+| Kafka consumer startup | `@collabspace/shared` `startKafkaConsumerWithRetry` | Retries broker/topic metadata races during deploy without crashing app pods |
 | Auth email outbox | `services/auth-service/src/infrastructure/outbox/*` | DB-backed queue, retries, degraded thresholds |
 | K8s PDB | `infrastructure/k8s/pdb.yaml` | minAvailable per service |
 | Prometheus alerts | `infrastructure/monitoring/alert-rules.yml` + Alertmanager | ServiceDown, 5xx rate, … |
