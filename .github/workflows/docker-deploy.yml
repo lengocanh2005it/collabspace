@@ -590,6 +590,17 @@ jobs:
             meta.helm.sh/release-namespace=collabspace \
             --overwrite
 
+      - name: Ensure ghcr-credentials secret exists
+
+        run: |
+          OWNER="${GITHUB_REPOSITORY_OWNER,,}"
+          kubectl create secret docker-registry ghcr-credentials \
+            --namespace collabspace \
+            --docker-server=ghcr.io \
+            --docker-username="${OWNER}" \
+            --docker-password="${{ secrets.GITHUB_TOKEN }}" \
+            --dry-run=client -o yaml | kubectl apply -f -
+
 
 
       - name: Prepare Helm release state
