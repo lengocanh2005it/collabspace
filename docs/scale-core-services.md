@@ -1,8 +1,8 @@
-# Scale Core Services + Traefik lên 2 Replica
+# Scale 5 Core Services lên 2 Replica
 
-> **Mục tiêu:** Scale 5 service chính + Traefik lên 2 replica để demo High Availability.  
+> **Mục tiêu trước mắt:** Scale 5 service chính lên 2 replica để demo High Availability ở tầng application.  
 > dlq-service và analytics-service giữ nguyên 1 replica — không nằm trên critical path.  
-> Kafka giữ nguyên 1 broker — xem lý do bên dưới.
+> Traefik, Kafka và Debezium vẫn là các điểm SPOF cần xử lý ở phase HA riêng — xem ghi chú bên dưới.
 
 ---
 
@@ -33,39 +33,69 @@
 | Việc | RAM request thêm |
 |------|-----------------|
 | 5 service × +1 replica (128Mi × 5) | +640Mi |
-| Traefik: đã là 2 replica trong values.yaml | +0Mi |
 | **Tổng** | **+640Mi** |
 
-**Kết luận: Hoàn toàn đủ.** Request cluster tăng từ ~40% lên ~46%. RAM thực tế ước tính ~70% — vẫn an toàn.
+**Kết luận: Hoàn toàn đủ để scale 5 core services trước.** Request cluster tăng khoảng +640Mi RAM và +350m CPU. Với số đo live ngày 2026-06-25, DOKS vẫn còn nhiều headroom, không có pod `Pending` hoặc `CrashLoopBackOff`.
 
 ---
 
-## Tại sao KHÔNG scale Kafka
+## Thứ tự triển khai khuyến nghị
 
-Kafka đang chạy 1 broker với tất cả topics có `PartitionCount: 1` và `ReplicationFactor: 1`. Scale broker lên 3 mà không tăng replication factor và partition count **không có lợi gì** — broker mới sẽ idle hoàn toàn.
+1. Scale 5 core services lên 2 replica trước:
+   - `auth-service`
+   - `user-service`
+   - `workspace-service`
+   - `task-service`
+   - `notification-service`
+2. Sau khi rollout ổn định, kiểm tra lại:
+   - `kubectl get pods -n collabspace`
+   - `kubectl top nodes`
+   - `kubectl top pods -n collabspace --sort-by=memory`
+3. Xử lý Traefik, Kafka, Debezium ở các phase HA riêng. Không gộp chung với lần scale app service đầu tiên.
 
-Để scale Kafka đúng cách cần làm đủ 3 bước:
-1. Tăng broker lên 3
-2. Tăng `replication.factor=3` cho mỗi topic
-3. Tăng partition lên ≥3 mỗi topic (rebalance consumer group)
-
-Kafka đang dùng 351m CPU / 611Mi RAM — rất nhẹ. Đưa vào backlog khi traffic thật sự cần.
-
----
-
-## Tại sao Traefik cũng cần scale
-
-Traefik 1 replica là SPOF ở tầng pod:
-- Pod crash → K8s restart, downtime ~30–60s
-- Node chứa Traefik chết → reschedule, downtime ~1–3 phút
-
-DigitalOcean Load Balancer phía trước là managed HA — không phải SPOF. Vấn đề chỉ ở Traefik pod.
-
-> Traefik đã được set `deployment.replicas: 2` trong `values.yaml` — không cần thay đổi thêm cho Traefik.
+Lý do: 5 service chính là stateless app pods nên scale an toàn hơn. Traefik/Kafka/Debezium có ràng buộc state, storage, replication, offset hoặc TLS nên cần thiết kế riêng để tránh tạo HA "nửa vời".
 
 ---
 
-## Cách scale vĩnh viễn qua Helm
+## Các SPOF còn lại sau khi scale app services
+
+### Traefik
+
+Traefik 1 replica là SPOF ở tầng ingress pod:
+- Pod crash → K8s restart, downtime khoảng 30-60s
+- Node chứa Traefik chết → reschedule, downtime khoảng 1-3 phút
+
+DigitalOcean Load Balancer phía trước là managed HA — không phải SPOF. Vấn đề hiện tại là backend Traefik pod.
+
+**Không nên chỉ đổi Traefik `replicas: 2` ngay lập tức.** Live DOKS ngày 2026-06-25 đang chạy Traefik `1/1`, mount PVC `traefik` dạng RWO vào `/data/acme.json`, strategy `Recreate`, QoS `BestEffort`. Nếu scale thẳng lên 2 replica, cần kiểm tra kỹ ACME/TLS storage và khả năng mount PVC.
+
+Hướng an toàn hơn:
+- Chuyển TLS/ACME sang `cert-manager`, DigitalOcean managed certificate, hoặc Kubernetes Secret được quản lý ngoài Traefik.
+- Thêm `traefik.resources.requests` để scheduler ổn định hơn.
+- Sau khi không còn phụ thuộc một PVC RWO chung cho ACME, scale Traefik lên 2 replica và verify qua DO Load Balancer.
+
+### Kafka
+
+Kafka đang chạy 1 broker với topics hiện tại chủ yếu `PartitionCount: 1` và `ReplicationFactor: 1`. Scale broker lên 3 mà không đổi replication/partition **không có lợi nhiều** — broker mới có thể idle, còn dữ liệu topic vẫn không HA.
+
+Để scale Kafka đúng cách cần làm đủ:
+1. Tăng broker lên 3.
+2. Tăng `replication.factor=3` cho topic mới.
+3. Reassign topic cũ sang replication factor 3.
+4. Tăng partition lên >=3 cho topic cần song song hóa consumer.
+5. Set `min.insync.replicas=2` và producer `acks=all` cho luồng event quan trọng.
+6. Verify consumer group rebalance, lag, DLQ và recovery khi kill broker.
+
+### Debezium Connect
+
+Debezium Connect 1 replica là SPOF ở tầng CDC/outbox publisher. Nếu pod chết, event có thể bị delay nhưng thường sẽ catch up khi pod sống lại nếu Kafka/offset/outbox còn nguyên.
+
+Không nên scale Debezium trước Kafka HA. Hướng đúng:
+- Làm Kafka HA trước để offset/config/status topics có replication.
+- Sau đó scale Debezium Connect workers.
+- Kiểm tra connector config, task count, offset storage và khả năng catch up sau restart/failover.
+
+## Cách scale 5 core services vĩnh viễn qua Helm
 
 ### Bước 1 — Sửa `infrastructure/helm/collabspace/values.yaml`
 
