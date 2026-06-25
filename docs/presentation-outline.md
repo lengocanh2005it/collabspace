@@ -850,16 +850,6 @@ flowchart LR
 
 3 node còn ~11,900Mi request headroom → scale an toàn, RAM node ước tính lên 60–72%.
 
-**Cách scale vĩnh viễn qua Helm:**
-```bash
-# Sửa values.yaml rồi helm upgrade — không dùng kubectl scale (tạm thời)
-helm upgrade collabspace infrastructure/helm/collabspace \
-  --set auth-service.replicaCount=2 \
-  --set user-service.replicaCount=2 \
-  ...
-```
-
-**Kafka consumer với 2 replica:** notification-service và task-service có Kafka consumer. Với 1 partition hiện tại, chỉ 1 pod xử lý message, pod còn lại standby sẵn sàng takeover khi pod kia down — vẫn đạt mục tiêu HA.
 
 ### Redis High Availability — Sentinel
 
