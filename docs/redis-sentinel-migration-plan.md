@@ -1055,7 +1055,7 @@ bash scripts/sync-agent-docs.sh
 - [x] Add Sentinel config parsing to `notification-service`.
 - [x] Ensure `REDIS_MODE=sentinel` ignores `REDIS_URL`.
 - [x] Ensure `redis.duplicate()` in notification realtime works with Sentinel.
-- [ ] Add unit tests for standalone and Sentinel modes.
+- [x] Add unit tests for standalone and Sentinel modes.
 
 ### Helm
 
@@ -1073,9 +1073,9 @@ bash scripts/sync-agent-docs.sh
 ### Verification
 
 - [x] `helm template` passes.
-- [ ] `pnpm run lint` passes.
-- [ ] `pnpm run build` passes.
-- [ ] `pnpm run test` passes.
+- [x] `pnpm run lint` passes.
+- [x] `pnpm run build` passes.
+- [x] `pnpm run test` passes.
 - [x] DOKS rollout completes.
 - [x] All app health endpoints return `200`.
 - [x] Redis Sentinel returns current master for `mymaster`.
