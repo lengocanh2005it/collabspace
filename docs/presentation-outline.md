@@ -152,7 +152,7 @@ mindmap
 | **Degradation** | Service phụ thuộc lỗi → trả lỗi rõ ràng, không crash | ✅ |
 | **Observability** | Metrics, logs tập trung, cảnh báo tự động | ✅ |
 | **Security** | Xác thực nhiều lớp, phân quyền, bảo vệ nội bộ | ✅ |
-| **Scalability** | Scale ngang từng service theo tải | ✅ 5 service chính chạy 2 replica — demo HA thực tế |
+| **Scalability** | Scale ngang từng service theo tải | ✅ 5 service chính chạy 2 replica mỗi service |
 | **SLO latency** | Cam kết thời gian phản hồi theo từng route | ⚠️ Đo được, chưa cam kết con số |
 | **Audit compliance** | Ghi log mọi thao tác admin | ❌ Ngoài phạm vi MVP |
 
@@ -822,7 +822,7 @@ flowchart LR
 
 ### Horizontal Scaling — 5 service chính chạy 2 replica
 
-Để demo HA thực tế, 5 service trên critical path được scale lên **2 replica** chạy song song. dlq-service và analytics-service giữ nguyên 1 replica — không nằm trên luồng chính người dùng.
+5 service trên critical path được scale lên **2 replica** chạy song song. dlq-service và analytics-service giữ nguyên 1 replica — không nằm trên luồng chính người dùng.
 
 ```mermaid
 flowchart LR
