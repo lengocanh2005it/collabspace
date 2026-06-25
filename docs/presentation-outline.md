@@ -227,6 +227,28 @@ flowchart LR
 - Áp dụng: task service
 - Lợi ích: lưu toàn bộ lịch sử thay đổi của task, có thể dựng lại trạng thái bất kỳ thời điểm nào
 
+**CQRS giải quyết vấn đề gì cụ thể?**
+
+Nếu dùng mô hình CRUD thông thường cho task, mỗi lần cập nhật sẽ **ghi đè trạng thái cũ**:
+
+```
+task: { status: "DONE", assignee: "B" }   ← không biết trước đó là gì, ai thay đổi, lúc nào
+```
+
+Với CQRS + Event Sourcing, thay vì lưu trạng thái, hệ thống lưu **chuỗi sự kiện**:
+
+```
+[task_created]        → { title: "Fix bug", by: A, at: 09:00 }
+[task_assigned]       → { assignee: B, by: A, at: 09:05 }
+[status_changed]      → { from: TODO, to: DOING, by: B, at: 10:00 }
+[comment_created]     → { text: "Done!", by: B, at: 11:00 }
+[status_changed]      → { from: DOING, to: DONE, by: B, at: 11:01 }
+```
+
+Trạng thái hiện tại (`status=DONE, assignee=B`) được **tính lại từ chuỗi sự kiện** — gọi là *replay*. Đây cũng chính là nguồn dữ liệu cho Activity Feed mà không cần bảng riêng.
+
+Command side (ghi) và Query side (đọc) được tách biệt hoàn toàn — Command Handler thao tác với aggregate và lưu event, Query Handler đọc thẳng từ read model (projection đã được tổng hợp sẵn) mà không cần replay toàn bộ lịch sử mỗi lần.
+
 **Ví dụ thực tế — Activity Feed từ Event Sourcing:**
 
 ```mermaid
@@ -320,6 +342,29 @@ flowchart LR
 
 ## Slide 6 — Kiến trúc hệ thống
 
+### Tại sao phân chia thành 7 service?
+
+> Câu hỏi quan trọng nhất trong kiến trúc microservices không phải *"làm thế nào"* mà là *"tách ở đâu"*.
+
+Ranh giới service được vạch theo **Bounded Context** trong Domain-Driven Design — mỗi service sở hữu một miền nghiệp vụ độc lập, có ngôn ngữ và dữ liệu riêng:
+
+| Service | Bounded Context | Lý do tách riêng |
+|---------|----------------|-----------------|
+| **auth** | Danh tính & xác thực | Security-sensitive — credential, token, session cần tách biệt hoàn toàn khỏi dữ liệu nghiệp vụ. Thay đổi auth (đổi thuật toán hash, thêm OAuth) không ảnh hưởng các service khác |
+| **user** | Hồ sơ người dùng | Tách khỏi auth vì thay đổi liên tục (avatar, bio, preferences) — scale và deploy độc lập. Auth biết "ai" (credential), user biết "như thế nào" (profile) |
+| **workspace** | Không gian cộng tác & phân quyền | Trung tâm phân quyền — các service khác hỏi *"user này có trong workspace không?"* không phải tự kiểm tra |
+| **task** | Quản lý công việc & lịch sử | Cần Event Sourcing (lưu chuỗi sự kiện thay đổi) → MongoDB, CQRS — schema và pattern hoàn toàn khác PostgreSQL services |
+| **notification** | Thông báo người dùng | Consumer thuần — chỉ lắng nghe sự kiện và lưu thông báo. Tách ra để không làm chậm service phát sự kiện |
+| **dlq** | Xử lý message lỗi | Tách ra để tập trung logic retry/replay, có API admin riêng và dashboard monitoring riêng |
+| **analytics** | Số liệu tổng hợp cho admin | Read model — không truy vấn chéo DB của service khác, chỉ lắng nghe sự kiện và tổng hợp |
+
+**Nguyên tắc tổng quát đã áp dụng:**
+- Mỗi service có **một lý do để thay đổi** — auth thay đổi vì yêu cầu bảo mật, task thay đổi vì yêu cầu nghiệp vụ
+- Mỗi service **sở hữu dữ liệu của nó** — không service nào đọc thẳng DB của service khác
+- **Giao tiếp qua contract** (gRPC proto, Kafka event schema, HTTP DTO) — không qua shared database hay shared library chứa domain logic
+
+> **Cái giá phải trả:** 7 service = 7 bộ migration, 7 health check, 7 Docker image, 7 Helm deployment. Microservices không miễn phí — phức tạp vận hành là đánh đổi có chủ ý.
+
 ### Sơ đồ tổng thể
 
 ```mermaid
@@ -399,6 +444,39 @@ Xem giải thích chi tiết ở phần DLQ Service bên dưới.
 **Analytics Service** — đọc sự kiện từ hệ thống để tổng hợp số liệu phục vụ dashboard admin.
 
 **Kafka + Debezium CDC** — event bus bất đồng bộ. Service không đẩy sự kiện trực tiếp vào Kafka mà ghi vào bảng trung gian trong cùng transaction DB; Debezium đọc thay đổi và đẩy lên Kafka — đảm bảo không mất sự kiện dù broker tạm thời down.
+
+### Giao tiếp giữa các service — Sync vs Async
+
+> Một trong những quyết định quan trọng nhất: khi nào dùng giao tiếp đồng bộ, khi nào dùng bất đồng bộ?
+
+```mermaid
+flowchart TD
+    subgraph SYNC["Đồng bộ — cần kết quả ngay"]
+        G1[gRPC\nXác thực token] 
+        G2[HTTP nội bộ\nKiểm tra quyền workspace\nLấy thông tin user]
+    end
+
+    subgraph ASYNC["Bất đồng bộ — không cần kết quả ngay"]
+        K1[Kafka\nThông báo sự kiện nghiệp vụ\nworkspace_invited · task_assigned · comment_created]
+        K2[Kafka\nSync read model\nuser_registered → task/notification lưu bản sao]
+        K3[Kafka\nAnalytics\nTổng hợp số liệu admin]
+    end
+```
+
+**Nguyên tắc chọn lựa trong CollabSpace:**
+
+| Tình huống | Kiểu giao tiếp | Lý do |
+|-----------|---------------|-------|
+| Xác thực token mỗi request | **gRPC (sync)** | Cần kết quả đúng tức thì — không thể tiếp tục nếu token sai |
+| Kiểm tra user có trong workspace không | **HTTP nội bộ (sync)** | Quyền phải đúng trước khi ghi task — không chấp nhận lag |
+| Gửi thông báo khi có task mới | **Kafka (async)** | Notification service down không được làm task service thất bại |
+| Đồng bộ bản sao user sang task service | **Kafka (async)** | Eventual consistency chấp nhận được — tên user có thể lag vài giây |
+| Tổng hợp analytics | **Kafka (async)** | Analytics không liên quan đến luồng chính, delay hoàn toàn ổn |
+
+**Hệ quả của lựa chọn này:**
+- Nếu auth-service down → **toàn bộ request thất bại** (sync dependency)
+- Nếu notification-service down → **task vẫn tạo được**, thông báo bị delay đến khi consumer recover (async decoupling)
+- Nếu Kafka down → **sự kiện nằm trong outbox**, xử lý khi Kafka recover — không mất dữ liệu
 
 ### Trade-off
 
@@ -521,6 +599,44 @@ flowchart LR
 - Dùng **bản sao** cho dữ liệu đọc nhiều, không cần chính xác tức thì → tên người dùng trong comment, thông báo
 - Dùng **gọi trực tiếp** cho dữ liệu cần đúng ngay → kiểm tra quyền thành viên trước khi ghi task, xác thực token
 - Chấp nhận **eventual consistency** ở tầng hiển thị — người dùng vừa đổi tên, comment có thể lag vài giây
+
+### Eventual Consistency — Hiểu đúng và hiểu rõ
+
+> "Eventual consistency" không có nghĩa là *"dữ liệu sai"* — mà là *"dữ liệu đúng, nhưng không phải tức thì"*.
+
+**Ví dụ cụ thể trong CollabSpace — User đổi tên:**
+
+```mermaid
+sequenceDiagram
+    participant U as Người dùng
+    participant US as User Service
+    participant Kafka
+    participant TS as Task Service\n(bản sao user)
+
+    U->>US: Đổi tên "Anh" → "Ngọc Anh"
+    US->>US: Cập nhật PostgreSQL ✅
+    US->>Kafka: Phát sự kiện user.profile_updated
+
+    Note over Kafka,TS: Vài trăm ms đến vài giây...
+
+    TS-->>Kafka: Consumer nhận sự kiện
+    TS->>TS: Cập nhật bản sao trong MongoDB
+
+    Note over U,TS: Trong khoảng thời gian này,<br/>comment cũ hiển thị tên "Anh",<br/>comment mới hiển thị "Ngọc Anh"
+```
+
+**Khi nào Eventual Consistency là chấp nhận được?**
+- ✅ Hiển thị tên người dùng trong comment, thông báo — người đọc chấp nhận lag vài giây
+- ✅ Số liệu analytics — admin xem dashboard, không cần real-time chính xác tuyệt đối
+- ✅ Badge thông báo — hiển thị chậm 1 giây không ảnh hưởng trải nghiệm
+
+**Khi nào KHÔNG được dùng Eventual Consistency?**
+- ❌ Kiểm tra quyền trước khi ghi task — nếu user vừa bị kick khỏi workspace, phải biết ngay
+- ❌ Xác thực token — phải đúng tức thì, không chấp nhận token hết hạn được treat là hợp lệ
+- ❌ Trừ tiền, đặt hàng, dữ liệu tài chính — ngoài phạm vi project này nhưng cần nhắc
+
+**Cơ chế bảo vệ trong CollabSpace:**
+Nếu task-service nhận request nhưng bản sao user chưa được sync (user vừa đăng ký xong, chưa kịp nhận Kafka event), service có **fallback gọi trực tiếp** sang user-service để lấy thông tin — tránh trả về response thiếu dữ liệu.
 
 ### Analytics Service — Read Model cho Admin Dashboard
 
