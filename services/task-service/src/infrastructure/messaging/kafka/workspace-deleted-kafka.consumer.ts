@@ -1,7 +1,7 @@
 import { Injectable, Logger, type OnModuleDestroy, type OnModuleInit } from "@nestjs/common";
 import { Inject } from "@nestjs/common";
 import { Kafka, type Consumer } from "kafkajs";
-import { processKafkaConsumerMessage } from "@collabspace/shared";
+import { processKafkaConsumerMessage, startKafkaConsumerWithRetry } from "@collabspace/shared";
 import { ConfigurationService } from "../../../configuration/configuration.service";
 import { WorkspaceDeletionService } from "../../../application/services/workspace-deletion.service";
 import { parseKafkaOutboxJsonValue, toWorkspaceDeletedEventPayload } from "./kafka-outbox-message";
@@ -40,69 +40,74 @@ export class WorkspaceDeletedKafkaConsumer implements OnModuleInit, OnModuleDest
     const consumerGroup = `${kafkaConfig.groupId}-workspace-events`;
     const workspaceDeletedTopic = kafkaConfig.workspaceDeletedTopic;
 
-    this.consumer = kafka.consumer({ groupId: consumerGroup });
-    await this.consumer.connect();
-    await this.consumer.subscribe({
-      topic: workspaceDeletedTopic,
-      fromBeginning: false,
-    });
+    const consumer = kafka.consumer({ groupId: consumerGroup });
+    this.consumer = consumer;
 
-    this.runPromise = this.consumer.run({
-      eachMessage: async ({ topic, partition, message }) => {
-        await processKafkaConsumerMessage({
-          context: {
-            topic,
-            partition,
-            offset: message.offset,
-            key: message.key,
-            value: message.value,
+    void startKafkaConsumerWithRetry({
+      description: `Kafka consumer topic=${workspaceDeletedTopic} group=${consumerGroup}`,
+      connect: () => consumer.connect(),
+      subscribe: () => consumer.subscribe({ topic: workspaceDeletedTopic, fromBeginning: false }),
+      run: () =>
+        consumer.run({
+          eachMessage: async ({ topic, partition, message }) => {
+            await processKafkaConsumerMessage({
+              context: {
+                topic,
+                partition,
+                offset: message.offset,
+                key: message.key,
+                value: message.value,
+              },
+              consumerGroup,
+              maxRetries: kafkaConfig.maxRetries,
+              retryDelayMs: kafkaConfig.retryDelayMs,
+              publishToDlq: (envelope) => this.kafkaDlqPublisher.publish(envelope),
+              log: this.logger,
+              parseValue: parseKafkaOutboxJsonValue,
+              handler: async (record) => {
+                const payload = toWorkspaceDeletedEventPayload(record);
+                if (!payload) {
+                  this.logger.warn(
+                    `Skipping Kafka workspace_deleted message missing workspaceId/deletedById keys=${Object.keys(record).join(",")}`,
+                  );
+                  return;
+                }
+
+                if (payload.eventId) {
+                  const claimed = await this.processedEventRepository.tryClaim(payload.eventId);
+                  if (!claimed) {
+                    this.logger.log(
+                      `workspace_deleted already processed eventId=${payload.eventId} workspaceId=${payload.workspaceId}`,
+                    );
+                    return;
+                  }
+                }
+
+                try {
+                  const deletedTasks = await this.deletionService.deleteWorkspaceData(
+                    payload.workspaceId,
+                  );
+                  this.logger.warn(
+                    `workspace_deleted via kafka workspaceId=${payload.workspaceId} deletedTasks=${deletedTasks}`,
+                  );
+                } catch (error) {
+                  if (payload.eventId) {
+                    await this.processedEventRepository.releaseClaim(payload.eventId);
+                  }
+                  throw error;
+                }
+              },
+            });
           },
-          consumerGroup,
-          maxRetries: kafkaConfig.maxRetries,
-          retryDelayMs: kafkaConfig.retryDelayMs,
-          publishToDlq: (envelope) => this.kafkaDlqPublisher.publish(envelope),
-          log: this.logger,
-          parseValue: parseKafkaOutboxJsonValue,
-          handler: async (record) => {
-            const payload = toWorkspaceDeletedEventPayload(record);
-            if (!payload) {
-              this.logger.warn(
-                `Skipping Kafka workspace_deleted message missing workspaceId/deletedById keys=${Object.keys(record).join(",")}`,
-              );
-              return;
-            }
-
-            if (payload.eventId) {
-              const claimed = await this.processedEventRepository.tryClaim(payload.eventId);
-              if (!claimed) {
-                this.logger.log(
-                  `workspace_deleted already processed eventId=${payload.eventId} workspaceId=${payload.workspaceId}`,
-                );
-                return;
-              }
-            }
-
-            try {
-              const deletedTasks = await this.deletionService.deleteWorkspaceData(
-                payload.workspaceId,
-              );
-              this.logger.warn(
-                `workspace_deleted via kafka workspaceId=${payload.workspaceId} deletedTasks=${deletedTasks}`,
-              );
-            } catch (error) {
-              if (payload.eventId) {
-                await this.processedEventRepository.releaseClaim(payload.eventId);
-              }
-              throw error;
-            }
-          },
-        });
+        }),
+      disconnect: () => consumer.disconnect(),
+      onStarted: (runPromise) => {
+        this.runPromise = runPromise;
       },
+      log: this.logger,
+      maxRetries: Math.max(kafkaConfig.maxRetries, 12),
+      retryDelayMs: Math.max(kafkaConfig.retryDelayMs, 1000),
     });
-
-    this.logger.log(
-      `Kafka consumer listening topic=${workspaceDeletedTopic} group=${consumerGroup}`,
-    );
   }
 
   async onModuleDestroy(): Promise<void> {

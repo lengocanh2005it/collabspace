@@ -5,6 +5,7 @@ import {
   TaskDeletedEventSchema,
   TaskStatusChangedEventSchema,
   processKafkaConsumerMessage,
+  startKafkaConsumerWithRetry,
 } from '@collabspace/shared';
 import { ConfigurationService } from '../config/configuration.service.js';
 import { AnalyticsRepository } from '../analytics/repositories/analytics.repository.js';
@@ -33,45 +34,47 @@ export class TaskEventsConsumer implements OnModuleInit, OnModuleDestroy {
     const kafka = new Kafka({ clientId: kafkaConfig.clientId, brokers: kafkaConfig.brokers });
     const consumerGroup = `${kafkaConfig.groupId}-task-events`;
 
-    this.consumer = kafka.consumer({ groupId: consumerGroup });
-    try {
-      await this.consumer.connect();
-    } catch (error) {
-      this.logger.warn(
-        `Kafka consumer failed to connect (non-fatal): ${error instanceof Error ? error.message : String(error)}`,
-      );
-      this.consumer = null;
-      return;
-    }
     const topics = [
       kafkaConfig.taskCreatedTopic,
       kafkaConfig.taskStatusChangedTopic,
       kafkaConfig.taskDeletedTopic,
     ];
-    await this.consumer.subscribe({ topics, fromBeginning: false });
+    const consumer = kafka.consumer({ groupId: consumerGroup });
+    this.consumer = consumer;
 
-    this.runPromise = this.consumer.run({
-      eachMessage: async ({ topic, partition, message }) => {
-        await processKafkaConsumerMessage({
-          context: {
-            topic,
-            partition,
-            offset: message.offset,
-            key: message.key,
-            value: message.value,
+    void startKafkaConsumerWithRetry({
+      description: `Kafka consumer topics=${topics.join(',')} group=${consumerGroup}`,
+      connect: () => consumer.connect(),
+      subscribe: () => consumer.subscribe({ topics, fromBeginning: false }),
+      run: () =>
+        consumer.run({
+          eachMessage: async ({ topic, partition, message }) => {
+            await processKafkaConsumerMessage({
+              context: {
+                topic,
+                partition,
+                offset: message.offset,
+                key: message.key,
+                value: message.value,
+              },
+              consumerGroup,
+              maxRetries: kafkaConfig.maxRetries,
+              retryDelayMs: kafkaConfig.retryDelayMs,
+              publishToDlq: (envelope) => this.dlqPublisher.publish(envelope),
+              log: this.logger,
+              parseValue: parseKafkaJsonValue,
+              handler: (record, topic) => this.handleTaskEvent(record, topic),
+            });
           },
-          consumerGroup,
-          maxRetries: kafkaConfig.maxRetries,
-          retryDelayMs: kafkaConfig.retryDelayMs,
-          publishToDlq: (envelope) => this.dlqPublisher.publish(envelope),
-          log: this.logger,
-          parseValue: parseKafkaJsonValue,
-          handler: (record, topic) => this.handleTaskEvent(record, topic),
-        });
+        }),
+      disconnect: () => consumer.disconnect(),
+      onStarted: (runPromise) => {
+        this.runPromise = runPromise;
       },
+      log: this.logger,
+      maxRetries: Math.max(kafkaConfig.maxRetries, 12),
+      retryDelayMs: Math.max(kafkaConfig.retryDelayMs, 1000),
     });
-
-    this.logger.log(`Kafka consumer listening topics=${topics.join(',')} group=${consumerGroup}`);
   }
 
   async handleTaskEvent(

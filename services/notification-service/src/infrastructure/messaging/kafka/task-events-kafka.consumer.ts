@@ -1,7 +1,7 @@
 import { Injectable, Logger, type OnModuleDestroy, type OnModuleInit } from "@nestjs/common";
 import { CommandBus } from "@nestjs/cqrs";
 import { Kafka, type Consumer } from "kafkajs";
-import { processKafkaConsumerMessage } from "@collabspace/shared";
+import { processKafkaConsumerMessage, startKafkaConsumerWithRetry } from "@collabspace/shared";
 import { InboundNotificationEventMapper } from "../../../application/mappers/inbound-notification-event.mapper";
 import { ConfigurationService } from "../../../configuration/configuration.service";
 import {
@@ -41,59 +41,64 @@ export class TaskEventsKafkaConsumer implements OnModuleInit, OnModuleDestroy {
     });
 
     const consumerGroup = `${kafkaConfig.groupId}-task-events`;
+    const topics = [
+      kafkaConfig.taskAssignedTopic,
+      kafkaConfig.taskCommentCreatedTopic,
+      kafkaConfig.taskCommentMentionedTopic,
+    ];
+    const consumer = kafka.consumer({ groupId: consumerGroup });
+    this.consumer = consumer;
 
-    this.consumer = kafka.consumer({ groupId: consumerGroup });
-    await this.consumer.connect();
-    await this.consumer.subscribe({
-      topics: [
-        kafkaConfig.taskAssignedTopic,
-        kafkaConfig.taskCommentCreatedTopic,
-        kafkaConfig.taskCommentMentionedTopic,
-      ],
-      fromBeginning: false,
-    });
+    void startKafkaConsumerWithRetry({
+      description: `Kafka consumer topics=${topics.join(",")} group=${consumerGroup}`,
+      connect: () => consumer.connect(),
+      subscribe: () => consumer.subscribe({ topics, fromBeginning: false }),
+      run: () =>
+        consumer.run({
+          eachMessage: async ({ topic, partition, message }) => {
+            await processKafkaConsumerMessage({
+              context: {
+                topic,
+                partition,
+                offset: message.offset,
+                key: message.key,
+                value: message.value,
+              },
+              consumerGroup,
+              maxRetries: kafkaConfig.maxRetries,
+              retryDelayMs: kafkaConfig.retryDelayMs,
+              publishToDlq: (envelope) => this.kafkaDlqPublisher.publish(envelope),
+              log: this.logger,
+              parseValue: parseKafkaOutboxJsonValue,
+              handler: async (record, messageTopic) => {
+                if (messageTopic === kafkaConfig.taskAssignedTopic) {
+                  await this.handleTaskAssigned(record);
+                  return;
+                }
 
-    this.runPromise = this.consumer.run({
-      eachMessage: async ({ topic, partition, message }) => {
-        await processKafkaConsumerMessage({
-          context: {
-            topic,
-            partition,
-            offset: message.offset,
-            key: message.key,
-            value: message.value,
+                if (messageTopic === kafkaConfig.taskCommentCreatedTopic) {
+                  await this.handleTaskCommented(record);
+                  return;
+                }
+
+                if (messageTopic === kafkaConfig.taskCommentMentionedTopic) {
+                  await this.handleCommentMentioned(record);
+                  return;
+                }
+
+                this.logger.warn(`Skipping Kafka message from unhandled topic=${messageTopic}`);
+              },
+            });
           },
-          consumerGroup,
-          maxRetries: kafkaConfig.maxRetries,
-          retryDelayMs: kafkaConfig.retryDelayMs,
-          publishToDlq: (envelope) => this.kafkaDlqPublisher.publish(envelope),
-          log: this.logger,
-          parseValue: parseKafkaOutboxJsonValue,
-          handler: async (record, messageTopic) => {
-            if (messageTopic === kafkaConfig.taskAssignedTopic) {
-              await this.handleTaskAssigned(record);
-              return;
-            }
-
-            if (messageTopic === kafkaConfig.taskCommentCreatedTopic) {
-              await this.handleTaskCommented(record);
-              return;
-            }
-
-            if (messageTopic === kafkaConfig.taskCommentMentionedTopic) {
-              await this.handleCommentMentioned(record);
-              return;
-            }
-
-            this.logger.warn(`Skipping Kafka message from unhandled topic=${messageTopic}`);
-          },
-        });
+        }),
+      disconnect: () => consumer.disconnect(),
+      onStarted: (runPromise) => {
+        this.runPromise = runPromise;
       },
+      log: this.logger,
+      maxRetries: Math.max(kafkaConfig.maxRetries, 12),
+      retryDelayMs: Math.max(kafkaConfig.retryDelayMs, 1000),
     });
-
-    this.logger.log(
-      `Kafka consumer listening topics=${kafkaConfig.taskAssignedTopic},${kafkaConfig.taskCommentCreatedTopic},${kafkaConfig.taskCommentMentionedTopic} group=${consumerGroup}`,
-    );
   }
 
   private async handleTaskAssigned(record: Record<string, unknown>): Promise<void> {

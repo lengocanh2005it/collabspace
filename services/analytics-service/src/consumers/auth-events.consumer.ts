@@ -1,6 +1,10 @@
 import { Injectable, Logger, type OnModuleDestroy, type OnModuleInit } from '@nestjs/common';
 import { Kafka, type Consumer } from 'kafkajs';
-import { UserRegisteredEventSchema, processKafkaConsumerMessage } from '@collabspace/shared';
+import {
+  UserRegisteredEventSchema,
+  processKafkaConsumerMessage,
+  startKafkaConsumerWithRetry,
+} from '@collabspace/shared';
 import { ConfigurationService } from '../config/configuration.service.js';
 import { AnalyticsRepository } from '../analytics/repositories/analytics.repository.js';
 import { KafkaDlqPublisher } from './kafka-dlq.publisher.js';
@@ -28,45 +32,46 @@ export class AuthEventsConsumer implements OnModuleInit, OnModuleDestroy {
     const kafka = new Kafka({ clientId: kafkaConfig.clientId, brokers: kafkaConfig.brokers });
     const consumerGroup = `${kafkaConfig.groupId}-user-events`;
 
-    this.consumer = kafka.consumer({ groupId: consumerGroup });
-    try {
-      await this.consumer.connect();
-    } catch (error) {
-      this.logger.warn(
-        `Kafka consumer failed to connect (non-fatal): ${error instanceof Error ? error.message : String(error)}`,
-      );
-      this.consumer = null;
-      return;
-    }
-    await this.consumer.subscribe({
-      topics: [kafkaConfig.userRegisteredTopic],
-      fromBeginning: false,
-    });
+    const consumer = kafka.consumer({ groupId: consumerGroup });
+    this.consumer = consumer;
 
-    this.runPromise = this.consumer.run({
-      eachMessage: async ({ topic, partition, message }) => {
-        await processKafkaConsumerMessage({
-          context: {
-            topic,
-            partition,
-            offset: message.offset,
-            key: message.key,
-            value: message.value,
+    void startKafkaConsumerWithRetry({
+      description: `Kafka consumer topic=${kafkaConfig.userRegisteredTopic} group=${consumerGroup}`,
+      connect: () => consumer.connect(),
+      subscribe: () =>
+        consumer.subscribe({
+          topics: [kafkaConfig.userRegisteredTopic],
+          fromBeginning: false,
+        }),
+      run: () =>
+        consumer.run({
+          eachMessage: async ({ topic, partition, message }) => {
+            await processKafkaConsumerMessage({
+              context: {
+                topic,
+                partition,
+                offset: message.offset,
+                key: message.key,
+                value: message.value,
+              },
+              consumerGroup,
+              maxRetries: kafkaConfig.maxRetries,
+              retryDelayMs: kafkaConfig.retryDelayMs,
+              publishToDlq: (envelope) => this.dlqPublisher.publish(envelope),
+              log: this.logger,
+              parseValue: parseKafkaJsonValue,
+              handler: (record, topic) => this.handleAuthEvent(record, topic),
+            });
           },
-          consumerGroup,
-          maxRetries: kafkaConfig.maxRetries,
-          retryDelayMs: kafkaConfig.retryDelayMs,
-          publishToDlq: (envelope) => this.dlqPublisher.publish(envelope),
-          log: this.logger,
-          parseValue: parseKafkaJsonValue,
-          handler: (record, topic) => this.handleAuthEvent(record, topic),
-        });
+        }),
+      disconnect: () => consumer.disconnect(),
+      onStarted: (runPromise) => {
+        this.runPromise = runPromise;
       },
+      log: this.logger,
+      maxRetries: Math.max(kafkaConfig.maxRetries, 12),
+      retryDelayMs: Math.max(kafkaConfig.retryDelayMs, 1000),
     });
-
-    this.logger.log(
-      `Kafka consumer listening topic=${kafkaConfig.userRegisteredTopic} group=${consumerGroup}`,
-    );
   }
 
   async handleAuthEvent(

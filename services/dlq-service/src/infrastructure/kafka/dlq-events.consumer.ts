@@ -1,6 +1,6 @@
 import { Injectable, Logger, type OnModuleDestroy, type OnModuleInit } from '@nestjs/common';
 import { Kafka, type Consumer } from 'kafkajs';
-import type { KafkaDlqEnvelope } from '@collabspace/shared';
+import { startKafkaConsumerWithRetry, type KafkaDlqEnvelope } from '@collabspace/shared';
 import { ConfigurationService } from '../../configuration/configuration.service';
 import { DlqIngestService } from '../../application/dlq-ingest.service';
 
@@ -27,53 +27,59 @@ export class DlqEventsConsumer implements OnModuleInit, OnModuleDestroy {
       brokers: kafkaConfig.brokers,
     });
 
-    this.consumer = kafka.consumer({ groupId: kafkaConfig.groupId });
-    await this.consumer.connect();
-    await this.consumer.subscribe({ topics: [kafkaConfig.dlqTopic], fromBeginning: false });
+    const consumer = kafka.consumer({ groupId: kafkaConfig.groupId });
+    this.consumer = consumer;
 
-    this.runPromise = this.consumer.run({
-      eachMessage: async ({ partition, message }) => {
-        const rawValue = message.value?.toString();
-        if (!rawValue) {
-          this.logger.warn(
-            `DLQ consumer: empty message value at partition=${partition} offset=${message.offset}`,
-          );
-          return;
-        }
+    void startKafkaConsumerWithRetry({
+      description: `DLQ Kafka consumer topic=${kafkaConfig.dlqTopic} group=${kafkaConfig.groupId}`,
+      connect: () => consumer.connect(),
+      subscribe: () => consumer.subscribe({ topics: [kafkaConfig.dlqTopic], fromBeginning: false }),
+      run: () =>
+        consumer.run({
+          eachMessage: async ({ partition, message }) => {
+            const rawValue = message.value?.toString();
+            if (!rawValue) {
+              this.logger.warn(
+                `DLQ consumer: empty message value at partition=${partition} offset=${message.offset}`,
+              );
+              return;
+            }
 
-        let envelope: KafkaDlqEnvelope;
-        try {
-          envelope = JSON.parse(rawValue) as KafkaDlqEnvelope;
-        } catch (err) {
-          this.logger.error(
-            `DLQ consumer: failed to parse message at partition=${partition} offset=${message.offset}: ${err instanceof Error ? err.message : String(err)}`,
-          );
-          return;
-        }
+            let envelope: KafkaDlqEnvelope;
+            try {
+              envelope = JSON.parse(rawValue) as KafkaDlqEnvelope;
+            } catch (err) {
+              this.logger.error(
+                `DLQ consumer: failed to parse message at partition=${partition} offset=${message.offset}: ${err instanceof Error ? err.message : String(err)}`,
+              );
+              return;
+            }
 
-        if (envelope.version !== 1) {
-          this.logger.warn(
-            `DLQ consumer: unsupported envelope version=${String(envelope.version)} at partition=${partition} offset=${message.offset} — skipping`,
-          );
-          return;
-        }
+            if (envelope.version !== 1) {
+              this.logger.warn(
+                `DLQ consumer: unsupported envelope version=${String(envelope.version)} at partition=${partition} offset=${message.offset} — skipping`,
+              );
+              return;
+            }
 
-        try {
-          await this.ingestService.ingest(envelope);
-        } catch (err) {
-          // Log but do not re-throw — commit the offset to avoid infinite loop.
-          // The message is already in MongoDB or failed due to a transient DB error;
-          // ops should be alerted via Prometheus dlq_consumer_events_ingested_total drop.
-          this.logger.error(
-            `DLQ consumer: ingest failed for topic=${envelope.sourceTopic} offset=${envelope.offset}: ${err instanceof Error ? err.message : String(err)}`,
-          );
-        }
+            try {
+              await this.ingestService.ingest(envelope);
+            } catch (err) {
+              // Log but do not re-throw — commit the offset to avoid infinite loop.
+              // The message is already in MongoDB or failed due to a transient DB error;
+              // ops should be alerted via Prometheus dlq_consumer_events_ingested_total drop.
+              this.logger.error(
+                `DLQ consumer: ingest failed for topic=${envelope.sourceTopic} offset=${envelope.offset}: ${err instanceof Error ? err.message : String(err)}`,
+              );
+            }
+          },
+        }),
+      disconnect: () => consumer.disconnect(),
+      onStarted: (runPromise) => {
+        this.runPromise = runPromise;
       },
+      log: this.logger,
     });
-
-    this.logger.log(
-      `DLQ Kafka consumer ready: topic=${kafkaConfig.dlqTopic} group=${kafkaConfig.groupId}`,
-    );
   }
 
   async onModuleDestroy(): Promise<void> {

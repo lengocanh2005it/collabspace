@@ -3,7 +3,7 @@ import { CommandBus } from "@nestjs/cqrs";
 import { Kafka, type Consumer } from "kafkajs";
 import { CreateUserReplicaCommand } from "../../../application/commands/create-user-replica.command";
 import { SyncUserReplicaCommand } from "../../../application/commands/sync-user-replica.command";
-import { processKafkaConsumerMessage } from "@collabspace/shared";
+import { processKafkaConsumerMessage, startKafkaConsumerWithRetry } from "@collabspace/shared";
 import { ConfigurationService } from "../../../configuration/configuration.service";
 import { MetricsService } from "../../../metrics/metrics.service";
 import {
@@ -39,50 +39,55 @@ export class UserEventsKafkaConsumer implements OnModuleInit, OnModuleDestroy {
     });
 
     const consumerGroup = `${kafkaConfig.groupId}-user-events`;
+    const topics = [kafkaConfig.userProfileUpdatedTopic, kafkaConfig.userRegisteredTopic];
+    const consumer = kafka.consumer({ groupId: consumerGroup });
+    this.consumer = consumer;
 
-    this.consumer = kafka.consumer({ groupId: consumerGroup });
-    await this.consumer.connect();
-    await this.consumer.subscribe({
-      topics: [kafkaConfig.userProfileUpdatedTopic, kafkaConfig.userRegisteredTopic],
-      fromBeginning: false,
-    });
+    void startKafkaConsumerWithRetry({
+      description: `Kafka consumer topics=${topics.join(",")} group=${consumerGroup}`,
+      connect: () => consumer.connect(),
+      subscribe: () => consumer.subscribe({ topics, fromBeginning: false }),
+      run: () =>
+        consumer.run({
+          eachMessage: async ({ topic, partition, message }) => {
+            await processKafkaConsumerMessage({
+              context: {
+                topic,
+                partition,
+                offset: message.offset,
+                key: message.key,
+                value: message.value,
+              },
+              consumerGroup,
+              maxRetries: kafkaConfig.maxRetries,
+              retryDelayMs: kafkaConfig.retryDelayMs,
+              publishToDlq: (envelope) => this.kafkaDlqPublisher.publish(envelope),
+              log: this.logger,
+              parseValue: parseKafkaOutboxJsonValue,
+              handler: async (record, messageTopic) => {
+                if (messageTopic === kafkaConfig.userRegisteredTopic) {
+                  await this.handleUserRegistered(record);
+                  return;
+                }
 
-    this.runPromise = this.consumer.run({
-      eachMessage: async ({ topic, partition, message }) => {
-        await processKafkaConsumerMessage({
-          context: {
-            topic,
-            partition,
-            offset: message.offset,
-            key: message.key,
-            value: message.value,
+                if (messageTopic === kafkaConfig.userProfileUpdatedTopic) {
+                  await this.handleUserProfileUpdated(record);
+                  return;
+                }
+
+                this.logger.warn(`Skipping Kafka message from unhandled topic=${messageTopic}`);
+              },
+            });
           },
-          consumerGroup,
-          maxRetries: kafkaConfig.maxRetries,
-          retryDelayMs: kafkaConfig.retryDelayMs,
-          publishToDlq: (envelope) => this.kafkaDlqPublisher.publish(envelope),
-          log: this.logger,
-          parseValue: parseKafkaOutboxJsonValue,
-          handler: async (record, messageTopic) => {
-            if (messageTopic === kafkaConfig.userRegisteredTopic) {
-              await this.handleUserRegistered(record);
-              return;
-            }
-
-            if (messageTopic === kafkaConfig.userProfileUpdatedTopic) {
-              await this.handleUserProfileUpdated(record);
-              return;
-            }
-
-            this.logger.warn(`Skipping Kafka message from unhandled topic=${messageTopic}`);
-          },
-        });
+        }),
+      disconnect: () => consumer.disconnect(),
+      onStarted: (runPromise) => {
+        this.runPromise = runPromise;
       },
+      log: this.logger,
+      maxRetries: Math.max(kafkaConfig.maxRetries, 12),
+      retryDelayMs: Math.max(kafkaConfig.retryDelayMs, 1000),
     });
-
-    this.logger.log(
-      `Kafka consumer listening topics=${kafkaConfig.userProfileUpdatedTopic},${kafkaConfig.userRegisteredTopic} group=${consumerGroup}`,
-    );
   }
 
   private async handleUserRegistered(record: Record<string, unknown>): Promise<void> {

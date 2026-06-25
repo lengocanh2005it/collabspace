@@ -1,6 +1,6 @@
 import { Injectable, Logger, type OnModuleDestroy, type OnModuleInit } from "@nestjs/common";
 import { Kafka, type Consumer } from "kafkajs";
-import { processKafkaConsumerMessage } from "@collabspace/shared";
+import { processKafkaConsumerMessage, startKafkaConsumerWithRetry } from "@collabspace/shared";
 import { ConfigurationService } from "../../../configuration/configuration.service";
 import { WorkspaceInviteNotificationService } from "../../../application/services/workspace-invite-notification.service";
 import { WorkspaceDeletedNotificationService } from "../../../application/services/workspace-deleted-notification.service";
@@ -37,50 +37,55 @@ export class WorkspaceEventsKafkaConsumer implements OnModuleInit, OnModuleDestr
     });
 
     const consumerGroup = `${kafkaConfig.groupId}-workspace-events`;
+    const topics = [kafkaConfig.workspaceInvitedTopic, kafkaConfig.workspaceDeletedTopic];
+    const consumer = kafka.consumer({ groupId: consumerGroup });
+    this.consumer = consumer;
 
-    this.consumer = kafka.consumer({ groupId: consumerGroup });
-    await this.consumer.connect();
-    await this.consumer.subscribe({
-      topics: [kafkaConfig.workspaceInvitedTopic, kafkaConfig.workspaceDeletedTopic],
-      fromBeginning: false,
-    });
+    void startKafkaConsumerWithRetry({
+      description: `Kafka consumer topics=${topics.join(",")} group=${consumerGroup}`,
+      connect: () => consumer.connect(),
+      subscribe: () => consumer.subscribe({ topics, fromBeginning: false }),
+      run: () =>
+        consumer.run({
+          eachMessage: async ({ topic, partition, message }) => {
+            await processKafkaConsumerMessage({
+              context: {
+                topic,
+                partition,
+                offset: message.offset,
+                key: message.key,
+                value: message.value,
+              },
+              consumerGroup,
+              maxRetries: kafkaConfig.maxRetries,
+              retryDelayMs: kafkaConfig.retryDelayMs,
+              publishToDlq: (envelope) => this.kafkaDlqPublisher.publish(envelope),
+              log: this.logger,
+              parseValue: parseKafkaOutboxJsonValue,
+              handler: async (record, messageTopic) => {
+                if (messageTopic === kafkaConfig.workspaceInvitedTopic) {
+                  await this.handleWorkspaceInvited(record);
+                  return;
+                }
 
-    this.runPromise = this.consumer.run({
-      eachMessage: async ({ topic, partition, message }) => {
-        await processKafkaConsumerMessage({
-          context: {
-            topic,
-            partition,
-            offset: message.offset,
-            key: message.key,
-            value: message.value,
+                if (messageTopic === kafkaConfig.workspaceDeletedTopic) {
+                  await this.handleWorkspaceDeleted(record);
+                  return;
+                }
+
+                this.logger.warn(`Skipping Kafka message from unhandled topic=${messageTopic}`);
+              },
+            });
           },
-          consumerGroup,
-          maxRetries: kafkaConfig.maxRetries,
-          retryDelayMs: kafkaConfig.retryDelayMs,
-          publishToDlq: (envelope) => this.kafkaDlqPublisher.publish(envelope),
-          log: this.logger,
-          parseValue: parseKafkaOutboxJsonValue,
-          handler: async (record, messageTopic) => {
-            if (messageTopic === kafkaConfig.workspaceInvitedTopic) {
-              await this.handleWorkspaceInvited(record);
-              return;
-            }
-
-            if (messageTopic === kafkaConfig.workspaceDeletedTopic) {
-              await this.handleWorkspaceDeleted(record);
-              return;
-            }
-
-            this.logger.warn(`Skipping Kafka message from unhandled topic=${messageTopic}`);
-          },
-        });
+        }),
+      disconnect: () => consumer.disconnect(),
+      onStarted: (runPromise) => {
+        this.runPromise = runPromise;
       },
+      log: this.logger,
+      maxRetries: Math.max(kafkaConfig.maxRetries, 12),
+      retryDelayMs: Math.max(kafkaConfig.retryDelayMs, 1000),
     });
-
-    this.logger.log(
-      `Kafka consumer listening topics=${kafkaConfig.workspaceInvitedTopic},${kafkaConfig.workspaceDeletedTopic} group=${consumerGroup}`,
-    );
   }
 
   private async handleWorkspaceInvited(record: Record<string, unknown>): Promise<void> {
