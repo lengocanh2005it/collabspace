@@ -909,6 +909,39 @@ flowchart LR
 
 > 📄 Nguồn: `infrastructure/helm/collabspace/templates/`, `infrastructure/vault/README.md`
 
+### Chi phí vận hành DOKS
+
+> Chi phí là một trade-off thực sự — không nên bỏ qua khi nói về kiến trúc production.
+
+**Breakdown chi phí thực tế (tháng 6/2026):**
+
+| Thành phần | Cấu hình | Chi phí/tháng |
+|-----------|----------|--------------|
+| **DOKS Worker Nodes** | 3 × 4vCPU / 8GiB RAM (SGP1) | ~$72 |
+| **DO Load Balancer** | Tự động tạo khi deploy Traefik | ~$12 |
+| **DO Spaces** | Object Storage cho backup (7 ngày giữ lại) | ~$5 |
+| **DO Container Registry** | Lưu Docker image cho CI/CD | ~$5 |
+| **DOKS Control Plane** | Managed K8s master (miễn phí trên DOKS) | $0 |
+| **Tổng ước tính** | | **~$94/tháng** |
+
+> **Lưu ý:** DOKS không tính phí control plane (managed) — đây là lợi thế so với tự dựng K8s cluster trên VM.
+
+**Tại sao chọn DOKS thay vì k3s single Droplet rẻ hơn?**
+
+Trước khi migrate lên DOKS (2026-06-23), CollabSpace chạy trên **k3s single-node Droplet $48/tháng**. Trade-off:
+
+| | k3s single Droplet ($48/tháng) | DOKS 3-node (~$94/tháng) |
+|--|-------------------------------|--------------------------|
+| **Node failure** | Toàn bộ hệ thống down | Pod tự migrate sang node khác |
+| **K8s upgrade** | Tự làm tay, rủi ro downtime | Managed, DigitalOcean xử lý |
+| **Scale** | Phải resize Droplet (downtime) | Thêm node không downtime |
+| **Workload isolation** | Tất cả pod trên 1 node | Pod phân tán trên 3 node |
+| **Chi phí** | $48/tháng | ~$94/tháng |
+
+**Kết luận:** DOKS tốn gấp ~2× nhưng mua được HA thật sự — phù hợp với mục tiêu demo production-like. Với production thật có traffic lớn, DOKS là lựa chọn đúng đắn; với demo đơn thuần, k3s đủ dùng.
+
+> 📄 Nguồn: `infrastructure/helm/collabspace/templates/`, `infrastructure/vault/README.md`
+
 ---
 
 ## Slide 9 — CI/CD & Triển khai trên DOKS
