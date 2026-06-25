@@ -152,7 +152,7 @@ mindmap
 | **Degradation** | Service phụ thuộc lỗi → trả lỗi rõ ràng, không crash | ✅ |
 | **Observability** | Metrics, logs tập trung, cảnh báo tự động | ✅ |
 | **Security** | Xác thực nhiều lớp, phân quyền, bảo vệ nội bộ | ✅ |
-| **Scalability** | Scale ngang từng service theo tải | ⚠️ Cấu hình có, chưa đo baseline |
+| **Scalability** | Scale ngang từng service theo tải | ✅ 5 service chính chạy 2 replica — demo HA thực tế |
 | **SLO latency** | Cam kết thời gian phản hồi theo từng route | ⚠️ Đo được, chưa cam kết con số |
 | **Audit compliance** | Ghi log mọi thao tác admin | ❌ Ngoài phạm vi MVP |
 
@@ -689,9 +689,14 @@ flowchart TD
     subgraph DOKS["DigitalOcean Kubernetes — namespace: collabspace"]
         Traefik[Traefik\nRouting · Auth · Rate limit · TLS termination]
 
-        subgraph Apps["7 App Deployments"]
+        subgraph Apps["App Deployments"]
             direction LR
-            A1[auth] & A2[user] & A3[workspace] & A4[task] & A5[notification] & A6[dlq] & A7[analytics]
+            subgraph HA["5 service chính — 2 replica mỗi service"]
+                A1[auth ×2] & A2[user ×2] & A3[workspace ×2] & A4[task ×2] & A5[notification ×2]
+            end
+            subgraph Single["2 service hỗ trợ — 1 replica"]
+                A6[dlq ×1] & A7[analytics ×1]
+            end
         end
 
         subgraph DBs["Databases (tất cả đều HA)"]
@@ -814,6 +819,47 @@ flowchart LR
 - Tốt hơn nhiều so với chạy PostgreSQL trong một StatefulSet đơn lẻ — đó là cách học thuật, đây là cách production
 
 > **Quyết định**: Dự án ban đầu dùng Bitnami PostgreSQL StatefulSet. Sau khi migrate sang DOKS, chuyển sang CloudNativePG để có failover thật sự và không phụ thuộc cách setup thủ công. Migration này được thực hiện mà không cần downtime dữ liệu.
+
+### Horizontal Scaling — 5 service chính chạy 2 replica
+
+Để demo HA thực tế, 5 service trên critical path được scale lên **2 replica** chạy song song. dlq-service và analytics-service giữ nguyên 1 replica — không nằm trên luồng chính người dùng.
+
+```mermaid
+flowchart LR
+    DOLB[DO Load Balancer] --> Traefik
+
+    Traefik -->|phân tải| A1[auth pod 1]
+    Traefik -->|phân tải| A2[auth pod 2]
+
+    Note1["Tương tự với user · workspace · task · notification"]
+
+    A1 & A2 --> Redis[(Redis Sentinel)]
+    A1 & A2 --> PG[(PostgreSQL)]
+```
+
+**Phân tích tài nguyên trước khi scale (đo thực tế 2026-06-25):**
+
+| Service | RAM đang dùng | RAM request thêm khi +1 replica |
+|---------|--------------|--------------------------------|
+| auth-service | 99Mi | 256Mi |
+| user-service | 94Mi | 256Mi |
+| workspace-service | 88Mi | 128Mi |
+| task-service | 111Mi | 256Mi |
+| notification-service | 99Mi | 256Mi |
+| **Tổng thêm** | | **1,152Mi** |
+
+3 node còn ~11,900Mi request headroom → scale an toàn, RAM node ước tính lên 60–72%.
+
+**Cách scale vĩnh viễn qua Helm:**
+```bash
+# Sửa values.yaml rồi helm upgrade — không dùng kubectl scale (tạm thời)
+helm upgrade collabspace infrastructure/helm/collabspace \
+  --set auth-service.replicaCount=2 \
+  --set user-service.replicaCount=2 \
+  ...
+```
+
+**Kafka consumer với 2 replica:** notification-service và task-service có Kafka consumer. Với 1 partition hiện tại, chỉ 1 pod xử lý message, pod còn lại standby sẵn sàng takeover khi pod kia down — vẫn đạt mục tiêu HA.
 
 ### Redis High Availability — Sentinel
 
