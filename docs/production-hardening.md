@@ -63,7 +63,7 @@ Dùng trước khi expose CollabSpace ra ngoài môi trường local/demo.
 | `REDIS_PASSWORD` | auth, notification | Secret manager |
 | `KAFKA_BROKERS` | Kafka consumers/producers (task, notification, dlq, user outbox mode) | ConfigMap / env |
 | `METRICS_AUTH_TOKEN` | Prometheus scrape, `/metrics` app | Secret manager |
-| Email (Brevo API) | auth outbox | Vault `brevo_api_key` → ESO |
+| Email (Resend API) | auth outbox | Vault `resend_api_key` -> ESO |
 
 Helm: `infrastructure/helm/collabspace/values.yaml` → `global.secrets` chỉ cho **default local/chart**. Production dùng `-f values-prod.yaml` từ pipeline an toàn hoặc `--set-file` từ CI secrets.
 

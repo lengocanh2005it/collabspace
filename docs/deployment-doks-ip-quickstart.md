@@ -101,7 +101,7 @@ curl -fsS http://165.xxx.xxx.xxx/api/v1/auth/health/ready
 curl -fsS http://165.xxx.xxx.xxx/api/v1/users/health/ready
 ```
 
-Smoke MVP (cần stack + Brevo email hoặc OTP outbox fallback cho bước register):
+Smoke MVP (cần stack + Resend email hoặc OTP outbox fallback cho bước register):
 
 ```bash
 BASE_URL=http://165.xxx.xxx.xxx/api/v1 ./scripts/demo-e2e.sh

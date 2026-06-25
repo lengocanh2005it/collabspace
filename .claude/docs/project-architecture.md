@@ -369,7 +369,7 @@ Cross-service events use **transactional outbox → Debezium → Kafka**. App se
 
 Canonical topic mapping: `.claude/docs/service-contracts.md` → Event Contracts. Ops: `infrastructure/kafka/README.md`, `docs/kafka-debezium-migration-roadmap.md`.
 
-**auth-service** email outbox is separate (SMTP/Brevo) — not on the Kafka event bus.
+**auth-service** email outbox is separate (Resend transactional email) — not on the Kafka event bus.
 
 Existing event names (topic suffix / contract):
 

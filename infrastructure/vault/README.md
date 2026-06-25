@@ -26,6 +26,7 @@ Keys in each path:
 | `mongo_username` / `mongo_password` | `MONGO_URI` | task, notification, dlq, analytics |
 | `redis_password` | `REDIS_PASSWORD` | auth, notification |
 | `metrics_auth_token` | `METRICS_AUTH_TOKEN` | all five apps |
+| `resend_api_key` | `RESEND_API_KEY` | auth |
 | `azure_storage_connection_string` | `AZURE_STORAGE_CONNECTION_STRING` | user-service (avatar), task-service (attachments) |
 | `do_spaces_key` / `do_spaces_secret` | — (inject vào `backup-spaces-secret` qua ESO) | CronJob backup-postgres, backup-mongo |
 

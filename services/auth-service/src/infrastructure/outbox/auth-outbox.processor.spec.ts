@@ -59,23 +59,27 @@ describe('AuthOutboxProcessor', () => {
           email: 'member@example.com',
           otp: '123456',
           otpTtlSeconds: 600,
+          recipientName: 'Member Name',
           userId: 'user-3',
         },
       },
     ]);
     jest.spyOn(emailsServiceMock, 'sendMailNow').mockResolvedValue({
       accepted: ['member@example.com'],
-      messageId: 'brevo-sent',
+      messageId: 'resend-sent',
     });
     jest.spyOn(authOutboxServiceMock, 'markProcessed').mockResolvedValue(undefined);
 
     await processor.processPendingEvents();
 
-    expect(emailsServiceMock.sendMailNow).toHaveBeenCalledWith({
-      subject: 'Verify your CollabSpace email',
-      text: 'Your CollabSpace verification code is 123456. This code expires in 600 seconds.',
-      to: 'member@example.com',
-    });
+    expect(emailsServiceMock.sendMailNow).toHaveBeenCalledWith(
+      expect.objectContaining({
+        html: expect.stringContaining('Chào Member Name,'),
+        subject: 'Xác minh email CollabSpace của bạn',
+        text: expect.stringContaining('Chào Member Name,'),
+        to: 'member@example.com',
+      }),
+    );
     expect(authOutboxServiceMock.markProcessed).toHaveBeenCalledWith('event-otp-1');
   });
 
@@ -95,17 +99,20 @@ describe('AuthOutboxProcessor', () => {
     ]);
     jest.spyOn(emailsServiceMock, 'sendMailNow').mockResolvedValue({
       accepted: ['member@example.com'],
-      messageId: 'brevo-sent',
+      messageId: 'resend-sent',
     });
     jest.spyOn(authOutboxServiceMock, 'markProcessed').mockResolvedValue(undefined);
 
     await processor.processPendingEvents();
 
-    expect(emailsServiceMock.sendMailNow).toHaveBeenCalledWith({
-      subject: 'Reset your CollabSpace password',
-      text: 'Use this password reset token: reset-token-123. It expires in 1800 seconds.',
-      to: 'member@example.com',
-    });
+    expect(emailsServiceMock.sendMailNow).toHaveBeenCalledWith(
+      expect.objectContaining({
+        html: expect.stringContaining('reset-token-123'),
+        subject: 'Đặt lại mật khẩu CollabSpace',
+        text: expect.stringContaining('Chào bạn,'),
+        to: 'member@example.com',
+      }),
+    );
     expect(authOutboxServiceMock.markProcessed).toHaveBeenCalledWith('event-reset-1');
   });
 });

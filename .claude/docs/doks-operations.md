@@ -69,7 +69,7 @@ GitHub secrets cho DOKS target: `KUBECONFIG_DOKS`, `GHCR_USERNAME`, `GHCR_TOKEN`
 
 **Legacy Bitnami cleanup:** after CNPG is healthy and apps point to `postgres-rw`, run `CONFIRM_DELETE_LEGACY_POSTGRES=true infrastructure/deploy/cleanup-legacy-bitnami-postgres.sh`. The script deletes old Bitnami `statefulset/postgres`, `service/postgres`, `service/postgres-hl`, configmaps/secrets/PDB, and preserves `pvc/data-postgres-0` unless `DELETE_LEGACY_POSTGRES_PVC=true` is explicitly set.
 
-**Vault seed:** phải có `BREVO_API_KEY` (auth-service crash nếu thiếu).
+**Vault seed:** phải có `RESEND_API_KEY` (auth-service crash nếu thiếu).
 
 ## Dev local ≠ image production (nguyên nhân hay gặp)
 

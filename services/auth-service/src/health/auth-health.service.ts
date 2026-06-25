@@ -102,15 +102,15 @@ export class AuthHealthService {
       userProfilesGrpc: await this.runBoundedCheck(false, 800, async () => {
         await this.userProfileClient.ping();
       }),
-      brevoEmail:
+      resendEmail:
         process.env.NODE_ENV === 'production'
           ? await this.runCheck(true, async () => {
-              if (!this.configurationService.getBrevoConfig().apiKey?.trim()) {
-                throw new Error('BREVO_API_KEY is not configured');
+              if (!this.configurationService.getResendConfig().apiKey?.trim()) {
+                throw new Error('RESEND_API_KEY is not configured');
               }
             })
           : {
-              detail: 'Brevo mock mode allowed outside production',
+              detail: 'Resend mock mode allowed outside production',
               required: false,
               status: 'disabled',
             },

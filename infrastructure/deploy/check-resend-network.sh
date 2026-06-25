@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Network + env check for Brevo from auth-service pod.
+# Network + env check for Resend from auth-service pod.
 set -euo pipefail
 export KUBECONFIG="${KUBECONFIG:-/etc/rancher/k3s/k3s.yaml}"
 APP_NS="${APP_NS:-collabspace}"
@@ -7,11 +7,11 @@ APP_NS="${APP_NS:-collabspace}"
 source "$(dirname "$0")/lib/postgres-target.sh"
 
 echo "=== Auth email env ==="
-kubectl exec -n "$APP_NS" deploy/auth-service -- printenv EMAIL_DELIVERY_TIMEOUT_MS BREVO_SENDER_EMAIL 2>/dev/null
+kubectl exec -n "$APP_NS" deploy/auth-service -- printenv EMAIL_DELIVERY_TIMEOUT_MS RESEND_SENDER_EMAIL 2>/dev/null
 
 echo
-echo "=== Curl Brevo API (HEAD) from auth pod ==="
-kubectl exec -n "$APP_NS" deploy/auth-service -- wget -q -O /dev/null -S --timeout=10 https://api.brevo.com/v3/account 2>&1 | head -5 || true
+echo "=== Curl Resend API (HEAD) from auth pod ==="
+kubectl exec -n "$APP_NS" deploy/auth-service -- wget -q -O /dev/null -S --timeout=10 https://api.resend.com 2>&1 | head -5 || true
 
 echo
 echo "=== Outbox stuck count ==="

@@ -58,7 +58,7 @@ $mongoPass = $secrets.mongo_password
 $redisPass = $secrets.redis_password
 $metrics = $secrets.metrics_auth_token
 $azure = $secrets.azure_storage_connection_string
-$brevo = $secrets.brevo_api_key
+$resend = $secrets.resend_api_key
 
 function Write-VaultEnvFile {
   param([string]$FilePath, [hashtable]$Entries)
@@ -132,7 +132,7 @@ $authEntries = @{
   REDIS_PASSWORD = $redisPass
 }
 if ($metrics) { $authEntries["METRICS_AUTH_TOKEN"] = $metrics }
-if ($brevo) { $authEntries["BREVO_API_KEY"] = $brevo }
+if ($resend) { $authEntries["RESEND_API_KEY"] = $resend }
 Write-VaultEnvFile $authVault $authEntries
 
 $userEntries = @{

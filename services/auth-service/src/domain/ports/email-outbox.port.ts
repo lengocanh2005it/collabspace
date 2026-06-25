@@ -4,11 +4,13 @@ export type EmailVerificationOtpEnqueuePayload = {
   email: string;
   otp: string;
   otpTtlSeconds: number;
+  recipientName?: string;
   userId: string;
 };
 
 export type PasswordResetEmailEnqueuePayload = {
   email: string;
+  recipientName?: string;
   token: string;
   ttlSeconds: number;
   userId: string;

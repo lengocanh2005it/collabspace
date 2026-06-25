@@ -22,7 +22,7 @@ global:
     mongoPassword: password
     redisPassword: collabspace123
     metricsAuthToken: ""
-    brevoApiKey: ""
+    resendApiKey: ""
     # Optional — task attachments + user avatars (mock mode when empty)
     azureStorageConnectionString: ""
   azureStorage:
@@ -606,8 +606,8 @@ apps:
       OUTBOX_ENABLED: "true"
       DATABASE_SYNCHRONIZE: "false"
       ALLOW_DEV_OTP_ENDPOINT: "false"
-      BREVO_SENDER_EMAIL: no-reply@collabspace.local
-      BREVO_SENDER_NAME: CollabSpace
+      RESEND_SENDER_EMAIL: no-reply@ngocanh2005it.site
+      RESEND_SENDER_NAME: CollabSpace
       EMAIL_DELIVERY_TIMEOUT_MS: "15000"
       EMAIL_QUEUE_TIMEOUT_MS: "5000"
       EMAIL_JOB_MAX_ATTEMPTS: "5"

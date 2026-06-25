@@ -47,5 +47,5 @@ const { Client } = require('pg');
 echo ""
 echo "=== Recent auth outbox logs ==="
 kubectl logs -n "$APP_NS" deploy/auth-service --since=120s 2>&1 \
-  | grep -iE 'Publishing auth|queued for delivery|publish failed|publish timed|Reclaimed|GraphileEmails|Brevo' \
+  | grep -iE 'Publishing auth|queued for delivery|publish failed|publish timed|Reclaimed|GraphileEmails|Resend' \
   | tail -20 || true

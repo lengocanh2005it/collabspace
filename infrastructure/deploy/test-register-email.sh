@@ -28,7 +28,7 @@ postgres_psql "$APP_NS" -d collabspace_auth -c \
 echo
 echo "=== Auth logs (last 60s) ==="
 kubectl logs -n "$APP_NS" deploy/auth-service --since=90s 2>/dev/null \
-  | grep -iE 'brevo|email|outbox|error|sent|timeout|failed|register' | tail -30 || true
+  | grep -iE 'resend|email|outbox|error|sent|timeout|failed|register' | tail -30 || true
 
 echo
 echo "=== OTP from outbox ==="

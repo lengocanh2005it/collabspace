@@ -50,7 +50,7 @@ export type EmailConfig = {
   jobMaxAttempts: number;
 };
 
-export type BrevoConfig = {
+export type ResendConfig = {
   apiKey?: string;
   senderEmail: string;
   senderName: string;
@@ -193,11 +193,11 @@ export class ConfigurationService {
     };
   }
 
-  getBrevoConfig(): BrevoConfig {
+  getResendConfig(): ResendConfig {
     return {
-      apiKey: this.configService.get<string>('brevo.apiKey') || undefined,
-      senderEmail: this.configService.get<string>('brevo.senderEmail') ?? '',
-      senderName: this.configService.get<string>('brevo.senderName') ?? 'CollabSpace',
+      apiKey: this.configService.get<string>('resend.apiKey') || undefined,
+      senderEmail: this.configService.get<string>('resend.senderEmail') ?? '',
+      senderName: this.configService.get<string>('resend.senderName') ?? 'CollabSpace',
     };
   }
 

@@ -54,7 +54,7 @@ export class EmailsService {
 
   /**
    * Enqueue email for background delivery (Graphile Worker). Outbox and HTTP
-   * handlers should prefer this over sendMailNow so Brevo I/O does not block
+   * handlers should prefer this over sendMailNow so email provider I/O does not block
    * the poll cycle.
    */
   async enqueueMail(options: SendEmailJobPayload): Promise<void> {

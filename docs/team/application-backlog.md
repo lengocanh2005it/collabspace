@@ -19,7 +19,7 @@ Tài liệu này liệt kê **việc còn lại về logic code / API / test / d
 | **Không có `TODO`/`FIXME`** trong `services/**` | Gap chủ yếu: contract test tự động, FE polish & tests |
 | **Thiếu lớn nhất (app)** | Contract test; FE automated E2E (Playwright); UI polish (`collabspace-fe`) |
 | **CI smoke `demo-e2e`** | ✅ Tự động sau deploy `main`; `workflow_dispatch` mặc định bật (`run_e2e`, opt-out `false`) |
-| **Rủi ro cấu hình** | Đã harden: prod yêu cầu `BREVO_API_KEY`, `SERVICE_JWT_SECRET`, `DATABASE_URL`, Azure Blob; `WORKSPACE_CLIENT_MODE=http` bắt buộc trên task prod |
+| **Rủi ro cấu hình** | Đã harden: prod yêu cầu `RESEND_API_KEY`, `SERVICE_JWT_SECRET`, `DATABASE_URL`, Azure Blob; `WORKSPACE_CLIENT_MODE=http` bắt buộc trên task prod |
 
 ### Phân công (theo [README.md](../../README.md#team))
 

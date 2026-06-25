@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Run MVP demo-e2e against a production k3s Droplet.
-# Register step needs Brevo (BREVO_API_KEY) or OTP fallback via read-auth-otp-from-outbox.sh.
+# Register step needs Resend (RESEND_API_KEY) or OTP fallback via read-auth-otp-from-outbox.sh.
 set -euo pipefail
 
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname "$0")" && pwd)
@@ -14,10 +14,10 @@ echo "==> Brief stabilization for gRPC / RabbitMQ consumers..."
 sleep "${E2E_STABILIZATION_SEC:-20}"
 
 if kubectl get deployment auth-service -n "${APP_NS:-collabspace}" >/dev/null 2>&1; then
-  if ! kubectl exec -n "${APP_NS:-collabspace}" deploy/auth-service -- sh -c 'test -n "$BREVO_API_KEY"' 2>/dev/null; then
-    echo "WARN: BREVO_API_KEY missing on auth-service — demo E2E will rely on OTP outbox fallback."
+  if ! kubectl exec -n "${APP_NS:-collabspace}" deploy/auth-service -- sh -c 'test -n "$RESEND_API_KEY"' 2>/dev/null; then
+    echo "WARN: RESEND_API_KEY missing on auth-service - demo E2E will rely on OTP outbox fallback."
   else
-    echo "Brevo email delivery configured on auth-service."
+    echo "Resend email delivery configured on auth-service."
   fi
 fi
 

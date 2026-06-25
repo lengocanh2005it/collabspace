@@ -35,7 +35,10 @@ export class EmailVerificationOtpService {
     return createHash('sha256').update(otp).digest('hex');
   }
 
-  async send(user: AuthUser): Promise<EmailVerificationOtpDispatchResult> {
+  async send(
+    user: AuthUser,
+    options?: { recipientName?: string },
+  ): Promise<EmailVerificationOtpDispatchResult> {
     const otp = this.generateOtp();
     const otpTtlSeconds = this.configurationService.getEmailVerificationConfig().otpTtlSeconds;
 
@@ -52,6 +55,7 @@ export class EmailVerificationOtpService {
       email: user.email,
       otp,
       otpTtlSeconds,
+      recipientName: options?.recipientName,
       userId: user.userId,
     });
 

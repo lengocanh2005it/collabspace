@@ -28,7 +28,7 @@ MONGO_USERNAME="${COLLABSPACE_MONGO_USERNAME:-admin}"
 MONGO_PASSWORD="${COLLABSPACE_MONGO_PASSWORD:-password}"
 REDIS_PASSWORD="${COLLABSPACE_REDIS_PASSWORD:-collabspace123}"
 METRICS_AUTH_TOKEN="${COLLABSPACE_METRICS_AUTH_TOKEN:-}"
-BREVO_API_KEY="${COLLABSPACE_BREVO_API_KEY:-}"
+RESEND_API_KEY="${COLLABSPACE_RESEND_API_KEY:-}"
 
 payload=$(cat <<EOF
 {
@@ -40,7 +40,7 @@ payload=$(cat <<EOF
     "mongo_password": "$MONGO_PASSWORD",
     "redis_password": "$REDIS_PASSWORD",
     "metrics_auth_token": "$METRICS_AUTH_TOKEN",
-    "brevo_api_key": "$BREVO_API_KEY"
+    "resend_api_key": "$RESEND_API_KEY"
   }
 }
 EOF

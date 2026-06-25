@@ -58,10 +58,10 @@ export default () => ({
     queueTimeoutMs: toNumber(process.env.EMAIL_QUEUE_TIMEOUT_MS, 5000),
     jobMaxAttempts: toNumber(process.env.EMAIL_JOB_MAX_ATTEMPTS, 5),
   },
-  brevo: {
-    apiKey: process.env.BREVO_API_KEY,
-    senderEmail: process.env.BREVO_SENDER_EMAIL ?? '',
-    senderName: process.env.BREVO_SENDER_NAME ?? 'CollabSpace',
+  resend: {
+    apiKey: process.env.RESEND_API_KEY,
+    senderEmail: process.env.RESEND_SENDER_EMAIL ?? '',
+    senderName: process.env.RESEND_SENDER_NAME ?? 'CollabSpace',
   },
   graphileWorker: {
     concurrency: toNumber(process.env.GRAPHILE_WORKER_CONCURRENCY, 5),

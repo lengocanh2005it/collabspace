@@ -78,7 +78,13 @@ describe('RegisterUseCase', () => {
       fullName: 'New User',
       userId: result.userId,
     });
-    expect(emailOutboxMock.enqueueEmailVerificationOtp).toHaveBeenCalled();
+    expect(emailOutboxMock.enqueueEmailVerificationOtp).toHaveBeenCalledWith(
+      expect.objectContaining({
+        email: 'new@collabspace.dev',
+        recipientName: 'New User',
+        userId: result.userId,
+      }),
+    );
   });
 
   it('rolls back a newly created auth user when profile bootstrap fails', async () => {

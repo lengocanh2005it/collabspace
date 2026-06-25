@@ -97,7 +97,7 @@ export class AuthOutboxProcessor implements OnModuleInit, OnModuleDestroy {
                   `Auth outbox publish ${event.id}`,
                 );
                 this.logger.log(
-                  `Auth outbox event ${event.id} (${event.eventType}) delivered via Brevo`,
+                  `Auth outbox event ${event.id} (${event.eventType}) delivered via Resend`,
                 );
               } catch (error) {
                 if (isOperationTimeoutError(error)) {

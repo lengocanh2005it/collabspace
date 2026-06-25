@@ -14,11 +14,13 @@ type AuthEmailVerificationOtpOutboxPayload = {
   email: string;
   otp: string;
   otpTtlSeconds: number;
+  recipientName?: string;
   userId: string;
 };
 
 type AuthPasswordResetEmailOutboxPayload = {
   email: string;
+  recipientName?: string;
   token: string;
   ttlSeconds: number;
   userId: string;

@@ -25,7 +25,7 @@ set -a
 source "$ENV_FILE"
 set +a
 
-required=(JWT_SECRET SERVICE_JWT_SECRET POSTGRES_PASSWORD MONGO_PASSWORD REDIS_PASSWORD METRICS_AUTH_TOKEN AZURE_STORAGE_CONNECTION_STRING DO_SPACES_KEY DO_SPACES_SECRET BREVO_API_KEY)
+required=(JWT_SECRET SERVICE_JWT_SECRET POSTGRES_PASSWORD MONGO_PASSWORD REDIS_PASSWORD METRICS_AUTH_TOKEN AZURE_STORAGE_CONNECTION_STRING DO_SPACES_KEY DO_SPACES_SECRET RESEND_API_KEY)
 for key in "${required[@]}"; do
   if [[ -z "${!key:-}" ]]; then
     echo "Missing $key in $ENV_FILE"
@@ -71,7 +71,7 @@ kubectl exec -n "$VAULT_NS" "$VAULT_POD" -- env \
   REDIS_PASSWORD="$REDIS_PASSWORD" \
   METRICS_AUTH_TOKEN="$METRICS_AUTH_TOKEN" \
   AZURE_B64="$azure_b64" \
-  BREVO_API_KEY="$BREVO_API_KEY" \
+  RESEND_API_KEY="$RESEND_API_KEY" \
   DO_SPACES_KEY="$DO_SPACES_KEY" \
   DO_SPACES_SECRET="$DO_SPACES_SECRET" \
   SLACK_ALERT_WEBHOOK_URL="${SLACK_ALERT_WEBHOOK_URL:-}" \
@@ -86,7 +86,7 @@ kubectl exec -n "$VAULT_NS" "$VAULT_POD" -- env \
       redis_password="${REDIS_PASSWORD}" \
       metrics_auth_token="${METRICS_AUTH_TOKEN}" \
       azure_storage_connection_string="${AZURE_STORAGE_CONNECTION_STRING}" \
-      brevo_api_key="${BREVO_API_KEY}" \
+      resend_api_key="${RESEND_API_KEY}" \
       do_spaces_key="${DO_SPACES_KEY}" \
       do_spaces_secret="${DO_SPACES_SECRET}" \
       slack_alert_webhook_url="${SLACK_ALERT_WEBHOOK_URL}"

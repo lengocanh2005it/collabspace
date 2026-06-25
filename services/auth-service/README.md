@@ -6,7 +6,7 @@ The Auth Service is the foundational identity and access management microservice
 - **Framework:** NestJS
 - **Database:** PostgreSQL (`collabspace_auth`) via TypeORM
 - **Authentication:** JWT (JSON Web Tokens)
-- **Messaging:** Outbox email (SMTP via Brevo) — no cross-service event bus
+- **Messaging:** Outbox email (Resend transactional email) — no cross-service event bus
 - **Containerization:** Docker (Alpine Node.js 20)
 
 ## Quick Start

@@ -30,7 +30,9 @@ export class RegisterUseCase {
         fullName: input.fullName,
         userId: user.userId,
       });
-      const result = await this.emailVerificationOtpService.send(user);
+      const result = await this.emailVerificationOtpService.send(user, {
+        recipientName: input.fullName,
+      });
 
       return {
         ...result,

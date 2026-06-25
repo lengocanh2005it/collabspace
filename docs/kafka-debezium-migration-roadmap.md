@@ -84,7 +84,7 @@ flowchart TB
 3. Consumer giữ **idempotency** theo `eventId`; lỗi lặp → retry + DLQ topic `collabspace.dlq.events` (Phase 7).
 4. Payload domain **không đổi** — chỉ đổi transport và envelope wire format.
 
-**auth-service:** `auth_outbox_events` cho **email** (SMTP/Brevo) — **ngoài** Kafka event bus microservice.
+**auth-service:** `auth_outbox_events` cho **email** (Resend transactional email) — **ngoài** Kafka event bus microservice.
 
 ### 1.2 Legacy (RabbitMQ — trước Phase 6)
 

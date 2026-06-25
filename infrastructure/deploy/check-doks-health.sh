@@ -33,9 +33,9 @@ echo "=== Infra pods ==="
 kubectl get pods -n "$APP_NS" --no-headers | grep -E 'postgres|mongo|redis|rabbit' || true
 
 echo
-echo "=== Auth Brevo env (no secrets) ==="
-kubectl exec -n "$APP_NS" deploy/auth-service -- printenv BREVO_SENDER_EMAIL BREVO_SENDER_NAME 2>/dev/null || echo "auth pod unavailable"
-kubectl exec -n "$APP_NS" deploy/auth-service -- sh -c 'test -n "$BREVO_API_KEY" && echo BREVO_API_KEY=present || echo BREVO_API_KEY=missing' 2>/dev/null
+echo "=== Auth Resend env (no secrets) ==="
+kubectl exec -n "$APP_NS" deploy/auth-service -- printenv RESEND_SENDER_EMAIL RESEND_SENDER_NAME 2>/dev/null || echo "auth pod unavailable"
+kubectl exec -n "$APP_NS" deploy/auth-service -- sh -c 'test -n "$RESEND_API_KEY" && echo RESEND_API_KEY=present || echo RESEND_API_KEY=missing' 2>/dev/null
 
 echo
 echo "=== Recent restarts (app deployments) ==="

@@ -54,7 +54,7 @@ $payload = @{
         mongo_password             = Get-ConfigValue "COLLABSPACE_MONGO_PASSWORD" "password"
         redis_password             = Get-ConfigValue "COLLABSPACE_REDIS_PASSWORD" "collabspace123"
         metrics_auth_token         = Get-ConfigValue "COLLABSPACE_METRICS_AUTH_TOKEN" ""
-        brevo_api_key              = Get-ConfigValue "COLLABSPACE_BREVO_API_KEY" ""
+        resend_api_key             = Get-ConfigValue "COLLABSPACE_RESEND_API_KEY" ""
     }
 }
 

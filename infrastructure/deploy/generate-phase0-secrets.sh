@@ -38,10 +38,10 @@ MONGO_PASSWORD=$(rand_b64)
 REDIS_PASSWORD=$(rand_b64)
 METRICS_AUTH_TOKEN=$(rand_b64)
 
-# --- Brevo (auth-service) ---
-BREVO_API_KEY=
-BREVO_SENDER_EMAIL=
-BREVO_SENDER_NAME="CollabSpace Platform"
+# --- Resend (auth-service) ---
+RESEND_API_KEY=
+RESEND_SENDER_EMAIL=no-reply@ngocanh2005it.site
+RESEND_SENDER_NAME="CollabSpace Platform"
 
 # --- Azure Blob ---
 AZURE_STORAGE_CONNECTION_STRING=

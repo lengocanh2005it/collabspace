@@ -121,7 +121,7 @@ describe('EmailsService', () => {
     );
   });
 
-  it('enqueueMail queues through graphile worker without waiting for Brevo', async () => {
+  it('enqueueMail queues through graphile worker without waiting for the email provider', async () => {
     await emailsService.enqueueMail({
       subject: 'Verify',
       text: 'code',
@@ -139,7 +139,7 @@ describe('EmailsService', () => {
     expect(sendMock).not.toHaveBeenCalled();
   });
 
-  it('falls back to direct Brevo send when graphile worker is disabled', async () => {
+  it('falls back to direct email provider send when graphile worker is disabled', async () => {
     (configurationServiceMock.getGraphileWorkerConfig as jest.Mock).mockReturnValue({
       concurrency: 5,
       connectionString: undefined,

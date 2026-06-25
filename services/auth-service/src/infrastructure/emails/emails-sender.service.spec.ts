@@ -1,22 +1,22 @@
 import type { ConfigurationService } from '@/configuration/configuration.service';
-import { BrevoEmailClient } from './brevo-email.client';
 import { EmailsSenderService } from './emails-sender.service';
+import { ResendEmailClient } from './resend-email.client';
 
-jest.mock('./brevo-email.client');
+jest.mock('./resend-email.client');
 
 describe('EmailsSenderService', () => {
   const sendTransactionalEmailMock = jest.fn();
 
-  const buildService = (brevoConfig: Record<string, unknown>) => {
-    (BrevoEmailClient as jest.Mock).mockImplementation(() => ({
+  const buildService = (resendConfig: Record<string, unknown>) => {
+    (ResendEmailClient as jest.Mock).mockImplementation(() => ({
       sendTransactionalEmail: sendTransactionalEmailMock,
     }));
 
     const configurationServiceMock = {
-      getBrevoConfig: jest.fn(() => ({
+      getResendConfig: jest.fn(() => ({
         senderEmail: 'sender@example.com',
         senderName: 'CollabSpace',
-        ...brevoConfig,
+        ...resendConfig,
       })),
     } as unknown as ConfigurationService;
 
@@ -25,11 +25,11 @@ describe('EmailsSenderService', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    sendTransactionalEmailMock.mockResolvedValue({ messageId: 'brevo-123' });
+    sendTransactionalEmailMock.mockResolvedValue({ messageId: 'resend-123' });
   });
 
-  it('uses Brevo SDK when BREVO_API_KEY is configured', async () => {
-    const service = buildService({ apiKey: 'xkeysib-test' });
+  it('uses Resend SDK when RESEND_API_KEY is configured', async () => {
+    const service = buildService({ apiKey: 're_test' });
 
     const result = await service.send({
       to: 'user@example.com',
@@ -45,10 +45,10 @@ describe('EmailsSenderService', () => {
       }),
       { email: 'sender@example.com', name: 'CollabSpace' },
     );
-    expect(result.messageId).toBe('brevo-123');
+    expect(result.messageId).toBe('resend-123');
   });
 
-  it('does not call Brevo when API key is not configured (non-production)', async () => {
+  it('does not call Resend when API key is not configured (non-production)', async () => {
     const originalNodeEnv = process.env.NODE_ENV;
     process.env.NODE_ENV = 'development';
     const service = buildService({ apiKey: '' });

@@ -6,7 +6,7 @@
 #   .\infrastructure\vault\scripts\seed-vault-from-phase0.ps1 -UsePhase0InfraPasswords
 #
 # Default (-LocalDocker): postgres/mongo/redis passwords match docker-compose.db.yml
-# and vault/.env.example so local stack connects. JWT/SERVICE_JWT/METRICS/Azure/Brevo from phase0.
+# and vault/.env.example so local stack connects. JWT/SERVICE_JWT/METRICS/Azure/Resend from phase0.
 
 param(
   [string]$Phase0Path = "",
@@ -93,7 +93,7 @@ $payload = @{
     redis_password                 = $redisPass
     metrics_auth_token             = Get-Phase0 "METRICS_AUTH_TOKEN"
     azure_storage_connection_string = Get-Phase0 "AZURE_STORAGE_CONNECTION_STRING"
-    brevo_api_key                  = Get-Phase0 "BREVO_API_KEY"
+    resend_api_key                 = Get-Phase0 "RESEND_API_KEY"
   }
 }
 
