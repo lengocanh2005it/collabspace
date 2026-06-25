@@ -123,7 +123,7 @@ Do **not** map dependency failures to generic `500` if the cause is known.
 | Forward auth | `strip-identity-headers` → `forward-auth` → `/api/v1/auth/verify` | Gateway strips spoofed identity headers, then validates JWT |
 | Kafka DLQ | `collabspace.dlq.events` + `@collabspace/shared` consumer retry | Failed consumer messages |
 | Kafka consumer startup | `@collabspace/shared` `startKafkaConsumerWithRetry` | Retries broker/topic metadata races during deploy without crashing app pods |
-| Sync HTTP retry + circuit breaker | `@collabspace/shared` `retryAsync`, `CircuitBreaker` | task → workspace/user and notification → user fallback clients retry 5xx/network, then fail fast when peer remains unhealthy |
+| Sync HTTP retry + circuit breaker | `@collabspace/shared` `retryAsync`, `CircuitBreaker` wrapper over `opossum` | task → workspace/user and notification → user fallback clients retry 5xx/network, then fail fast when peer remains unhealthy |
 | Service rate limit | `@collabspace/shared` `createServiceRateLimitMiddleware` | 5 core HTTP services default to 100 req/min/IP; skips health, metrics, Swagger |
 | Auth email outbox | `services/auth-service/src/infrastructure/outbox/*` | DB-backed queue, retries, degraded thresholds |
 | K8s PDB | `infrastructure/k8s/pdb.yaml` | minAvailable per service |

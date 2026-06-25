@@ -1,3 +1,5 @@
+import Opossum from 'opossum';
+
 export type CircuitBreakerState = 'CLOSED' | 'OPEN' | 'HALF_OPEN';
 
 export type CircuitBreakerOptions = {
@@ -13,14 +15,11 @@ export class CircuitBreakerOpenError extends Error {
 }
 
 export class CircuitBreaker {
-  private failureCount = 0;
-  private openedAt = 0;
-  private halfOpenProbeInFlight = false;
-  private state: CircuitBreakerState = 'CLOSED';
+  private readonly breaker: Opossum<[() => Promise<unknown>], unknown>;
 
   constructor(
     private readonly name: string,
-    private readonly options: CircuitBreakerOptions,
+    options: CircuitBreakerOptions,
   ) {
     if (options.failureThreshold < 1) {
       throw new Error('Circuit breaker failureThreshold must be at least 1');
@@ -29,68 +28,53 @@ export class CircuitBreaker {
     if (options.resetTimeoutMs < 1) {
       throw new Error('Circuit breaker resetTimeoutMs must be at least 1');
     }
+
+    this.breaker = new Opossum<[() => Promise<unknown>], unknown>(
+      (operation: () => Promise<unknown>) => operation(),
+      {
+        errorThresholdPercentage: 1,
+        name,
+        resetTimeout: options.resetTimeoutMs,
+        rollingCountTimeout: Math.max(options.resetTimeoutMs, 10_000),
+        timeout: false,
+        volumeThreshold: options.failureThreshold,
+      },
+    );
   }
 
   getState(): CircuitBreakerState {
-    if (this.state === 'OPEN' && this.canProbe()) {
+    if (this.breaker.halfOpen) {
       return 'HALF_OPEN';
     }
 
-    return this.state;
+    if (this.breaker.opened) {
+      return 'OPEN';
+    }
+
+    return 'CLOSED';
   }
 
   async execute<T>(operation: () => Promise<T>): Promise<T> {
-    const currentState = this.getState();
-
-    if (currentState === 'OPEN') {
+    if (this.getState() === 'OPEN') {
       throw new CircuitBreakerOpenError(`${this.name} circuit breaker is open`);
     }
 
-    if (currentState === 'HALF_OPEN') {
-      if (this.halfOpenProbeInFlight) {
-        throw new CircuitBreakerOpenError(`${this.name} circuit breaker probe already in flight`);
-      }
-
-      this.state = 'HALF_OPEN';
-      this.halfOpenProbeInFlight = true;
-    }
-
     try {
-      const result = await operation();
-      this.recordSuccess();
-      return result;
+      return (await this.breaker.fire(operation)) as T;
     } catch (error) {
-      this.recordFailure();
+      if (isOpenBreakerError(error)) {
+        throw new CircuitBreakerOpenError(`${this.name} circuit breaker is open`);
+      }
       throw error;
-    } finally {
-      this.halfOpenProbeInFlight = false;
     }
   }
+}
 
-  private canProbe(): boolean {
-    return Date.now() - this.openedAt >= this.options.resetTimeoutMs;
+function isOpenBreakerError(error: unknown): boolean {
+  if (!(error instanceof Error)) {
+    return false;
   }
 
-  private recordSuccess(): void {
-    this.failureCount = 0;
-    this.openedAt = 0;
-    this.state = 'CLOSED';
-  }
-
-  private recordFailure(): void {
-    if (this.state === 'HALF_OPEN') {
-      this.open();
-      return;
-    }
-
-    this.failureCount += 1;
-    if (this.failureCount >= this.options.failureThreshold) {
-      this.open();
-    }
-  }
-
-  private open(): void {
-    this.state = 'OPEN';
-    this.openedAt = Date.now();
-  }
+  const code = (error as Error & { code?: string }).code;
+  return code === 'EOPENBREAKER' || error.message === 'Breaker is open';
 }
