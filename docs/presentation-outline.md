@@ -18,7 +18,7 @@
 - **7 backend services:** auth, user, workspace, task, notification, dlq, analytics
 - **1 API Gateway:** Traefik
 - **Event bus:** Kafka + Debezium CDC
-- **Frontend SPA:** Vite + React
+- **Frontend SPA:** Vite + React (repo riêng: `collabspace-fe`)
 - **Hạ tầng:** DigitalOcean Kubernetes (DOKS) + Helm + HashiCorp Vault
 
 ### Điểm nổi bật
@@ -177,6 +177,7 @@ mindmap
 | **Framework** | NestJS 11 + TypeScript |
 | **Database** | PostgreSQL (auth, user, workspace), MongoDB (task, notification, dlq, analytics) |
 | **Cache / HA** | Redis Sentinel (1 master + 2 replicas + 3 sentinel sidecars) |
+| **RPC nội bộ** | gRPC (xác thực token, giao tiếp auth ↔ user, auth ← tất cả services) |
 | **Event bus** | Apache Kafka + Debezium Connect |
 | **Gateway** | Traefik |
 | **Container / Orchestration** | Docker Compose (dev) · Kubernetes DOKS (prod) |
@@ -801,7 +802,7 @@ flowchart LR
     style AM fill:#E8964D,color:#fff
 ```
 
-### 4 Grafana Dashboards
+### 5 Grafana Dashboards
 
 | Dashboard | Mục đích |
 |-----------|---------|
@@ -809,6 +810,7 @@ flowchart LR
 | **App Logs** | Xu hướng log theo service, phát hiện lỗi nhanh |
 | **Load Test Run** | Theo dõi kết quả k6 realtime khi chạy kiểm thử tải |
 | **DLQ** | Theo dõi message lỗi: số lượng theo trạng thái, tốc độ xử lý, message chờ lâu nhất |
+| **Analytics Service** | Tổng quan admin: số người dùng, workspace, task toàn hệ thống theo ngày |
 
 ### k6 Load Test
 
@@ -1210,7 +1212,7 @@ Mặc định **chặn tất cả** giao tiếp. Chỉ mở đúng các luồng 
 flowchart TD
     L1["🔺 Kiểm thử tải — k6\nSmoke · Demo flow · SLO baseline\nĐo hiệu năng và ngưỡng chịu tải"]
     L2["🔶 Kiểm thử tích hợp — Supertest\n6 bộ test · 1 per service\nKiểm tra luồng request/response thật"]
-    L3["🟦 Kiểm thử đơn vị — Jest\n~153 file · 6 services\nUse-case · Handler · Domain · Guard · Repository"]
+    L3["🟦 Kiểm thử đơn vị — Jest\n~158 file · 7 services\nUse-case · Handler · Domain · Guard · Repository"]
 
     L3 --> L2 --> L1
 
@@ -1219,7 +1221,7 @@ flowchart TD
     style L3 fill:#3498DB,color:#fff
 ```
 
-### Kiểm thử đơn vị — Jest (~153 file)
+### Kiểm thử đơn vị — Jest (~158 file)
 
 | Tầng | Phạm vi kiểm thử |
 |------|-----------------|
