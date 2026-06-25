@@ -374,6 +374,9 @@ flowchart TD
 
 **DLQ Service** — tiếp nhận các message mà consumer xử lý thất bại. Cho phép admin điều tra, xử lý lại, hoặc đóng thủ công — không để mất dữ liệu.
 
+> **Tại sao tách thành service riêng?**
+> Ban đầu có thể xử lý DLQ ngay trong từng consumer, nhưng thiết kế đó có ba vấn đề: (1) **logic lưu trữ lẫn lộn vào consumer chính** — mỗi service đều phải viết lại code lưu/retry message lỗi; (2) **không có API admin tập trung** — muốn replay hay discard một message phải truy cập từng service; (3) **monitoring phân tán** — không thể nhìn một chỗ để biết toàn hệ thống đang có bao nhiêu message lỗi. Tách ra thành `dlq-service` giải quyết cả ba: consumer chỉ cần publish vào topic `dead-letter`, mọi logic điều tra/replay/đóng message tập trung một chỗ, và Grafana DLQ Dashboard có một nguồn dữ liệu duy nhất để theo dõi.
+
 **Analytics Service** — đọc sự kiện từ hệ thống để tổng hợp số liệu phục vụ dashboard admin.
 
 **Kafka + Debezium CDC** — event bus bất đồng bộ. Service không đẩy sự kiện trực tiếp vào Kafka mà ghi vào bảng trung gian trong cùng transaction DB; Debezium đọc thay đổi và đẩy lên Kafka — đảm bảo không mất sự kiện dù broker tạm thời down.
