@@ -1740,7 +1740,18 @@ mindmap
       Service mesh mTLS
       Multi-region HA
       WebSocket hai chiều nếu cần realtime phức tạp hơn SSE
+      Traefik · Kafka · Debezium HA
 ```
+
+**SPOF còn lại — Traefik, Kafka, Debezium chưa được scale:**
+
+| Thành phần | Hiện tại | Vì sao chưa scale |
+|-----------|----------|-------------------|
+| **Traefik** | 1 replica | Scale lên 2+ cần shared storage cho ACME cert (`acme.json` dùng RWO PVC — chỉ 1 pod mount được); cần chuyển sang cert-manager hoặc RWX storage |
+| **Kafka** | 1 broker | Multi-broker cần replication factor > 1, ZooKeeper/KRaft ensemble — tăng đáng kể tài nguyên và độ phức tạp vận hành |
+| **Debezium Connect** | 1 instance | Scale Debezium cần leader election cho connector tasks — phức tạp để cấu hình đúng, dễ sinh duplicate event nếu sai |
+
+Ba thành phần này nằm ngoài phạm vi MVP vì: kỹ thuật phức tạp hơn đáng kể so với scale service NestJS thông thường, tốn tài nguyên node không tương xứng với scope demo, và HA ở tầng này chỉ thực sự cần thiết khi có traffic production thật.
 
 > 📄 Nguồn: `docs/production-hardening.md`, `docs/team/phan-phu-tho-infrastructure-backlog.md`, `docs/team/application-backlog.md`
 
