@@ -1,9 +1,8 @@
 {{- if .Values.observability.exporters.enabled }}
 {{- $ns := include "collabspace.namespace" . }}
-{{- $redisPass := include "collabspace.redisPassword" (dict "root" .) }}
-{{- $pgPass := include "collabspace.postgresPassword" (dict "root" .) }}
-{{- $mongoPass := include "collabspace.mongoPassword" (dict "root" .) }}
-{{- $mongoUser := include "collabspace.mongoUsername" (dict "root" .) }}
+{{- $redisPass := include "collabspace.redisPassword" (dict "root" .) | urlquery }}
+{{- $postgresExporterDsn := include "collabspace.postgresUrl" (dict "root" . "database" "postgres") }}
+{{- $mongoExporterDsn := include "collabspace.mongoConnectionString" (dict "root" .) }}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -72,7 +71,7 @@ spec:
           image: prometheuscommunity/postgres-exporter:v0.15.0
           env:
             - name: DATA_SOURCE_NAME
-              value: {{ printf "postgresql://postgres:%s@%s:5432/postgres?sslmode=disable" $pgPass (include "collabspace.postgresql.host" (dict "root" .)) | quote }}
+              value: {{ printf "%s?sslmode=disable" $postgresExporterDsn | quote }}
           ports:
             - containerPort: 9187
           resources:
@@ -128,7 +127,7 @@ spec:
             - --compatible-mode
           env:
             - name: MONGODB_URI
-              value: {{ printf "mongodb://%s:%s@%s:27017/admin" $mongoUser $mongoPass (include "collabspace.mongodb.host" (dict "root" .)) | quote }}
+              value: {{ $mongoExporterDsn | quote }}
           ports:
             - containerPort: 9216
           resources:
