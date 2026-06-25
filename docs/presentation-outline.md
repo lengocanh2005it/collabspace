@@ -1062,6 +1062,22 @@ flowchart LR
 4. **Health check** phân tầng — phân biệt process còn sống và thực sự sẵn sàng nhận request
 5. **Không thất bại im lặng** trên luồng quan trọng — đăng ký, xác thực, ghi dữ liệu
 
+### Bức tranh toàn diện — Những gì đã triển khai
+
+| Cơ chế | Áp dụng ở đâu | Ghi chú |
+|--------|--------------|---------|
+| **Timeout** | `WorkspaceHttpClient`, `UserProfileHttpClient`, gRPC | `AbortController` + configurable `timeoutMs` |
+| **Circuit Breaker** | HTTP call sang workspace-service, user-service | `CircuitBreaker` từ `@collabspace/shared` — 5 lỗi → OPEN 30s |
+| **Retry HTTP sync** | `WorkspaceHttpClient`, `UserProfileHttpClient` | Retry 1–2 lần cho 5xx/network error, không retry 4xx |
+| **Rate Limiting** | Tất cả service, từng endpoint nhạy cảm | `@nestjs/throttler` — 100 req/phút/IP mặc định |
+| **Idempotency** | Kafka consumer — notification, task, analytics | `ProcessedEvent.tryClaim(eventId)` |
+| **Saga rollback** | Luồng đăng ký auth-service | gRPC sang user-service fail → xóa credential, không orphan data |
+| **Fallback read model** | task-service, notification-service | Local replica → HTTP fallback |
+| **Health check** | Tất cả 7 service | `liveness` vs `readiness` tách biệt |
+| **DLQ** | Toàn hệ thống | Message lỗi lưu MongoDB, có API replay/discard |
+| **Cache invalidation** | task-service membership cache | Lắng nghe `workspace.member_left` → `membershipCache.clear()` |
+| **Outbox Pattern** | workspace, task, auth | Ghi sự kiện + dữ liệu cùng transaction |
+
 ### Saga Rollback — Đăng ký tài khoản
 
 ```mermaid
@@ -1101,6 +1117,30 @@ flowchart TD
     style Degrade fill:#E8964D,color:#fff
 ```
 
+### Circuit Breaker — Fail-fast thay vì chờ timeout
+
+Timeout ngăn request treo vô hạn, nhưng **không ngăn được cascade failure**: nếu workspace-service chậm 2,900ms/request, 100 user đồng thời tạo task → 100 request đều treo gần hết 3s timeout, tốn thread/connection vô ích.
+
+Circuit Breaker giải quyết bằng cách **mở mạch** khi phát hiện service dependency đang có vấn đề:
+
+```mermaid
+stateDiagram-v2
+    CLOSED --> OPEN : 5 lỗi liên tiếp
+    OPEN --> HALF_OPEN : Sau 30 giây
+    HALF_OPEN --> CLOSED : Request thử nghiệm thành công
+    HALF_OPEN --> OPEN : Request thử nghiệm thất bại
+
+    CLOSED : CLOSED\nGọi bình thường
+    OPEN : OPEN\nFail-fast ngay lập tức\nKhông gọi dependency
+    HALF_OPEN : HALF-OPEN\nThử 1 request để kiểm tra
+```
+
+- **CLOSED** → gọi dependency bình thường
+- **OPEN** → fail-fast ngay, không chờ timeout — trả 503 trong <1ms thay vì 3s
+- **HALF-OPEN** → thử 1 request sau 30s để kiểm tra dependency đã hồi phục chưa
+
+Áp dụng trong CollabSpace: `WorkspaceHttpClient` và `UserProfileHttpClient` bọc trong `CircuitBreaker` từ `@collabspace/shared`. Khi circuit OPEN, fallback về cache hoặc trả lỗi rõ ràng ngay — không chờ timeout.
+
 ### Trust Boundary — Bảo vệ nhiều lớp
 
 ```mermaid
@@ -1139,11 +1179,35 @@ sequenceDiagram
     Note over Auth,WS: Tìm kiếm trên Loki bằng ID abc-123\n→ thấy toàn bộ hành trình request
 ```
 
+### Cache Invalidation — Correctness quan trọng hơn performance
+
+Workspace membership được cache Redis TTL 60s để tránh gọi HTTP mỗi request. Vấn đề: nếu admin kick user ra khỏi workspace lúc 10:00:00, đến 10:01:00 cache mới hết hạn — trong 60s đó user bị kick **vẫn tạo được task** vì cache nói "vẫn là member".
+
+Giải pháp: khi workspace-service phát sự kiện `workspace.member_left` lên Kafka, task-service lắng nghe và gọi `membershipCache.clear(workspaceId, userId)` ngay lập tức — không chờ TTL tự hết hạn.
+
+```mermaid
+sequenceDiagram
+    participant Admin
+    participant WS as Workspace Service
+    participant Kafka
+    participant Task as Task Service
+    participant Cache as Redis Cache
+
+    Admin->>WS: Kick user B khỏi workspace
+    WS->>Kafka: Phát workspace.member_left
+    Kafka->>Task: Consumer nhận event
+    Task->>Cache: clear(workspaceId, userId B)
+
+    Note over Cache: Cache bị xóa ngay lập tức
+    Task-->>Admin: User B tạo task → 403 Forbidden
+```
+
 ### Ma trận Degradation
 
 | Khi hỏng... | Đăng ký | Đăng nhập / API | Ghi task |
 |-------------|---------|-----------------|---------|
 | User Service | Báo lỗi + rollback tài khoản | Trả thông tin cơ bản, báo hồ sơ không khả dụng | Bản sao dữ liệu có thể cũ |
+| Workspace Service | — | — | Circuit Breaker OPEN → fail-fast 503, không treo |
 | Redis (Sentinel) | Sentinel bầu master mới ~22s, app tự reconnect | Brief reconnect warning, OTP/session khôi phục tự động | Cache miss, repopulate tự động |
 | Auth Service | — | Toàn bộ xác thực thất bại | Không xác thực được token |
 | Kafka / Debezium | Vẫn OK — sự kiện chờ trong outbox | Vẫn OK | Sự kiện delay → vào DLQ |
@@ -1171,7 +1235,7 @@ flowchart LR
 - Thêm service mới cần dọn dữ liệu khi workspace xóa? **Chỉ cần subscribe thêm** — không sửa workspace service
 - Đây chính là loose coupling trong thực tế: thay đổi một bên không ảnh hưởng bên kia
 
-> 📄 Nguồn: `docs/resilience-overview.md`, `.claude/docs/resilience.md`, `docs/production-hardening.md`
+> 📄 Nguồn: `docs/resilience-overview.md`, `docs/design-for-failure-gaps.md`, `.claude/docs/resilience.md`, `docs/production-hardening.md`
 
 ---
 
