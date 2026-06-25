@@ -735,8 +735,25 @@ flowchart LR
     style KSec fill:#27AE60,color:#fff
 ```
 
+**Ba khái niệm cần phân biệt:**
+
+| Thứ | Là gì | Vai trò |
+|-----|-------|---------|
+| **HashiCorp Vault** | Kho lưu trữ secret riêng biệt, mã hóa, có audit log | Nguồn gốc thật của mọi secret |
+| **ExternalSecret** (CRD) | Một object K8s khai báo "tôi muốn lấy secret X từ Vault" | Cầu nối — chỉ là cấu hình, không chứa giá trị thật |
+| **K8s Secret** | Object K8s chứa giá trị thật (base64) để pod đọc | Đích — được ESO tạo/cập nhật tự động từ Vault |
+
+**Luồng hoạt động:**
+1. DevOps ghi secret vào **Vault** (`vault kv put secret/collabspace JWT_SECRET=...`)
+2. **ExternalSecret** object khai báo trong K8s: *"sync key `jwt_secret` từ Vault vào K8s Secret `auth-secrets`"*
+3. **External Secrets Operator** (ESO) — một controller chạy trong cluster — đọc ExternalSecret, kéo giá trị từ Vault, tạo hoặc cập nhật **K8s Secret** tương ứng
+4. Pod mount **K8s Secret** thành biến môi trường — app chỉ đọc `process.env.JWT_SECRET`, không biết gì về Vault hay ESO
+
+> **Tại sao không để app đọc thẳng từ Vault?**  
+> App sẽ phải biết địa chỉ Vault, có Vault token, và xử lý Vault down. ESO tách biệt concern đó ra khỏi app — app chỉ cần đọc env var như bình thường, toàn bộ complexity nằm ở tầng infra.
+
 - Không lưu secret trong code hay config file — chỉ quản lý qua Vault
-- Khi secret thay đổi, External Secrets Operator tự động cập nhật vào K8s mà không cần deploy lại
+- Khi secret thay đổi, ESO tự động cập nhật K8s Secret mà không cần restart app hay deploy lại
 
 > 📄 Nguồn: `infrastructure/helm/collabspace/templates/`, `infrastructure/vault/README.md`
 
