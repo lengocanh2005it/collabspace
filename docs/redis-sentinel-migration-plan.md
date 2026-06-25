@@ -1048,41 +1048,41 @@ bash scripts/sync-agent-docs.sh
 
 ### Code
 
-- [ ] Add Sentinel config parsing to `auth-service`.
-- [ ] Add Sentinel config parsing to `user-service`.
-- [ ] Add Sentinel config parsing to `workspace-service`.
-- [ ] Add Sentinel config parsing to `task-service`.
-- [ ] Add Sentinel config parsing to `notification-service`.
-- [ ] Ensure `REDIS_MODE=sentinel` ignores `REDIS_URL`.
-- [ ] Ensure `redis.duplicate()` in notification realtime works with Sentinel.
+- [x] Add Sentinel config parsing to `auth-service`.
+- [x] Add Sentinel config parsing to `user-service`.
+- [x] Add Sentinel config parsing to `workspace-service`.
+- [x] Add Sentinel config parsing to `task-service`.
+- [x] Add Sentinel config parsing to `notification-service`.
+- [x] Ensure `REDIS_MODE=sentinel` ignores `REDIS_URL`.
+- [x] Ensure `redis.duplicate()` in notification realtime works with Sentinel.
 - [ ] Add unit tests for standalone and Sentinel modes.
 
 ### Helm
 
-- [ ] Change Redis to `architecture: replication`.
-- [ ] Enable `redis.sentinel.enabled`.
-- [ ] Set `redis.sentinel.masterSet=mymaster`.
-- [ ] Set `redis.sentinel.quorum=2`.
-- [ ] Set `redis.replica.replicaCount=2`.
-- [ ] Set small but explicit Redis/Sentinel resources.
-- [ ] Change `infra.hosts.redis` from `redis-master` to `redis` for Sentinel.
-- [ ] Add app envs `REDIS_MODE`, `REDIS_SENTINELS`, `REDIS_SENTINEL_NAME`.
-- [ ] Update network policy to allow Redis clients on `6379` and `26379`.
-- [ ] Confirm Redis exporter still works or document scrape limitation.
+- [x] Change Redis to `architecture: replication`.
+- [x] Enable `redis.sentinel.enabled`.
+- [x] Set `redis.sentinel.masterSet=mymaster`.
+- [x] Set `redis.sentinel.quorum=2`.
+- [x] Set `redis.replica.replicaCount=2`.
+- [x] Set small but explicit Redis/Sentinel resources.
+- [x] Change `infra.hosts.redis` from `redis-master` to `redis` for Sentinel.
+- [x] Add app envs `REDIS_MODE`, `REDIS_SENTINELS`, `REDIS_SENTINEL_NAME`.
+- [x] Update network policy to allow Redis clients on `6379` and `26379`.
+- [x] Confirm Redis exporter still works or document scrape limitation.
 
 ### Verification
 
-- [ ] `helm template` passes.
+- [x] `helm template` passes.
 - [ ] `pnpm run lint` passes.
 - [ ] `pnpm run build` passes.
 - [ ] `pnpm run test` passes.
-- [ ] DOKS rollout completes.
-- [ ] All app health endpoints return `200`.
-- [ ] Redis Sentinel returns current master for `mymaster`.
-- [ ] Redis master pod delete triggers failover.
-- [ ] Auth OTP/login still works after failover.
-- [ ] Notification cache/realtime does not crash after failover.
-- [ ] Runbook/drill result recorded.
+- [x] DOKS rollout completes.
+- [x] All app health endpoints return `200`.
+- [x] Redis Sentinel returns current master for `mymaster`.
+- [ ] Redis master pod delete triggers failover. _(Phase 4 drill — pending)_
+- [ ] Auth OTP/login still works after failover. _(Phase 4 drill — pending)_
+- [ ] Notification cache/realtime does not crash after failover. _(Phase 4 drill — pending)_
+- [ ] Runbook/drill result recorded. _(Phase 4 drill — pending)_
 
 ## Open questions before implementation
 
