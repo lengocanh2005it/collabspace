@@ -37,25 +37,19 @@
 
 | STT | Họ tên | MSSV | Vai trò chính |
 |-----|--------|------|---------------|
-| 1 | Lê Ngọc Anh | ... | Auth/User service + DOKS deploy |
-| 2 | ... | ... | Workspace/Task service |
-| 3 | Phan Phú Thọ | ... | Infrastructure / DevOps |
-| 4 | ... | ... | Frontend + Notification |
+| 1 | Lê Ngọc Anh | 23520048 | Auth Service · User Service · DOKS deploy · Kanban board UI |
+| 2 | Ngô Quang Tiến | 2352xxxx | Workspace Service · Analytics Service · Admin UI · Tích hợp API |
+| 3 | Phan Phú Thọ | 2352xxxx | DLQ Service · DevOps · CI/CD · Hạ tầng K8s · Dashboard UI · Workspace UI |
+| 4 | Võ Trung Tín | 2352xxxx | Task Service · Notification Service · Unit test toàn bộ service |
 
-> ⚠️ Điền MSSV và vai trò thực tế của nhóm vào đây.
+### Phân công chi tiết
 
-### Phân công theo domain
-
-| Domain | Thành viên |
-|--------|------------|
-| Auth & Identity | ... |
-| User Directory | ... |
-| Workspace & Project | ... |
-| Task & Comment | ... |
-| Notification | ... |
-| DLQ & Analytics | ... |
-| Infrastructure / K8s / CI/CD | Phan Phú Thọ |
-| Frontend SPA | ... |
+| Thành viên | Backend | Frontend | Hạ tầng |
+|-----------|---------|----------|---------|
+| **Lê Ngọc Anh** | Auth Service (đăng ký · đăng nhập · OTP · session), User Service (profile · avatar) | Kanban board (task detail · search · activity feed) | Deploy DOKS · Helm upgrade · CNPG migration · K8s health gate |
+| **Ngô Quang Tiến** | Workspace Service (workspace · thành viên · lời mời · project), Analytics Service (read model · Kafka consumer) | Admin UI (KPI · danh sách user · workspace · DLQ management) | Tích hợp API end-to-end FE ↔ BE |
+| **Phan Phú Thọ** | DLQ Service (ingest · replay · discard · auto-retry scheduler) | Dashboard UI (KPI tổng quan · skeleton loading), Workspace UI (danh sách · error handling) | CI/CD pipeline · Helm chart · Backup/Restore · Load test (k6) · Monitoring (Grafana · Alertmanager) · Docker Compose |
+| **Võ Trung Tín** | Task Service (CQRS · Event Sourcing · comment · gán task), Notification Service (SSE · Kafka consumer · broadcast) | Notification badge · Task board polish | Unit test tất cả service (~158 bộ) |
 
 ---
 
@@ -141,6 +135,27 @@ mindmap
 
 > **Cơ chế SSE:** client mở một kết nối HTTP dài hạn đến server, server đẩy tín hiệu xuống mỗi khi có thông báo mới. Client nhận tín hiệu → gọi lại API để lấy danh sách mới nhất. Đơn giản hơn WebSocket (chỉ server→client), không cần thư viện socket phức tạp, đủ dùng cho bài toán notification badge.
 
+### Phân quyền & Vai trò
+
+Hệ thống có **2 lớp role độc lập** — 5 role tổng cộng:
+
+**Platform role** (`auth-service`) — áp dụng toàn hệ thống:
+
+| Role | Mô tả |
+|------|-------|
+| `admin` | Vận hành hệ thống — quản lý tài khoản, RBAC, truy cập `/admin` |
+| `user` | Mọi tài khoản đăng ký bình thường — mặc định sau khi verify email |
+
+**Workspace role** (`workspace-service`) — áp dụng trong từng workspace:
+
+| Role | Mô tả |
+|------|-------|
+| `owner` | Người tạo workspace — toàn quyền bao gồm xóa workspace, promote/demote thành viên |
+| `manager` | Được owner bổ nhiệm — invite thành viên, project CRUD, remove `member` |
+| `member` | Mặc định khi accept invitation — tạo/sửa/comment task, leave workspace |
+
+> **Quy tắc cốt lõi:** platform `admin` **không** tự động là workspace `owner` — hai lớp hoàn toàn độc lập. Một `user` có thể là `owner` ở workspace A và `member` ở workspace B cùng lúc.
+
 ### Yêu cầu phi chức năng
 
 | Thuộc tính | Mục tiêu | Trạng thái |
@@ -152,7 +167,7 @@ mindmap
 | **Degradation** | Service phụ thuộc lỗi → trả lỗi rõ ràng, không crash | ✅ |
 | **Observability** | Metrics, logs tập trung, cảnh báo tự động | ✅ |
 | **Security** | Xác thực nhiều lớp, phân quyền, bảo vệ nội bộ | ✅ |
-| **Scalability** | Scale ngang từng service theo tải | ✅ 5 service chính chạy 2 replica mỗi service |
+| **Scalability** | Scale ngang từng service theo tải | ✅ HPA — 5 service chính: min 2 replica, max 3, scale khi CPU > 70% |
 | **SLO latency** | Cam kết thời gian phản hồi theo từng route | ⚠️ Đo được, chưa cam kết con số |
 | **Audit compliance** | Ghi log mọi thao tác admin | ❌ Ngoài phạm vi MVP |
 
@@ -691,10 +706,10 @@ flowchart TD
 
         subgraph Apps["App Deployments"]
             direction LR
-            subgraph HA["5 service chính — 2 replica mỗi service"]
-                A1[auth ×2] & A2[user ×2] & A3[workspace ×2] & A4[task ×2] & A5[notification ×2]
+            subgraph HA["5 service chính — HPA min 2 / max 3 replica"]
+                A1[auth ×2-3] & A2[user ×2-3] & A3[workspace ×2-3] & A4[task ×2-3] & A5[notification ×2-3]
             end
-            subgraph Single["2 service hỗ trợ — 1 replica"]
+            subgraph Single["2 service hỗ trợ — 1 replica, no HPA"]
                 A6[dlq ×1] & A7[analytics ×1]
             end
         end
@@ -820,9 +835,9 @@ flowchart LR
 
 > **Quyết định**: Dự án ban đầu dùng Bitnami PostgreSQL StatefulSet. Sau khi migrate sang DOKS, chuyển sang CloudNativePG để có failover thật sự và không phụ thuộc cách setup thủ công. Migration này được thực hiện mà không cần downtime dữ liệu.
 
-### Horizontal Scaling — 5 service chính chạy 2 replica
+### Horizontal Scaling — HPA trên 5 service chính
 
-5 service trên critical path được scale lên **2 replica** chạy song song. dlq-service và analytics-service giữ nguyên 1 replica — không nằm trên luồng chính người dùng.
+5 service trên critical path dùng **HorizontalPodAutoscaler (HPA)**: chạy tối thiểu **2 replica**, tự động scale lên tối đa **3 replica** khi CPU vượt **70%**. dlq-service và analytics-service giữ nguyên 1 replica — không nằm trên luồng chính người dùng.
 
 ```mermaid
 flowchart LR
@@ -830,6 +845,7 @@ flowchart LR
 
     Traefik -->|phân tải| A1[auth pod 1]
     Traefik -->|phân tải| A2[auth pod 2]
+    Traefik -.->|scale khi CPU > 70%| A3[auth pod 3]
 
     Note1["Tương tự với user · workspace · task · notification"]
 
@@ -837,7 +853,16 @@ flowchart LR
     A1 & A2 --> PG[(PostgreSQL)]
 ```
 
-**Phân tích tài nguyên trước khi scale (đo thực tế 2026-06-25):**
+**Cấu hình HPA (Helm values):**
+
+| Tham số | Giá trị |
+|---------|---------|
+| `minReplicas` | 2 |
+| `maxReplicas` | 3 |
+| `targetCPUUtilizationPercentage` | 70% |
+| Services áp dụng | auth · user · workspace · task · notification |
+
+**Phân tích tài nguyên (đo thực tế 2026-06-25):**
 
 | Service | RAM đang dùng | RAM request thêm khi +1 replica |
 |---------|--------------|--------------------------------|
@@ -1061,7 +1086,6 @@ flowchart LR
 
 - HashiCorp Vault đang chạy **single-node** — chưa có HA, chưa tự động xoay vòng secrets
 - HTTPS cho Grafana chưa được cấu hình
-- Một số exporter monitoring chưa kết nối được do cấu hình network
 - Backup chưa có WAL archiving — chưa hỗ trợ phục hồi theo thời điểm (point-in-time recovery)
 - RPO 24h — production thực tế nên siết xuống 1 giờ khi traffic đủ lớn
 
@@ -1142,6 +1166,7 @@ flowchart LR
 - Mỗi service ghi lại **span** — thời gian bắt đầu, kết thúc, và metadata của bước xử lý
 - Jaeger ghép tất cả span lại thành timeline: thấy rõ bước nào chậm, bước nào lỗi
 - Kết hợp với **Correlation ID** trên Loki → debug xuyên service cực nhanh
+- **Jaeger UI truy cập được qua HTTPS:** `https://collabspace.ngocanh2005it.site/jaeger`
 
 **Ba trụ cột Observability đủ đầy:**
 
@@ -1719,7 +1744,6 @@ sequenceDiagram
 | HTTPS cho Grafana | Đang chạy HTTP, chưa có TLS |
 | Kiểm thử tích hợp với DB thật | Đang dùng in-memory |
 | Contract test tự động | Chưa có |
-| Một số exporter monitoring | Chưa kết nối được do cấu hình network |
 | SLO chưa cam kết | Đo được nhưng chưa có ngưỡng chính thức |
 | Frontend còn nợ kỹ thuật | Polish, accessibility, mobile |
 
@@ -1735,7 +1759,9 @@ mindmap
       Analytics nâng cao
     Kỹ thuật
       Vault HA · tự động xoay vòng secrets
-      HTTPS toàn hệ thống
+      Expose Grafana ra ngoài qua HTTPS
+      Kết nối Alertmanager Slack webhook cho cảnh báo thật
+      WAL archiving · Point-in-time recovery cho PostgreSQL
       Contract test tự động giữa các service
       Kiểm thử tích hợp với DB thật
       Service mesh mTLS
