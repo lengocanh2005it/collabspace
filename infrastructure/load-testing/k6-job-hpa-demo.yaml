@@ -1,0 +1,404 @@
+# k6 load test Job for DOKS
+#
+# Usage:
+#   # Run smoke (default)
+#   kubectl apply -f infrastructure/load-testing/k6-job.yaml
+#
+#   # Run a specific scenario with custom VUs
+#   K6_SCENARIO=slo-baseline K6_VUS=20 \
+#     envsubst < infrastructure/load-testing/k6-job.yaml | kubectl apply -f -
+#
+# Required secrets (create once):
+#   kubectl create secret generic k6-config -n collabspace \
+#     --from-literal=userPassword=<seed-password> \
+#     --from-literal=grafanaPassword=<grafana-admin-password>
+#
+# Clean up after run:
+#   kubectl delete job k6-load-test -n collabspace
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: k6-lib
+  namespace: collabspace
+data:
+  grafana-annotation.js: |
+    import http from 'k6/http';
+    import encoding from 'k6/encoding';
+
+    const DEFAULT_BASE = '/grafana/api/annotations';
+
+    function apiBase() {
+      const root = (__ENV.GRAFANA_URL || '').replace(/\/$/, '');
+      if (!root) return null;
+      return `${root}${DEFAULT_BASE}`;
+    }
+
+    function authHeaders() {
+      const user = __ENV.GRAFANA_USER || 'admin';
+      const pass = __ENV.GRAFANA_PASSWORD || '';
+      if (!pass) return { 'Content-Type': 'application/json' };
+      const token = `${user}:${pass}`;
+      return {
+        'Content-Type': 'application/json',
+        Authorization: `Basic ${encoding.b64encode(token)}`,
+      };
+    }
+
+    export function annotateLoadTest(text, tags = []) {
+      const url = apiBase();
+      if (!url) return;
+      const payload = JSON.stringify({
+        text,
+        tags: ['k6', 'load-test', ...tags],
+        time: Date.now(),
+        dashboardUID: 'collabspace-load-test',
+      });
+      const res = http.post(url, payload, { headers: authHeaders(), timeout: '5s' });
+      if (res.status < 200 || res.status >= 300) {
+        console.warn(`Grafana annotation skipped (${res.status}): ${text}`);
+      }
+    }
+
+    export function annotateStart(scenario) {
+      annotateLoadTest(`k6 ${scenario} started`, [scenario]);
+    }
+
+    export function annotateEnd(scenario, passed) {
+      annotateLoadTest(`k6 ${scenario} ${passed ? 'passed' : 'failed'}`, [scenario]);
+    }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: k6-scenarios
+  namespace: collabspace
+data:
+  smoke.js: |
+    import http from 'k6/http';
+    import { check, sleep } from 'k6';
+    import { annotateEnd, annotateStart } from '../lib/grafana-annotation.js';
+
+    const SCENARIO = 'smoke';
+
+    export const options = {
+      vus: Number(__ENV.K6_VUS || 5),
+      duration: __ENV.K6_DURATION || '1m',
+      thresholds: {
+        http_req_failed: ['rate<0.02'],
+        http_req_duration: ['p(95)<2000'],
+        checks: ['rate>0.95'],
+      },
+    };
+
+    const BASE_URL = (__ENV.BASE_URL || 'http://localhost/api/v1').replace(/\/$/, '');
+
+    const HEALTH_PATHS = [
+      { name: 'auth',          path: '/auth/health' },
+      { name: 'users',         path: '/users/health' },
+      { name: 'workspaces',    path: '/workspaces/health' },
+      { name: 'tasks',         path: '/tasks/health' },
+      { name: 'notifications', path: '/notifications/health' },
+    ];
+
+    export function setup() {
+      annotateStart(SCENARIO);
+      return { startedAt: Date.now() };
+    }
+
+    export default function () {
+      for (const route of HEALTH_PATHS) {
+        const res = http.get(`${BASE_URL}${route.path}`);
+        check(res, { [`${route.name} health 200`]: (r) => r.status === 200 });
+      }
+      sleep(1);
+    }
+
+    export function teardown(data) {
+      annotateEnd(SCENARIO, Boolean(data?.startedAt));
+    }
+
+  slo-baseline.js: |
+    import http from 'k6/http';
+    import { check, group, sleep } from 'k6';
+    import { annotateEnd, annotateStart } from '../lib/grafana-annotation.js';
+
+    const SCENARIO = 'slo-baseline';
+
+    export const options = {
+      vus: Number(__ENV.K6_VUS || 10),
+      duration: __ENV.K6_DURATION || '2m',
+      thresholds: {
+        http_req_failed: ['rate<0.01'],
+        checks: ['rate>0.99'],
+        'http_req_duration{scenario:default}':          ['p(95)<800'],
+        'http_req_duration{group:::list workspaces}':   ['p(95)<500'],
+        'http_req_duration{group:::task board}':        ['p(95)<600'],
+        'http_req_duration{group:::list tasks}':        ['p(95)<600'],
+        'http_req_duration{group:::list notifications}':['p(95)<500'],
+        'http_req_duration{group:::user profile}':      ['p(95)<400'],
+        'http_req_duration{group:::task activity}':     ['p(95)<700'],
+      },
+    };
+
+    const BASE_URL        = (__ENV.BASE_URL || 'http://localhost/api/v1').replace(/\/$/, '');
+    const USER_A_EMAIL    = __ENV.K6_USER_A_EMAIL || 'ngocanh@collabspace.dev';
+    const USER_B_EMAIL    = __ENV.K6_USER_B_EMAIL || 'quangtien@collabspace.dev';
+    const USER_PASSWORD   = __ENV.K6_USER_PASSWORD || 'collabspace123';
+
+    function jsonHeaders(token) {
+      const h = { 'Content-Type': 'application/json' };
+      if (token) h.Authorization = `Bearer ${token}`;
+      return h;
+    }
+
+    function login(email) {
+      const res = http.post(
+        `${BASE_URL}/auth/login`,
+        JSON.stringify({ email, password: USER_PASSWORD }),
+        { headers: jsonHeaders() },
+      );
+      check(res, { 'login 200': (r) => r.status === 200 });
+      if (res.status !== 200) return null;
+      const body = res.json();
+      return body.accessToken || body.data?.accessToken || null;
+    }
+
+    export function setup() {
+      annotateStart(SCENARIO);
+      const tokenA = login(USER_A_EMAIL);
+      const tokenB = login(USER_B_EMAIL);
+      if (!tokenA || !tokenB) throw new Error('Demo users missing — run seed first');
+      return { tokenA, tokenB, startedAt: Date.now() };
+    }
+
+    export default function (data) {
+      const token = __VU % 2 === 0 ? data.tokenA : data.tokenB;
+      let workspaceId, taskId;
+
+      group('list workspaces', () => {
+        const res = http.get(`${BASE_URL}/workspaces`, { headers: jsonHeaders(token) });
+        check(res, { 'workspaces 200': (r) => r.status === 200 });
+        if (res.status === 200) {
+          const body = res.json();
+          const ws = (body.data || body).workspaces || [];
+          if (ws.length > 0) workspaceId = ws[0].id;
+        }
+      });
+
+      if (workspaceId) {
+        group('task board', () => {
+          const res = http.get(`${BASE_URL}/tasks/board?workspaceId=${workspaceId}`, { headers: jsonHeaders(token) });
+          check(res, { 'task board 200': (r) => r.status === 200 });
+          if (res.status === 200) {
+            const body = res.json();
+            const columns = (body.data || body).columns || [];
+            const first = columns.flatMap((c) => c.tasks || []).find((t) => t?.id);
+            if (first) taskId = first.id;
+          }
+        });
+
+        group('list tasks', () => {
+          const res = http.get(`${BASE_URL}/tasks?workspaceId=${workspaceId}&limit=50`, { headers: jsonHeaders(token) });
+          check(res, { 'tasks list 200': (r) => r.status === 200 });
+          if (!taskId && res.status === 200) {
+            const tasks = ((res.json().data || res.json()).tasks || []);
+            if (tasks.length > 0) taskId = tasks[0].id;
+          }
+        });
+      }
+
+      group('list notifications', () => {
+        const res = http.get(`${BASE_URL}/notifications?limit=20`, { headers: jsonHeaders(token) });
+        check(res, { 'notifications 200': (r) => r.status === 200 });
+      });
+
+      group('user profile', () => {
+        const res = http.get(`${BASE_URL}/users/me`, { headers: jsonHeaders(token) });
+        check(res, { 'users/me 200': (r) => r.status === 200 });
+      });
+
+      if (taskId) {
+        group('task activity', () => {
+          const res = http.get(`${BASE_URL}/tasks/${taskId}/activity?limit=20`, { headers: jsonHeaders(token) });
+          check(res, { 'task activity 200': (r) => r.status === 200 });
+        });
+      }
+
+      sleep(0.3 + Math.random() * 0.4);
+    }
+
+    export function teardown(data) {
+      annotateEnd(SCENARIO, Boolean(data?.startedAt));
+    }
+
+  demo-flow.js: |
+    import http from 'k6/http';
+    import { check, group, sleep } from 'k6';
+    import { annotateEnd, annotateStart } from '../lib/grafana-annotation.js';
+
+    const SCENARIO = 'demo-flow';
+
+    export const options = {
+      stages: __ENV.K6_STAGES
+        ? JSON.parse(__ENV.K6_STAGES)
+        : [
+            { duration: '30s', target: Number(__ENV.K6_VUS || 10) },
+            { duration: '2m',  target: Number(__ENV.K6_VUS || 10) },
+            { duration: '30s', target: 0 },
+          ],
+      thresholds: {
+        http_req_failed:   ['rate<0.05'],
+        http_req_duration: ['p(95)<3000'],
+        checks:            ['rate>0.90'],
+      },
+    };
+
+    const BASE_URL      = (__ENV.BASE_URL || 'http://localhost/api/v1').replace(/\/$/, '');
+    const USER_A_EMAIL  = __ENV.K6_USER_A_EMAIL || 'ngocanh@collabspace.dev';
+    const USER_B_EMAIL  = __ENV.K6_USER_B_EMAIL || 'quangtien@collabspace.dev';
+    const USER_PASSWORD = __ENV.K6_USER_PASSWORD || 'collabspace123';
+
+    function jsonHeaders(token) {
+      const h = { 'Content-Type': 'application/json' };
+      if (token) h.Authorization = `Bearer ${token}`;
+      return h;
+    }
+
+    function login(email) {
+      const res = http.post(
+        `${BASE_URL}/auth/login`,
+        JSON.stringify({ email, password: USER_PASSWORD }),
+        { headers: jsonHeaders() },
+      );
+      check(res, { 'login 200': (r) => r.status === 200 });
+      if (res.status !== 200) return null;
+      const body = res.json();
+      return body.accessToken || body.data?.accessToken || null;
+    }
+
+    export function setup() {
+      annotateStart(SCENARIO);
+      const tokenA = login(USER_A_EMAIL);
+      const tokenB = login(USER_B_EMAIL);
+      if (!tokenA || !tokenB) throw new Error('Demo users missing — run seed first');
+      return { tokenA, tokenB, startedAt: Date.now() };
+    }
+
+    export default function (data) {
+      const token = __VU % 2 === 0 ? data.tokenA : data.tokenB;
+
+      group('auth', () => {
+        const res = http.get(`${BASE_URL}/auth/health`, { headers: jsonHeaders(token) });
+        check(res, { 'auth health 200': (r) => r.status === 200 });
+      });
+
+      group('workspaces', () => {
+        const res = http.get(`${BASE_URL}/workspaces`, { headers: jsonHeaders(token) });
+        check(res, { 'workspaces 200': (r) => r.status === 200 });
+      });
+
+      group('tasks', () => {
+        const res = http.get(`${BASE_URL}/tasks/health`, { headers: jsonHeaders(token) });
+        check(res, { 'tasks health 200': (r) => r.status === 200 });
+      });
+
+      sleep(1);
+    }
+
+    export function teardown(data) {
+      annotateEnd(SCENARIO, Boolean(data?.startedAt));
+    }
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: k6-load-test
+  namespace: collabspace
+  labels:
+    app: k6-load-test
+spec:
+  ttlSecondsAfterFinished: 600
+  template:
+    metadata:
+      labels:
+        app: k6-load-test
+    spec:
+      restartPolicy: Never
+      initContainers:
+        # Copy scenario + lib files into shared volume, preserving relative import paths:
+        #   /scripts/scenarios/<scenario>.js  →  imports  ../lib/grafana-annotation.js
+        #   /scripts/lib/grafana-annotation.js
+      - name: prepare-scripts
+        image: busybox
+        command:
+        - /bin/sh
+        - -c
+        - |
+          mkdir -p /scripts/scenarios /scripts/lib
+          cp /cm-scenarios/* /scripts/scenarios/
+          cp /cm-lib/*       /scripts/lib/
+          echo "Scripts ready:"; find /scripts -type f
+        volumeMounts:
+        - name: scripts
+          mountPath: /scripts
+        - name: cm-scenarios
+          mountPath: /cm-scenarios
+        - name: cm-lib
+          mountPath: /cm-lib
+      containers:
+      - name: k6
+        image: grafana/k6:latest
+        args:
+        - run
+        - /scripts/scenarios/$(K6_SCENARIO).js
+        env:
+        - name: K6_SCENARIO
+          value: "demo-flow"                            # override with -p K6_SCENARIO=slo-baseline
+        - name: BASE_URL
+          value: "https://collabspace.ngocanh2005it.site/api/v1"
+        - name: K6_VUS
+          value: "50"
+        - name: K6_DURATION
+          value: "3m"
+        - name: K6_INSECURE_SKIP_TLS_VERIFY
+          value: "true"
+        - name: K6_USER_A_EMAIL
+          value: "ngocanh@collabspace.dev"
+        - name: K6_USER_B_EMAIL
+          value: "quangtien@collabspace.dev"
+        - name: K6_USER_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: k6-config
+              key: userPassword
+              optional: true                        # falls back to default seed password if secret absent
+        - name: GRAFANA_URL
+          value: "https://collabspace.ngocanh2005it.site/grafana"
+        - name: GRAFANA_USER
+          value: "admin"
+        - name: GRAFANA_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: k6-config
+              key: grafanaPassword
+              optional: true
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 256Mi
+        volumeMounts:
+        - name: scripts
+          mountPath: /scripts
+      volumes:
+      - name: scripts
+        emptyDir: {}
+      - name: cm-scenarios
+        configMap:
+          name: k6-scenarios
+      - name: cm-lib
+        configMap:
+          name: k6-lib
