@@ -292,7 +292,10 @@ backup:
     secretKey: ""
 
 hpa:
-  enabled: false
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 3
+  targetCPUUtilization: 70
 
 pdb:
   enabled: true
@@ -301,6 +304,8 @@ pdb:
 apps:
   auth-service:
     replicas: 2
+    autoscaling:
+      enabled: true
     image:
       repository: ghcr.io/REPLACE_ME_GHCR_OWNER/collabspace-auth-service
       tag: REPLACE_ME_IMAGE_TAG
@@ -325,6 +330,8 @@ apps:
 
   user-service:
     replicas: 2
+    autoscaling:
+      enabled: true
     image:
       repository: ghcr.io/REPLACE_ME_GHCR_OWNER/collabspace-user-service
       tag: REPLACE_ME_IMAGE_TAG
@@ -344,6 +351,8 @@ apps:
 
   workspace-service:
     replicas: 2
+    autoscaling:
+      enabled: true
     image:
       repository: ghcr.io/REPLACE_ME_GHCR_OWNER/collabspace-workspace-service
       tag: REPLACE_ME_IMAGE_TAG
@@ -362,6 +371,8 @@ apps:
 
   task-service:
     replicas: 2
+    autoscaling:
+      enabled: true
     image:
       repository: ghcr.io/REPLACE_ME_GHCR_OWNER/collabspace-task-service
       tag: REPLACE_ME_IMAGE_TAG
@@ -397,6 +408,8 @@ apps:
   dlq-service:
     enabled: true
     replicas: 1
+    autoscaling:
+      enabled: false
     image:
       repository: ghcr.io/REPLACE_ME_GHCR_OWNER/collabspace-dlq-service
       tag: REPLACE_ME_IMAGE_TAG
@@ -409,6 +422,8 @@ apps:
 
   notification-service:
     replicas: 2
+    autoscaling:
+      enabled: true
     image:
       repository: ghcr.io/REPLACE_ME_GHCR_OWNER/collabspace-notification-service
       tag: REPLACE_ME_IMAGE_TAG
@@ -438,6 +453,8 @@ apps:
   analytics-service:
     enabled: true
     replicas: 1
+    autoscaling:
+      enabled: false
     image:
       repository: ghcr.io/REPLACE_ME_GHCR_OWNER/collabspace-analytics-service
       tag: REPLACE_ME_IMAGE_TAG

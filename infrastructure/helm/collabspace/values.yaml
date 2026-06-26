@@ -562,7 +562,7 @@ backup:
 
 hpa:
   enabled: true
-  minReplicas: 1
+  minReplicas: 2
   maxReplicas: 3
   targetCPUUtilization: 70
 
@@ -575,6 +575,8 @@ apps:
   auth-service:
     enabled: true
     replicas: 2
+    autoscaling:
+      enabled: true
     image:
       repository: collabspace/auth-service
       tag: latest
@@ -624,6 +626,8 @@ apps:
   user-service:
     enabled: true
     replicas: 2
+    autoscaling:
+      enabled: true
     image:
       repository: collabspace/user-service
       tag: latest
@@ -661,6 +665,8 @@ apps:
   workspace-service:
     enabled: true
     replicas: 2
+    autoscaling:
+      enabled: true
     image:
       repository: collabspace/workspace-service
       tag: latest
@@ -700,6 +706,8 @@ apps:
   task-service:
     enabled: true
     replicas: 2
+    autoscaling:
+      enabled: true
     image:
       repository: collabspace/task-service
       tag: latest
@@ -754,6 +762,8 @@ apps:
   notification-service:
     enabled: true
     replicas: 2
+    autoscaling:
+      enabled: true
     image:
       repository: collabspace/notification-service
       tag: latest
@@ -798,6 +808,8 @@ apps:
   dlq-service:
     enabled: true
     replicas: 1
+    autoscaling:
+      enabled: false
     image:
       repository: collabspace/dlq-service
       tag: latest
@@ -829,6 +841,8 @@ apps:
   analytics-service:
     enabled: true
     replicas: 1
+    autoscaling:
+      enabled: false
     image:
       repository: collabspace/analytics-service
       tag: latest

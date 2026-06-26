@@ -106,6 +106,25 @@ Tìm block `apps:` và đổi `replicas: 1` → `replicas: 2` cho 5 service tron
 
 Production thật dùng GitHub secret `HELM_VALUES_PROD`, nên secret này cũng phải không override 5 service về `replicas: 1`.
 
+HPA production chỉ bật cho 5 core services, giữ baseline 2 replica và chỉ scale out khi CPU cao:
+
+```yaml
+hpa:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 3
+  targetCPUUtilization: 70
+```
+
+Trong từng core service, bật:
+
+```yaml
+autoscaling:
+  enabled: true
+```
+
+Giữ `autoscaling.enabled: false` cho `dlq-service` và `analytics-service` trong phase này.
+
 ```yaml
 apps:
   auth-service:
@@ -149,6 +168,10 @@ kubectl get pods -n collabspace -o wide
 # Xem tài nguyên sau scale
 kubectl top nodes
 kubectl top pods -n collabspace --sort-by=memory
+
+# Xem HPA cho 5 core services
+kubectl get hpa -n collabspace
+kubectl describe hpa -n collabspace
 ```
 
 ---
