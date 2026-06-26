@@ -732,10 +732,10 @@ apps:
     resources:
       requests:
         memory: 128Mi
-        cpu: 100m
+        cpu: 200m
       limits:
         memory: 256Mi
-        cpu: 250m
+        cpu: 500m
     extraEnv:
       KAFKA_CONSUMERS_ENABLED: "true"
       KAFKA_BROKERS: "kafka:9092"
@@ -791,10 +791,10 @@ apps:
     resources:
       requests:
         memory: 128Mi
-        cpu: 100m
+        cpu: 200m
       limits:
         memory: 256Mi
-        cpu: 250m
+        cpu: 500m
     extraEnv:
       KAFKA_CONSUMERS_ENABLED: "true"
       KAFKA_BROKERS: "kafka:9092"
