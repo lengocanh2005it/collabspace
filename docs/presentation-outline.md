@@ -135,6 +135,27 @@ mindmap
 
 > **Cơ chế SSE:** client mở một kết nối HTTP dài hạn đến server, server đẩy tín hiệu xuống mỗi khi có thông báo mới. Client nhận tín hiệu → gọi lại API để lấy danh sách mới nhất. Đơn giản hơn WebSocket (chỉ server→client), không cần thư viện socket phức tạp, đủ dùng cho bài toán notification badge.
 
+### Phân quyền & Vai trò
+
+Hệ thống có **2 lớp role độc lập** — 5 role tổng cộng:
+
+**Platform role** (`auth-service`) — áp dụng toàn hệ thống:
+
+| Role | Mô tả |
+|------|-------|
+| `admin` | Vận hành hệ thống — quản lý tài khoản, RBAC, truy cập `/admin` |
+| `user` | Mọi tài khoản đăng ký bình thường — mặc định sau khi verify email |
+
+**Workspace role** (`workspace-service`) — áp dụng trong từng workspace:
+
+| Role | Mô tả |
+|------|-------|
+| `owner` | Người tạo workspace — toàn quyền bao gồm xóa workspace, promote/demote thành viên |
+| `manager` | Được owner bổ nhiệm — invite thành viên, project CRUD, remove `member` |
+| `member` | Mặc định khi accept invitation — tạo/sửa/comment task, leave workspace |
+
+> **Quy tắc cốt lõi:** platform `admin` **không** tự động là workspace `owner` — hai lớp hoàn toàn độc lập. Một `user` có thể là `owner` ở workspace A và `member` ở workspace B cùng lúc.
+
 ### Yêu cầu phi chức năng
 
 | Thuộc tính | Mục tiêu | Trạng thái |
