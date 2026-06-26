@@ -603,10 +603,10 @@ apps:
     resources:
       requests:
         memory: 128Mi
-        cpu: 50m
+        cpu: 100m
       limits:
         memory: 256Mi
-        cpu: 250m
+        cpu: 400m
     extraEnv:
       GRPC_ENABLED: "true"
       GRPC_URL: "0.0.0.0:50051"
