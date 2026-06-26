@@ -39,7 +39,7 @@
 |-----|--------|------|---------------|
 | 1 | Lê Ngọc Anh | 23520048 | Auth Service · User Service · DOKS deploy · Kanban board UI |
 | 2 | Ngô Quang Tiến | 2352xxxx | Workspace Service · Analytics Service · Admin UI · Tích hợp API |
-| 3 | Phan Phú Thọ | 2352xxxx | DevOps · CI/CD · Hạ tầng K8s · Dashboard UI · Workspace UI |
+| 3 | Phan Phú Thọ | 2352xxxx | DLQ Service · DevOps · CI/CD · Hạ tầng K8s · Dashboard UI · Workspace UI |
 | 4 | Võ Trung Tín | 2352xxxx | Task Service · Notification Service · Unit test toàn bộ service |
 
 ### Phân công chi tiết
