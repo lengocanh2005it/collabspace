@@ -97,9 +97,14 @@ Không nên scale Debezium trước Kafka HA. Hướng đúng:
 
 ## Cách scale 5 core services vĩnh viễn qua Helm
 
-### Bước 1 — Sửa `infrastructure/helm/collabspace/values.yaml`
+### Bước 1 — Sửa Helm values
 
-Tìm block `apps:` và đổi `replicas: 1` → `replicas: 2` cho 5 service:
+Tìm block `apps:` và đổi `replicas: 1` → `replicas: 2` cho 5 service trong:
+
+- `infrastructure/helm/collabspace/values.yaml`
+- `infrastructure/helm/collabspace/values-prod.example.yaml`
+
+Production thật dùng GitHub secret `HELM_VALUES_PROD`, nên secret này cũng phải không override 5 service về `replicas: 1`.
 
 ```yaml
 apps:
