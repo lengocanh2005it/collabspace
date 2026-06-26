@@ -14,6 +14,7 @@ export type KafkaConfig = {
   maxRetries: number;
   retryDelayMs: number;
   workspaceDeletedTopic: string;
+  workspaceMemberLeftTopic: string;
   userProfileUpdatedTopic: string;
   userRegisteredTopic: string;
 };
@@ -58,6 +59,9 @@ export class ConfigurationService {
       workspaceDeletedTopic:
         this.configService.get<string>("KAFKA_TOPIC_WORKSPACE_DELETED") ??
         "collabspace.workspace.workspace_deleted",
+      workspaceMemberLeftTopic:
+        this.configService.get<string>("KAFKA_TOPIC_WORKSPACE_MEMBER_LEFT") ??
+        "collabspace.workspace.member_left",
       userProfileUpdatedTopic:
         this.configService.get<string>("KAFKA_TOPIC_USER_PROFILE_UPDATED") ??
         "collabspace.user.profile_updated",

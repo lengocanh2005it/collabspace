@@ -152,7 +152,7 @@ mindmap
 | **Degradation** | Service phụ thuộc lỗi → trả lỗi rõ ràng, không crash | ✅ |
 | **Observability** | Metrics, logs tập trung, cảnh báo tự động | ✅ |
 | **Security** | Xác thực nhiều lớp, phân quyền, bảo vệ nội bộ | ✅ |
-| **Scalability** | Scale ngang từng service theo tải | ⚠️ Cấu hình có, chưa đo baseline |
+| **Scalability** | Scale ngang từng service theo tải | ✅ 5 service chính chạy 2 replica mỗi service |
 | **SLO latency** | Cam kết thời gian phản hồi theo từng route | ⚠️ Đo được, chưa cam kết con số |
 | **Audit compliance** | Ghi log mọi thao tác admin | ❌ Ngoài phạm vi MVP |
 
@@ -682,14 +682,21 @@ flowchart LR
 
 ```mermaid
 flowchart TD
-    Internet([Internet]) --> Traefik
+    Internet([Internet]) --> DOLB
+
+    DOLB[DigitalOcean Load Balancer\nAuto-provisioned · IP tĩnh · TCP passthrough]
 
     subgraph DOKS["DigitalOcean Kubernetes — namespace: collabspace"]
-        Traefik[Traefik\nRouting · Auth · Rate limit]
+        Traefik[Traefik\nRouting · Auth · Rate limit · TLS termination]
 
-        subgraph Apps["7 App Deployments"]
+        subgraph Apps["App Deployments"]
             direction LR
-            A1[auth] & A2[user] & A3[workspace] & A4[task] & A5[notification] & A6[dlq] & A7[analytics]
+            subgraph HA["5 service chính — 2 replica mỗi service"]
+                A1[auth ×2] & A2[user ×2] & A3[workspace ×2] & A4[task ×2] & A5[notification ×2]
+            end
+            subgraph Single["2 service hỗ trợ — 1 replica"]
+                A6[dlq ×1] & A7[analytics ×1]
+            end
         end
 
         subgraph DBs["Databases (tất cả đều HA)"]
@@ -719,6 +726,7 @@ flowchart TD
         NP[Network Policy\nChặn giao tiếp không được phép]
     end
 
+    DOLB --> Traefik
     Traefik --> Apps
     Apps --> DBs & KF
     DC --> KF
@@ -735,6 +743,39 @@ flowchart TD
 ```
 
 ### Quyết định thiết kế hạ tầng
+
+**DigitalOcean Load Balancer — tự động tạo, không cần cấu hình tay**
+
+Khi Traefik được deploy lên DOKS với `Service type: LoadBalancer`, DigitalOcean **tự động provision một Load Balancer** và gán IP tĩnh bên ngoài — không cần cấu hình LB thủ công hay trỏ port trực tiếp vào node. Đây là tích hợp native giữa DOKS và hạ tầng DigitalOcean.
+
+```mermaid
+flowchart LR
+    Internet([Internet]) --> DOLB
+
+    subgraph DO["DigitalOcean Cloud"]
+        DOLB[DO Load Balancer\nIP tĩnh: 146.190.201.18\nTCP passthrough port 80/443]
+    end
+
+    subgraph K8s["DOKS Cluster — 3 nodes"]
+        DOLB --> T1[Traefik pod\nnode-1]
+        DOLB --> T2[Traefik pod\nnếu scale lên 2]
+        T1 & T2 --> Apps[App pods]
+    end
+
+    DNS[DNS\ncollabspace.ngocanh2005it.site] -->|A record| DOLB
+
+    style DOLB fill:#0080FF,color:#fff
+    style T1 fill:#F39C12,color:#fff
+    style T2 fill:#F39C12,color:#fff
+```
+
+**Cách hoạt động:**
+- DOKS nhìn thấy Service `type: LoadBalancer` → gọi DigitalOcean API tạo LB tự động
+- LB nhận traffic TCP port 80/443 và forward thẳng vào Traefik pod (passthrough — không decrypt TLS)
+- Traefik mới là nơi **terminate TLS** và xử lý Let's Encrypt ACME HTTP-01 challenge
+- DNS `collabspace.ngocanh2005it.site` trỏ A record vào IP tĩnh của LB — khi cluster thay đổi, chỉ cần cập nhật IP này
+
+**Một gotcha thực tế gặp phải:** khi cài Traefik lên cluster mới, Traefik thử ACME challenge ở giây ~17 nhưng DO LB cần 30–60s mới sẵn sàng hoàn toàn → Let's Encrypt validate fail. Fix: đợi LB ổn định rồi re-apply IngressRoute để Traefik thử lại ACME ngay lập tức.
 
 **Tại sao Kubernetes (DOKS) thay vì một VM đơn?**
 VM đơn (Droplet) không có self-healing: nếu một container crash, phải restart tay hoặc dùng cron. K8s tự động restart pod lỗi, rolling update không downtime, và horizontal scaling theo tải. DOKS được chọn vì managed control plane — không cần quản lý master node, tự động upgrade, và tích hợp native với DigitalOcean Load Balancer và Block Storage.
@@ -778,6 +819,37 @@ flowchart LR
 - Tốt hơn nhiều so với chạy PostgreSQL trong một StatefulSet đơn lẻ — đó là cách học thuật, đây là cách production
 
 > **Quyết định**: Dự án ban đầu dùng Bitnami PostgreSQL StatefulSet. Sau khi migrate sang DOKS, chuyển sang CloudNativePG để có failover thật sự và không phụ thuộc cách setup thủ công. Migration này được thực hiện mà không cần downtime dữ liệu.
+
+### Horizontal Scaling — 5 service chính chạy 2 replica
+
+5 service trên critical path được scale lên **2 replica** chạy song song. dlq-service và analytics-service giữ nguyên 1 replica — không nằm trên luồng chính người dùng.
+
+```mermaid
+flowchart LR
+    DOLB[DO Load Balancer] --> Traefik
+
+    Traefik -->|phân tải| A1[auth pod 1]
+    Traefik -->|phân tải| A2[auth pod 2]
+
+    Note1["Tương tự với user · workspace · task · notification"]
+
+    A1 & A2 --> Redis[(Redis Sentinel)]
+    A1 & A2 --> PG[(PostgreSQL)]
+```
+
+**Phân tích tài nguyên trước khi scale (đo thực tế 2026-06-25):**
+
+| Service | RAM đang dùng | RAM request thêm khi +1 replica |
+|---------|--------------|--------------------------------|
+| auth-service | 99Mi | 256Mi |
+| user-service | 94Mi | 256Mi |
+| workspace-service | 88Mi | 128Mi |
+| task-service | 111Mi | 256Mi |
+| notification-service | 99Mi | 256Mi |
+| **Tổng thêm** | | **1,152Mi** |
+
+3 node còn ~11,900Mi request headroom → scale an toàn, RAM node ước tính lên 60–72%.
+
 
 ### Redis High Availability — Sentinel
 
@@ -870,6 +942,39 @@ flowchart LR
 
 - Không lưu secret trong code hay config file — chỉ quản lý qua Vault
 - Khi secret thay đổi, ESO tự động cập nhật K8s Secret mà không cần restart app hay deploy lại
+
+> 📄 Nguồn: `infrastructure/helm/collabspace/templates/`, `infrastructure/vault/README.md`
+
+### Chi phí vận hành DOKS
+
+> Chi phí là một trade-off thực sự — không nên bỏ qua khi nói về kiến trúc production.
+
+**Breakdown chi phí thực tế (tháng 6/2026):**
+
+| Thành phần | Cấu hình | Chi phí/tháng |
+|-----------|----------|--------------|
+| **DOKS Worker Nodes** | 3 × 4vCPU / 8GiB RAM (SGP1) | ~$72 |
+| **DO Load Balancer** | Tự động tạo khi deploy Traefik | ~$12 |
+| **DO Spaces** | Object Storage cho backup (7 ngày giữ lại) | ~$5 |
+| **DO Container Registry** | Lưu Docker image cho CI/CD | ~$5 |
+| **DOKS Control Plane** | Managed K8s master (miễn phí trên DOKS) | $0 |
+| **Tổng ước tính** | | **~$94/tháng** |
+
+> **Lưu ý:** DOKS không tính phí control plane (managed) — đây là lợi thế so với tự dựng K8s cluster trên VM.
+
+**Tại sao chọn DOKS thay vì k3s single Droplet rẻ hơn?**
+
+Trước khi migrate lên DOKS (2026-06-23), CollabSpace chạy trên **k3s single-node Droplet $48/tháng**. Trade-off:
+
+| | k3s single Droplet ($48/tháng) | DOKS 3-node (~$94/tháng) |
+|--|-------------------------------|--------------------------|
+| **Node failure** | Toàn bộ hệ thống down | Pod tự migrate sang node khác |
+| **K8s upgrade** | Tự làm tay, rủi ro downtime | Managed, DigitalOcean xử lý |
+| **Scale** | Phải resize Droplet (downtime) | Thêm node không downtime |
+| **Workload isolation** | Tất cả pod trên 1 node | Pod phân tán trên 3 node |
+| **Chi phí** | $48/tháng | ~$94/tháng |
+
+**Kết luận:** DOKS tốn gấp ~2× nhưng mua được HA thật sự — phù hợp với mục tiêu demo production-like. Với production thật có traffic lớn, DOKS là lựa chọn đúng đắn; với demo đơn thuần, k3s đủ dùng.
 
 > 📄 Nguồn: `infrastructure/helm/collabspace/templates/`, `infrastructure/vault/README.md`
 
@@ -1062,6 +1167,22 @@ flowchart LR
 4. **Health check** phân tầng — phân biệt process còn sống và thực sự sẵn sàng nhận request
 5. **Không thất bại im lặng** trên luồng quan trọng — đăng ký, xác thực, ghi dữ liệu
 
+### Bức tranh toàn diện — Những gì đã triển khai
+
+| Cơ chế | Áp dụng ở đâu | Ghi chú |
+|--------|--------------|---------|
+| **Timeout** | `WorkspaceHttpClient`, `UserProfileHttpClient`, gRPC | `AbortController` + configurable `timeoutMs` |
+| **Circuit Breaker** | HTTP call sang workspace-service, user-service | `CircuitBreaker` từ `@collabspace/shared` — 5 lỗi → OPEN 30s |
+| **Retry HTTP sync** | `WorkspaceHttpClient`, `UserProfileHttpClient` | Retry 1–2 lần cho 5xx/network error, không retry 4xx |
+| **Rate Limiting** | Tất cả service, từng endpoint nhạy cảm | `@nestjs/throttler` — 100 req/phút/IP mặc định |
+| **Idempotency** | Kafka consumer — notification, task, analytics | `ProcessedEvent.tryClaim(eventId)` |
+| **Saga rollback** | Luồng đăng ký auth-service | gRPC sang user-service fail → xóa credential, không orphan data |
+| **Fallback read model** | task-service, notification-service | Local replica → HTTP fallback |
+| **Health check** | Tất cả 7 service | `liveness` vs `readiness` tách biệt |
+| **DLQ** | Toàn hệ thống | Message lỗi lưu MongoDB, có API replay/discard |
+| **Cache invalidation** | task-service membership cache | Lắng nghe `workspace.member_left` → `membershipCache.clear()` |
+| **Outbox Pattern** | workspace, task, auth | Ghi sự kiện + dữ liệu cùng transaction |
+
 ### Saga Rollback — Đăng ký tài khoản
 
 ```mermaid
@@ -1101,6 +1222,30 @@ flowchart TD
     style Degrade fill:#E8964D,color:#fff
 ```
 
+### Circuit Breaker — Fail-fast thay vì chờ timeout
+
+Timeout ngăn request treo vô hạn, nhưng **không ngăn được cascade failure**: nếu workspace-service chậm 2,900ms/request, 100 user đồng thời tạo task → 100 request đều treo gần hết 3s timeout, tốn thread/connection vô ích.
+
+Circuit Breaker giải quyết bằng cách **mở mạch** khi phát hiện service dependency đang có vấn đề:
+
+```mermaid
+stateDiagram-v2
+    CLOSED --> OPEN : 5 lỗi liên tiếp
+    OPEN --> HALF_OPEN : Sau 30 giây
+    HALF_OPEN --> CLOSED : Request thử nghiệm thành công
+    HALF_OPEN --> OPEN : Request thử nghiệm thất bại
+
+    CLOSED : CLOSED\nGọi bình thường
+    OPEN : OPEN\nFail-fast ngay lập tức\nKhông gọi dependency
+    HALF_OPEN : HALF-OPEN\nThử 1 request để kiểm tra
+```
+
+- **CLOSED** → gọi dependency bình thường
+- **OPEN** → fail-fast ngay, không chờ timeout — trả 503 trong <1ms thay vì 3s
+- **HALF-OPEN** → thử 1 request sau 30s để kiểm tra dependency đã hồi phục chưa
+
+Áp dụng trong CollabSpace: `WorkspaceHttpClient` và `UserProfileHttpClient` bọc trong `CircuitBreaker` từ `@collabspace/shared`. Khi circuit OPEN, fallback về cache hoặc trả lỗi rõ ràng ngay — không chờ timeout.
+
 ### Trust Boundary — Bảo vệ nhiều lớp
 
 ```mermaid
@@ -1139,11 +1284,35 @@ sequenceDiagram
     Note over Auth,WS: Tìm kiếm trên Loki bằng ID abc-123\n→ thấy toàn bộ hành trình request
 ```
 
+### Cache Invalidation — Correctness quan trọng hơn performance
+
+Workspace membership được cache Redis TTL 60s để tránh gọi HTTP mỗi request. Vấn đề: nếu admin kick user ra khỏi workspace lúc 10:00:00, đến 10:01:00 cache mới hết hạn — trong 60s đó user bị kick **vẫn tạo được task** vì cache nói "vẫn là member".
+
+Giải pháp: khi workspace-service phát sự kiện `workspace.member_left` lên Kafka, task-service lắng nghe và gọi `membershipCache.clear(workspaceId, userId)` ngay lập tức — không chờ TTL tự hết hạn.
+
+```mermaid
+sequenceDiagram
+    participant Admin
+    participant WS as Workspace Service
+    participant Kafka
+    participant Task as Task Service
+    participant Cache as Redis Cache
+
+    Admin->>WS: Kick user B khỏi workspace
+    WS->>Kafka: Phát workspace.member_left
+    Kafka->>Task: Consumer nhận event
+    Task->>Cache: clear(workspaceId, userId B)
+
+    Note over Cache: Cache bị xóa ngay lập tức
+    Task-->>Admin: User B tạo task → 403 Forbidden
+```
+
 ### Ma trận Degradation
 
 | Khi hỏng... | Đăng ký | Đăng nhập / API | Ghi task |
 |-------------|---------|-----------------|---------|
 | User Service | Báo lỗi + rollback tài khoản | Trả thông tin cơ bản, báo hồ sơ không khả dụng | Bản sao dữ liệu có thể cũ |
+| Workspace Service | — | — | Circuit Breaker OPEN → fail-fast 503, không treo |
 | Redis (Sentinel) | Sentinel bầu master mới ~22s, app tự reconnect | Brief reconnect warning, OTP/session khôi phục tự động | Cache miss, repopulate tự động |
 | Auth Service | — | Toàn bộ xác thực thất bại | Không xác thực được token |
 | Kafka / Debezium | Vẫn OK — sự kiện chờ trong outbox | Vẫn OK | Sự kiện delay → vào DLQ |
@@ -1171,7 +1340,7 @@ flowchart LR
 - Thêm service mới cần dọn dữ liệu khi workspace xóa? **Chỉ cần subscribe thêm** — không sửa workspace service
 - Đây chính là loose coupling trong thực tế: thay đổi một bên không ảnh hưởng bên kia
 
-> 📄 Nguồn: `docs/resilience-overview.md`, `.claude/docs/resilience.md`, `docs/production-hardening.md`
+> 📄 Nguồn: `docs/resilience-overview.md`, `docs/design-for-failure-gaps.md`, `.claude/docs/resilience.md`, `docs/production-hardening.md`
 
 ---
 
@@ -1545,6 +1714,7 @@ sequenceDiagram
 
 | Hạn chế | Chi tiết |
 |---------|---------|
+| **Traefik, Kafka, Debezium vẫn là SPOF** | Chạy 1 instance — nếu down, toàn bộ traffic vào (Traefik), event bus (Kafka), hoặc CDC pipeline (Debezium) bị gián đoạn cho đến khi K8s restart pod |
 | Vault chưa HA | Single-node; chưa có tự động xoay vòng secrets |
 | HTTPS cho Grafana | Đang chạy HTTP, chưa có TLS |
 | Kiểm thử tích hợp với DB thật | Đang dùng in-memory |
@@ -1571,7 +1741,16 @@ mindmap
       Service mesh mTLS
       Multi-region HA
       WebSocket hai chiều nếu cần realtime phức tạp hơn SSE
+      Traefik · Kafka · Debezium HA
 ```
+
+**Nếu tài nguyên cho phép — hướng giải quyết SPOF còn lại:**
+
+| Thành phần | Hướng giải quyết |
+|-----------|-----------------|
+| **Traefik** | Chuyển sang `cert-manager` để quản lý TLS thay vì ACME file — khi đó Traefik stateless hoàn toàn, scale lên 2+ replica bình thường |
+| **Kafka** | Chạy 3 broker + replication factor 3 + `min.insync.replicas: 2` — mất 1 broker không mất dữ liệu, consumer tự reconnect broker còn lại |
+| **Debezium Connect** | Chạy Kafka Connect cluster 2+ node — connector tasks tự phân phối, leader election xử lý tự động qua Kafka group protocol |
 
 > 📄 Nguồn: `docs/production-hardening.md`, `docs/team/phan-phu-tho-infrastructure-backlog.md`, `docs/team/application-backlog.md`
 

@@ -1,5 +1,5 @@
 import './observability/instrumentation';
-import { assertRequiredInProduction } from '@collabspace/shared';
+import { assertRequiredInProduction, createServiceRateLimitMiddleware } from '@collabspace/shared';
 import { ensureDatabaseUrl } from '@collabspace/typeorm-migrate';
 import { ConfigurationService } from '@/configuration/configuration.service';
 import { Logger, ValidationPipe } from '@nestjs/common';
@@ -21,6 +21,7 @@ async function bootstrap() {
 
   const app = await NestFactory.create(AppModule);
   app.use(compression());
+  app.use(createServiceRateLimitMiddleware());
   app.setGlobalPrefix('api/v1');
   app.useGlobalPipes(
     new ValidationPipe({

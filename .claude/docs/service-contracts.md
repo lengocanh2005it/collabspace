@@ -421,12 +421,13 @@ Debezium Outbox Event Router on `workspace_outbox_events` (`infrastructure/kafka
 | `workspace.workspace_created` | `collabspace.workspace.workspace_created` | `analytics-service` |
 | `workspace.project_created` | `collabspace.workspace.project_created` | `analytics-service` |
 | `workspace.member_joined` | `collabspace.workspace.member_joined` | `analytics-service` |
-| `workspace.member_left` | `collabspace.workspace.member_left` | `analytics-service` |
+| `workspace.member_left` | `collabspace.workspace.member_left` | `analytics-service`, `task-service` |
 
 - **Message value**: expanded domain JSON from outbox `payload` column (`transforms.outbox.table.expand.json.payload=true`).
 - **Producer path**: `WORKSPACE_OUTBOX_PUBLISH_MODE=debezium` (default) — CDC only; no in-app broker publish.
 - **Consumer env**: `KAFKA_CONSUMERS_ENABLED=true`, `KAFKA_BROKERS`, `KAFKA_GROUP_ID` (base), topic overrides `KAFKA_TOPIC_WORKSPACE_*`.
 - **Consumer groups**: `${KAFKA_GROUP_ID}-workspace-events` (workspace topics), `${KAFKA_GROUP_ID}-user-events` (user topics), `${KAFKA_GROUP_ID}-task-events` (task topics) — **never share one group** across multiple `kafkajs` consumers in the same service.
+- **task-service behavior**: `workspace.workspace_deleted` deletes workspace task data; `workspace.member_left` clears the Redis membership cache for `(workspaceId,userId)` so removed users do not retain cached access until TTL expiry.
 - **Local E2E**: `scripts/kafka-phase3-e2e.ps1` — invite notification + workspace delete → task cleanup.
 
 ### Kafka topics (user events — Phase 4a–4b)

@@ -8,7 +8,7 @@ Microservices CollabSpace phụ thuộc lẫn nhau (gRPC, Kafka, Debezium Connec
 
 ## Nguyên tắc cốt lõi
 
-1. **Timeout** mọi gọi sync giữa services (mặc định 3s).
+1. **Timeout + retry nhẹ + circuit breaker** cho gọi sync giữa services (mặc định timeout 3s, không retry 4xx).
 2. **Event** có `eventId` + `occurredAt`; consumer **idempotent** và retry lúc startup nếu Kafka metadata/topic chưa sẵn sàng.
 3. Dependency down → **`503`** + `code` rõ (`*_UNAVAILABLE`), không `500` mù.
 4. **Health**: `live` vs `ready`; không nhận traffic khi `ready: false`.
@@ -30,6 +30,9 @@ Microservices CollabSpace phụ thuộc lẫn nhau (gRPC, Kafka, Debezium Connec
 - **Workspace / task / notification auth** → `AuthGuard` verify JWT qua auth gRPC; dev-only `ALLOW_DEV_IDENTITY_HEADERS`.
 - **Gateway strip** → Traefik `strip-identity-headers` trước `forward-auth` (client không gửi được `X-User-Id` giả).
 - **Task → workspace S2S** → internal membership API + Service JWT (không dùng `X-User-Id` header).
+- **Sync HTTP resilience** → task/notification fallback clients có retry 5xx/network và circuit breaker fail-fast.
+- **Service-level rate limit** → 5 core HTTP services có fixed-window limit mặc định 100 req/phút/IP/pod, bỏ qua health/metrics/Swagger.
+- **Workspace membership cache invalidation** → task-service lắng nghe `workspace.member_left` để clear cache user bị remove/leave.
 - **NetworkPolicy (K8s)** → default deny; task/notification → user internal HTTP; task → workspace internal; peers → auth gRPC.
 - **Gateway internal block** → Traefik từ chối `/api/v1/*/internal/*` (503).
 - **Metrics lockdown** → env `METRICS_AUTH_TOKEN` (Bearer hoặc `X-Metrics-Token`); Helm `global.secrets.metricsAuthToken`.

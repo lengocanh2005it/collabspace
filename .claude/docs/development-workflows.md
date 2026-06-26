@@ -540,3 +540,20 @@ Check:
 ### Database tests behave differently locally
 
 `user-service` uses in-memory repository when `DATABASE_URL` is not set. If a persistence bug only appears with TypeORM, run with `DATABASE_URL` configured and database containers up.
+
+### Resilience env quick reference
+
+Sync HTTP clients use bounded retry + circuit breaker:
+
+- `WORKSPACE_SERVICE_RETRY_ATTEMPTS` / `WORKSPACE_SERVICE_RETRY_DELAY_MS` — task-service → workspace membership lookup; defaults `2` / `75`.
+- `WORKSPACE_SERVICE_CIRCUIT_BREAKER_FAILURE_THRESHOLD` / `WORKSPACE_SERVICE_CIRCUIT_BREAKER_RESET_TIMEOUT_MS` — defaults `5` / `30000`.
+- `USER_SERVICE_RETRY_ATTEMPTS` / `USER_SERVICE_RETRY_DELAY_MS` — task/notification → user replica lookup; defaults `3` / `50`.
+- `USER_SERVICE_CIRCUIT_BREAKER_FAILURE_THRESHOLD` / `USER_SERVICE_CIRCUIT_BREAKER_RESET_TIMEOUT_MS` — defaults `5` / `30000`.
+
+Service-level fixed-window rate limit is enabled in auth/user/workspace/task/notification by default:
+
+- `SERVICE_RATE_LIMIT_ENABLED=false` disables it for local load testing.
+- `SERVICE_RATE_LIMIT_PER_MINUTE` defaults to `100`; `SERVICE_RATE_LIMIT_TTL_MS` defaults to `60000`.
+- Health, metrics, and Swagger paths are skipped.
+
+Task-service membership cache invalidation consumes `KAFKA_TOPIC_WORKSPACE_MEMBER_LEFT` (default `collabspace.workspace.member_left`) when `KAFKA_CONSUMERS_ENABLED=true`.
