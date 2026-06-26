@@ -37,25 +37,19 @@
 
 | STT | Họ tên | MSSV | Vai trò chính |
 |-----|--------|------|---------------|
-| 1 | Lê Ngọc Anh | ... | Auth/User service + DOKS deploy |
-| 2 | ... | ... | Workspace/Task service |
-| 3 | Phan Phú Thọ | ... | Infrastructure / DevOps |
-| 4 | ... | ... | Frontend + Notification |
+| 1 | Lê Ngọc Anh | 23520048 | Auth Service · User Service · DOKS deploy · Kanban board UI |
+| 2 | Ngô Quang Tiến | 2352xxxx | Workspace Service · Analytics Service · Admin UI · Tích hợp API |
+| 3 | Phan Phú Thọ | 2352xxxx | DevOps · CI/CD · Hạ tầng K8s · Dashboard UI · Workspace UI |
+| 4 | Võ Trung Tín | 2352xxxx | Task Service · Notification Service · Unit test toàn bộ service |
 
-> ⚠️ Điền MSSV và vai trò thực tế của nhóm vào đây.
+### Phân công chi tiết
 
-### Phân công theo domain
-
-| Domain | Thành viên |
-|--------|------------|
-| Auth & Identity | ... |
-| User Directory | ... |
-| Workspace & Project | ... |
-| Task & Comment | ... |
-| Notification | ... |
-| DLQ & Analytics | ... |
-| Infrastructure / K8s / CI/CD | Phan Phú Thọ |
-| Frontend SPA | ... |
+| Thành viên | Backend | Frontend | Hạ tầng |
+|-----------|---------|----------|---------|
+| **Lê Ngọc Anh** | Auth Service (đăng ký · đăng nhập · OTP · session), User Service (profile · avatar) | Kanban board (task detail · search · activity feed) | Deploy DOKS · Helm upgrade · CNPG migration · K8s health gate |
+| **Ngô Quang Tiến** | Workspace Service (workspace · thành viên · lời mời · project), Analytics Service (read model · Kafka consumer) | Admin UI (KPI · danh sách user · workspace · DLQ management) | Tích hợp API end-to-end FE ↔ BE |
+| **Phan Phú Thọ** | DLQ Service (ingest · replay · discard · auto-retry scheduler) | Dashboard UI (KPI tổng quan · skeleton loading), Workspace UI (danh sách · error handling) | CI/CD pipeline · Helm chart · Backup/Restore · Load test (k6) · Monitoring (Grafana · Alertmanager) · Docker Compose |
+| **Võ Trung Tín** | Task Service (CQRS · Event Sourcing · comment · gán task), Notification Service (SSE · Kafka consumer · broadcast) | Notification badge · Task board polish | Unit test tất cả service (~158 bộ) |
 
 ---
 
