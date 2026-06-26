@@ -146,7 +146,7 @@ mindmap
 | **Degradation** | Service phụ thuộc lỗi → trả lỗi rõ ràng, không crash | ✅ |
 | **Observability** | Metrics, logs tập trung, cảnh báo tự động | ✅ |
 | **Security** | Xác thực nhiều lớp, phân quyền, bảo vệ nội bộ | ✅ |
-| **Scalability** | Scale ngang từng service theo tải | ✅ 5 service chính chạy 2 replica mỗi service |
+| **Scalability** | Scale ngang từng service theo tải | ✅ HPA — 5 service chính: min 2 replica, max 3, scale khi CPU > 70% |
 | **SLO latency** | Cam kết thời gian phản hồi theo từng route | ⚠️ Đo được, chưa cam kết con số |
 | **Audit compliance** | Ghi log mọi thao tác admin | ❌ Ngoài phạm vi MVP |
 
@@ -685,10 +685,10 @@ flowchart TD
 
         subgraph Apps["App Deployments"]
             direction LR
-            subgraph HA["5 service chính — 2 replica mỗi service"]
-                A1[auth ×2] & A2[user ×2] & A3[workspace ×2] & A4[task ×2] & A5[notification ×2]
+            subgraph HA["5 service chính — HPA min 2 / max 3 replica"]
+                A1[auth ×2-3] & A2[user ×2-3] & A3[workspace ×2-3] & A4[task ×2-3] & A5[notification ×2-3]
             end
-            subgraph Single["2 service hỗ trợ — 1 replica"]
+            subgraph Single["2 service hỗ trợ — 1 replica, no HPA"]
                 A6[dlq ×1] & A7[analytics ×1]
             end
         end
@@ -814,9 +814,9 @@ flowchart LR
 
 > **Quyết định**: Dự án ban đầu dùng Bitnami PostgreSQL StatefulSet. Sau khi migrate sang DOKS, chuyển sang CloudNativePG để có failover thật sự và không phụ thuộc cách setup thủ công. Migration này được thực hiện mà không cần downtime dữ liệu.
 
-### Horizontal Scaling — 5 service chính chạy 2 replica
+### Horizontal Scaling — HPA trên 5 service chính
 
-5 service trên critical path được scale lên **2 replica** chạy song song. dlq-service và analytics-service giữ nguyên 1 replica — không nằm trên luồng chính người dùng.
+5 service trên critical path dùng **HorizontalPodAutoscaler (HPA)**: chạy tối thiểu **2 replica**, tự động scale lên tối đa **3 replica** khi CPU vượt **70%**. dlq-service và analytics-service giữ nguyên 1 replica — không nằm trên luồng chính người dùng.
 
 ```mermaid
 flowchart LR
@@ -824,6 +824,7 @@ flowchart LR
 
     Traefik -->|phân tải| A1[auth pod 1]
     Traefik -->|phân tải| A2[auth pod 2]
+    Traefik -.->|scale khi CPU > 70%| A3[auth pod 3]
 
     Note1["Tương tự với user · workspace · task · notification"]
 
@@ -831,7 +832,16 @@ flowchart LR
     A1 & A2 --> PG[(PostgreSQL)]
 ```
 
-**Phân tích tài nguyên trước khi scale (đo thực tế 2026-06-25):**
+**Cấu hình HPA (Helm values):**
+
+| Tham số | Giá trị |
+|---------|---------|
+| `minReplicas` | 2 |
+| `maxReplicas` | 3 |
+| `targetCPUUtilizationPercentage` | 70% |
+| Services áp dụng | auth · user · workspace · task · notification |
+
+**Phân tích tài nguyên (đo thực tế 2026-06-25):**
 
 | Service | RAM đang dùng | RAM request thêm khi +1 replica |
 |---------|--------------|--------------------------------|
