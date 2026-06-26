@@ -5,7 +5,7 @@ SCRIPT_DIR=$(CDPATH= cd -- "$(dirname "$0")" && pwd)
 ROOT_DIR=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)
 
 echo "Running CollabSpace seed pipeline from $ROOT_DIR"
-echo "Order: auth → user → workspace → task (user_replicas) → notification (user_replicas)"
+echo "Order: auth → user → workspace → task (user_replicas) → notification (user_replicas) → dlq"
 echo "Source: scripts/demo-seed-data.json — each service writes its DB + replicas (no RabbitMQ)"
 if command -v node >/dev/null 2>&1 && [ -f "$ROOT_DIR/scripts/load-demo-seed-data.js" ]; then
   node -e "require(process.argv[1]).printSeedWriteTargets()" "$ROOT_DIR/scripts/load-demo-seed-data.js"
@@ -25,6 +25,7 @@ run_service_seed "user-service" "$ROOT_DIR/services/user-service"
 run_service_seed "workspace-service" "$ROOT_DIR/services/workspace-service"
 run_service_seed "task-service" "$ROOT_DIR/services/task-service"
 run_service_seed "notification-service" "$ROOT_DIR/services/notification-service"
+run_service_seed "dlq-service" "$ROOT_DIR/services/dlq-service"
 
 echo ""
 echo "Seed pipeline completed successfully."
