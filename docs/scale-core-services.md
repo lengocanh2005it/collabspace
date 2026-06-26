@@ -193,5 +193,6 @@ Hoặc sửa lại `replicas: 1` trong `values.yaml` rồi chạy lại `helm up
 ## Lưu ý
 
 - Kafka consumer (notification, task) chạy 2 replica: mỗi consumer group có 2 member nhưng với 1 partition hiện tại chỉ 1 pod xử lý message — pod còn lại standby, sẵn sàng takeover khi pod kia down.
+- Sau HPA, Kafka consumer idempotency của task-service và notification-service dùng lease `claimedUntil` trên `eventId`, chỉ mark `processedAt` sau khi handler thành công. Nếu pod chết giữa lúc xử lý, pod khác có thể reclaim sau TTL; notification-service còn có `eventDedupeKey` để tránh tạo duplicate notification khi retry sau partial crash.
 - Traefik không có `resources.requests` trong values.yaml hiện tại → best-effort scheduling class. Nếu muốn K8s schedule ổn định hơn, thêm vào `traefik.resources.requests` trong values.yaml.
 - `maxUnavailable: 0` đã được set trong deployment template — rolling update sẽ không có downtime (surge 1 pod mới trước, xóa pod cũ sau).

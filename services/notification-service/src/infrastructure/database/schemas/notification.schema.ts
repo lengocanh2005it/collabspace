@@ -43,6 +43,9 @@ export class Notification {
   @Prop({ type: String, required: false })
   broadcastDedupeKey?: string;
 
+  @Prop({ type: String, required: false })
+  eventDedupeKey?: string;
+
   @Prop({ type: Date, default: () => new Date() })
   createdAt!: Date;
 
@@ -57,3 +60,4 @@ NotificationSchema.index({ recipientId: 1, status: 1 });
 NotificationSchema.index({ createdAt: 1 });
 NotificationSchema.index({ targetId: 1, targetType: 1 });
 NotificationSchema.index({ broadcastDedupeKey: 1 }, { unique: true, sparse: true });
+NotificationSchema.index({ eventDedupeKey: 1 }, { unique: true, sparse: true });

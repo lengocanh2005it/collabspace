@@ -8,8 +8,11 @@ export class ProcessedEvent {
   @Prop({ required: true, unique: true, index: true })
   eventId!: string;
 
-  @Prop({ required: true })
-  processedAt!: Date;
+  @Prop({ default: null, index: true, type: Date })
+  claimedUntil!: Date | null;
+
+  @Prop({ default: null, type: Date })
+  processedAt!: Date | null;
 }
 
 export const ProcessedEventSchema = SchemaFactory.createForClass(ProcessedEvent);

@@ -56,17 +56,30 @@ export class CreateNotificationHandler
     );
 
     try {
-      const savedNotificationId = await this.notificationRepository.createAsync(notification);
+      const result = command.eventId
+        ? await this.notificationRepository.createForEventAsync(notification, command.eventId)
+        : {
+            created: true,
+            id: await this.notificationRepository.createAsync(notification),
+          };
+
+      if (command.eventId) {
+        await this.processedEventRepository.markProcessed(command.eventId);
+      }
+
+      if (!result.created) {
+        return {
+          notificationId: "",
+          message: "Notification already processed for event",
+        };
+      }
 
       // New unread notification — bust the cached count
       await this.countCache.invalidateUnreadCount(command.recipientId);
-      await this.notificationRealtime.emitNotificationCreated(
-        command.recipientId,
-        savedNotificationId,
-      );
+      await this.notificationRealtime.emitNotificationCreated(command.recipientId, result.id);
 
       return {
-        notificationId: savedNotificationId,
+        notificationId: result.id,
         message: "Notification created successfully",
       };
     } catch (error) {

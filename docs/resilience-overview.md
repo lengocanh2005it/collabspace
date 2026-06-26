@@ -33,6 +33,7 @@ Microservices CollabSpace phụ thuộc lẫn nhau (gRPC, Kafka, Debezium Connec
 - **Sync HTTP resilience** → task/notification fallback clients có retry 5xx/network và circuit breaker fail-fast.
 - **Service-level rate limit** → 5 core HTTP services có fixed-window limit mặc định 100 req/phút/IP/pod, bỏ qua health/metrics/Swagger.
 - **Workspace membership cache invalidation** → task-service lắng nghe `workspace.member_left` để clear cache user bị remove/leave.
+- **Kafka consumer sau HPA** → task-service/notification-service claim `eventId` bằng lease `claimedUntil`, chỉ set `processedAt` sau khi xử lý thành công; notification có thêm dedupe key theo event để tránh tạo trùng khi pod crash giữa chừng.
 - **NetworkPolicy (K8s)** → default deny; task/notification → user internal HTTP; task → workspace internal; peers → auth gRPC.
 - **Gateway internal block** → Traefik từ chối `/api/v1/*/internal/*` (503).
 - **Metrics lockdown** → env `METRICS_AUTH_TOKEN` (Bearer hoặc `X-Metrics-Token`); Helm `global.secrets.metricsAuthToken`.

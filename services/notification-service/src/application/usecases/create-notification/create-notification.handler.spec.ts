@@ -23,6 +23,7 @@ describe("CreateNotificationHandler", () => {
     jest.clearAllMocks();
     mockRepository = {
       createAsync: jest.fn(),
+      createForEventAsync: jest.fn(),
       createBroadcastAsync: jest.fn(),
       findByIdAsync: jest.fn(),
       findByRecipientIdAsync: jest.fn(),
@@ -31,6 +32,7 @@ describe("CreateNotificationHandler", () => {
       deleteAsync: jest.fn(),
     };
     mockProcessedEventRepository = {
+      markProcessed: jest.fn().mockResolvedValue(undefined),
       tryClaim: jest.fn().mockResolvedValue(true),
       releaseClaim: jest.fn().mockResolvedValue(undefined),
     };
@@ -105,11 +107,39 @@ describe("CreateNotificationHandler", () => {
     );
 
     mockProcessedEventRepository.tryClaim.mockResolvedValue(true);
-    mockRepository.createAsync.mockRejectedValue(new Error("MongoDB write failed"));
+    mockRepository.createForEventAsync.mockRejectedValue(new Error("MongoDB write failed"));
 
     await expect(handler.execute(command)).rejects.toThrow("MongoDB write failed");
 
     expect(mockProcessedEventRepository.releaseClaim).toHaveBeenCalledWith("evt-will-fail");
+  });
+
+  it("marks eventId processed only after the notification is created", async () => {
+    const command = new CreateNotificationCommand(
+      "recipient-123",
+      "actor-123",
+      NotificationType.TASK_ASSIGNED,
+      "New Task",
+      "You have a new task",
+      "task-123",
+      "TASK",
+      { workspaceId: "ws-123" },
+      "evt-created",
+    );
+
+    mockRepository.createForEventAsync.mockResolvedValue({
+      created: true,
+      id: "new-notif-id",
+    });
+
+    const result = await handler.execute(command);
+
+    expect(result.notificationId).toBe("new-notif-id");
+    expect(mockRepository.createForEventAsync).toHaveBeenCalledWith(
+      expect.any(Object),
+      "evt-created",
+    );
+    expect(mockProcessedEventRepository.markProcessed).toHaveBeenCalledWith("evt-created");
   });
 
   it("does not call releaseClaim when there is no eventId", async () => {

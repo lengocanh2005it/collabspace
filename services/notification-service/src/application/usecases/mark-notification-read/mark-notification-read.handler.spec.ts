@@ -17,6 +17,7 @@ describe("MarkNotificationReadHandler", () => {
     mockRepo = {
       createAsync: jest.fn(),
       createBroadcastAsync: jest.fn(),
+      createForEventAsync: jest.fn(),
       findByIdAsync: jest.fn(),
       findByRecipientIdAsync: jest.fn(),
       findUnreadByRecipientIdAsync: jest.fn(),
