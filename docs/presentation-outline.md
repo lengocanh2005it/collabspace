@@ -1065,7 +1065,6 @@ flowchart LR
 
 - HashiCorp Vault đang chạy **single-node** — chưa có HA, chưa tự động xoay vòng secrets
 - HTTPS cho Grafana chưa được cấu hình
-- Một số exporter monitoring chưa kết nối được do cấu hình network
 - Backup chưa có WAL archiving — chưa hỗ trợ phục hồi theo thời điểm (point-in-time recovery)
 - RPO 24h — production thực tế nên siết xuống 1 giờ khi traffic đủ lớn
 
@@ -1146,6 +1145,7 @@ flowchart LR
 - Mỗi service ghi lại **span** — thời gian bắt đầu, kết thúc, và metadata của bước xử lý
 - Jaeger ghép tất cả span lại thành timeline: thấy rõ bước nào chậm, bước nào lỗi
 - Kết hợp với **Correlation ID** trên Loki → debug xuyên service cực nhanh
+- **Jaeger UI truy cập được qua HTTPS:** `https://collabspace.ngocanh2005it.site/jaeger`
 
 **Ba trụ cột Observability đủ đầy:**
 
@@ -1723,7 +1723,6 @@ sequenceDiagram
 | HTTPS cho Grafana | Đang chạy HTTP, chưa có TLS |
 | Kiểm thử tích hợp với DB thật | Đang dùng in-memory |
 | Contract test tự động | Chưa có |
-| Một số exporter monitoring | Chưa kết nối được do cấu hình network |
 | SLO chưa cam kết | Đo được nhưng chưa có ngưỡng chính thức |
 | Frontend còn nợ kỹ thuật | Polish, accessibility, mobile |
 
@@ -1739,7 +1738,9 @@ mindmap
       Analytics nâng cao
     Kỹ thuật
       Vault HA · tự động xoay vòng secrets
-      HTTPS toàn hệ thống
+      Expose Grafana ra ngoài qua HTTPS
+      Kết nối Alertmanager Slack webhook cho cảnh báo thật
+      WAL archiving · Point-in-time recovery cho PostgreSQL
       Contract test tự động giữa các service
       Kiểm thử tích hợp với DB thật
       Service mesh mTLS
