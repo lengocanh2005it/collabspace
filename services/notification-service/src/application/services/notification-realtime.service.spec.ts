@@ -12,6 +12,7 @@ describe("NotificationRealtimeService", () => {
       countUnreadByRecipientIdAsync: jest.fn(),
       createAsync: jest.fn(),
       createBroadcastAsync: jest.fn(),
+      createForEventAsync: jest.fn(),
       deleteAsync: jest.fn(),
       deleteOldNotificationsAsync: jest.fn(),
       findByIdAsync: jest.fn(),

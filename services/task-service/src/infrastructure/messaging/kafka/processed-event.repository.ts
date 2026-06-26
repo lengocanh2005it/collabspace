@@ -8,9 +8,12 @@ export const PROCESSED_KAFKA_EVENT_REPOSITORY_TOKEN = Symbol(
 );
 
 export interface IProcessedKafkaEventRepository {
+  markProcessed(eventId: string): Promise<void>;
   tryClaim(eventId: string): Promise<boolean>;
   releaseClaim(eventId: string): Promise<void>;
 }
+
+const DEFAULT_CLAIM_TTL_MS = 5 * 60 * 1000;
 
 @Injectable()
 export class ProcessedKafkaEventRepository implements IProcessedKafkaEventRepository {
@@ -20,8 +23,15 @@ export class ProcessedKafkaEventRepository implements IProcessedKafkaEventReposi
   ) {}
 
   async tryClaim(eventId: string): Promise<boolean> {
+    const now = new Date();
+    const claimedUntil = new Date(now.getTime() + this.getClaimTtlMs());
+
     try {
-      await this.model.create({ eventId, processedAt: new Date() });
+      await this.model.create({
+        claimedUntil,
+        eventId,
+        processedAt: null,
+      });
       return true;
     } catch (error) {
       if (
@@ -30,13 +40,43 @@ export class ProcessedKafkaEventRepository implements IProcessedKafkaEventReposi
         "code" in error &&
         (error as { code?: number }).code === 11000
       ) {
-        return false;
+        const reclaimed = await this.model
+          .findOneAndUpdate(
+            {
+              eventId,
+              processedAt: null,
+              $or: [{ claimedUntil: null }, { claimedUntil: { $lte: now } }],
+            },
+            { $set: { claimedUntil } },
+            { returnDocument: "after" },
+          )
+          .lean()
+          .exec();
+
+        return reclaimed !== null;
       }
       throw error;
     }
   }
 
+  async markProcessed(eventId: string): Promise<void> {
+    await this.model.updateOne(
+      { eventId },
+      {
+        $set: {
+          claimedUntil: null,
+          processedAt: new Date(),
+        },
+      },
+    );
+  }
+
   async releaseClaim(eventId: string): Promise<void> {
-    await this.model.deleteOne({ eventId });
+    await this.model.deleteOne({ eventId, processedAt: null });
+  }
+
+  private getClaimTtlMs(): number {
+    const configured = Number(process.env.KAFKA_EVENT_CLAIM_TTL_MS);
+    return Number.isFinite(configured) && configured > 0 ? configured : DEFAULT_CLAIM_TTL_MS;
   }
 }

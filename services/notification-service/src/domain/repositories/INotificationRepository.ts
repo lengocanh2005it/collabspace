@@ -14,6 +14,11 @@ export interface INotificationRepository {
    */
   createAsync(notification: Notification): Promise<string>;
 
+  createForEventAsync(
+    notification: Notification,
+    eventDedupeKey: string,
+  ): Promise<{ created: boolean; id: string }>;
+
   createBroadcastAsync(notification: Notification, dedupeKey: string): Promise<boolean>;
 
   /**

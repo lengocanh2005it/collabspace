@@ -12,10 +12,14 @@ export class ProcessedEventRepository implements IProcessedEventRepository {
   ) {}
 
   async tryClaim(eventId: string): Promise<boolean> {
+    const now = new Date();
+    const claimedUntil = new Date(now.getTime() + this.getClaimTtlMs());
+
     try {
       await this.processedEventModel.create({
+        claimedUntil,
         eventId,
-        processedAt: new Date(),
+        processedAt: null,
       });
       return true;
     } catch (error) {
@@ -25,14 +29,44 @@ export class ProcessedEventRepository implements IProcessedEventRepository {
         "code" in error &&
         (error as { code?: number }).code === 11000
       ) {
-        return false;
+        const reclaimed = await this.processedEventModel
+          .findOneAndUpdate(
+            {
+              eventId,
+              processedAt: null,
+              $or: [{ claimedUntil: null }, { claimedUntil: { $lte: now } }],
+            },
+            { $set: { claimedUntil } },
+            { returnDocument: "after" },
+          )
+          .lean()
+          .exec();
+
+        return reclaimed !== null;
       }
 
       throw error;
     }
   }
 
+  async markProcessed(eventId: string): Promise<void> {
+    await this.processedEventModel.updateOne(
+      { eventId },
+      {
+        $set: {
+          claimedUntil: null,
+          processedAt: new Date(),
+        },
+      },
+    );
+  }
+
   async releaseClaim(eventId: string): Promise<void> {
-    await this.processedEventModel.deleteOne({ eventId });
+    await this.processedEventModel.deleteOne({ eventId, processedAt: null });
+  }
+
+  private getClaimTtlMs(): number {
+    const configured = Number(process.env.KAFKA_EVENT_CLAIM_TTL_MS);
+    return Number.isFinite(configured) && configured > 0 ? configured : 5 * 60 * 1000;
   }
 }

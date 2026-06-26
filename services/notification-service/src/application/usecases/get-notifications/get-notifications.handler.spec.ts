@@ -22,12 +22,17 @@ describe("GetNotificationsHandler", () => {
     mockRepository = {
       createAsync: jest.fn(),
       createBroadcastAsync: jest.fn(),
+      createForEventAsync: jest.fn(),
       findByIdAsync: jest.fn(),
       findByRecipientIdAsync: jest.fn(),
       countByRecipientIdAsync: jest.fn(),
       countUnreadByRecipientIdAsync: jest.fn(),
       updateAsync: jest.fn(),
       deleteAsync: jest.fn(),
+      findUnreadByRecipientIdAsync: jest.fn(),
+      markAllAsReadAsync: jest.fn(),
+      findByTypeAsync: jest.fn(),
+      deleteOldNotificationsAsync: jest.fn(),
     };
 
     mockUserReplicaLookup = {

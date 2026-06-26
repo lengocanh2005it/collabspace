@@ -127,6 +127,9 @@ export class UserEventsKafkaConsumer implements OnModuleInit, OnModuleDestroy {
           payload.avatarUrl,
         ),
       );
+      if (payload.eventId) {
+        await this.processedEventRepository.markProcessed(payload.eventId);
+      }
     } catch (error) {
       if (payload.eventId) {
         await this.processedEventRepository.releaseClaim(payload.eventId);
@@ -169,6 +172,9 @@ export class UserEventsKafkaConsumer implements OnModuleInit, OnModuleDestroy {
           payload.isActive,
         ),
       );
+      if (payload.eventId) {
+        await this.processedEventRepository.markProcessed(payload.eventId);
+      }
     } catch (error) {
       if (payload.eventId) {
         await this.processedEventRepository.releaseClaim(payload.eventId);

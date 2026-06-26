@@ -102,6 +102,9 @@ export class WorkspaceDeletedKafkaConsumer implements OnModuleInit, OnModuleDest
                   const deletedTasks = await this.deletionService.deleteWorkspaceData(
                     payload.workspaceId,
                   );
+                  if (payload.eventId) {
+                    await this.processedEventRepository.markProcessed(payload.eventId);
+                  }
                   this.logger.warn(
                     `workspace_deleted via kafka workspaceId=${payload.workspaceId} deletedTasks=${deletedTasks}`,
                   );
@@ -146,6 +149,9 @@ export class WorkspaceDeletedKafkaConsumer implements OnModuleInit, OnModuleDest
 
     try {
       await this.membershipCache.clear(payload.workspaceId, payload.userId);
+      if (payload.eventId) {
+        await this.processedEventRepository.markProcessed(payload.eventId);
+      }
       this.logger.log(
         `member_left invalidated membership cache workspaceId=${payload.workspaceId} userId=${payload.userId}`,
       );

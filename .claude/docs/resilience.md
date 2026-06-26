@@ -56,12 +56,18 @@ Design goals:
 | Payload | Every event MUST include `eventId` (UUID) and `occurredAt` (ISO 8601 UTC). |
 | Publish timing | Publish **after** local persistence succeeds (prefer transactional outbox). |
 | Delivery | Assume **at-least-once** delivery. |
-| Consumer | Handlers MUST be **idempotent** (dedupe on `eventId` before side effects). |
+| Consumer | Handlers MUST be **idempotent** (lease/claim on `eventId` before side effects, mark processed only after success). |
 | Consumer startup | Consumers MUST retry transient broker/topic metadata errors during startup and MUST NOT crash the HTTP service after bounded startup retries fail. |
 | Failure | After max retries → **DLQ topic** `collabspace.dlq.events` (see `docs/runbooks/KafkaDlqNotEmpty.md`). |
 | Unknown fields | Consumers MUST ignore unknown JSON fields. |
 
 Canonical routing keys / queues: see `service-contracts.md` → Event Contracts.
+
+**Kafka consumer claim policy after HPA:** task-service and notification-service use a Mongo-backed
+lease on `eventId` (`claimedUntil`) before side effects, then set `processedAt` only after the
+handler succeeds. If a pod dies while holding a claim, another pod can reclaim the event after the
+lease expires. Notification writes additionally store an event dedupe key so a retry after a partial
+crash cannot create duplicate notifications.
 
 ### 2.3 HTTP error contract
 
@@ -272,6 +278,7 @@ When changing resilience behavior, update:
 | **2** | Transactional outbox for workspace/task events, idempotency keys, workspace client in task-service ✅ |
 | **3** | Metrics (`prom-client` + `/metrics`), tracing bootstrap, failure drill scripts, runbooks ✅ |
 | **4** | Chaos tooling (`infrastructure/chaos/`), production hardening checklist, K8s probe paths ✅ |
+| **5** | HPA-safe Kafka consumer claims for task/notification workers (`claimedUntil` lease + `processedAt` after success) ✅ |
 
 ---
 
@@ -281,7 +288,7 @@ Before merging resilience-related changes:
 
 - [ ] Cross-service calls have timeouts and mapped `503` codes
 - [ ] New events include `eventId` + `occurredAt`
-- [ ] Consumers dedupe or are documented as non-idempotent with justification
+- [ ] Consumers dedupe with a durable claim/lease and mark processed only after side effects succeed
 - [ ] Degradation matrix row updated if user-visible behavior changes
 - [ ] `/health/ready` reflects new dependencies
 - [ ] No new silent `catch {}` on critical paths without matrix entry

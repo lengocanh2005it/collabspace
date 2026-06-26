@@ -1,4 +1,5 @@
 import { Injectable, Logger, type OnModuleDestroy, type OnModuleInit } from "@nestjs/common";
+import { Inject } from "@nestjs/common";
 import { CommandBus } from "@nestjs/cqrs";
 import { Kafka, type Consumer } from "kafkajs";
 import { CreateUserReplicaCommand } from "../../../application/commands/create-user-replica.command";
@@ -6,6 +7,10 @@ import { SyncUserReplicaCommand } from "../../../application/commands/sync-user-
 import { processKafkaConsumerMessage, startKafkaConsumerWithRetry } from "@collabspace/shared";
 import { ConfigurationService } from "../../../configuration/configuration.service";
 import { MetricsService } from "../../../metrics/metrics.service";
+import {
+  type IProcessedEventRepository,
+  PROCESSED_EVENT_REPOSITORY_TOKEN,
+} from "../../../domain/repositories/IProcessedEventRepository";
 import {
   parseKafkaOutboxJsonValue,
   toUserProfileUpdatedEventPayload,
@@ -24,6 +29,8 @@ export class UserEventsKafkaConsumer implements OnModuleInit, OnModuleDestroy {
     private readonly commandBus: CommandBus,
     private readonly metricsService: MetricsService,
     private readonly kafkaDlqPublisher: KafkaDlqPublisher,
+    @Inject(PROCESSED_EVENT_REPOSITORY_TOKEN)
+    private readonly processedEventRepository: IProcessedEventRepository,
   ) {}
 
   async onModuleInit(): Promise<void> {
@@ -99,16 +106,37 @@ export class UserEventsKafkaConsumer implements OnModuleInit, OnModuleDestroy {
       return;
     }
 
-    await this.commandBus.execute(
-      new CreateUserReplicaCommand(
-        payload.userId,
-        payload.fullName,
-        payload.email,
-        payload.username,
-        payload.displayName,
-        payload.avatarUrl,
-      ),
-    );
+    if (payload.eventId) {
+      const claimed = await this.processedEventRepository.tryClaim(payload.eventId);
+      if (!claimed) {
+        this.logger.log(
+          `user_registered already processed eventId=${payload.eventId} userId=${payload.userId}`,
+        );
+        return;
+      }
+    }
+
+    try {
+      await this.commandBus.execute(
+        new CreateUserReplicaCommand(
+          payload.userId,
+          payload.fullName,
+          payload.email,
+          payload.username,
+          payload.displayName,
+          payload.avatarUrl,
+        ),
+      );
+      if (payload.eventId) {
+        await this.processedEventRepository.markProcessed(payload.eventId);
+      }
+    } catch (error) {
+      if (payload.eventId) {
+        await this.processedEventRepository.releaseClaim(payload.eventId);
+      }
+      throw error;
+    }
+
     this.recordSyncLag(payload.occurredAt);
     this.logger.log(`user_registered via kafka userId=${payload.userId}`);
   }
@@ -122,17 +150,38 @@ export class UserEventsKafkaConsumer implements OnModuleInit, OnModuleDestroy {
       return;
     }
 
-    await this.commandBus.execute(
-      new SyncUserReplicaCommand(
-        payload.userId,
-        payload.fullName || "",
-        payload.displayName || undefined,
-        payload.avatarUrl || undefined,
-        payload.username || undefined,
-        payload.email,
-        payload.isActive,
-      ),
-    );
+    if (payload.eventId) {
+      const claimed = await this.processedEventRepository.tryClaim(payload.eventId);
+      if (!claimed) {
+        this.logger.log(
+          `user_profile_updated already processed eventId=${payload.eventId} userId=${payload.userId}`,
+        );
+        return;
+      }
+    }
+
+    try {
+      await this.commandBus.execute(
+        new SyncUserReplicaCommand(
+          payload.userId,
+          payload.fullName || "",
+          payload.displayName || undefined,
+          payload.avatarUrl || undefined,
+          payload.username || undefined,
+          payload.email,
+          payload.isActive,
+        ),
+      );
+      if (payload.eventId) {
+        await this.processedEventRepository.markProcessed(payload.eventId);
+      }
+    } catch (error) {
+      if (payload.eventId) {
+        await this.processedEventRepository.releaseClaim(payload.eventId);
+      }
+      throw error;
+    }
+
     this.recordSyncLag(payload.occurredAt);
     this.logger.log(`user_profile_updated via kafka userId=${payload.userId}`);
   }

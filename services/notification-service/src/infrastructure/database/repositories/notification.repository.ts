@@ -30,6 +30,40 @@ export class NotificationRepository implements INotificationRepository {
     return createdNotification._id.toString();
   }
 
+  async createForEventAsync(
+    notification: NotificationEntity,
+    eventDedupeKey: string,
+  ): Promise<{ created: boolean; id: string }> {
+    const notificationDocument = NotificationMapper.toPersistence(notification);
+
+    try {
+      const createdNotification = await this.notificationModel.create({
+        ...notificationDocument,
+        eventDedupeKey,
+      });
+      return { created: true, id: createdNotification._id.toString() };
+    } catch (error) {
+      if (
+        typeof error === "object" &&
+        error !== null &&
+        "code" in error &&
+        (error as { code?: number }).code === 11000
+      ) {
+        const existingNotification = await this.notificationModel
+          .findOne({ eventDedupeKey })
+          .select({ _id: 1 })
+          .lean()
+          .exec();
+
+        if (existingNotification?._id) {
+          return { created: false, id: existingNotification._id.toString() };
+        }
+      }
+
+      throw error;
+    }
+  }
+
   async createBroadcastAsync(
     notification: NotificationEntity,
     dedupeKey: string,
