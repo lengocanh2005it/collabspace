@@ -69,11 +69,16 @@ export class NotificationRepository implements INotificationRepository {
     dedupeKey: string,
   ): Promise<boolean> {
     const notificationDocument = NotificationMapper.toPersistence(notification);
+    // Loại bỏ createdAt và updatedAt khỏi payload:
+    // Schema dùng `timestamps: true` nên Mongoose tự quản lý 2 field này.
+    // Nếu để lại, MongoDB sẽ báo conflict path khi $setOnInsert và timestamps
+    // cùng cố ghi vào 'updatedAt' trong một operation.
+    const { createdAt: _c, updatedAt: _u, ...insertFields } = notificationDocument;
     const result = await this.notificationModel.updateOne(
       { broadcastDedupeKey: dedupeKey },
       {
         $setOnInsert: {
-          ...notificationDocument,
+          ...insertFields,
           broadcastDedupeKey: dedupeKey,
         },
       },
