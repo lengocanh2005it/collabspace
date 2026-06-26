@@ -20,8 +20,6 @@ spec:
         - name: grafana
           port: 80
       middlewares:
-        - name: strip-identity-headers
-        - name: forward-auth
         - name: rate-limit
   {{- if and .Values.gateway.tls .Values.gateway.tls.enabled }}
   tls:
