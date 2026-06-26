@@ -141,6 +141,13 @@ data:
         static_configs:
           - targets: ['kafka-exporter:9308']
       {{- end }}
+      {{- if .Values.observability.kubeStateMetrics.enabled }}
+      - job_name: kube-state-metrics
+        static_configs:
+          - targets: ['kube-state-metrics:8080']
+      {{- end }}
+    rule_files:
+      - /etc/prometheus/rules/*.yml
       {{- if .Values.observability.alertmanager.enabled }}
     alerting:
       alertmanagers:
@@ -182,6 +189,8 @@ spec:
           volumeMounts:
             - name: config
               mountPath: /etc/prometheus
+            - name: rules
+              mountPath: /etc/prometheus/rules
             - name: data
               mountPath: /prometheus
             {{- if $metricsAuthToken }}
@@ -200,6 +209,9 @@ spec:
         - name: config
           configMap:
             name: prometheus-config
+        - name: rules
+          configMap:
+            name: prometheus-alert-rules
         - name: data
           emptyDir: {}
         {{- if $metricsAuthToken }}
@@ -207,6 +219,39 @@ spec:
           secret:
             secretName: prometheus-metrics-auth
         {{- end }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-alert-rules
+  namespace: {{ $ns }}
+  labels:
+    app: prometheus
+data:
+  hpa.yml: |
+    groups:
+      - name: hpa-scaling
+        rules:
+          - alert: HPAScaledUp
+            expr: |
+              kube_horizontalpodautoscaler_status_current_replicas{namespace="{{ $ns }}"}
+              == kube_horizontalpodautoscaler_spec_max_replicas{namespace="{{ $ns }}"}
+            for: 30s
+            labels:
+              severity: warning
+            annotations:
+              summary: "HPA {{ "{{" }} $labels.horizontalpodautoscaler {{ "}}" }} đã scale lên max replicas"
+              description: "{{ "{{" }} $labels.horizontalpodautoscaler {{ "}}" }} đang chạy {{ "{{" }} $value | humanize {{ "}}" }} replicas (max=3). CPU liên tục vượt ngưỡng 70%."
+          - alert: HighCPUUsage
+            expr: |
+              kube_horizontalpodautoscaler_status_current_replicas{namespace="{{ $ns }}"}
+              > kube_horizontalpodautoscaler_spec_min_replicas{namespace="{{ $ns }}"}
+            for: 30s
+            labels:
+              severity: critical
+            annotations:
+              summary: "HPA {{ "{{" }} $labels.horizontalpodautoscaler {{ "}}" }} scale vượt min do CPU cao"
+              description: "{{ "{{" }} $labels.horizontalpodautoscaler {{ "}}" }} đang chạy {{ "{{" }} $value | humanize {{ "}}" }} replicas — HPA tự động scale do CPU vượt 70%."
 ---
 apiVersion: v1
 kind: Service

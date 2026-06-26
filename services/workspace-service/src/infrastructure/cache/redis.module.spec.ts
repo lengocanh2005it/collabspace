@@ -10,7 +10,6 @@ jest.mock('ioredis', () => {
   return { default: MockRedis, __esModule: true };
 });
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const MockRedis: jest.Mock = (jest.requireMock('ioredis') as any).default;
 
 function makeConfigService(env: Record<string, string>): ConfigService {

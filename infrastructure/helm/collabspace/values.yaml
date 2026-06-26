@@ -381,8 +381,8 @@ observability:
   alertmanager:
     enabled: true
     slack:
-      enabled: false
-      channel: "#alerts-production"
+      enabled: true
+      channel: "#nouveau-canal"
       webhookUrl: ""
   grafana:
     enabled: true
@@ -390,6 +390,19 @@ observability:
     enabled: true
   promtail:
     enabled: true
+  kubeStateMetrics:
+    enabled: true
+
+kube-state-metrics:
+  fullnameOverride: kube-state-metrics
+  namespaceOverride: collabspace
+  resources:
+    requests:
+      memory: 64Mi
+      cpu: 25m
+    limits:
+      memory: 128Mi
+      cpu: 100m
   jaeger:
     enabled: false  # bật khi cần tracing (TRACING_ENABLED=true trong services)
     resources:

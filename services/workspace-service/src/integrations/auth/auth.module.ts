@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { join } from 'node:path';
+import { RedisModule } from '../../infrastructure/cache/redis.module';
 import { AUTH_GRPC_CLIENT, AuthGrpcService } from './auth-grpc.service';
 import { AuthHttpClient } from './auth-http.client';
 
@@ -8,6 +9,7 @@ const protoDir = join(process.cwd(), 'proto');
 
 @Module({
   imports: [
+    RedisModule,
     ClientsModule.register([
       {
         name: AUTH_GRPC_CLIENT,

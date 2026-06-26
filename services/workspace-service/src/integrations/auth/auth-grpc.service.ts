@@ -3,11 +3,15 @@ import {
   Injectable,
   Logger,
   type OnModuleInit,
+  Optional,
   ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common';
 import type { ClientGrpc } from '@nestjs/microservices';
+import { createHash } from 'node:crypto';
 import { TimeoutError, firstValueFrom, type Observable, timeout } from 'rxjs';
+import type { Redis } from 'ioredis';
+import { REDIS_CLIENT } from '../../infrastructure/cache/redis-client.token';
 
 export const AUTH_GRPC_CLIENT = 'AUTH_GRPC_CLIENT';
 
@@ -73,7 +77,10 @@ export class AuthGrpcService implements OnModuleInit {
   private authClient?: ReadyGrpcClient;
   private authService?: AuthGrpcClient;
 
-  constructor(@Inject(AUTH_GRPC_CLIENT) client: unknown) {
+  constructor(
+    @Inject(AUTH_GRPC_CLIENT) client: unknown,
+    @Optional() @Inject(REDIS_CLIENT) private readonly redis: Redis | null = null,
+  ) {
     this.client = client as ClientGrpc;
   }
 
@@ -121,20 +128,35 @@ export class AuthGrpcService implements OnModuleInit {
   }
 
   async verifyAccessTokenLite(authorizationHeader?: string): Promise<AuthLiteIdentity> {
+    const authorization = authorizationHeader?.trim();
+
+    if (!authorization) {
+      throw new UnauthorizedException({
+        code: 'TOKEN_MISSING',
+        message: 'Authorization header is required',
+      });
+    }
+
+    const cached = await this.getCachedIdentity(authorization);
+    if (cached) return cached;
+
     const authService = this.getAuthServiceClient();
     const response = await this.invokeVerify(
-      (authorization) => authService.verifyAccessTokenLite({ authorization }),
-      authorizationHeader,
+      (auth) => authService.verifyAccessTokenLite({ authorization: auth }),
+      authorization,
       'VerifyAccessTokenLite',
     );
 
-    return {
+    const identity: AuthLiteIdentity = {
       emailVerified: response.emailVerified,
       role: response.role,
       roles: response.roles ?? [],
       userId: response.userId,
       workspaceId: response.workspaceId,
     };
+
+    await this.setCachedIdentity(authorization, identity);
+    return identity;
   }
 
   async verifyAccessToken(authorizationHeader?: string): Promise<AuthIdentity> {
@@ -256,6 +278,43 @@ export class AuthGrpcService implements OnModuleInit {
 
   private isTimeoutError(error: unknown): boolean {
     return error instanceof TimeoutError;
+  }
+
+  private tokenCacheKey(authorization: string): string {
+    const hash = createHash('sha256').update(authorization).digest('hex').slice(0, 32);
+    return `auth-token:${hash}`;
+  }
+
+  private tokenCacheTtl(): number {
+    const ttl = Number(process.env.AUTH_TOKEN_CACHE_TTL_SECONDS ?? 60);
+    return Number.isFinite(ttl) && ttl > 0 ? ttl : 60;
+  }
+
+  private async getCachedIdentity(authorization: string): Promise<AuthLiteIdentity | null> {
+    if (!this.redis) return null;
+    try {
+      const raw = await this.redis.get(this.tokenCacheKey(authorization));
+      if (!raw) return null;
+      return JSON.parse(raw) as AuthLiteIdentity;
+    } catch {
+      return null;
+    }
+  }
+
+  private async setCachedIdentity(
+    authorization: string,
+    identity: AuthLiteIdentity,
+  ): Promise<void> {
+    if (!this.redis) return;
+    try {
+      await this.redis.setex(
+        this.tokenCacheKey(authorization),
+        this.tokenCacheTtl(),
+        JSON.stringify(identity),
+      );
+    } catch {
+      // cache write failure is non-fatal
+    }
   }
 
   private isUnauthenticatedError(error: unknown): boolean {
