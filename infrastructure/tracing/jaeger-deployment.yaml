@@ -64,7 +64,7 @@ metadata:
     app.kubernetes.io/name: jaeger
     app.kubernetes.io/component: tracing
     app.kubernetes.io/part-of: collabspace
-    app.kubernetes.io/version: "1.41"
+    app.kubernetes.io/version: "1.57"
 spec:
   replicas: 1
   selector:
@@ -89,13 +89,9 @@ spec:
         fsGroup: 10001
       containers:
         - name: jaeger
-          image: jaegertracing/all-in-one:1.41
+          image: jaegertracing/all-in-one:1.57
           imagePullPolicy: IfNotPresent
-          env:
-            - name: COLLECTOR_OTLP_ENABLED
-              value: "true"
           args:
-            - "--memory.max-traces=100000"
             - "--query.base-path=/jaeger"
             - "--sampling.strategies-file=/etc/jaeger/sampling-strategies.json"
           ports:
@@ -135,12 +131,14 @@ spec:
               containerPort: 9411
               protocol: TCP
           env:
+            - name: COLLECTOR_OTLP_ENABLED
+              value: "true"
             - name: COLLECTOR_ZIPKIN_HOST_PORT
               value: ":9411"
             - name: SPAN_STORAGE_TYPE
               value: "memory"
             - name: MEMORY_MAX_TRACES
-              value: "100000"
+              value: "5000"
             # For production, use Elasticsearch:
             # - name: SPAN_STORAGE_TYPE
             #   value: "elasticsearch"
@@ -152,10 +150,10 @@ spec:
               readOnly: true
           resources:
             requests:
-              memory: "256Mi"
+              memory: "512Mi"
               cpu: "100m"
             limits:
-              memory: "512Mi"
+              memory: "1Gi"
               cpu: "250m"
           readinessProbe:
             httpGet:
