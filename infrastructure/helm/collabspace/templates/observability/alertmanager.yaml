@@ -74,10 +74,11 @@ spec:
                     - channel: '{{ $channel }}'
                       send_resolved: true
                       title: '[{{ "{{" }} .Status | toUpper {{ "}}" }}{{ "{{" }} if eq .Status "firing" {{ "}}" }}:{{ "{{" }} .Alerts.Firing | len {{ "}}" }}{{ "{{" }} end {{ "}}" }}] {{ "{{" }} .GroupLabels.SortedPairs.Values | join " " {{ "}}" }}'
-                      text: >-
-                        {{ "{{" }} range .Alerts -{{ "}}" }}
+                      text: |
+                        {{ "{{" }} range .Alerts {{ "}}" }}
                         *Alert:* {{ "{{" }} .Annotations.summary {{ "}}" }}{{ "{{" }} if .Labels.severity {{ "}}" }} - `{{ "{{" }} .Labels.severity {{ "}}" }}`{{ "{{" }} end {{ "}}" }}
                         *Description:* {{ "{{" }} .Annotations.description {{ "}}" }}
+
                         {{ "{{" }} end {{ "}}" }}
               inhibit_rules:
                 - source_match:
